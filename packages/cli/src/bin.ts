@@ -14,7 +14,7 @@ const program = new Command();
 program
   .name('vitrin')
   .description('iOS App Store Connect metadata, ekran görüntüsü, kreatif ve App Preview otomasyonu')
-  .version('0.1.0')
+  .version('0.3.0')
   .option('-C, --cwd <dir>', 'uygulama reposu (varsayılan: çalışma dizini)')
   .option('-f, --force', 'girdiler değişmemiş olsa da aşamayı yeniden çalıştır')
   .option('--json', 'makine okunur çıktı')

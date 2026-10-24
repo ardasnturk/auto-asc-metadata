@@ -58,7 +58,7 @@ Listeyi doctor çıktısından al; yalnız gerçekten eksik olanları yaz.
 - Rakip metnini, görselini veya marka adını kopyalama; rakip verisi yalnız analiz içindir.
 - Gizli değerleri loglama, commit etme, sohbete yazma. `.env`, `*.p8` asla commit edilmez.
 - Proof rozeti yalnız Lookup’taki gerçek puanla; fiyat rozeti yok; Apple markaları yalnız gerçekse.
-- Emin olmadığın Apple kuralında `docs/apple-notes.md`’ye ve references/apple-specs.md’ye bak; hâlâ belirsizse kullanıcıya sor.
+- Emin olmadığın Apple kuralında `references/apple-notes.md` (repoda `docs/apple-notes.md`) ve references/apple-specs.md’ye bak; hâlâ belirsizse kullanıcıya sor.
 
 ## Referanslar (gerektiğinde oku)
 

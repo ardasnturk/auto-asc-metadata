@@ -12,7 +12,7 @@ Gereksinimler: macOS, Node.js ≥ 22, pnpm, Xcode (simctl), Ruby + Bundler, ffmp
 skill/scripts/install.sh
 ```
 
-Betik bağımlılıkları kurar, CLI’ı derler, Playwright Chromium’u indirir, `vitrin` komutunu bağlar ve skill’i `~/.claude/skills/vitrin` altına kopyalar. Uygulama reposunda:
+Betik bağımlılıkları kurar, CLI’ı derler, Playwright Chromium’u indirir, `vitrin` komutunu npm’in global bin klasörüne (`npm prefix -g`/bin; `VITRIN_BIN_DIR` ile değiştirilebilir) yazar ve skill’i `~/.claude/skills/vitrin` altına kopyalar (`CLAUDE_SKILLS_DIR`). Repoyu taşırsan betiği yeniden çalıştır; komut repodaki derlemeyi çalıştırır. Uygulama reposunda:
 
 ```bash
 vitrin init
