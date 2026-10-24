@@ -1,0 +1,86 @@
+import { z } from 'zod';
+import { AscLocale } from './common.js';
+
+export const CaptureScreen = z.object({
+  id: z.string().regex(/^[a-z0-9-]+$/),
+  /** Extra launch arguments, e.g. ["-VitrinScreen", "home"]. -VitrinDemo is always added. */
+  launchArgs: z.array(z.string()).default([]),
+  /** Optional deep link opened with `simctl openurl` after launch. */
+  url: z.string().optional(),
+  waitMs: z.number().int().nonnegative().default(2500),
+});
+
+export const CaptureRecording = CaptureScreen.extend({
+  durationSec: z.number().min(3).max(60).default(12),
+});
+
+export const VitrinConfig = z.object({
+  app: z.object({
+    /** Falls back to APP_BUNDLE_ID, then to the Xcode project. */
+    bundleId: z.string().optional(),
+    project: z.string().optional(),
+    scheme: z.string().optional(),
+    primaryLocale: AscLocale.default('en-US'),
+    locales: z.array(AscLocale).min(1).default(['en-US']),
+    /** ASC Apple ID (numeric). Read from the API when empty. */
+    appleId: z.string().optional(),
+  }),
+  storefronts: z.array(z.string().length(2)).default(['us']),
+  urls: z.object({
+    support: z.string().url().optional(),
+    marketing: z.string().url().optional(),
+    privacy: z.string().url().optional(),
+  }),
+  copyrightHolder: z.string().optional(),
+  review: z
+    .object({
+      firstName: z.string().optional(),
+      lastName: z.string().optional(),
+      phone: z.string().optional(),
+      email: z.string().optional(),
+    })
+    .default({}),
+  research: z
+    .object({
+      /** Seed search terms: one list for all locales, or `{ "tr": [...], "en-US": [...] }`. Written by Claude. */
+      seeds: z.union([z.array(z.string()), z.record(AscLocale, z.array(z.string()))]).default([]),
+      /** Max competitors kept per storefront. */
+      competitors: z.number().int().min(3).max(40).default(15),
+      /** Max keyword candidates scored per locale (each costs one search request). */
+      candidates: z.number().int().min(5).max(100).default(40),
+      limit: z.number().int().min(1).max(200).default(50),
+      cacheHours: z.number().default(24),
+      reviewsPerApp: z.number().int().default(50),
+      ocr: z.boolean().default(true),
+    })
+    .default({ seeds: [], competitors: 15, candidates: 40, limit: 50, cacheHours: 24, reviewsPerApp: 50, ocr: true }),
+  targets: z
+    .object({
+      /** Target ids from data/targets.json to force on or off. */
+      enable: z.array(z.string()).default([]),
+      disable: z.array(z.string()).default([]),
+    })
+    .default({ enable: [], disable: [] }),
+  capture: z
+    .object({
+      mode: z.enum(['launch-args', 'xcuitest', 'manual']).default('launch-args'),
+      configuration: z.string().default('Debug'),
+      appearance: z.enum(['light', 'dark']).default('light'),
+      screens: z.array(CaptureScreen).default([]),
+      recordings: z.array(CaptureRecording).default([]),
+      /** Override simulator per family, e.g. { iphone: "iPhone 17 Pro" }. */
+      simulators: z.record(z.string(), z.string()).default({}),
+    })
+    .default({ mode: 'launch-args', configuration: 'Debug', appearance: 'light', screens: [], recordings: [], simulators: {} }),
+  video: z
+    .object({ enabled: z.boolean().default(true), loops: z.boolean().default(true) })
+    .default({ enabled: true, loops: true }),
+  upload: z
+    .object({
+      uploader: z.enum(['deliver', 'asset-library']).default('deliver'),
+      platform: z.enum(['ios', 'osx', 'appletvos', 'xros']).default('ios'),
+      appVersion: z.string().optional(),
+    })
+    .default({ uploader: 'deliver', platform: 'ios' }),
+});
+export type VitrinConfig = z.infer<typeof VitrinConfig>;

@@ -1,0 +1,16 @@
+
+# Vitrin
+.env
+*.p8
+secrets/
+.vitrin/cache/
+.vitrin/raw/
+fastlane/report.xml
+fastlane/README.md
+# Vitrin render çıktıları (büyük; `vitrin design` / `vitrin video` yeniden üretir)
+fastlane/screenshots/
+fastlane/app-previews/
+.vitrin/creative/
+.vitrin/report.html
+.vitrin/render-manifest.json
+.vitrin/video-styles/

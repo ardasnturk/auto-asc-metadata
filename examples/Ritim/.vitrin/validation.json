@@ -1,0 +1,145 @@
+{
+  "generatedAt": "2026-10-24T09:34:43.559Z",
+  "ok": true,
+  "counts": {
+    "error": 0,
+    "warning": 7,
+    "info": 0
+  },
+  "issues": [
+    {
+      "severity": "warning",
+      "code": "text.superlative",
+      "message": "Açıklamada “best” var; belgeli değilse kaldır.",
+      "locale": "en-US",
+      "field": "description",
+      "file": ".vitrin/metadata/en-US.json"
+    },
+    {
+      "severity": "warning",
+      "code": "text.price",
+      "message": "Açıklamada fiyat ifadesi (“free”); abonelik bilgisi değilse kaldır.",
+      "locale": "en-US",
+      "field": "description",
+      "file": ".vitrin/metadata/en-US.json"
+    },
+    {
+      "severity": "warning",
+      "code": "url.placeholder",
+      "message": "supportUrl yer tutucu (https://example.com/support); yüklemeden önce gerçek adresi yaz.",
+      "locale": "en-US",
+      "field": "supportUrl",
+      "file": ".vitrin/metadata/en-US.json"
+    },
+    {
+      "severity": "warning",
+      "code": "url.placeholder",
+      "message": "privacyUrl yer tutucu (https://example.com/privacy); yüklemeden önce gerçek adresi yaz.",
+      "locale": "en-US",
+      "field": "privacyUrl",
+      "file": ".vitrin/metadata/en-US.json"
+    },
+    {
+      "severity": "warning",
+      "code": "text.price",
+      "message": "Açıklamada fiyat ifadesi (“ücretsiz”); abonelik bilgisi değilse kaldır.",
+      "locale": "tr",
+      "field": "description",
+      "file": ".vitrin/metadata/tr.json"
+    },
+    {
+      "severity": "warning",
+      "code": "url.placeholder",
+      "message": "supportUrl yer tutucu (https://example.com/support); yüklemeden önce gerçek adresi yaz.",
+      "locale": "tr",
+      "field": "supportUrl",
+      "file": ".vitrin/metadata/tr.json"
+    },
+    {
+      "severity": "warning",
+      "code": "url.placeholder",
+      "message": "privacyUrl yer tutucu (https://example.com/privacy); yüklemeden önce gerçek adresi yaz.",
+      "locale": "tr",
+      "field": "privacyUrl",
+      "file": ".vitrin/metadata/tr.json"
+    }
+  ],
+  "measurements": {
+    "en-US": {
+      "name": {
+        "chars": 20,
+        "bytes": 20,
+        "limit": 30,
+        "unit": "chars"
+      },
+      "subtitle": {
+        "chars": 28,
+        "bytes": 28,
+        "limit": 30,
+        "unit": "chars"
+      },
+      "promotionalText": {
+        "chars": 116,
+        "bytes": 116,
+        "limit": 170,
+        "unit": "chars"
+      },
+      "description": {
+        "chars": 1354,
+        "bytes": 1368,
+        "limit": 4000,
+        "unit": "chars"
+      },
+      "keywords": {
+        "chars": 94,
+        "bytes": 94,
+        "limit": 100,
+        "unit": "bytes"
+      },
+      "whatsNew": {
+        "chars": 440,
+        "bytes": 454,
+        "limit": 4000,
+        "unit": "chars"
+      }
+    },
+    "tr": {
+      "name": {
+        "chars": 24,
+        "bytes": 27,
+        "limit": 30,
+        "unit": "chars"
+      },
+      "subtitle": {
+        "chars": 27,
+        "bytes": 29,
+        "limit": 30,
+        "unit": "chars"
+      },
+      "promotionalText": {
+        "chars": 124,
+        "bytes": 134,
+        "limit": 170,
+        "unit": "chars"
+      },
+      "description": {
+        "chars": 1274,
+        "bytes": 1414,
+        "limit": 4000,
+        "unit": "chars"
+      },
+      "keywords": {
+        "chars": 89,
+        "bytes": 96,
+        "limit": 100,
+        "unit": "bytes"
+      },
+      "whatsNew": {
+        "chars": 483,
+        "bytes": 545,
+        "limit": 4000,
+        "unit": "chars"
+      }
+    }
+  }
+}

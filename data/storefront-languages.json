@@ -1,0 +1,1297 @@
+{
+ "updatedAt": "2026-10-24",
+ "source": "https://developer.apple.com/help/app-store-connect/reference/app-information/app-store-localizations",
+ "note": "Ek dillerin aramada sayıldığı ASO topluluğunun gözlemi; Apple taahhüdü değil.",
+ "storefronts": [
+  {
+   "code": "af",
+   "country": "Afghanistan",
+   "default": "en-GB",
+   "additional": []
+  },
+  {
+   "code": "al",
+   "country": "Albania",
+   "default": "en-GB",
+   "additional": []
+  },
+  {
+   "code": "dz",
+   "country": "Algeria",
+   "default": "en-GB",
+   "additional": [
+    "ar-SA",
+    "fr-FR"
+   ]
+  },
+  {
+   "code": "ao",
+   "country": "Angola",
+   "default": "en-GB",
+   "additional": []
+  },
+  {
+   "code": "ai",
+   "country": "Anguilla",
+   "default": "en-GB",
+   "additional": []
+  },
+  {
+   "code": "ag",
+   "country": "Antigua and Barbuda",
+   "default": "en-GB",
+   "additional": []
+  },
+  {
+   "code": "ar",
+   "country": "Argentina",
+   "default": "es-MX",
+   "additional": [
+    "en-GB"
+   ]
+  },
+  {
+   "code": "am",
+   "country": "Armenia",
+   "default": "en-GB",
+   "additional": []
+  },
+  {
+   "code": "au",
+   "country": "Australia",
+   "default": "en-AU",
+   "additional": [
+    "en-GB"
+   ]
+  },
+  {
+   "code": "at",
+   "country": "Austria",
+   "default": "de-DE",
+   "additional": [
+    "en-GB"
+   ]
+  },
+  {
+   "code": "az",
+   "country": "Azerbaijan",
+   "default": "en-GB",
+   "additional": []
+  },
+  {
+   "code": "bs",
+   "country": "Bahamas",
+   "default": "en-GB",
+   "additional": []
+  },
+  {
+   "code": "bh",
+   "country": "Bahrain",
+   "default": "en-GB",
+   "additional": [
+    "ar-SA"
+   ]
+  },
+  {
+   "code": "bb",
+   "country": "Barbados",
+   "default": "en-GB",
+   "additional": []
+  },
+  {
+   "code": "by",
+   "country": "Belarus",
+   "default": "en-GB",
+   "additional": []
+  },
+  {
+   "code": "be",
+   "country": "Belgium",
+   "default": "en-GB",
+   "additional": [
+    "nl-NL",
+    "fr-FR"
+   ]
+  },
+  {
+   "code": "bz",
+   "country": "Belize",
+   "default": "en-GB",
+   "additional": [
+    "es-MX"
+   ]
+  },
+  {
+   "code": "bj",
+   "country": "Benin",
+   "default": "en-GB",
+   "additional": [
+    "fr-FR"
+   ]
+  },
+  {
+   "code": "bm",
+   "country": "Bermuda",
+   "default": "en-GB",
+   "additional": []
+  },
+  {
+   "code": "bt",
+   "country": "Bhutan",
+   "default": "en-GB",
+   "additional": []
+  },
+  {
+   "code": "bo",
+   "country": "Bolivia",
+   "default": "es-MX",
+   "additional": [
+    "en-GB"
+   ]
+  },
+  {
+   "code": "ba",
+   "country": "Bosnia and Herzegovina",
+   "default": "en-GB",
+   "additional": [
+    "hr"
+   ]
+  },
+  {
+   "code": "bw",
+   "country": "Botswana",
+   "default": "en-GB",
+   "additional": []
+  },
+  {
+   "code": "br",
+   "country": "Brazil",
+   "default": "pt-BR",
+   "additional": [
+    "en-GB"
+   ]
+  },
+  {
+   "code": "vg",
+   "country": "British Virgin Islands",
+   "default": "en-GB",
+   "additional": []
+  },
+  {
+   "code": "bn",
+   "country": "Brunei",
+   "default": "en-GB",
+   "additional": []
+  },
+  {
+   "code": "bg",
+   "country": "Bulgaria",
+   "default": "en-GB",
+   "additional": []
+  },
+  {
+   "code": "bf",
+   "country": "Burkina Faso",
+   "default": "en-GB",
+   "additional": [
+    "fr-FR"
+   ]
+  },
+  {
+   "code": "kh",
+   "country": "Cambodia",
+   "default": "en-GB",
+   "additional": [
+    "fr-FR"
+   ]
+  },
+  {
+   "code": "cm",
+   "country": "Cameroon",
+   "default": "fr-FR",
+   "additional": [
+    "en-GB"
+   ]
+  },
+  {
+   "code": "ca",
+   "country": "Canada",
+   "default": "en-CA",
+   "additional": [
+    "fr-CA"
+   ]
+  },
+  {
+   "code": "cv",
+   "country": "Cape Verde",
+   "default": "en-GB",
+   "additional": []
+  },
+  {
+   "code": "ky",
+   "country": "Cayman Islands",
+   "default": "en-GB",
+   "additional": []
+  },
+  {
+   "code": "td",
+   "country": "Chad",
+   "default": "en-GB",
+   "additional": [
+    "fr-FR"
+   ]
+  },
+  {
+   "code": "cl",
+   "country": "Chile",
+   "default": "es-MX",
+   "additional": [
+    "en-GB"
+   ]
+  },
+  {
+   "code": "cn",
+   "country": "China mainland",
+   "default": "zh-Hans",
+   "additional": [
+    "en-GB"
+   ]
+  },
+  {
+   "code": "co",
+   "country": "Colombia",
+   "default": "es-MX",
+   "additional": [
+    "en-GB"
+   ]
+  },
+  {
+   "code": "cd",
+   "country": "Congo, Democratic Republic of the",
+   "default": "en-GB",
+   "additional": [
+    "fr-FR"
+   ]
+  },
+  {
+   "code": "cg",
+   "country": "Congo, Republic of the",
+   "default": "en-GB",
+   "additional": [
+    "fr-FR"
+   ]
+  },
+  {
+   "code": "cr",
+   "country": "Costa Rica",
+   "default": "es-MX",
+   "additional": [
+    "en-GB"
+   ]
+  },
+  {
+   "code": "ci",
+   "country": "Cote d'Ivoire",
+   "default": "fr-FR",
+   "additional": [
+    "en-GB"
+   ]
+  },
+  {
+   "code": "hr",
+   "country": "Croatia",
+   "default": "en-GB",
+   "additional": [
+    "hr"
+   ]
+  },
+  {
+   "code": "cy",
+   "country": "Cyprus",
+   "default": "en-GB",
+   "additional": [
+    "el",
+    "tr"
+   ]
+  },
+  {
+   "code": "cz",
+   "country": "Czechia",
+   "default": "en-GB",
+   "additional": [
+    "cs"
+   ]
+  },
+  {
+   "code": "dk",
+   "country": "Denmark",
+   "default": "en-GB",
+   "additional": [
+    "da"
+   ]
+  },
+  {
+   "code": "dm",
+   "country": "Dominica",
+   "default": "en-GB",
+   "additional": []
+  },
+  {
+   "code": "do",
+   "country": "Dominican Republic",
+   "default": "es-MX",
+   "additional": [
+    "en-GB"
+   ]
+  },
+  {
+   "code": "ec",
+   "country": "Ecuador",
+   "default": "es-MX",
+   "additional": [
+    "en-GB"
+   ]
+  },
+  {
+   "code": "eg",
+   "country": "Egypt",
+   "default": "en-GB",
+   "additional": [
+    "ar-SA",
+    "fr-FR"
+   ]
+  },
+  {
+   "code": "sv",
+   "country": "El Salvador",
+   "default": "es-MX",
+   "additional": [
+    "en-GB"
+   ]
+  },
+  {
+   "code": "ee",
+   "country": "Estonia",
+   "default": "en-GB",
+   "additional": []
+  },
+  {
+   "code": "sz",
+   "country": "Eswatini",
+   "default": "en-GB",
+   "additional": []
+  },
+  {
+   "code": "fj",
+   "country": "Fiji",
+   "default": "en-GB",
+   "additional": []
+  },
+  {
+   "code": "fi",
+   "country": "Finland",
+   "default": "en-GB",
+   "additional": [
+    "fi"
+   ]
+  },
+  {
+   "code": "fr",
+   "country": "France",
+   "default": "fr-FR",
+   "additional": [
+    "en-GB"
+   ]
+  },
+  {
+   "code": "ga",
+   "country": "Gabon",
+   "default": "fr-FR",
+   "additional": [
+    "en-GB"
+   ]
+  },
+  {
+   "code": "gm",
+   "country": "Gambia",
+   "default": "en-GB",
+   "additional": []
+  },
+  {
+   "code": "ge",
+   "country": "Georgia",
+   "default": "en-GB",
+   "additional": []
+  },
+  {
+   "code": "de",
+   "country": "Germany",
+   "default": "de-DE",
+   "additional": [
+    "en-GB"
+   ]
+  },
+  {
+   "code": "gh",
+   "country": "Ghana",
+   "default": "en-GB",
+   "additional": []
+  },
+  {
+   "code": "gr",
+   "country": "Greece",
+   "default": "en-GB",
+   "additional": [
+    "el"
+   ]
+  },
+  {
+   "code": "gd",
+   "country": "Grenada",
+   "default": "en-GB",
+   "additional": []
+  },
+  {
+   "code": "gt",
+   "country": "Guatemala",
+   "default": "es-MX",
+   "additional": [
+    "en-GB"
+   ]
+  },
+  {
+   "code": "gw",
+   "country": "Guinea-Bissau",
+   "default": "en-GB",
+   "additional": [
+    "fr-FR"
+   ]
+  },
+  {
+   "code": "gy",
+   "country": "Guyana",
+   "default": "en-GB",
+   "additional": [
+    "fr-FR"
+   ]
+  },
+  {
+   "code": "hn",
+   "country": "Honduras",
+   "default": "es-MX",
+   "additional": [
+    "en-GB"
+   ]
+  },
+  {
+   "code": "hk",
+   "country": "Hong Kong",
+   "default": "zh-Hant",
+   "additional": [
+    "en-GB"
+   ]
+  },
+  {
+   "code": "hu",
+   "country": "Hungary",
+   "default": "en-GB",
+   "additional": [
+    "hu"
+   ]
+  },
+  {
+   "code": "is",
+   "country": "Iceland",
+   "default": "en-GB",
+   "additional": []
+  },
+  {
+   "code": "in",
+   "country": "India",
+   "default": "en-GB",
+   "additional": [
+    "bn-BD",
+    "gu-IN",
+    "hi",
+    "kn-IN",
+    "ml-IN",
+    "mr-IN",
+    "or-IN",
+    "pa-IN",
+    "ta-IN",
+    "te-IN",
+    "ur-PK"
+   ]
+  },
+  {
+   "code": "id",
+   "country": "Indonesia",
+   "default": "en-GB",
+   "additional": [
+    "id"
+   ]
+  },
+  {
+   "code": "iq",
+   "country": "Iraq",
+   "default": "en-GB",
+   "additional": [
+    "ar-SA"
+   ]
+  },
+  {
+   "code": "ie",
+   "country": "Ireland",
+   "default": "en-GB",
+   "additional": []
+  },
+  {
+   "code": "il",
+   "country": "Israel",
+   "default": "en-GB",
+   "additional": [
+    "he"
+   ]
+  },
+  {
+   "code": "it",
+   "country": "Italy",
+   "default": "it",
+   "additional": [
+    "en-GB"
+   ]
+  },
+  {
+   "code": "jm",
+   "country": "Jamaica",
+   "default": "en-GB",
+   "additional": []
+  },
+  {
+   "code": "jp",
+   "country": "Japan",
+   "default": "ja",
+   "additional": [
+    "en-US"
+   ]
+  },
+  {
+   "code": "jo",
+   "country": "Jordan",
+   "default": "en-GB",
+   "additional": [
+    "ar-SA"
+   ]
+  },
+  {
+   "code": "kz",
+   "country": "Kazakhstan",
+   "default": "en-GB",
+   "additional": []
+  },
+  {
+   "code": "ke",
+   "country": "Kenya",
+   "default": "en-GB",
+   "additional": []
+  },
+  {
+   "code": "xk",
+   "country": "Kosovo",
+   "default": "en-GB",
+   "additional": []
+  },
+  {
+   "code": "kw",
+   "country": "Kuwait",
+   "default": "en-GB",
+   "additional": [
+    "ar-SA"
+   ]
+  },
+  {
+   "code": "kg",
+   "country": "Kyrgyzstan",
+   "default": "en-GB",
+   "additional": []
+  },
+  {
+   "code": "la",
+   "country": "Laos",
+   "default": "en-GB",
+   "additional": [
+    "fr-FR"
+   ]
+  },
+  {
+   "code": "lv",
+   "country": "Latvia",
+   "default": "en-GB",
+   "additional": []
+  },
+  {
+   "code": "lb",
+   "country": "Lebanon",
+   "default": "en-GB",
+   "additional": [
+    "ar-SA",
+    "fr-FR"
+   ]
+  },
+  {
+   "code": "lr",
+   "country": "Liberia",
+   "default": "en-GB",
+   "additional": []
+  },
+  {
+   "code": "ly",
+   "country": "Libya",
+   "default": "en-GB",
+   "additional": [
+    "ar-SA"
+   ]
+  },
+  {
+   "code": "lt",
+   "country": "Lithuania",
+   "default": "en-GB",
+   "additional": []
+  },
+  {
+   "code": "lu",
+   "country": "Luxembourg",
+   "default": "en-GB",
+   "additional": [
+    "fr-FR",
+    "de-DE"
+   ]
+  },
+  {
+   "code": "mo",
+   "country": "Macau",
+   "default": "zh-Hant",
+   "additional": [
+    "en-GB"
+   ]
+  },
+  {
+   "code": "mg",
+   "country": "Madagascar",
+   "default": "en-GB",
+   "additional": [
+    "fr-FR"
+   ]
+  },
+  {
+   "code": "mw",
+   "country": "Malawi",
+   "default": "en-GB",
+   "additional": []
+  },
+  {
+   "code": "my",
+   "country": "Malaysia",
+   "default": "en-GB",
+   "additional": [
+    "ms"
+   ]
+  },
+  {
+   "code": "mv",
+   "country": "Maldives",
+   "default": "en-GB",
+   "additional": []
+  },
+  {
+   "code": "ml",
+   "country": "Mali",
+   "default": "en-GB",
+   "additional": [
+    "fr-FR"
+   ]
+  },
+  {
+   "code": "mt",
+   "country": "Malta",
+   "default": "en-GB",
+   "additional": []
+  },
+  {
+   "code": "mr",
+   "country": "Mauritania",
+   "default": "en-GB",
+   "additional": [
+    "ar-SA",
+    "fr-FR"
+   ]
+  },
+  {
+   "code": "mu",
+   "country": "Mauritius",
+   "default": "en-GB",
+   "additional": [
+    "fr-FR"
+   ]
+  },
+  {
+   "code": "mx",
+   "country": "Mexico",
+   "default": "es-MX",
+   "additional": [
+    "en-GB"
+   ]
+  },
+  {
+   "code": "fm",
+   "country": "Micronesia",
+   "default": "en-GB",
+   "additional": []
+  },
+  {
+   "code": "md",
+   "country": "Moldova",
+   "default": "en-GB",
+   "additional": []
+  },
+  {
+   "code": "mn",
+   "country": "Mongolia",
+   "default": "en-GB",
+   "additional": []
+  },
+  {
+   "code": "me",
+   "country": "Montenegro",
+   "default": "en-GB",
+   "additional": [
+    "hr"
+   ]
+  },
+  {
+   "code": "ms",
+   "country": "Montserrat",
+   "default": "en-GB",
+   "additional": []
+  },
+  {
+   "code": "ma",
+   "country": "Morocco",
+   "default": "en-GB",
+   "additional": [
+    "ar-SA",
+    "fr-FR"
+   ]
+  },
+  {
+   "code": "mz",
+   "country": "Mozambique",
+   "default": "en-GB",
+   "additional": []
+  },
+  {
+   "code": "mm",
+   "country": "Myanmar",
+   "default": "en-GB",
+   "additional": []
+  },
+  {
+   "code": "na",
+   "country": "Namibia",
+   "default": "en-GB",
+   "additional": []
+  },
+  {
+   "code": "nr",
+   "country": "Nauru",
+   "default": "en-GB",
+   "additional": []
+  },
+  {
+   "code": "np",
+   "country": "Nepal",
+   "default": "en-GB",
+   "additional": []
+  },
+  {
+   "code": "nl",
+   "country": "Netherlands",
+   "default": "nl-NL",
+   "additional": [
+    "en-GB"
+   ]
+  },
+  {
+   "code": "nz",
+   "country": "New Zealand",
+   "default": "en-AU",
+   "additional": [
+    "en-GB"
+   ]
+  },
+  {
+   "code": "ni",
+   "country": "Nicaragua",
+   "default": "es-MX",
+   "additional": [
+    "en-GB"
+   ]
+  },
+  {
+   "code": "ne",
+   "country": "Niger",
+   "default": "en-GB",
+   "additional": [
+    "fr-FR"
+   ]
+  },
+  {
+   "code": "ng",
+   "country": "Nigeria",
+   "default": "en-GB",
+   "additional": []
+  },
+  {
+   "code": "mk",
+   "country": "North Macedonia",
+   "default": "en-GB",
+   "additional": []
+  },
+  {
+   "code": "no",
+   "country": "Norway",
+   "default": "en-GB",
+   "additional": [
+    "no"
+   ]
+  },
+  {
+   "code": "om",
+   "country": "Oman",
+   "default": "en-GB",
+   "additional": [
+    "ar-SA"
+   ]
+  },
+  {
+   "code": "pk",
+   "country": "Pakistan",
+   "default": "en-GB",
+   "additional": [
+    "ur-PK"
+   ]
+  },
+  {
+   "code": "pw",
+   "country": "Palau",
+   "default": "en-GB",
+   "additional": []
+  },
+  {
+   "code": "pa",
+   "country": "Panama",
+   "default": "es-MX",
+   "additional": [
+    "en-GB"
+   ]
+  },
+  {
+   "code": "pg",
+   "country": "Papua New Guinea",
+   "default": "en-GB",
+   "additional": []
+  },
+  {
+   "code": "py",
+   "country": "Paraguay",
+   "default": "es-MX",
+   "additional": [
+    "en-GB"
+   ]
+  },
+  {
+   "code": "pe",
+   "country": "Peru",
+   "default": "es-MX",
+   "additional": [
+    "en-GB"
+   ]
+  },
+  {
+   "code": "ph",
+   "country": "Philippines",
+   "default": "en-GB",
+   "additional": []
+  },
+  {
+   "code": "pl",
+   "country": "Poland",
+   "default": "en-GB",
+   "additional": [
+    "pl"
+   ]
+  },
+  {
+   "code": "pt",
+   "country": "Portugal",
+   "default": "pt-PT",
+   "additional": [
+    "en-GB"
+   ]
+  },
+  {
+   "code": "qa",
+   "country": "Qatar",
+   "default": "en-GB",
+   "additional": [
+    "ar-SA"
+   ]
+  },
+  {
+   "code": "kr",
+   "country": "Republic of Korea",
+   "default": "ko",
+   "additional": [
+    "en-GB"
+   ]
+  },
+  {
+   "code": "ro",
+   "country": "Romania",
+   "default": "en-GB",
+   "additional": [
+    "ro"
+   ]
+  },
+  {
+   "code": "ru",
+   "country": "Russia",
+   "default": "ru",
+   "additional": [
+    "en-GB",
+    "uk"
+   ]
+  },
+  {
+   "code": "rw",
+   "country": "Rwanda",
+   "default": "en-GB",
+   "additional": [
+    "fr-FR"
+   ]
+  },
+  {
+   "code": "st",
+   "country": "Sao Tome and Principe",
+   "default": "en-GB",
+   "additional": []
+  },
+  {
+   "code": "sa",
+   "country": "Saudi Arabia",
+   "default": "en-GB",
+   "additional": [
+    "ar-SA"
+   ]
+  },
+  {
+   "code": "sn",
+   "country": "Senegal",
+   "default": "en-GB",
+   "additional": [
+    "fr-FR"
+   ]
+  },
+  {
+   "code": "rs",
+   "country": "Serbia",
+   "default": "en-GB",
+   "additional": [
+    "hr"
+   ]
+  },
+  {
+   "code": "sc",
+   "country": "Seychelles",
+   "default": "en-GB",
+   "additional": [
+    "fr-FR"
+   ]
+  },
+  {
+   "code": "sl",
+   "country": "Sierra Leone",
+   "default": "en-GB",
+   "additional": []
+  },
+  {
+   "code": "sg",
+   "country": "Singapore",
+   "default": "en-GB",
+   "additional": [
+    "zh-Hans"
+   ]
+  },
+  {
+   "code": "sk",
+   "country": "Slovakia",
+   "default": "en-GB",
+   "additional": [
+    "sk"
+   ]
+  },
+  {
+   "code": "si",
+   "country": "Slovenia",
+   "default": "en-GB",
+   "additional": [
+    "sl-SI"
+   ]
+  },
+  {
+   "code": "sb",
+   "country": "Solomon Islands",
+   "default": "en-GB",
+   "additional": []
+  },
+  {
+   "code": "za",
+   "country": "South Africa",
+   "default": "en-GB",
+   "additional": []
+  },
+  {
+   "code": "es",
+   "country": "Spain",
+   "default": "es-ES",
+   "additional": [
+    "ca",
+    "en-GB"
+   ]
+  },
+  {
+   "code": "lk",
+   "country": "Sri Lanka",
+   "default": "en-GB",
+   "additional": []
+  },
+  {
+   "code": "kn",
+   "country": "St. Kitts and Nevis",
+   "default": "en-GB",
+   "additional": []
+  },
+  {
+   "code": "lc",
+   "country": "St. Lucia",
+   "default": "en-GB",
+   "additional": []
+  },
+  {
+   "code": "vc",
+   "country": "St. Vincent and the Grenadines",
+   "default": "en-GB",
+   "additional": []
+  },
+  {
+   "code": "sr",
+   "country": "Suriname",
+   "default": "en-GB",
+   "additional": [
+    "nl-NL"
+   ]
+  },
+  {
+   "code": "se",
+   "country": "Sweden",
+   "default": "sv",
+   "additional": [
+    "en-GB"
+   ]
+  },
+  {
+   "code": "ch",
+   "country": "Switzerland",
+   "default": "de-DE",
+   "additional": [
+    "en-GB",
+    "fr-FR",
+    "it"
+   ]
+  },
+  {
+   "code": "tw",
+   "country": "Taiwan",
+   "default": "zh-Hant",
+   "additional": [
+    "en-GB"
+   ]
+  },
+  {
+   "code": "tj",
+   "country": "Tajikistan",
+   "default": "en-GB",
+   "additional": []
+  },
+  {
+   "code": "tz",
+   "country": "Tanzania",
+   "default": "en-GB",
+   "additional": []
+  },
+  {
+   "code": "th",
+   "country": "Thailand",
+   "default": "en-GB",
+   "additional": [
+    "th"
+   ]
+  },
+  {
+   "code": "to",
+   "country": "Tonga",
+   "default": "en-GB",
+   "additional": []
+  },
+  {
+   "code": "tt",
+   "country": "Trinidad and Tobago",
+   "default": "en-GB",
+   "additional": [
+    "fr-FR"
+   ]
+  },
+  {
+   "code": "tn",
+   "country": "Tunisia",
+   "default": "en-GB",
+   "additional": [
+    "ar-SA",
+    "fr-FR"
+   ]
+  },
+  {
+   "code": "tr",
+   "country": "Türkiye",
+   "default": "en-GB",
+   "additional": [
+    "tr"
+   ]
+  },
+  {
+   "code": "tm",
+   "country": "Turkmenistan",
+   "default": "en-GB",
+   "additional": []
+  },
+  {
+   "code": "tc",
+   "country": "Turks and Caicos Islands",
+   "default": "en-GB",
+   "additional": []
+  },
+  {
+   "code": "ug",
+   "country": "Uganda",
+   "default": "en-GB",
+   "additional": []
+  },
+  {
+   "code": "ua",
+   "country": "Ukraine",
+   "default": "en-GB",
+   "additional": [
+    "ru",
+    "uk"
+   ]
+  },
+  {
+   "code": "ae",
+   "country": "United Arab Emirates",
+   "default": "en-GB",
+   "additional": [
+    "ar-SA"
+   ]
+  },
+  {
+   "code": "gb",
+   "country": "United Kingdom",
+   "default": "en-GB",
+   "additional": []
+  },
+  {
+   "code": "us",
+   "country": "United States",
+   "default": "en-US",
+   "additional": [
+    "ar-SA",
+    "zh-Hans",
+    "zh-Hant",
+    "fr-FR",
+    "ko",
+    "pt-BR",
+    "ru",
+    "es-MX",
+    "vi"
+   ]
+  },
+  {
+   "code": "uy",
+   "country": "Uruguay",
+   "default": "en-GB",
+   "additional": [
+    "es-MX"
+   ]
+  },
+  {
+   "code": "uz",
+   "country": "Uzbekistan",
+   "default": "en-GB",
+   "additional": []
+  },
+  {
+   "code": "vu",
+   "country": "Vanuatu",
+   "default": "en-GB",
+   "additional": [
+    "fr-FR"
+   ]
+  },
+  {
+   "code": "ve",
+   "country": "Venezuela",
+   "default": "es-MX",
+   "additional": [
+    "en-GB"
+   ]
+  },
+  {
+   "code": "vn",
+   "country": "Vietnam",
+   "default": "en-GB",
+   "additional": [
+    "vi"
+   ]
+  },
+  {
+   "code": "ye",
+   "country": "Yemen",
+   "default": "en-GB",
+   "additional": [
+    "ar-SA"
+   ]
+  },
+  {
+   "code": "zm",
+   "country": "Zambia",
+   "default": "en-GB",
+   "additional": []
+  },
+  {
+   "code": "zw",
+   "country": "Zimbabwe",
+   "default": "en-GB",
+   "additional": []
+  }
+ ]
+}

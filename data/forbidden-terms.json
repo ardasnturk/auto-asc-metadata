@@ -1,0 +1,225 @@
+{
+  "updatedAt": "2026-10-24",
+  "notes": "Fiyat ve kanıtsız üstünlük ifadeleri metadata'da hata, açıklamada uyarıdır. Rakip marka adları çalışma anında competitors.json'dan eklenir. cta: ekran görüntüsü metinlerinde eylem çağrısı yasak; otherPlatforms: başka platform adları yasak.",
+  "price": {
+    "*": [
+      "$",
+      "€",
+      "£",
+      "₺",
+      "¥"
+    ],
+    "en": [
+      "free",
+      "sale",
+      "discount",
+      "cheap",
+      "deal",
+      "half price",
+      "on sale",
+      "limited time",
+      "price drop"
+    ],
+    "tr": [
+      "ücretsiz",
+      "bedava",
+      "indirim",
+      "kampanya fiyatı",
+      "ucuz",
+      "fırsat"
+    ],
+    "de": [
+      "kostenlos",
+      "gratis",
+      "rabatt",
+      "angebot",
+      "billig"
+    ],
+    "fr": [
+      "gratuit",
+      "promo",
+      "réduction",
+      "solde",
+      "pas cher"
+    ],
+    "es": [
+      "gratis",
+      "descuento",
+      "oferta",
+      "barato"
+    ],
+    "it": [
+      "gratis",
+      "gratuito",
+      "sconto",
+      "offerta"
+    ],
+    "pt": [
+      "grátis",
+      "gratuito",
+      "desconto",
+      "promoção"
+    ],
+    "nl": [
+      "gratis",
+      "korting",
+      "aanbieding"
+    ],
+    "ja": [
+      "無料",
+      "セール",
+      "割引"
+    ],
+    "ko": [
+      "무료",
+      "할인",
+      "세일"
+    ],
+    "zh": [
+      "免费",
+      "免費",
+      "打折",
+      "折扣",
+      "促销"
+    ],
+    "ru": [
+      "бесплатно",
+      "скидка",
+      "распродажа"
+    ]
+  },
+  "superlatives": {
+    "en": [
+      "#1",
+      "no. 1",
+      "number one",
+      "best",
+      "top rated",
+      "top-rated",
+      "the only",
+      "world's first",
+      "award-winning",
+      "most popular"
+    ],
+    "tr": [
+      "#1",
+      "1 numara",
+      "en iyi",
+      "en popüler",
+      "tek uygulama",
+      "dünyanın ilk",
+      "ödüllü"
+    ],
+    "de": [
+      "#1",
+      "nr. 1",
+      "beste",
+      "bestes",
+      "die einzige",
+      "preisgekrönt"
+    ],
+    "fr": [
+      "#1",
+      "n°1",
+      "meilleur",
+      "meilleure",
+      "le seul",
+      "primé"
+    ],
+    "es": [
+      "#1",
+      "número uno",
+      "mejor",
+      "el único",
+      "premiado"
+    ],
+    "ja": [
+      "No.1",
+      "ナンバーワン",
+      "最高",
+      "唯一"
+    ],
+    "zh": [
+      "第一",
+      "最佳",
+      "唯一"
+    ]
+  },
+  "appleTrademarks": [
+    "Apple",
+    "iPhone",
+    "iPad",
+    "Apple Watch",
+    "Mac",
+    "iCloud",
+    "Siri",
+    "Apple Health",
+    "HealthKit",
+    "App Store",
+    "Apple Pay",
+    "Vision Pro",
+    "iPhone Duo",
+    "SF Symbols"
+  ],
+  "keywordNoise": [
+    "app",
+    "apps",
+    "iphone",
+    "ipad",
+    "ios",
+    "application",
+    "uygulama",
+    "uygulaması",
+    "aplicación",
+    "anwendung"
+  ],
+  "cta": {
+    "en": [
+      "download now",
+      "download today",
+      "get it now",
+      "install now",
+      "try it now",
+      "buy now",
+      "subscribe now",
+      "tap here",
+      "click here"
+    ],
+    "tr": [
+      "hemen indir",
+      "şimdi indir",
+      "indir ve",
+      "hemen yükle",
+      "şimdi yükle",
+      "hemen dene",
+      "şimdi dene",
+      "tıkla",
+      "hemen abone ol"
+    ],
+    "de": [
+      "jetzt herunterladen",
+      "jetzt laden",
+      "jetzt installieren",
+      "jetzt testen"
+    ],
+    "fr": [
+      "téléchargez maintenant",
+      "télécharger maintenant",
+      "installez maintenant"
+    ],
+    "es": [
+      "descarga ahora",
+      "descárgala ahora",
+      "instala ahora"
+    ]
+  },
+  "otherPlatforms": [
+    "Android",
+    "Google Play",
+    "Play Store",
+    "Samsung",
+    "Huawei",
+    "Windows",
+    "Galaxy Store"
+  ]
+}

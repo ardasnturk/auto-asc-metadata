@@ -1,0 +1,12 @@
+node_modules/
+dist/
+*.tsbuildinfo
+.DS_Store
+.env
+*.p8
+secrets/
+.vitrin/cache/
+examples/**/.vitrin/raw/
+examples/**/DerivedData/
+examples/**/build/
+coverage/

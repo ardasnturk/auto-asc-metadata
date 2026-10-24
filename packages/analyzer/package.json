@@ -1,0 +1,26 @@
+{
+  "name": "@vitrin/analyzer",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "dependencies": {
+    "@vitrin/schemas": "workspace:*",
+    "@vitrin/core": "workspace:*",
+    "plist": "^5.0.0",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@types/plist": "^3.0.5"
+  }
+}

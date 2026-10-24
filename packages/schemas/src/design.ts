@@ -1,0 +1,264 @@
+import { z } from 'zod';
+import { AscLocale, FeatureId, HexColor, Localized } from './common.js';
+
+export const Archetype = z.enum([
+  'hero',
+  'feature',
+  'split',
+  'collage',
+  'before-after',
+  'stat',
+  'social-proof',
+  'panoramic',
+  /** Frameless real UI filling the canvas under the caption. */
+  'fullbleed',
+  /** Device plus magnified crops of real UI regions popping out of the screen. */
+  'callout',
+  /** Large device rotated and bleeding off the canvas edge. */
+  'tilted',
+  /** Text-first brand/proof slide (icon, big claim, laurels). Not real UI — counts against the 60/40 rule. */
+  'statement',
+  /** Real App Store review quotes of this app. Not real UI. */
+  'testimonial',
+]);
+
+/** Archetypes that show no app UI (best practice: at least 60 % of shots show real UI). */
+export const NON_UI_ARCHETYPES: ReadonlyArray<z.infer<typeof Archetype>> = ['statement', 'testimonial'];
+export type Archetype = z.infer<typeof Archetype>;
+
+export const BackgroundStyle = z.enum(['solid', 'linear', 'radial', 'mesh', 'grid', 'dots', 'panoramic']);
+
+export const ArtDirectionOption = z.object({
+  id: z.string().regex(/^[a-z0-9-]+$/),
+  name: z.string(),
+  rationale: z.string(),
+  /** Why this direction stands apart from competitor screenshots. */
+  differentiation: z.string(),
+  palette: z.object({
+    background: z.array(HexColor).min(1).max(4),
+    surface: HexColor,
+    primary: HexColor,
+    accent: HexColor,
+    text: HexColor,
+    textMuted: HexColor,
+    badgeBackground: HexColor,
+    badgeText: HexColor,
+  }),
+  typography: z.object({
+    /** Must be one of the bundled OFL families (see packages/render/fonts). */
+    headline: z.string(),
+    body: z.string(),
+    headlineWeight: z.number().int().min(100).max(900).default(800),
+    headlineCase: z.enum(['none', 'upper']).default('none'),
+    letterSpacing: z.number().default(-0.02),
+  }),
+  background: z.object({
+    style: BackgroundStyle,
+    angle: z.number().default(160),
+    /** Strength of the decorative pattern 0–1. */
+    intensity: z.number().min(0).max(1).default(0.5),
+  }),
+  device: z.object({
+    frame: z.enum(['none', 'minimal', 'realistic']).default('minimal'),
+    shadow: z.boolean().default(true),
+    tilt: z.number().min(-12).max(12).default(0),
+  }),
+});
+export type ArtDirectionOption = z.infer<typeof ArtDirectionOption>;
+
+export const ArtDirection = z.object({
+  options: z.array(ArtDirectionOption).min(1).max(3),
+  selected: z.string(),
+  selectionReason: z.string(),
+});
+export type ArtDirection = z.infer<typeof ArtDirection>;
+
+export const BadgeType = z.enum(['feature', 'new', 'proof', 'platform']);
+export const PlatformBadge = z.enum(['ipad', 'apple-watch', 'iphone-duo', 'mac', 'vision', 'widgets']);
+
+export const ProofEvidence = z.discriminatedUnion('kind', [
+  z.object({
+    kind: z.literal('rating'),
+    /** Must equal the live App Store value from the iTunes Lookup API (competitors.json → self). */
+    value: z.number().min(0).max(5),
+    count: z.number().int().nonnegative(),
+    trackId: z.number(),
+  }),
+  z.object({ kind: z.literal('award'), name: z.string(), url: z.string().url(), year: z.number().int() }),
+]);
+
+export const Badge = z.object({
+  type: BadgeType,
+  /** pill = default chip, sticker = rotated accent burst, laurel = proof/award between laurel branches. */
+  style: z.enum(['pill', 'sticker', 'laurel']).default('pill'),
+  /** Lucide icon name (MIT). SF Symbols are not allowed in marketing art. */
+  icon: z.string().optional(),
+  label: Localized,
+  featureId: FeatureId.optional(),
+  platform: PlatformBadge.optional(),
+  proof: ProofEvidence.optional(),
+});
+export type Badge = z.infer<typeof Badge>;
+
+export const ShotCopy = z.object({
+  /** Small line above the headline ("Track" + headline "Blood Sugar"). */
+  kicker: z.string().default(''),
+  /** Wrap words in *asterisks* to colour them with the accent. */
+  headline: z.string().min(1),
+  subheadline: z.string().default(''),
+});
+
+const CalloutRect = z.object({ x: z.number().min(0).max(1), y: z.number().min(0).max(1), w: z.number().min(0.05).max(1), h: z.number().min(0.03).max(1) });
+
+/** A magnified crop of a real screen region (fractions of the raw capture). */
+export const Callout = z.object({
+  screen: z.number().int().min(0).max(2).default(0),
+  /** Region on the iPhone capture (also used for Duo when it falls back to the iPhone capture). */
+  rect: CalloutRect,
+  /** Region per device family when its UI is laid out differently (iPad). Families without a rect get no callout. */
+  rects: z.object({ ipad: CalloutRect.optional(), duo: CalloutRect.optional() }).default({}),
+  /** Magnification relative to how the region appears inside the device. */
+  scale: z.number().min(1).max(3).default(1.6),
+  side: z.enum(['left', 'right', 'center']).default('right'),
+  /** Vertical position of the callout centre on the device, 0 = top, 1 = bottom. */
+  at: z.number().min(0).max(1).default(0.5),
+});
+export type Callout = z.infer<typeof Callout>;
+
+/** Verbatim App Store review of this app (validated against competitors.json → self.reviews). */
+export const Quote = z.object({
+  text: z.string().min(3).max(160),
+  rating: z.number().int().min(1).max(5),
+  author: z.string().optional(),
+});
+export type Quote = z.infer<typeof Quote>;
+
+export const Shot = z.object({
+  /** Two-digit order, e.g. "01". Files are written as NN_<slug>.png. */
+  id: z.string().regex(/^\d{2}$/),
+  slug: z.string().regex(/^[a-z0-9-]+$/),
+  archetype: Archetype,
+  /** Raw capture ids (capture.screens[].id). Most archetypes use one, split/collage/before-after use 2–3, statement/testimonial may use none. */
+  screens: z.array(z.string()).max(3).default([]),
+  captionPosition: z.enum(['top', 'bottom']).default('top'),
+  callouts: z.array(Callout).max(3).default([]),
+  /** testimonial: per-locale review quotes in the review's own language (never translated). */
+  quotes: z.record(AscLocale, z.array(Quote).max(3)).default({}),
+  copy: z.record(AscLocale, ShotCopy),
+  badges: z.array(Badge).max(3).default([]),
+  /** Features the headline and subheadline claim. */
+  featureIds: z.array(FeatureId).min(1),
+  /** For `stat` archetype: the number shown large (must be backed by a feature or proof). */
+  stat: z.object({ value: z.string(), featureId: FeatureId }).optional(),
+  /** Restrict to some target ids (default: all enabled screenshot targets). */
+  targets: z.array(z.string()).optional(),
+});
+export type Shot = z.infer<typeof Shot>;
+
+export const CreativeSpec = z.object({
+  copy: z.record(AscLocale, ShotCopy),
+  screens: z.array(z.string()).min(1).max(3),
+  featureIds: z.array(FeatureId).min(1),
+  badges: z.array(Badge).max(2).default([]),
+});
+export type CreativeSpec = z.infer<typeof CreativeSpec>;
+
+export const InAppEventSpec = z.object({
+  id: z.string().regex(/^[a-z0-9-]+$/),
+  badge: z.enum(['CHALLENGE', 'COMPETITION', 'LIVE_EVENT', 'MAJOR_UPDATE', 'NEW_SEASON', 'PREMIERE', 'SPECIAL_EVENT']),
+  name: Localized,
+  shortDescription: Localized,
+  longDescription: Localized,
+  card: CreativeSpec,
+  detail: CreativeSpec,
+});
+
+/** `.vitrin/shots.json` — written by Claude in the design step. */
+export const ShotList = z.object({
+  shots: z.array(Shot).min(1).max(10),
+  creatives: z
+    .object({
+      header: CreativeSpec.optional(),
+      search: CreativeSpec.optional(),
+      events: z.array(InAppEventSpec).default([]),
+    })
+    .default({ events: [] }),
+});
+export type ShotList = z.infer<typeof ShotList>;
+
+/** Scene type of one App Preview beat. */
+export const BeatScene = z.enum([
+  /** Device with the recording/screenshot; caption animates in. */
+  'device',
+  /** Camera flies into a region of the real UI (`zoom` rect, fractions of the capture). */
+  'zoom',
+  /** Two devices side by side (`secondSource`). */
+  'split',
+  /** Full-screen kinetic typography card (no UI — keep these short, ≤ 1.5 s). */
+  'text',
+  /** Big animated counter (`stat`) next to the device. */
+  'stat',
+  /** Feature chips pop around the device (`badges`). */
+  'badges',
+]);
+export type BeatScene = z.infer<typeof BeatScene>;
+
+export const VideoBeat = z.object({
+  scene: BeatScene.default('device'),
+  /** Recording id from capture.recordings, or a raw screenshot id. Not needed for `text`. */
+  source: z.string().default(''),
+  from: z.number().nonnegative().default(0),
+  to: z.number().positive(),
+  /** Wrap words in *asterisks* for the accent colour / highlight. */
+  caption: Localized,
+  featureIds: z.array(FeatureId).min(1),
+  secondSource: z.string().optional(),
+  zoom: z.object({ x: z.number().min(0).max(1), y: z.number().min(0).max(1), w: z.number().min(0.1).max(1), h: z.number().min(0.05).max(1) }).optional(),
+  stat: z.object({ value: z.number(), suffix: Localized.default({}), label: Localized.default({}), featureId: FeatureId }).optional(),
+  badges: z.array(z.object({ icon: z.string().default('check'), label: Localized, featureId: FeatureId })).max(4).default([]),
+});
+export type VideoBeat = z.infer<typeof VideoBeat>;
+
+/**
+ * Motion style of a whole preview:
+ * classic = calm fades; showcase = 3D device entrances, camera push-ins, light leaks;
+ * kinetic = word-by-word typography cards between UI beats, punchy cuts;
+ * energetic = tilted devices, bouncing chips, fast alternating slides and wipes.
+ */
+export const VideoStyle = z.enum(['classic', 'showcase', 'kinetic', 'energetic']);
+export type VideoStyle = z.infer<typeof VideoStyle>;
+
+export const VideoTransition = z.enum(['auto', 'fade', 'slide', 'wipe', 'flip', 'push', 'iris', 'none']);
+export type VideoTransition = z.infer<typeof VideoTransition>;
+
+export const PreviewPlan = z.object({
+  id: z.string().regex(/^\d{2}$/),
+  device: z.enum(['iphone', 'ipad']),
+  style: VideoStyle.default('showcase'),
+  transition: VideoTransition.default('auto'),
+  /** Light-leak overlays on cuts (showcase default on). */
+  lightLeaks: z.boolean().optional(),
+  hook: Localized,
+  hookSource: z.string(),
+  /** Seconds into the hook recording (skips the app launch at the start of a capture). */
+  hookFrom: z.number().nonnegative().default(1.5),
+  beats: z.array(VideoBeat).min(1).max(8),
+  outro: z.object({ title: Localized, subtitle: Localized.default({}) }),
+});
+export type PreviewPlan = z.infer<typeof PreviewPlan>;
+
+export const LoopPlan = z.object({
+  durationSec: z.number().min(5).max(30),
+  fps: z.union([z.literal(30), z.literal(60)]).default(30),
+  copy: Localized,
+  sources: z.array(z.string()).min(1).max(4),
+  featureIds: z.array(FeatureId).min(1),
+});
+export type LoopPlan = z.infer<typeof LoopPlan>;
+
+/** `.vitrin/video-plan.json` — written by Claude. */
+export const VideoPlan = z.object({
+  previews: z.array(PreviewPlan).max(3),
+  loops: z.object({ header: LoopPlan.optional(), search: LoopPlan.optional() }).default({}),
+});
+export type VideoPlan = z.infer<typeof VideoPlan>;

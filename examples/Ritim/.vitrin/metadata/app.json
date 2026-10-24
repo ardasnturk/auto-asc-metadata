@@ -1,0 +1,19 @@
+{
+  "copyright": "2026 JASTech",
+  "primaryCategory": "HEALTH_AND_FITNESS",
+  "secondaryCategory": "PRODUCTIVITY",
+  "reviewNotes": "Ritim does not require an account. All data is stored on device (SwiftData). The Ritim Plus subscription can be tested in the sandbox from the crown button on the Today tab. Reminders ask for notification permission only when a reminder is enabled.",
+  "ageRatingDraft": {
+    "answers": { "socialMedia": "NO", "userGeneratedContent": "NO", "unrestrictedWebAccess": "NO", "gambling": "NONE", "medicalInformation": "NONE" },
+    "rationale": "No social features, web views, chat or user-generated content were found in the code (app_profile.signals has no age.* entries). Expected rating 4+.",
+    "needsUserConfirmation": true
+  },
+  "accessibilityDraft": [
+    { "criterion": "VoiceOver", "supported": "partial", "evidence": "accessibilityLabel on check-in rings and pickers (accessibility.voiceover signal)" },
+    { "criterion": "Larger Text", "supported": "yes", "evidence": "@ScaledMetric and text styles (accessibility.larger-text signal)" },
+    { "criterion": "Dark Interface", "supported": "yes", "evidence": "Light/dark colour sets in Assets.xcassets" },
+    { "criterion": "Reduced Motion", "supported": "unknown" },
+    { "criterion": "Sufficient Contrast", "supported": "unknown" },
+    { "criterion": "Captions", "supported": "unknown", "evidence": "App has no video content" }
+  ]
+}

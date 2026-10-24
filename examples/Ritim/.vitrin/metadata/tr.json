@@ -1,0 +1,23 @@
+{
+  "locale": "tr",
+  "name": "Ritim: Alışkanlık Takibi",
+  "subtitle": "Günlük rutin ve seri hedefi",
+  "promotionalText": "1.2 ile yeni: haftalık grafiklerle İstatistikler sekmesi ve her alışkanlık için 12 haftalık takvim. Ritmini tek bakışta gör.",
+  "description": "Günde tek dokunuşla kalıcı alışkanlıklar edin.\nSerini koru, ilerlemeni sade grafiklerle izle.\nSakin, yalın ve her gün yaptıklarına odaklı.\n\nRitim, küçük günlük adımları düzenli bir ritme dönüştürmene yardım eder. Senin için önemli alışkanlıkları ekle, günlük hedefini belirle ve ilerleme halkasına tek dokunuşla işaretle.\n\nNELER YAPABİLİRSİN\n• Alışkanlıklarını tek dokunuşla işaretle, günün ilerlemesini bir bakışta gör\n• Güncel ve en uzun serinle motivasyonunu koru\n• Haftalık tamamlama ve 30 günlük eğilim grafikleriyle ilerlemeni izle\n• Her alışkanlığın son 12 haftasını takvim ısı haritasında incele\n• Her alışkanlık için günlük hatırlatıcı kur\n• Listende ara, ilerlemeni paylaş, kayıtlarını CSV olarak dışa aktar\n• Her alışkanlığa ikon, renk ve günlük hedef ver\n\nIPHONE VE IPAD İÇİN\niPad’de uyarlanabilir kenar çubuğu ve çok sütunlu düzen. Açık ve koyu görünüm, büyük metin ve VoiceOver etiketleri desteklenir.\n\nRITIM PLUS\nRitim Plus, bir haftalık ücretsiz denemeyle başlayan, isteğe bağlı aylık otomatik yenilenen bir aboneliktir. Ödeme, satın alma onayında Apple Hesabından alınır. Abonelik, dönem bitmeden en az 24 saat önce iptal edilmezse otomatik yenilenir. Apple Hesabı ayarlarından yönetebilir veya iptal edebilirsin.\n\nTürkçe ve İngilizce olarak kullanılabilir.",
+  "keywords": "planlayıcı,takvim,hatırlatıcı,motivasyon,ilerleme,düzen,disiplin,yapılacaklar,sabah,habit",
+  "whatsNew": "• Yeni İstatistikler sekmesi: haftalık tamamlama grafiği, 30 günlük eğilim ve her alışkanlık için güncel seriler.\n• Alışkanlık ayrıntısında 12 haftalık takvim ısı haritası.\n• Tüm kayıtları CSV olarak dışa aktarma ve ilerleme özetini paylaşma.\n• Alışkanlık listesinde arama.\n• Uyarlanabilir kenar çubuğuyla daha iyi iPad düzeni.\n• İlerleme halkaları ve seçiciler için büyük metin desteği ve VoiceOver etiketleri.\n• Düzeltildi: seriler artık sabah ilk işaretlemeden önce sıfırlanmıyor.",
+  "claims": [
+    { "text": "Günde tek dokunuşla kalıcı alışkanlıklar edin", "featureIds": ["habit-tracking"] },
+    { "text": "Serini koru", "featureIds": ["streaks"] },
+    { "text": "30 günlük eğilim grafikleriyle ilerlemeni izle", "featureIds": ["charts"] },
+    { "text": "takvim ısı haritasında incele", "featureIds": ["calendar-heatmap"] },
+    { "text": "günlük hatırlatıcı kur", "featureIds": ["reminders"] },
+    { "text": "kayıtlarını CSV olarak dışa aktar", "featureIds": ["export"] },
+    { "text": "Listende ara", "featureIds": ["search"] },
+    { "text": "ilerlemeni paylaş", "featureIds": ["sharing"] },
+    { "text": "uyarlanabilir kenar çubuğu ve çok sütunlu düzen", "featureIds": ["ipad"] },
+    { "text": "Açık ve koyu görünüm", "featureIds": ["dark-mode"] },
+    { "text": "isteğe bağlı aylık otomatik yenilenen bir aboneliktir", "featureIds": ["premium-subscription"] },
+    { "text": "Türkçe ve İngilizce olarak kullanılabilir", "featureIds": ["localization"] }
+  ]
+}

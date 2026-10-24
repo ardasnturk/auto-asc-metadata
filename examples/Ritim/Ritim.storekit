@@ -1,0 +1,92 @@
+{
+  "appPolicies" : {
+    "eula" : "",
+    "policies" : [
+      {
+        "locale" : "en_US",
+        "policyText" : "",
+        "policyURL" : ""
+      }
+    ]
+  },
+  "identifier" : "9F1C2A7B",
+  "nonRenewingSubscriptions" : [
+
+  ],
+  "products" : [
+
+  ],
+  "settings" : {
+    "_applicationInternalID" : "6740000000",
+    "_developerTeamID" : "",
+    "_failTransactionsEnabled" : false,
+    "_lastSynchronizedDate" : 0,
+    "_locale" : "en_US",
+    "_storefront" : "USA",
+    "_storeKitErrors" : [
+
+    ]
+  },
+  "subscriptionGroups" : [
+    {
+      "id" : "21500001",
+      "localizations" : [
+        {
+          "description" : "Ritim Plus",
+          "displayName" : "Ritim Plus",
+          "locale" : "en_US"
+        },
+        {
+          "description" : "Ritim Plus",
+          "displayName" : "Ritim Plus",
+          "locale" : "tr"
+        }
+      ],
+      "name" : "Ritim Plus",
+      "subscriptions" : [
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "2.99",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "6740000001",
+          "introductoryOffer" : {
+            "internalID" : "6740000002",
+            "numberOfPeriods" : 1,
+            "paymentMode" : "free",
+            "subscriptionPeriod" : "P1W"
+          },
+          "localizations" : [
+            {
+              "description" : "Unlimited habits, advanced statistics and smart reminders.",
+              "displayName" : "Ritim Plus Monthly",
+              "locale" : "en_US"
+            },
+            {
+              "description" : "Sınırsız alışkanlık, gelişmiş istatistikler ve akıllı hatırlatıcılar.",
+              "displayName" : "Ritim Plus Aylık",
+              "locale" : "tr"
+            }
+          ],
+          "productID" : "com.jastech.ritim.plus.monthly",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "Ritim Plus Monthly",
+          "subscriptionGroupID" : "21500001",
+          "type" : "RecurringSubscription",
+          "winbackOffers" : [
+
+          ]
+        }
+      ]
+    }
+  ],
+  "version" : {
+    "major" : 4,
+    "minor" : 0
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "dist"
+  },
+  "include": [
+    "src"
+  ],
+  "references": [
+    {
+      "path": "../schemas"
+    },
+    {
+      "path": "../core"
+    },
+    {
+      "path": "../analyzer"
+    },
+    {
+      "path": "../research"
+    },
+    {
+      "path": "../validate"
+    },
+    {
+      "path": "../render"
+    },
+    {
+      "path": "../video"
+    },
+    {
+      "path": "../upload"
+    }
+  ]
+}

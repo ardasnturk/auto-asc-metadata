@@ -1,0 +1,217 @@
+{
+  "locale": "tr",
+  "storefront": "tr",
+  "generatedAt": "2026-10-24T08:35:42.306Z",
+  "candidates": [
+    {
+      "term": "alışkanlık takibi",
+      "relevance": null,
+      "competition": {
+        "resultCount": 47,
+        "top10MedianRatings": 48.5,
+        "score": 0.611
+      },
+      "popularity": {
+        "score": 0.396,
+        "source": "estimate"
+      },
+      "total": null
+    },
+    {
+      "term": "alışkanlık",
+      "relevance": null,
+      "competition": {
+        "resultCount": 50,
+        "top10MedianRatings": 158,
+        "score": 0.683
+      },
+      "popularity": {
+        "score": 0.41,
+        "source": "estimate"
+      },
+      "total": null
+    },
+    {
+      "term": "günlük rutin",
+      "relevance": null,
+      "competition": {
+        "resultCount": 48,
+        "top10MedianRatings": 548,
+        "score": 0.708
+      },
+      "popularity": {
+        "score": 0.388,
+        "source": "estimate"
+      },
+      "total": null
+    },
+    {
+      "term": "hedef takip",
+      "relevance": null,
+      "competition": {
+        "resultCount": 48,
+        "top10MedianRatings": 16.5,
+        "score": 0.584
+      },
+      "popularity": {
+        "score": 0.321,
+        "source": "estimate"
+      },
+      "total": null
+    },
+    {
+      "term": "seri takibi",
+      "relevance": null,
+      "competition": {
+        "resultCount": 50,
+        "top10MedianRatings": 6.5,
+        "score": 0.573
+      },
+      "popularity": {
+        "score": 0.309,
+        "source": "estimate"
+      },
+      "total": null
+    },
+    {
+      "term": "rutin planlayıcı",
+      "relevance": null,
+      "competition": {
+        "resultCount": 49,
+        "top10MedianRatings": 100.5,
+        "score": 0.657
+      },
+      "popularity": {
+        "score": 0.369,
+        "source": "estimate"
+      },
+      "total": null
+    },
+    {
+      "term": "tracker",
+      "relevance": null,
+      "competition": {
+        "resultCount": 46,
+        "top10MedianRatings": 2775,
+        "score": 0.747
+      },
+      "popularity": {
+        "score": 0.763,
+        "source": "estimate"
+      },
+      "total": null
+    },
+    {
+      "term": "habit",
+      "relevance": null,
+      "competition": {
+        "resultCount": 42,
+        "top10MedianRatings": 146,
+        "score": 0.601
+      },
+      "popularity": {
+        "score": 0.754,
+        "source": "estimate"
+      },
+      "total": null
+    },
+    {
+      "term": "daily",
+      "relevance": null,
+      "competition": {
+        "resultCount": 43,
+        "top10MedianRatings": 1316,
+        "score": 0.69
+      },
+      "popularity": {
+        "score": 0.717,
+        "source": "estimate"
+      },
+      "total": null
+    },
+    {
+      "term": "planner",
+      "relevance": null,
+      "competition": {
+        "resultCount": 44,
+        "top10MedianRatings": 1622.5,
+        "score": 0.708
+      },
+      "popularity": {
+        "score": 0.701,
+        "source": "estimate"
+      },
+      "total": null
+    },
+    {
+      "term": "daily planner",
+      "relevance": null,
+      "competition": {
+        "resultCount": 44,
+        "top10MedianRatings": 2898.5,
+        "score": 0.729
+      },
+      "popularity": {
+        "score": 0.596,
+        "source": "estimate"
+      },
+      "total": null
+    },
+    {
+      "term": "daily routine",
+      "relevance": null,
+      "competition": {
+        "resultCount": 45,
+        "top10MedianRatings": 2493,
+        "score": 0.733
+      },
+      "popularity": {
+        "score": 0.537,
+        "source": "estimate"
+      },
+      "total": null
+    },
+    {
+      "term": "day",
+      "relevance": null,
+      "competition": {
+        "resultCount": 45,
+        "top10MedianRatings": 1859.5,
+        "score": 0.722
+      },
+      "popularity": {
+        "score": 0.834,
+        "source": "estimate"
+      },
+      "total": null
+    },
+    {
+      "term": "habits",
+      "relevance": null,
+      "competition": {
+        "resultCount": 45,
+        "top10MedianRatings": 146,
+        "score": 0.631
+      },
+      "popularity": {
+        "score": 0.465,
+        "source": "estimate"
+      },
+      "total": null
+    },
+    {
+      "term": "routine",
+      "relevance": null,
+      "competition": {
+        "resultCount": 46,
+        "top10MedianRatings": 2154.5,
+        "score": 0.738
+      },
+      "popularity": {
+        "score": 0.631,
+        "source": "estimate"
+      },
+      "total": null
+    }
+  ]
+}

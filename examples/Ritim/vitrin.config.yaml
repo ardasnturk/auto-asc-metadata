@@ -1,0 +1,82 @@
+# Vitrin yapılandırması — gizli olmayan değerler. Anahtarlar .env içinde durur.
+# urls, copyrightHolder ve review alanlarını gerçek değerlerle doldur.
+# research.seeds ve capture.screens /vitrin skill’i çalışırken Claude tarafından doldurulur.
+app:
+  bundleId: com.jastech.ritim
+  project: Ritim.xcodeproj
+  scheme: Ritim
+  primaryLocale: en-US
+  locales:
+    - en-US
+    - tr
+storefronts:
+  - us
+  - tr
+urls:
+  support: https://example.com/support
+  privacy: https://example.com/privacy
+copyrightHolder: JASTech
+review:
+  firstName: ""
+  lastName: ""
+  phone: ""
+  email: ""
+research:
+  seeds:
+    en-US:
+      - habit tracker
+      - daily habits
+      - streak tracker
+      - routine planner
+      - habit calendar
+      - goal tracker
+    tr:
+      - alışkanlık takibi
+      - alışkanlık
+      - günlük rutin
+      - hedef takip
+      - seri takibi
+      - rutin planlayıcı
+  competitors: 15
+  candidates: 40
+  limit: 50
+  cacheHours: 24
+  reviewsPerApp: 50
+  ocr: true
+targets:
+  enable: []
+  disable: []
+capture:
+  mode: launch-args
+  configuration: Debug
+  appearance: light
+  screens:
+    - id: home
+      launchArgs: [-VitrinScreen, home]
+      waitMs: 3000
+    - id: stats
+      launchArgs: [-VitrinScreen, stats]
+      waitMs: 3000
+    - id: detail
+      launchArgs: [-VitrinScreen, detail]
+      waitMs: 3500
+    - id: reminders
+      launchArgs: [-VitrinScreen, reminders]
+      waitMs: 3000
+    - id: add
+      launchArgs: [-VitrinScreen, add]
+      waitMs: 3500
+  recordings:
+    - id: home-flow
+      launchArgs: [-VitrinScreen, home]
+      durationSec: 8
+    - id: stats-flow
+      launchArgs: [-VitrinScreen, stats]
+      durationSec: 7
+  simulators: {}
+video:
+  enabled: true
+  loops: true
+upload:
+  uploader: deliver
+  platform: ios

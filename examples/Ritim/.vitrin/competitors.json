@@ -1,0 +1,2632 @@
+{
+  "generatedAt": "2026-10-24T08:35:42.273Z",
+  "storefronts": [
+    "us",
+    "tr"
+  ],
+  "seeds": [
+    "habit tracker",
+    "daily habits",
+    "streak tracker",
+    "routine planner",
+    "habit calendar",
+    "goal tracker",
+    "alışkanlık takibi",
+    "alışkanlık",
+    "günlük rutin",
+    "hedef takip",
+    "seri takibi",
+    "rutin planlayıcı"
+  ],
+  "apps": [
+    {
+      "trackId": 1438388363,
+      "name": "Habit Tracker",
+      "sellerName": "Inner Grow Limited",
+      "bundleId": "com.davetech.habit",
+      "storefront": "us",
+      "averageUserRating": 4.79112,
+      "userRatingCount": 148235,
+      "price": 0,
+      "formattedPrice": "Free",
+      "primaryGenre": "Productivity",
+      "genres": [
+        "Productivity",
+        "Health & Fitness"
+      ],
+      "version": "2.15.6",
+      "currentVersionReleaseDate": "2026-10-22T22:11:24Z",
+      "screenshotUrls": [
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/5c/b8/05/5cb8051e-e125-e84e-f0b5-2551b6e9d69d/_U767d1.jpg/320x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/13/5d/32/135d32df-678d-5c7e-d940-4f16d5c4e396/_U767d2.jpg/320x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/2e/a8/66/2ea866a0-2271-4d8a-e380-8386b935283f/_U767d3.jpg/320x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/58/9c/11/589c1153-5d91-f99a-0b24-2467a6b6c239/_U767d4.jpg/320x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/ac/a8/fe/aca8fee4-573a-f966-0ee2-11b3f701a68f/_U767d5.jpg/320x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/df/3b/0d/df3b0d0b-5e85-747b-c85f-ab94079f94a0/_U767d7.jpg/320x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/f7/14/b2/f714b249-4ba1-653b-b9a5-2897b51fc7f3/_U767d6.jpg/320x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/14/2d/68/142d6844-74ce-660b-ab2e-92144650dc72/_U767d10.jpg/320x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/b2/a6/82/b2a682bb-d6d2-5a3b-bcd1-eef221158830/_U767d8.jpg/320x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/8f/00/5e/8f005e91-1077-38ce-c7e4-09bb062ed4ae/_U767d9.jpg/320x480bb.jpg"
+      ],
+      "ipadScreenshotUrls": [
+        "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/b5/92/d2/b592d245-95ab-cf32-ebef-3b91d13db779/pr_source.png/576x768bb.png",
+        "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/03/31/4f/03314fcd-1461-d8e4-67e6-bdf52d799912/682e8d54-8e5f-4113-9820-54a3dcbe35fd__U82f1.png/576x768bb.png",
+        "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/4d/69/27/4d69271d-f735-089f-dc46-35f6128fb466/9a63d49f-6316-4518-835b-1b3b157ae594_widget.png/576x768bb.png",
+        "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/cd/c0/69/cdc069d1-5b34-05a4-7f23-178a45e3355c/pr_source.png/576x768bb.png",
+        "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/2f/1f/a5/2f1fa5bb-7869-5f12-6296-c6bc0a6e493f/pr_source.png/576x768bb.png",
+        "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/f1/ae/37/f1ae373c-ab99-1791-90a8-05b28054639c/pr_source.png/576x768bb.png",
+        "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/06/93/fc/0693fcac-39ac-78bf-36b1-61ad382b5563/pr_source.png/576x768bb.png",
+        "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/0f/6f/e9/0f6fe9ef-5e6d-1a49-aba3-67ac3db640fe/pr_source.png/576x768bb.png",
+        "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/df/12/f9/df12f944-b479-3b0c-06cf-01a9b01a5774/pr_source.png/576x768bb.png",
+        "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/75/ee/e6/75eee69f-b9ff-1d26-ebea-b53ad81a5107/pr_source.png/576x768bb.png"
+      ],
+      "iconUrl": "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/21/ac/f0/21acf085-d817-b9dd-d8d1-3cb7d9c54068/AppIcon-pink-gr-0-0-1x_U007epad-0-1-0-85-220.png/512x512bb.jpg",
+      "rankBySeed": {
+        "habit tracker": 1,
+        "daily habits": 1,
+        "streak tracker": 2,
+        "routine planner": 3,
+        "habit calendar": 2,
+        "goal tracker": 1
+      },
+      "screenshotText": [],
+      "palette": [
+        "#FBDFDD",
+        "#F8F7F9",
+        "#B1D0A6",
+        "#CECACF",
+        "#A296A1"
+      ],
+      "reviews": []
+    },
+    {
+      "trackId": 1499198946,
+      "name": "Structured: Daily Planner Todo",
+      "sellerName": "unorderly GmbH",
+      "bundleId": "com.leomehlig.today",
+      "storefront": "us",
+      "averageUserRating": 4.79377,
+      "userRatingCount": 167974,
+      "price": 0,
+      "formattedPrice": "Free",
+      "primaryGenre": "Productivity",
+      "genres": [
+        "Productivity",
+        "Education"
+      ],
+      "version": "4.6.6",
+      "currentVersionReleaseDate": "2026-10-22T21:09:56Z",
+      "screenshotUrls": [
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/84/da/9b/84da9bd8-1c70-1f39-a5be-21d964f842e8/6.9_baseline_1.jpg/320x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/3d/18/90/3d1890b0-748a-63d8-8c30-cafc21ffe0ae/6.9__baseline_2.jpg/320x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/22/88/28/228828b7-723d-3672-6148-28f2798119c7/6.9__baseline_3.jpg/320x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/03/3c/1a/033c1ad8-0a02-fb77-a014-f61b603fc036/6.9__baseline_4.jpg/320x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/c0/20/8d/c0208d19-fa42-7c19-c9f1-65531e1ae5e4/6.9__baseline_7.jpg/320x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/38/9d/87/389d8781-9e96-3914-94bb-836bd3b2c1a6/6.9__baseline_5.jpg/320x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/c1/48/6f/c1486f64-82f8-8577-b4e3-002fea127f8f/6.9__baseline_6.jpg/320x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/fd/96/02/fd9602d9-4989-9de3-916d-91e7e7298d36/6.9__baseline_8.jpg/320x480bb.jpg"
+      ],
+      "ipadScreenshotUrls": [
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/48/7d/92/487d924b-ffea-d5af-c777-966bf161f8da/1.jpg/360x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/9a/69/d8/9a69d853-f35d-969f-8d3a-afb18e917474/2.jpg/360x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/1f/48/e1/1f48e1bd-7209-f674-1ccd-84995a1970d7/3.jpg/360x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/62/2e/c0/622ec0cf-253e-db6d-8ba2-0f110e66fe33/4.jpg/360x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/d2/cc/ae/d2ccaedd-89e1-78e6-3c74-8749c37dcff5/5.jpg/360x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/e0/22/05/e022055f-528d-7e9d-2361-44498f162f4e/6.jpg/360x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/10/b3/cc/10b3cc82-8f25-2c16-7eb1-bc8c4ee9a19d/7.jpg/360x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/e8/c0/12/e8c0128f-6d5e-c820-177d-cc2aafb1b261/8.jpg/360x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/63/65/3f/63653f37-2ac7-e32d-7126-d3a157739baf/9.jpg/360x480bb.jpg"
+      ],
+      "iconUrl": "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/79/5a/4e/795a4e8b-1629-1441-2bb9-db135a059115/AppIcon-0-0-1x_U007epad-0-1-0-sRGB-85-220.png/512x512bb.jpg",
+      "rankBySeed": {
+        "habit tracker": 12,
+        "daily habits": 19,
+        "routine planner": 1,
+        "habit calendar": 9,
+        "goal tracker": 2
+      },
+      "screenshotText": [],
+      "palette": [
+        "#FAE5E7",
+        "#AFA2A3",
+        "#D7C6C8",
+        "#7E7777",
+        "#333031"
+      ],
+      "reviews": []
+    },
+    {
+      "trackId": 1596403446,
+      "name": "Me+ Lifestyle Routine",
+      "sellerName": "ENERJOY PTE. LTD.",
+      "bundleId": "alarm.smart.awake.sleep.health",
+      "storefront": "us",
+      "averageUserRating": 4.79875,
+      "userRatingCount": 248568,
+      "price": 0,
+      "formattedPrice": "Free",
+      "primaryGenre": "Health & Fitness",
+      "genres": [
+        "Health & Fitness"
+      ],
+      "version": "2.8.9",
+      "currentVersionReleaseDate": "2026-06-29T05:18:12Z",
+      "screenshotUrls": [
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/18/e9/10/18e91012-30d4-0a6e-be64-3f29f75a96bc/EN.png/320x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/f4/dc/d2/f4dcd295-1cc6-8704-3ba9-0d57c5032b2d/p_2.png/320x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/8f/ee/b1/8feeb119-7299-7ba0-fa4a-bb24e8badc63/p_3.png/320x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/b8/7a/62/b87a6277-82d7-3bd5-dcc8-bda67d908fdf/p_4.png/320x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/57/0c/fd/570cfd5c-35c6-bd99-2630-2c8339a06520/p_5.png/320x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/a5/ab/fd/a5abfd78-96d2-42e3-e65e-4dc9e1d77e59/p_6.png/320x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/8d/71/df/8d71df02-96d2-c618-62a9-205c392dbd4a/p_7.png/320x480bb.jpg"
+      ],
+      "ipadScreenshotUrls": [],
+      "iconUrl": "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/2f/0d/09/2f0d096e-9b35-c9b6-52ed-466e9a5e9825/AppIcon-0-0-1x_U007emarketing-0-8-0-85-220.png/512x512bb.jpg",
+      "rankBySeed": {
+        "habit tracker": 17,
+        "daily habits": 6,
+        "routine planner": 4,
+        "habit calendar": 21,
+        "goal tracker": 34
+      },
+      "screenshotText": [],
+      "palette": [
+        "#F9E195",
+        "#F1C434",
+        "#828143",
+        "#FBF9F2",
+        "#BCD1D6"
+      ],
+      "reviews": []
+    },
+    {
+      "trackId": 983826477,
+      "name": "Productive - Habit Tracker",
+      "sellerName": "Mosaic S.r.l.",
+      "bundleId": "com.beHappy.Productive",
+      "storefront": "us",
+      "averageUserRating": 4.59618,
+      "userRatingCount": 91066,
+      "price": 0,
+      "formattedPrice": "Free",
+      "primaryGenre": "Productivity",
+      "genres": [
+        "Productivity",
+        "Health & Fitness"
+      ],
+      "version": "3.26.39",
+      "currentVersionReleaseDate": "2026-03-19T09:48:03Z",
+      "screenshotUrls": [
+        "https://is1-ssl.mzstatic.com/image/thumb/Purple126/v4/08/29/bb/0829bbad-886c-fd04-69e8-1b9a91614916/08174d87-8f8d-46f1-8cbd-52d4bf952735_iphone5.5_s1_en-US.jpg/392x696bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/Purple116/v4/0b/87/30/0b8730a2-f383-ac2c-0cfb-e435dbcfa383/a25beccb-e278-4ccc-aa5b-964908ec598e_iphone5.5_s2_en-US.jpg/392x696bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/Purple126/v4/ae/b8/a8/aeb8a823-c3e9-5436-3075-eda9fd014c78/320360fb-5a7b-40f0-8213-ef1609bc1420_iphone5.5_s4_en-US.jpg/392x696bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/Purple116/v4/0d/0d/2f/0d0d2fd0-0f24-196a-e3d4-05bdf5f67eb9/dfe620f8-463b-46ed-86f8-78832196ab23_iphone5.5_s3_en-US.jpg/392x696bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/Purple126/v4/93/48/1c/93481c40-3f5b-8b20-bd4e-3a1e6efee109/7bceabc7-a679-4759-8b54-14e921d36217_iphone5.5_s5_en-US.jpg/392x696bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/Purple126/v4/60/06/27/600627e6-ec8f-cd05-42f8-262a8a8d5249/3a9e3665-3925-4f94-8e51-e348cf449347_iphone5.5_s6_en-US.jpg/392x696bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/Purple116/v4/01/89/86/01898689-07e5-4eaf-feb6-716c630cb0f0/39784144-d3c5-449b-ab6a-b89faebca849_iphone5.5_s7_en-US.jpg/392x696bb.jpg"
+      ],
+      "ipadScreenshotUrls": [
+        "https://is1-ssl.mzstatic.com/image/thumb/Purple116/v4/28/ab/ae/28abae9f-dbf9-d0a1-a61b-af9c453e39c2/95ee5fac-5dba-4029-ab52-6dc5ed0eab7f_ipad12.9_U00282_U0029_s1_en-US.jpg/576x768bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/Purple126/v4/0b/c6/e1/0bc6e187-ec92-9712-543d-e62b519662e1/cef27ecc-7526-468a-9d23-6a050623f908_ipad12.9_U00282_U0029_s2_en-US.jpg/576x768bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/Purple126/v4/94/d0/b3/94d0b372-8825-2ad8-e559-01bb6d737a4a/3c319200-39de-45e0-9981-3f0f7b61f04e_ipad12.9_U00282_U0029_s3_en-US.jpg/576x768bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/Purple116/v4/b1/2c/2f/b12c2fe9-082c-83a2-1203-47c842558cec/1bae1878-7d5c-4b83-8736-8a8e3d76748f_ipad12.9_U00282_U0029_s4_en-US.jpg/576x768bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/Purple126/v4/8b/ed/78/8bed7873-6688-d799-02df-d12c19a4f5a0/7f2e4f52-b4d9-41a2-8805-f03f647e6bd2_ipad12.9_U00282_U0029_s5_en-US.jpg/576x768bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/Purple126/v4/a2/5f/d2/a25fd242-de6d-a3e7-220a-3f3318174905/f1123174-d924-4ed6-a76a-c13a79d9f995_ipad12.9_U00282_U0029_s6_en-US.jpg/576x768bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/Purple126/v4/03/fd/78/03fd781d-2f3c-aa8c-504f-53e306cc4ef2/4a4a8393-9648-4718-85b2-2551e0cbc862_ipad12.9_U00282_U0029_s7_en-US.jpg/576x768bb.jpg"
+      ],
+      "iconUrl": "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/7f/8c/d1/7f8cd183-7ce1-b8b3-b690-51a7565ee76b/AppIcon_iOS-0-0-1x_U007emarketing-0-8-0-85-220.png/512x512bb.jpg",
+      "rankBySeed": {
+        "habit tracker": 5,
+        "daily habits": 4,
+        "routine planner": 21,
+        "habit calendar": 28,
+        "goal tracker": 14
+      },
+      "screenshotText": [],
+      "palette": [
+        "#1E1E1D",
+        "#69C791",
+        "#5C6346",
+        "#E8E2D5",
+        "#4387DE"
+      ],
+      "reviews": []
+    },
+    {
+      "trackId": 1450486923,
+      "name": "Routine Planner, Habit Tracker",
+      "sellerName": "Routinery Corp.",
+      "bundleId": "com.alt.goodmorning",
+      "storefront": "us",
+      "averageUserRating": 4.71498,
+      "userRatingCount": 18104,
+      "price": 0,
+      "formattedPrice": "Free",
+      "primaryGenre": "Productivity",
+      "genres": [
+        "Productivity",
+        "Health & Fitness"
+      ],
+      "version": "3.30.3",
+      "currentVersionReleaseDate": "2026-10-15T12:04:05Z",
+      "screenshotUrls": [
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/9e/df/69/9edf69ac-fd35-880a-8a1d-787a60ce2e7c/En_26Y3Q_5.5_01.jpg/392x696bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/83/9a/06/839a060f-4f0d-0400-52c3-42f6d3c34565/En_26Y3Q_5.5_02.jpg/392x696bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/e9/ba/30/e9ba3045-2a01-84ed-327b-00f5e5ba1eef/En_26Y3Q_5.5_03.jpg/392x696bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/41/0d/98/410d9862-868c-5755-8dab-ad64c0c34464/En_26Y3Q_5.5_04.jpg/392x696bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/71/18/83/71188300-918f-1e52-d9c0-75f40b2dff26/En_26Y3Q_5.5_05.jpg/392x696bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/80/34/8f/80348f9f-23de-116a-8837-128fb9758833/En_26Y3Q_5.5_06.jpg/392x696bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/b0/fa/25/b0fa257a-9e18-6d51-d3b1-148a57bb7770/En_26Y3Q_5.5_07.jpg/392x696bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/f6/6d/39/f66d39ab-7371-8140-28ab-875b75f7e485/En_26Y3Q_5.5_08.jpg/392x696bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/6b/9b/cb/6b9bcba5-3a0b-3af1-07c3-a46054e34bc4/En_26Y3Q_5.5_09.jpg/392x696bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/b8/ef/02/b8ef029c-f3db-b9db-bf06-4034027adba4/En_26Y3Q_5.5_10.jpg/392x696bb.jpg"
+      ],
+      "ipadScreenshotUrls": [
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/31/5d/59/315d599d-c066-13ce-0898-2c52591a5168/En_26Y3Q_Pad_01.jpg/360x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/c4/ff/c1/c4ffc151-a70f-5683-a9d2-d1665bd1eb15/En_26Y3Q_Pad_02.jpg/360x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/be/9e/0c/be9e0ccb-4087-d755-472d-23dd4159784d/En_26Y3Q_Pad_03.jpg/360x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/9b/21/07/9b21072b-7dbb-c261-e309-21eae9889ec8/En_26Y3Q_Pad_04.jpg/360x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/d9/cd/3b/d9cd3b8d-9c50-b567-4b62-731e144755c3/En_26Y3Q_Pad_05.jpg/360x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/2d/bc/e1/2dbce128-4511-def7-b50e-cec049200f95/En_26Y3Q_Pad_06.jpg/360x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/d4/d8/57/d4d85784-2f89-52b5-ccda-f6eb48a8b578/En_26Y3Q_Pad_07.jpg/360x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/f1/1e/0a/f11e0aae-1377-e226-592d-e9128bf0cf56/En_26Y3Q_Pad_08.jpg/360x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/cd/8e/1d/cd8e1d76-e1ef-48bf-d8a1-6c043f9f958d/En_26Y3Q_Pad_09.jpg/360x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/c9/7c/40/c97c4026-693c-0237-74c4-23e325918931/En_26Y3Q_Pad_10.jpg/360x480bb.jpg"
+      ],
+      "iconUrl": "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/93/f6/a9/93f6a91a-6591-39ee-d0b1-4723b19200a5/Default-0-0-1x_U007emarketing-0-11-0-85-220.png/512x512bb.jpg",
+      "rankBySeed": {
+        "habit tracker": 6,
+        "daily habits": 22,
+        "routine planner": 2,
+        "habit calendar": 29,
+        "goal tracker": 20
+      },
+      "screenshotText": [],
+      "palette": [
+        "#FEFEFE",
+        "#F6E690",
+        "#DCDCDD",
+        "#9C9678",
+        "#575653"
+      ],
+      "reviews": []
+    },
+    {
+      "trackId": 672401817,
+      "name": "Strides: Habit Tracker + Goals",
+      "sellerName": "Goals LLC",
+      "bundleId": "com.puresignal.strides",
+      "storefront": "us",
+      "averageUserRating": 4.78856,
+      "userRatingCount": 19249,
+      "price": 0,
+      "formattedPrice": "Free",
+      "primaryGenre": "Productivity",
+      "genres": [
+        "Productivity",
+        "Lifestyle"
+      ],
+      "version": "20.0",
+      "currentVersionReleaseDate": "2026-10-23T13:58:36Z",
+      "screenshotUrls": [
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/5a/e0/69/5ae0697b-6bd7-394e-095f-0f6dedfa65de/780059c5-f9da-49ff-be2b-aa6eb4b4295b_1.png/392x696bb.png",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/09/34/97/0934979d-b304-cd08-0ad6-bb6e4f9caa36/3905dbe1-811f-4723-b0ab-81946b1bfada_2.png/392x696bb.png",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/dd/23/de/dd23de65-e5bb-fb9c-e9b2-2697b1fc98a1/61596527-601b-42c0-ba8c-b82c37d1b6e7_3.png/392x696bb.png",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/9f/f6/9d/9ff69db4-73aa-f221-cd5a-c23b4049e820/accacb1e-57d2-43e5-8f80-63da528cfa56_4.png/392x696bb.png",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/ff/07/f8/ff07f891-7686-e071-62f2-c8f6fb429e63/e9c7cbf6-4d9f-409b-abf3-d4bfdc76d6c3_5.png/392x696bb.png",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/b7/c5/26/b7c526d8-3850-b5ce-5c61-1c11f73140a2/140b25a5-d313-43b6-9f16-ddb8ff29a8e6_6.png/392x696bb.png",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/66/5e/5e/665e5e90-038f-d21d-eb0c-06153781ee89/31dc05c6-1777-4963-87fb-457a366570d1_7.png/392x696bb.png",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/66/65/7c/66657c07-0ef0-00ec-e257-e75d1d018b95/813b41b8-8b29-41ff-94da-be07ce0cde2e_8.png/392x696bb.png",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/d7/2c/b2/d72cb237-197b-b74c-f295-6504a13153b3/897fdd68-aa5e-4a96-b1b2-82b4a09b724a_9.png/392x696bb.png"
+      ],
+      "ipadScreenshotUrls": [
+        "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/a0/e7/c8/a0e7c830-f84f-abcd-cc92-d519cb42662d/7ad0fc8a-6a25-4e0f-a5e9-c1b4bbb2c6c6_iPad-english.png/552x414bb.png",
+        "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/d1/78/05/d1780518-7834-04d2-f80c-87929a81db41/c2f2bc4e-279a-4d28-8330-48e8d53a9448_iPad-2.png/552x414bb.png",
+        "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/f4/cb/68/f4cb68c6-e9fe-af17-3915-db03c02e7e4a/c90c9b59-4ec4-47e3-a74f-c3d14f78ec93_iPad-3.png/552x414bb.png"
+      ],
+      "iconUrl": "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/b3/ea/21/b3ea2166-235d-b7db-5d65-88fb3b1be80b/AppIcon-0-0-1x_U007epad-0-1-0-P3-85-220.png/512x512bb.jpg",
+      "rankBySeed": {
+        "habit tracker": 11,
+        "daily habits": 20,
+        "streak tracker": 11,
+        "habit calendar": 20,
+        "goal tracker": 3
+      },
+      "screenshotText": [],
+      "palette": [
+        "#0F67D1",
+        "#175CB0",
+        "#E1E7EA",
+        "#78A5D2",
+        "#A78436"
+      ],
+      "reviews": []
+    },
+    {
+      "trackId": 1103961876,
+      "name": "Do Habits: Get It Done",
+      "sellerName": "Kodeon, Inc.",
+      "bundleId": "com.tbd.Done",
+      "storefront": "us",
+      "averageUserRating": 4.04526,
+      "userRatingCount": 16859,
+      "price": 0,
+      "formattedPrice": "Free",
+      "primaryGenre": "Productivity",
+      "genres": [
+        "Productivity",
+        "Lifestyle"
+      ],
+      "version": "4.2.1",
+      "currentVersionReleaseDate": "2026-09-12T10:28:37Z",
+      "screenshotUrls": [
+        "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/38/14/e0/3814e016-3f8a-109d-b412-d3fef14a4cc6/4abd9ad3-0b93-4c5a-b0aa-d9d939db2237_5.5_iOS_screenshot_1.jpg/392x696bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/49/b6/e4/49b6e494-53c3-f15d-2492-4c1c0842eae7/36cd6ef9-9a7a-46ab-842f-2c4562267690_5.5_iOS_screenshot_2.jpg/392x696bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/22/0e/a8/220ea8c1-6915-0e70-461e-6c1fb68cf677/97b02ee3-59e7-478a-bd2a-eb4214a8aa8e_5.5_iOS_screenshot_3.jpg/392x696bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/64/85/f2/6485f207-319d-98a8-c086-2bc092017862/d568c220-013f-412c-aa52-d4e1ed1b886b_5.5_iOS_screenshot_4.jpg/392x696bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/41/da/98/41da9861-3a91-2d9e-9f3f-e1657dd34e2b/027f5a1f-f006-4db8-8ba3-e4ebfaf0230a_5.5_iOS_screenshot_5.jpg/392x696bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/07/10/29/0710291c-7723-00fe-02f5-0c68ee77dbce/1fb99202-436f-41dc-8639-d88e9fb70915_5.5_iOS_screenshot_6.jpg/392x696bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/6b/b7/ba/6bb7ba88-3037-c150-7f91-a04bbed3478c/0c05ba47-e2d7-40c1-b0cc-1d635a861a65_5.5_iOS_screenshot_7.jpg/392x696bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/87/b0/c5/87b0c541-b765-6eba-2209-82ccd0084ffd/59b7513d-c110-4463-8dd8-2f5abf536b9b_5.5_iOS_screenshot_8.jpg/392x696bb.jpg"
+      ],
+      "ipadScreenshotUrls": [],
+      "iconUrl": "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/25/72/34/25723497-5a63-f7f0-f900-876116d424c1/AppIcon-0-0-1x_U007ephone-0-1-85-220.png/512x512bb.jpg",
+      "rankBySeed": {
+        "habit tracker": 18,
+        "daily habits": 7,
+        "routine planner": 11,
+        "habit calendar": 13,
+        "goal tracker": 23
+      },
+      "screenshotText": [],
+      "palette": [
+        "#4A91E1",
+        "#78A9E6",
+        "#EFF3F8",
+        "#A9C8EE",
+        "#E091A7"
+      ],
+      "reviews": []
+    },
+    {
+      "trackId": 1528595748,
+      "name": "Finch: Self-Care Pet",
+      "sellerName": "Finch Care Public Benefit Corporation",
+      "bundleId": "com.finch.finch",
+      "storefront": "us",
+      "averageUserRating": 4.94731,
+      "userRatingCount": 767392,
+      "price": 0,
+      "formattedPrice": "Free",
+      "primaryGenre": "Health & Fitness",
+      "genres": [
+        "Health & Fitness",
+        "Lifestyle"
+      ],
+      "version": "3.73.231",
+      "currentVersionReleaseDate": "2026-10-23T22:19:32Z",
+      "screenshotUrls": [
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/6f/a9/fe/6fa9feb6-41c9-7c26-0f5c-296558c9f0f1/iPhone_social_large_01.jpg/320x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/e8/ca/ee/e8caee25-4118-702c-c751-02a9ce6b8c66/iPhone_social_large_02.jpg/320x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/be/a7/84/bea784ad-4c13-e5fd-2108-1dc9827e05d9/iPhone_social_large_03.jpg/320x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/01/f7/19/01f7194f-379f-5b81-bb5d-e05a30711938/iPhone_social_large_04.jpg/320x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/79/1d/c2/791dc207-24ec-5d17-ae7f-2faafaf7bdbc/iPhone_social_large_05.jpg/320x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/bf/c4/59/bfc45963-b7a0-97e2-39c1-da95a3059a3c/iPhone_social_large_06.jpg/320x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/41/4e/5b/414e5b53-e6b8-588d-3894-a311fe1c89e3/iPhone_social_large_07.jpg/320x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/ab/3c/4c/ab3c4cbf-089a-f52e-759c-b7fb618465fd/iPhone_social_large_08.jpg/320x480bb.jpg"
+      ],
+      "ipadScreenshotUrls": [
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/3e/60/f2/3e60f2c3-a26c-cde0-a7c1-421d5e2f7f1a/ipad_social_01.jpg/360x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/98/16/72/981672ff-0578-722d-0947-e3d5a87c393b/ipad_social_02.jpg/360x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/d1/e8/89/d1e889a8-c832-81c7-617c-e2aee71ae0a3/ipad_social_03.jpg/360x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/12/5a/9b/125a9b4d-5e8d-6f63-17e5-0b3e2194c791/ipad_social_04.jpg/360x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/65/a7/05/65a70576-7007-7332-f09c-647b0023a542/ipad_social_05.jpg/360x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/68/29/aa/6829aa8e-d6d2-f1a7-7b97-e4e2d4f4a593/ipad_social_06.jpg/360x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/21/b5/5f/21b55f70-42d5-968d-8859-faae937224ef/ipad_social_07.jpg/360x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/9a/fa/ed/9afaed85-2f7a-21f3-19d9-4b9fa4abb7a5/ipad_social_08.jpg/360x480bb.jpg"
+      ],
+      "iconUrl": "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/8e/aa/a9/8eaaa930-5645-f071-cfc8-182eaff0164b/AppIcon-0-0-1x_U007emarketing-0-8-0-85-220.png/512x512bb.jpg",
+      "rankBySeed": {
+        "habit tracker": 4,
+        "routine planner": 12,
+        "goal tracker": 6
+      },
+      "screenshotText": [],
+      "palette": [
+        "#B0E0FA",
+        "#539A52",
+        "#E8F2F3",
+        "#6795C0",
+        "#E1AD98"
+      ],
+      "reviews": []
+    },
+    {
+      "trackId": 1547137474,
+      "name": "Onrise: Habit Tracker & Focus",
+      "sellerName": "Maximilian Munker",
+      "bundleId": "me.onrise",
+      "storefront": "us",
+      "averageUserRating": 4.83706,
+      "userRatingCount": 2596,
+      "price": 0,
+      "formattedPrice": "Free",
+      "primaryGenre": "Productivity",
+      "genres": [
+        "Productivity",
+        "Health & Fitness"
+      ],
+      "version": "1.1.9",
+      "currentVersionReleaseDate": "2026-08-25T14:24:43Z",
+      "screenshotUrls": [
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/99/b8/b2/99b8b251-bef8-cbd8-f3fe-26ab14454e5f/Screen_1.png/392x696bb.png",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/c2/2d/d6/c22dd6fd-07e8-5c34-ceb9-e07e9e7bf3bc/Screen_2.png/392x696bb.png",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/52/7b/38/527b382f-a900-ca43-58f6-cef5f891b3f9/Screen_3.png/392x696bb.png",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/5e/03/9f/5e039fa7-461b-0eef-246f-d7068cc8a9e4/Screen_4.png/392x696bb.png",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/27/5d/0e/275d0ee9-9997-9747-7cff-1945b99adaf5/Screen_5.png/392x696bb.png",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/ff/c3/cf/ffc3cfb7-0818-5605-bcad-d85b011ad87d/Screen_49.png/392x696bb.png",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/b4/f2/a4/b4f2a484-5647-ab13-b458-9c6dad464e64/Screen_6.png/392x696bb.png"
+      ],
+      "ipadScreenshotUrls": [
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/22/23/b0/2223b0fb-e77d-48d1-b8d2-ba6327093d08/ipad-1.png/360x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/dc/dd/15/dcdd159d-da42-6922-bc75-107adc7839ee/ipad-2.png/360x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/04/17/15/041715d4-0179-9262-e39d-f4a81e527f74/ipad-3.png/360x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/bb/85/d4/bb85d429-40d0-0bce-b5ee-7ab09686022f/ipad-7.png/360x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/c0/c5/80/c0c580fd-b213-9ed9-e586-5afdf11728df/ipad-4.png/360x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/ad/43/6d/ad436d6f-5623-206c-baf5-1d04edda62e9/ipad-6.png/360x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/99/cd/f3/99cdf3ce-e742-cb1a-2d5f-5cc50a032b59/ipad-5.png/360x480bb.jpg"
+      ],
+      "iconUrl": "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/23/08/7f/23087fb9-5ddc-bc14-4574-18a2b13fb909/AppIcon-0-0-1x_U007epad-0-8-0-85-220.png/512x512bb.jpg",
+      "rankBySeed": {
+        "habit tracker": 3,
+        "daily habits": 2,
+        "habit calendar": 47,
+        "goal tracker": 33
+      },
+      "screenshotText": [],
+      "palette": [],
+      "reviews": []
+    },
+    {
+      "trackId": 6446997766,
+      "name": "Grit: Daily Habit Tracker",
+      "sellerName": "GrittyApps",
+      "bundleId": "stoope.Grit",
+      "storefront": "us",
+      "averageUserRating": 4.7838,
+      "userRatingCount": 16147,
+      "price": 0,
+      "formattedPrice": "Free",
+      "primaryGenre": "Productivity",
+      "genres": [
+        "Productivity",
+        "Health & Fitness"
+      ],
+      "version": "6.0.2",
+      "currentVersionReleaseDate": "2026-10-09T08:52:38Z",
+      "screenshotUrls": [
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/38/f1/e5/38f1e597-63ad-7790-4c0b-e18a21484517/1.png/320x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/99/6c/e7/996ce739-30df-955b-270e-3947ad0c140a/2.png/320x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/ba/16/d8/ba16d8e8-883b-aaf6-096f-bc06c294e609/3.png/320x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/8f/4b/70/8f4b7058-5e62-776b-bc4f-dfefc0f3cf31/4.png/320x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/15/e8/3c/15e83c3b-d87e-9005-49ad-1fab7e0ace56/5.png/320x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/4d/73/09/4d73099c-1762-4a1b-06ed-d7bdd93195e4/6.png/320x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/11/12/a1/1112a1a6-cacd-142d-44ee-54c08d1ccadd/7.png/320x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/b2/1d/9f/b21d9f58-bb8c-e7d6-497d-e8151e97df51/8.png/320x480bb.jpg"
+      ],
+      "ipadScreenshotUrls": [
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/bf/47/30/bf473016-c505-3441-091e-b925e76c55b9/1.png/360x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/06/aa/a1/06aaa1de-0896-74e4-3eee-587b186b3eab/2.png/360x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/97/43/17/97431716-02c3-9266-444c-1de95edb1a7f/3.png/360x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/bc/68/bc/bc68bc76-e6f9-18c2-c95b-219e868e0a2a/4.png/360x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/7b/a9/09/7ba909e1-95b5-c741-9bd3-9bbcabdfd870/5.png/360x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/5c/67/6c/5c676c37-e5aa-4610-3138-d21abf22127b/6.png/360x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/ee/12/21/ee1221aa-4e89-4e74-5d92-44e547d23399/7.png/360x480bb.jpg"
+      ],
+      "iconUrl": "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/6b/0b/87/6b0b8716-6f21-b9b7-a302-c94d2bc37151/AppIcon-0-0-1x_U007epad-0-1-85-220.png/512x512bb.jpg",
+      "rankBySeed": {
+        "habit tracker": 10,
+        "daily habits": 12,
+        "streak tracker": 14,
+        "routine planner": 46
+      },
+      "screenshotText": [],
+      "palette": [],
+      "reviews": []
+    },
+    {
+      "trackId": 1522121879,
+      "name": "Habit Rabbit: Habit Tracker",
+      "sellerName": "Justin Patrick Silang",
+      "bundleId": "com.superbyte.habitrabbit",
+      "storefront": "us",
+      "averageUserRating": 4.65955,
+      "userRatingCount": 8800,
+      "price": 0,
+      "formattedPrice": "Free",
+      "primaryGenre": "Productivity",
+      "genres": [
+        "Productivity"
+      ],
+      "version": "5.12",
+      "currentVersionReleaseDate": "2025-11-18T18:36:13Z",
+      "screenshotUrls": [
+        "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/96/38/e5/9638e557-23bc-5850-e318-efe660c4a00e/122bc0e5-79bb-4e4f-8b3c-eb7155aadd01_storelisting1.png/392x696bb.png",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/bf/15/22/bf1522b0-4845-4c26-2d14-ae6ac47046c7/465a0c50-6443-454f-aab8-bf3a3506ca66_storelisting2.png/392x696bb.png",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/ea/4d/f1/ea4df17c-3524-cdcc-6e6b-bcf005ad5fac/2ad7fabc-ee90-4205-90e9-0217cc1d492f_storelisting3.png/392x696bb.png",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/93/a9/72/93a972d9-76e8-d36c-a0ff-7aaf9a4f88c7/bc8166e8-5815-4262-9ecc-aac410f35f0f_storelisting4.png/392x696bb.png",
+        "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/e6/92/19/e69219a2-2ae3-55a8-be03-7e3d32485d2b/7d17b14e-4988-4c92-a785-3b9e47690371_storelisting5.png/392x696bb.png"
+      ],
+      "ipadScreenshotUrls": [],
+      "iconUrl": "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/67/3e/cb/673ecb34-6fa2-c899-abd2-5b448e8cc0fc/AppIcon-0-0-1x_U007emarketing-0-6-0-85-220.png/512x512bb.jpg",
+      "rankBySeed": {
+        "habit tracker": 9,
+        "streak tracker": 37,
+        "habit calendar": 32,
+        "goal tracker": 10
+      },
+      "screenshotText": [],
+      "palette": [],
+      "reviews": []
+    },
+    {
+      "trackId": 1445348921,
+      "name": "Days Since: Quit Habit Tracker",
+      "sellerName": "A Couple of Friends OOD",
+      "bundleId": "npetrova.DaysSince",
+      "storefront": "us",
+      "averageUserRating": 4.82082,
+      "userRatingCount": 19550,
+      "price": 0,
+      "formattedPrice": "Free",
+      "primaryGenre": "Health & Fitness",
+      "genres": [
+        "Health & Fitness",
+        "Productivity"
+      ],
+      "version": "4.1.3",
+      "currentVersionReleaseDate": "2026-10-13T11:16:09Z",
+      "screenshotUrls": [
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/0e/1e/e8/0e1ee8a0-cd87-0a76-ffb2-0cc448a31073/Screenshot_01.png/392x696bb.png",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/d9/cc/90/d9cc9044-85c3-5565-9add-d15a34ff99eb/Screenshot_02.png/392x696bb.png",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/70/63/c2/7063c23a-c12b-eef9-6144-6496e3b11b49/Screenshot_03.png/392x696bb.png",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/cb/96/5c/cb965c9e-ee8c-872a-956a-4191dc8adeb6/Screenshot_04.png/392x696bb.png",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/7a/4e/33/7a4e33a3-85e9-cb4a-5a7c-36d5ecee76e9/Screenshot_05.png/392x696bb.png",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/25/46/2d/25462de8-fb59-1cbd-9d09-d8d01e1fd2a1/Screenshot_06.png/392x696bb.png",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/23/00/fd/2300fd5d-a0ee-5bc6-94e2-c2500b64c621/Screenshot_07.png/392x696bb.png",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/9b/d4/d4/9bd4d44d-bc7a-858e-6a1b-4f1ad887d0da/Screenshot_08.png/392x696bb.png",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/57/43/19/574319ba-8b12-83e8-6386-2fe5c1132444/Screenshot_09.png/392x696bb.png",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/18/36/1b/18361b2c-b069-2458-6e88-7a1b87edf0ac/Screenshot_10.png/392x696bb.png"
+      ],
+      "ipadScreenshotUrls": [],
+      "iconUrl": "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/94/4f/dd/944fdd49-76de-59f7-7b1f-d0b1694d9e01/AppIcon-0-0-1x_U007ephone-0-1-0-sRGB-85-220.png/512x512bb.jpg",
+      "rankBySeed": {
+        "habit tracker": 26,
+        "streak tracker": 3,
+        "habit calendar": 44
+      },
+      "screenshotText": [],
+      "palette": [],
+      "reviews": []
+    },
+    {
+      "trackId": 1394150432,
+      "name": "everyday - Habit Tracker",
+      "sellerName": "Everyday Growth S.L.",
+      "bundleId": "app.everyday",
+      "storefront": "us",
+      "averageUserRating": 4.71161,
+      "userRatingCount": 4539,
+      "price": 0,
+      "formattedPrice": "Free",
+      "primaryGenre": "Productivity",
+      "genres": [
+        "Productivity",
+        "Lifestyle"
+      ],
+      "version": "3.10.0",
+      "currentVersionReleaseDate": "2026-10-14T16:54:31Z",
+      "screenshotUrls": [
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource113/v4/d8/e8/30/d8e830cd-20e7-92c8-eab3-4fb856ebcf52/ab9d20df-7fdd-42a0-8f2f-9f9acc228b43_0-iPhone-5.5-0-Main@3x.png/392x696bb.png",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource113/v4/34/22/6f/34226f02-da54-07a1-325a-0723a915d300/fe37d23c-4eff-44e0-b5b9-102b95b6a9dc_0-iPhone-5.5-1-Widget@3x.png/392x696bb.png",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource113/v4/cd/2d/5b/cd2d5bd6-796e-5566-2d4b-37f3e1948d9b/a3756fa8-b463-4092-a536-2d84399d9de5_0-iPhone-5.5-2-Watch@3x.png/392x696bb.png",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource113/v4/2e/55/5f/2e555f95-b322-1dae-a62d-d66238d6d5d8/833398f6-9271-413c-8f33-5ed8f8762c2e_0-iPhone-5.5-3-Darkmode@3x.png/392x696bb.png",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource123/v4/d8/0e/c9/d80ec938-328f-642d-90f6-76eddc3b6317/87197472-cb0e-4ca1-97a8-5663fe73bb3d_0-iPhone-5.5-4-Multiplatform@3x.png/392x696bb.png",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource113/v4/60/44/01/604401e7-5324-a2ec-2965-13079ed59079/1a95e390-e5c9-4887-a76b-984b76b89e62_0-iPhone-5.5-5-Cpanel@3x.png/392x696bb.png",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource123/v4/5f/75/19/5f751924-c11e-38dd-98cf-4d2b4cd672cc/3b09d660-f328-4ad0-9580-85acce8a1272_0-iPhone-5.5-6-Habit@3x.png/392x696bb.png",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource123/v4/b3/1d/f3/b31df386-1e82-7ecc-c3f7-7f7b12608ce7/346b1eb4-d69d-412e-aacc-932a0b195625_0-iPhone-5.5-7-Learn@3x.png/392x696bb.png"
+      ],
+      "ipadScreenshotUrls": [
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource123/v4/7d/4e/5c/7d4e5cd7-48aa-c5ee-dd60-985c4045d3e0/c53bd04f-5616-4ea1-abdd-8144f1b364ae_3-iPad2gen-12.9-0-Main@2x.png/576x768bb.png",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource123/v4/dd/f9/ec/ddf9ec41-9da6-b5e6-9a2d-b3d069339f58/d94fa69e-9eee-4302-8380-1d84d80d2320_3-iPad2gen-12.9-1-Widgets@2x.png/576x768bb.png",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource123/v4/d5/48/5b/d5485b95-55a5-935b-5c5f-f26d0474b6f7/bf91fb7b-dd98-48e7-a907-2a97f4cb87c8_3-iPad2gen-12.9-2-Watch@2x.png/576x768bb.png",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource123/v4/5d/ce/cc/5dcecc12-cef7-3a8c-71b6-286cd3db16b6/4524cb2c-1a81-457d-81d1-d4a61ff0c02c_3-iPad2gen-12.9-3-Darkmode@2x.png/576x768bb.png",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource113/v4/cd/ce/f6/cdcef651-9992-8d0d-7bb3-cad5db00892f/743cd768-8daa-4ad1-a98d-99c186942354_3-iPad2gen-12.9-4-Multiplatform@2x.png/576x768bb.png",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource123/v4/ce/1d/3f/ce1d3fe5-2b7d-dbf6-b6c5-54149fe1e1bf/3dbcd20a-71a8-4bef-8418-2010d198cceb_3-iPad2gen-12.9-5-Cpanel@2x.png/576x768bb.png",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource123/v4/2b/82/d9/2b82d9b3-7f45-06b1-4b2f-3c468ada6b98/402336b2-9b82-41df-b1ba-0e76b3b9e80b_3-iPad2gen-12.9-6-Habit@2x.png/576x768bb.png",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource113/v4/45/7c/4f/457c4f75-ba5c-04d4-e5d4-6472b4925d66/957d1514-6291-48da-bbd9-2e98ce151a4f_3-iPad2gen-12.9-7-Learn@2x.png/576x768bb.png"
+      ],
+      "iconUrl": "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/62/41/51/624151cf-22bb-87c4-1786-7682980b56d2/AppIcon-0-0-1x_U007epad-0-1-0-85-220.png/512x512bb.jpg",
+      "rankBySeed": {
+        "habit tracker": 16,
+        "daily habits": 11,
+        "streak tracker": 22,
+        "habit calendar": 22
+      },
+      "screenshotText": [],
+      "palette": [],
+      "reviews": []
+    },
+    {
+      "trackId": 1203637303,
+      "name": "Fabulous: Daily Habit Tracker",
+      "sellerName": "Fabulous",
+      "bundleId": "co.thefabulous.app",
+      "storefront": "us",
+      "averageUserRating": 4.42295,
+      "userRatingCount": 89369,
+      "price": 0,
+      "formattedPrice": "Free",
+      "primaryGenre": "Health & Fitness",
+      "genres": [
+        "Health & Fitness",
+        "Lifestyle"
+      ],
+      "version": "24.0.1",
+      "currentVersionReleaseDate": "2026-09-28T13:08:40Z",
+      "screenshotUrls": [
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/92/8e/fa/928efa04-16e1-9aa4-c053-0c82980665ff/0x0ss.png/392x696bb.png",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/68/bc/81/68bc81ea-e95c-23f7-655f-bd5c9aff374d/0x0ss-1.png/392x696bb.png",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/7e/b4/68/7eb46817-e955-ac8f-83fc-c85995874842/0x0ss-2.png/392x696bb.png",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/8e/27/b9/8e27b99c-179f-3b63-108a-09ba0622d380/0x0ss-3.png/392x696bb.png",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/13/6f/dc/136fdc25-ce83-8670-d2f2-52674a16f57b/0x0ss-4.png/392x696bb.png",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/ec/b1/00/ecb10026-f0eb-9af9-7d10-7991ac4e8931/0x0ss-5.png/392x696bb.png"
+      ],
+      "ipadScreenshotUrls": [],
+      "iconUrl": "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/d0/9f/75/d09f75f4-c04d-c0bb-f21f-3c402658301e/AppIconFabulous-0-0-1x_U007ephone-0-1-85-220.png/512x512bb.jpg",
+      "rankBySeed": {
+        "habit tracker": 15,
+        "daily habits": 9,
+        "routine planner": 30
+      },
+      "screenshotText": [],
+      "palette": [],
+      "reviews": []
+    },
+    {
+      "trackId": 6443918070,
+      "name": "Habit Tracker - HabitKit",
+      "sellerName": "Sebastian Roehl",
+      "bundleId": "com.roehl.habitkit",
+      "storefront": "us",
+      "averageUserRating": 4.84385,
+      "userRatingCount": 2504,
+      "price": 0,
+      "formattedPrice": "Free",
+      "primaryGenre": "Productivity",
+      "genres": [
+        "Productivity"
+      ],
+      "version": "1.18.3",
+      "currentVersionReleaseDate": "2026-10-20T06:10:24Z",
+      "screenshotUrls": [
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/05/77/11/057711e1-28c7-b156-a8d1-eac33baf552c/01-progress.png/320x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/5c/a1/46/5ca14664-d18c-dabb-929e-43f1223d3665/02-widgets.png/320x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/ca/f8/70/caf870b8-7847-7e3b-038a-86e48868c69a/03-compact.png/320x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/21/00/c9/2100c913-475d-e503-97f5-8f5b016c4538/04-history.png/320x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/00/df/df/00dfdf47-5e5f-fd5f-161f-f968d0623e00/05-statistics.png/320x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/bd/e9/12/bde912a8-1db6-75dc-0861-905672229605/06-notes.png/320x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/13/f4/c2/13f4c23a-bd1b-edd5-aefb-7996c8afa84b/07-quit.png/320x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/91/56/10/915610e3-7028-f913-7154-c93ca6a59f65/08-reminders.png/320x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/3c/9b/00/3c9b0034-c1f4-cd17-592c-be8e6d8c29ae/09-personalize.png/320x480bb.jpg"
+      ],
+      "ipadScreenshotUrls": [],
+      "iconUrl": "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/df/49/ff/df49ff85-ef05-d6c2-5701-43bd823d60e4/NewAppIcon-0-0-1x_U007ephone-0-1-85-220.png/512x512bb.jpg",
+      "rankBySeed": {
+        "habit tracker": 2,
+        "streak tracker": 13,
+        "habit calendar": 16
+      },
+      "screenshotText": [],
+      "palette": [],
+      "reviews": []
+    },
+    {
+      "trackId": 6478412318,
+      "name": "Daily Habit Tracker - Habitier",
+      "sellerName": "Recep Demirel",
+      "bundleId": "com.anonymous.Habitier",
+      "storefront": "tr",
+      "averageUserRating": 4.65574,
+      "userRatingCount": 122,
+      "price": 0,
+      "formattedPrice": "Free",
+      "primaryGenre": "Productivity",
+      "genres": [
+        "Productivity",
+        "Lifestyle"
+      ],
+      "version": "2.3.0",
+      "currentVersionReleaseDate": "2026-04-19T19:11:58Z",
+      "screenshotUrls": [
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/9a/7b/e0/9a7be008-4739-b76e-d360-239337b06923/Screenshot-second_screen.jpg/320x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/d9/03/cd/d903cd5f-6a4c-1c04-c454-4a229e367ffb/Screenshot-third_screen.jpg/320x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/d2/b8/c1/d2b8c1f3-33d6-a01c-3fe9-5565f0c5e9a3/Screenshot-fifth_screen.jpg/320x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/40/19/a6/4019a6b4-2b99-a961-2a32-126a0e1aabf7/Screenshot-fourth_screen.jpg/320x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/f1/6a/66/f16a66ad-2098-671d-7454-2d1c8f3787f9/Screenshot-fifth_screen-1.jpg/320x480bb.jpg"
+      ],
+      "ipadScreenshotUrls": [
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/75/5e/8d/755e8d70-9280-9ea1-fc01-af7cd7f9bb26/Screenshot-first_screen.jpg/360x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/cc/56/6f/cc566f7c-96ae-d02b-7985-83c34256021c/Screenshot-second_screen.jpg/360x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/c5/97/c8/c597c8e9-729d-832c-b7fc-a129ac994865/Screenshot-third_screen.jpg/360x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/60/9d/3a/609d3a8b-e5d6-2d52-d4d4-9559f1ecb6ec/Screenshot-fifth_screen.jpg/360x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/05/e1/be/05e1bea0-b095-e9db-60bd-737e93cac7fa/Screenshot-fourth_screen.jpg/360x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/66/91/8f/66918fe2-bd26-c414-517e-a434f4da3a04/Screenshot-fifth_screen-1.jpg/360x480bb.jpg"
+      ],
+      "iconUrl": "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/9f/01/c7/9f01c713-30c2-7b88-6643-7035b9bd6977/AppIcon-0-0-1x_U007epad-0-1-85-220.png/512x512bb.jpg",
+      "rankBySeed": {
+        "alışkanlık takibi": 1,
+        "alışkanlık": 6,
+        "günlük rutin": 26,
+        "hedef takip": 25,
+        "rutin planlayıcı": 4
+      },
+      "screenshotText": [],
+      "palette": [
+        "#F7F4F6",
+        "#D2E6F3",
+        "#9AD7F4",
+        "#80878B",
+        "#46B0EC"
+      ],
+      "reviews": []
+    },
+    {
+      "trackId": 1438388363,
+      "name": "Habit Tracker",
+      "sellerName": "Inner Grow Limited",
+      "bundleId": "com.davetech.habit",
+      "storefront": "tr",
+      "averageUserRating": 4.72365,
+      "userRatingCount": 5540,
+      "price": 0,
+      "formattedPrice": "Free",
+      "primaryGenre": "Productivity",
+      "genres": [
+        "Productivity",
+        "Health & Fitness"
+      ],
+      "version": "2.15.6",
+      "currentVersionReleaseDate": "2026-10-22T22:11:24Z",
+      "screenshotUrls": [
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/5c/b8/05/5cb8051e-e125-e84e-f0b5-2551b6e9d69d/_U767d1.jpg/320x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/13/5d/32/135d32df-678d-5c7e-d940-4f16d5c4e396/_U767d2.jpg/320x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/2e/a8/66/2ea866a0-2271-4d8a-e380-8386b935283f/_U767d3.jpg/320x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/58/9c/11/589c1153-5d91-f99a-0b24-2467a6b6c239/_U767d4.jpg/320x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/ac/a8/fe/aca8fee4-573a-f966-0ee2-11b3f701a68f/_U767d5.jpg/320x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/df/3b/0d/df3b0d0b-5e85-747b-c85f-ab94079f94a0/_U767d7.jpg/320x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/f7/14/b2/f714b249-4ba1-653b-b9a5-2897b51fc7f3/_U767d6.jpg/320x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/14/2d/68/142d6844-74ce-660b-ab2e-92144650dc72/_U767d10.jpg/320x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/b2/a6/82/b2a682bb-d6d2-5a3b-bcd1-eef221158830/_U767d8.jpg/320x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/8f/00/5e/8f005e91-1077-38ce-c7e4-09bb062ed4ae/_U767d9.jpg/320x480bb.jpg"
+      ],
+      "ipadScreenshotUrls": [
+        "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/28/4e/88/284e8802-c8e8-c8ff-f4c6-7b557d1bf4e9/pr_source.png/576x768bb.png",
+        "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/26/a3/7b/26a37b94-f1da-4700-ce1c-d482a39e9552/ccc44a77-bd53-4599-82e1-9f6c43a2922b_2048x2732bb.png/576x768bb.png",
+        "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/12/2a/f7/122af721-1204-43c0-6313-2c6478dc302f/pr_source.png/576x768bb.png",
+        "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/28/13/85/28138559-cd2a-d886-1d9e-00ef0211edb1/d1bb48dc-fab3-4b35-a880-b98070114367_widget.png/576x768bb.png",
+        "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/01/f7/53/01f7532a-d73a-98e1-809d-145c77b13802/pr_source.png/576x768bb.png",
+        "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/30/7f/45/307f453d-2a0a-51d4-22e2-9f2b0b067d12/pr_source.png/576x768bb.png",
+        "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/dc/2d/53/dc2d531b-0902-af72-17ca-c87e18ef3790/pr_source.png/576x768bb.png",
+        "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/a4/c3/e4/a4c3e460-526e-739f-4d6d-ce6aa237a4e9/pr_source.png/576x768bb.png",
+        "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/7f/3a/b2/7f3ab214-5f8c-1b72-81f7-aa4045ef91b3/pr_source.png/576x768bb.png",
+        "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/65/cf/8d/65cf8df8-cfe6-04a3-c6f2-01f9ba9c1f64/pr_source.png/576x768bb.png"
+      ],
+      "iconUrl": "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/21/ac/f0/21acf085-d817-b9dd-d8d1-3cb7d9c54068/AppIcon-pink-gr-0-0-1x_U007epad-0-1-0-85-220.png/512x512bb.jpg",
+      "rankBySeed": {
+        "alışkanlık takibi": 18,
+        "alışkanlık": 21,
+        "günlük rutin": 5,
+        "rutin planlayıcı": 44
+      },
+      "screenshotText": [],
+      "palette": [
+        "#FBDFDD",
+        "#F8F7F9",
+        "#B1D0A6",
+        "#CECACF",
+        "#A296A1"
+      ],
+      "reviews": []
+    },
+    {
+      "trackId": 1549845424,
+      "name": "EvolveMe: Habit Tracker",
+      "sellerName": "Evrim Demir",
+      "bundleId": "com.evomind.Zinciri-Kirma",
+      "storefront": "tr",
+      "averageUserRating": 4.46645,
+      "userRatingCount": 626,
+      "price": 0,
+      "formattedPrice": "Free",
+      "primaryGenre": "Health & Fitness",
+      "genres": [
+        "Health & Fitness",
+        "Productivity"
+      ],
+      "version": "6.0.1",
+      "currentVersionReleaseDate": "2026-04-18T15:38:16Z",
+      "screenshotUrls": [
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/3d/ff/0c/3dff0c81-f9f3-dea4-e957-d7d98147f474/d77c1300-5d00-4dd1-a42a-3ec50360ef87_iPhone_8_Plus_-_1.jpg/392x696bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/a0/88/b8/a088b86d-9357-9730-dc84-05de3119aa24/30339505-7fe2-4438-8a7e-56ca49e173f0_iPhone_8_Plus_-_2.jpg/392x696bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/f5/f8/7e/f5f87e6c-86f6-195c-cf35-fa0037f86df4/d69e5be8-1083-4b91-827a-56624c10b89b_iPhone_8_Plus_-_4.jpg/392x696bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/5f/59/cc/5f59cc48-d8d1-45a3-c9ae-425d57a8fa04/d49fb159-046e-4a32-9dd3-525385ae49cd_iPhone_8_Plus_-_3.jpg/392x696bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/15/f4/01/15f401d0-48a2-dadc-d769-e02e3cbc69fe/a64cf64a-1680-4cf7-b94f-ec4630093ad9_iPhone_8_Plus_-_5.jpg/392x696bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/80/45/6f/80456f6b-8efb-3475-436d-22570f5fac87/3bf8ddcb-cc37-4c90-8208-722f9f856d39_iPhone_8_Plus_-_7.jpg/392x696bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/aa/5c/71/aa5c7176-da2c-2210-0bed-a4d84c7b9ac5/5f2d38ea-1d6e-4b3d-b760-c3cb06de0a9f_iPhone_8_Plus_-_6.jpg/392x696bb.jpg"
+      ],
+      "ipadScreenshotUrls": [
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/61/83/31/618331e5-ab75-7fcd-166f-7c54ab435568/bffdc038-5873-44b2-80d8-3a6094474acf_iPad_Pro_12.9_-_1__U00282nd_Gen_U0029.jpg/576x768bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/9a/ae/2e/9aae2e82-39c1-e6bf-fa59-a5ccbb915a77/a9038b49-29d3-45f8-99ae-11bb43063b71_iPad_Pro_12.9_-_2__U00282nd_Gen_U0029.jpg/576x768bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/ac/6b/d3/ac6bd3aa-4bf1-bff0-48d6-ec7f955dab3b/ece0b3e3-3ff7-49af-a387-4a17949c7dc5_iPad_Pro_12.9_-_3__U00282nd_Gen_U0029.jpg/576x768bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/22/af/48/22af4831-6642-ca34-ced5-2394a5a99f75/e56c0a4c-4a6e-4eab-8630-29a8a3702fda_iPad_Pro_12.9_-_5__U00282nd_Gen_U0029.jpg/576x768bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/af/7a/fe/af7afef0-f3d2-1132-a177-ddb54086a940/2434e124-9d7a-4e5f-9bd6-9f0cf8677cb1_iPad_Pro_12.9_-_4__U00282nd_Gen_U0029.jpg/576x768bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/90/e4/8b/90e48b79-62ff-4749-74de-10c08d508942/e205e95e-9aa2-4c5e-8074-cc067fd05a4b_iPad_Pro_12.9_-_7__U00282nd_Gen_U0029.jpg/576x768bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/a1/cb/18/a1cb18ff-26b9-53e1-6e84-d8005d97d054/041dd518-7331-4411-b612-ebaf7e57c866_iPad_Pro_12.9_-_6__U00282nd_Gen_U0029.jpg/576x768bb.jpg"
+      ],
+      "iconUrl": "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/15/5f/28/155f2883-25a0-2678-a054-5f907bedcd94/AppIcon-0-0-1x_U007emarketing-0-11-0-85-220.png/512x512bb.jpg",
+      "rankBySeed": {
+        "alışkanlık takibi": 6,
+        "alışkanlık": 8,
+        "günlük rutin": 2,
+        "hedef takip": 5
+      },
+      "screenshotText": [],
+      "palette": [
+        "#FBA41A",
+        "#F9BB55",
+        "#F5D496",
+        "#737A5F",
+        "#F3F2EA"
+      ],
+      "reviews": []
+    },
+    {
+      "trackId": 1394150432,
+      "name": "everyday - Habit Tracker",
+      "sellerName": "Everyday Growth S.L.",
+      "bundleId": "app.everyday",
+      "storefront": "tr",
+      "averageUserRating": 4.6323,
+      "userRatingCount": 582,
+      "price": 0,
+      "formattedPrice": "Free",
+      "primaryGenre": "Productivity",
+      "genres": [
+        "Productivity",
+        "Lifestyle"
+      ],
+      "version": "3.10.0",
+      "currentVersionReleaseDate": "2026-10-14T16:54:31Z",
+      "screenshotUrls": [
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource113/v4/6f/f6/11/6ff61106-7094-080c-94b5-3946dff957c6/cb56ac80-3291-42c3-923e-11dda562c844_0-iPhone-5.5-0-Main@3x.png/392x696bb.png",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource113/v4/83/14/ca/8314ca7b-e7fb-88dc-ede4-9da8b2eedcf7/b32c136f-a63f-4ad4-958a-8a139831a2b2_0-iPhone-5.5-1-Widget@3x.png/392x696bb.png",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource123/v4/68/fc/cd/68fccdf2-f2e5-5199-90be-5449c05a3b53/1bdc310e-cfe0-4b79-86d7-ccec432b55d1_0-iPhone-5.5-2-Watch@3x.png/392x696bb.png",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource123/v4/31/d3/a6/31d3a69e-1439-c54c-daf5-8e97e630761c/521a4682-8c95-4e7f-b4e3-897c49a15cce_0-iPhone-5.5-3-Darkmode@3x.png/392x696bb.png",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource123/v4/a2/24/2f/a2242fe5-ab71-c5b6-1c7f-8ebc8b6becf4/b445c75c-e35d-4e2e-af66-32d1106dc34e_0-iPhone-5.5-4-Multiplatform@3x.png/392x696bb.png",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource113/v4/fd/7d/74/fd7d7425-fc4e-b681-53aa-f501a7caf625/71213505-b65e-4d1f-8ec7-59964680163f_0-iPhone-5.5-5-Cpanel@3x.png/392x696bb.png",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource113/v4/c6/82/7b/c6827be2-9470-2beb-c678-ec0bf30016c1/e746ab4a-fc97-4b8b-a2e1-ff0cd28bcb49_0-iPhone-5.5-6-Habit@3x.png/392x696bb.png",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource113/v4/8e/68/78/8e687864-9e3c-2a46-6d11-f49b6fafb0ed/2bff4424-1677-425f-b24c-bd034bce6363_0-iPhone-5.5-7-Learn@3x.png/392x696bb.png"
+      ],
+      "ipadScreenshotUrls": [
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource113/v4/88/05/6e/88056efa-e18b-8edd-58e9-058bc1fa1b13/e77b2036-d711-47d2-b3f3-eb7f93ecdcb6_3-iPad2gen-12.9-0-Main@2x.png/576x768bb.png",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource123/v4/08/e8/66/08e866c7-6a54-c7d2-66a4-e499bc36da08/1e29e4be-28d8-4fbf-81d4-c2eaab87e988_3-iPad2gen-12.9-1-Widgets@2x.png/576x768bb.png",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource123/v4/8e/54/ed/8e54ed8b-5b40-e727-ffd6-33cfc978a5f6/5c601aa7-4b74-4310-9d8d-6eb63c04b794_3-iPad2gen-12.9-2-Watch@2x.png/576x768bb.png",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource123/v4/f0/31/6b/f0316bdc-dd6f-30e4-89e6-927c079bd079/d866b9a4-7f16-48b3-87ee-68b01d6b64bf_3-iPad2gen-12.9-3-Darkmode@2x.png/576x768bb.png",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource113/v4/42/a5/86/42a58622-23ec-4341-fba8-b11d523ad34d/0ff7d087-bfd8-482d-b255-4981508d3003_3-iPad2gen-12.9-4-Multiplatform@2x.png/576x768bb.png",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource113/v4/96/33/45/963345e8-ea0a-99a6-6540-8b3fa76e4bf3/316565f3-85a1-415a-9312-ce69b831b329_3-iPad2gen-12.9-5-Cpanel@2x.png/576x768bb.png",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource123/v4/72/88/39/72883941-1aeb-9b4a-4bb8-f802bd8aa31f/089da895-c16a-449a-bc08-067721e1393d_3-iPad2gen-12.9-6-Habit@2x.png/576x768bb.png",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource113/v4/db/35/80/db3580f1-b8a4-b18d-e164-30303b2588b0/bb48e3b0-8bc3-4090-a470-8f1309b3a497_3-iPad2gen-12.9-7-Learn@2x.png/576x768bb.png"
+      ],
+      "iconUrl": "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/62/41/51/624151cf-22bb-87c4-1786-7682980b56d2/AppIcon-0-0-1x_U007epad-0-1-0-85-220.png/512x512bb.jpg",
+      "rankBySeed": {
+        "alışkanlık takibi": 17,
+        "alışkanlık": 9,
+        "hedef takip": 26,
+        "seri takibi": 7
+      },
+      "screenshotText": [],
+      "palette": [
+        "#F9F9F8",
+        "#A18D98",
+        "#141414",
+        "#FE9D24",
+        "#A20F16"
+      ],
+      "reviews": []
+    },
+    {
+      "trackId": 983826477,
+      "name": "Productive - Habit Tracker",
+      "sellerName": "Mosaic S.r.l.",
+      "bundleId": "com.beHappy.Productive",
+      "storefront": "tr",
+      "averageUserRating": 4.43102,
+      "userRatingCount": 3914,
+      "price": 0,
+      "formattedPrice": "Free",
+      "primaryGenre": "Productivity",
+      "genres": [
+        "Productivity",
+        "Health & Fitness"
+      ],
+      "version": "3.26.39",
+      "currentVersionReleaseDate": "2026-03-19T09:48:03Z",
+      "screenshotUrls": [
+        "https://is1-ssl.mzstatic.com/image/thumb/Purple126/v4/a9/fe/bb/a9febb6c-821f-dcb0-d10b-d2c63358f72e/36b21010-d89e-448d-bf57-fa88b964415d_iphone5.5_s1_en-US.jpg/392x696bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/Purple116/v4/13/cf/45/13cf458a-03f3-3215-0c65-4b2d395b2c23/1ec8c0dd-19bc-4d35-9491-792de95cca88_iphone5.5_s2_en-US.jpg/392x696bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/Purple126/v4/49/b5/af/49b5af46-bce4-0852-07ff-4e0ea5f86e3a/52bb719d-29a0-4f08-8186-9c1713ef262f_iphone5.5_s3_en-US.jpg/392x696bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/Purple126/v4/a7/16/5f/a7165fce-ed89-0710-88a4-271e26fa2a96/6f6acba3-ecf7-467a-acd8-414a853459d0_iphone5.5_s4_en-US.jpg/392x696bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/Purple116/v4/47/92/db/4792db85-de2e-55ea-21b6-42b1229ef1f8/a5cc7e06-3909-4cfc-9482-aa30d2c0301c_iphone5.5_s5_en-US.jpg/392x696bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/Purple116/v4/e9/40/a9/e940a931-e3e2-7175-c95a-e279d7db81c6/99b75a58-8ebc-48d1-b980-430691802ae6_iphone5.5_s6_en-US.jpg/392x696bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/Purple116/v4/55/6e/fc/556efc68-8d79-5be5-7afb-3bc7e7f1987a/3d13d993-a543-4083-8320-a98d917ca795_iphone5.5_s7_en-US.jpg/392x696bb.jpg"
+      ],
+      "ipadScreenshotUrls": [
+        "https://is1-ssl.mzstatic.com/image/thumb/Purple116/v4/28/ab/ae/28abae9f-dbf9-d0a1-a61b-af9c453e39c2/95ee5fac-5dba-4029-ab52-6dc5ed0eab7f_ipad12.9_U00282_U0029_s1_en-US.jpg/576x768bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/Purple126/v4/0b/c6/e1/0bc6e187-ec92-9712-543d-e62b519662e1/cef27ecc-7526-468a-9d23-6a050623f908_ipad12.9_U00282_U0029_s2_en-US.jpg/576x768bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/Purple126/v4/94/d0/b3/94d0b372-8825-2ad8-e559-01bb6d737a4a/3c319200-39de-45e0-9981-3f0f7b61f04e_ipad12.9_U00282_U0029_s3_en-US.jpg/576x768bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/Purple116/v4/b1/2c/2f/b12c2fe9-082c-83a2-1203-47c842558cec/1bae1878-7d5c-4b83-8736-8a8e3d76748f_ipad12.9_U00282_U0029_s4_en-US.jpg/576x768bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/Purple126/v4/8b/ed/78/8bed7873-6688-d799-02df-d12c19a4f5a0/7f2e4f52-b4d9-41a2-8805-f03f647e6bd2_ipad12.9_U00282_U0029_s5_en-US.jpg/576x768bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/Purple126/v4/a2/5f/d2/a25fd242-de6d-a3e7-220a-3f3318174905/f1123174-d924-4ed6-a76a-c13a79d9f995_ipad12.9_U00282_U0029_s6_en-US.jpg/576x768bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/Purple126/v4/03/fd/78/03fd781d-2f3c-aa8c-504f-53e306cc4ef2/4a4a8393-9648-4718-85b2-2551e0cbc862_ipad12.9_U00282_U0029_s7_en-US.jpg/576x768bb.jpg"
+      ],
+      "iconUrl": "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/7f/8c/d1/7f8cd183-7ce1-b8b3-b690-51a7565ee76b/AppIcon_iOS-0-0-1x_U007emarketing-0-8-0-85-220.png/512x512bb.jpg",
+      "rankBySeed": {
+        "alışkanlık takibi": 2,
+        "alışkanlık": 5,
+        "hedef takip": 32
+      },
+      "screenshotText": [],
+      "palette": [
+        "#1E1E1D",
+        "#69C791",
+        "#5C6346",
+        "#E8E2D5",
+        "#4387DE"
+      ],
+      "reviews": []
+    },
+    {
+      "trackId": 6474597340,
+      "name": "Atomic: Goal & Habit Tracker",
+      "sellerName": "OURO YAZILIM REKLAM TEKNOLOJILERI ARASTIRMA GELISTIRME VE PAZARLAMA TICARET ANONIM SIRKETI",
+      "bundleId": "com.ouro.habittracker",
+      "storefront": "tr",
+      "averageUserRating": 4.49437,
+      "userRatingCount": 89,
+      "price": 0,
+      "formattedPrice": "Free",
+      "primaryGenre": "Productivity",
+      "genres": [
+        "Productivity",
+        "Lifestyle"
+      ],
+      "version": "2.9.2",
+      "currentVersionReleaseDate": "2026-03-17T01:29:09Z",
+      "screenshotUrls": [
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/a2/67/69/a26769a4-77ea-6b85-9d69-b13da4efcf17/22d9b862-4719-4ae0-8b50-8b3341b1769b_AppStore_5_5_01.jpg/392x696bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/0d/11/8f/0d118fdc-1c96-0505-bc30-dfa38cafbc33/ef1787fc-ed56-46e1-a220-40224a17be5e_AppStore_5_5_02.jpg/392x696bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/e9/f2/35/e9f235d4-7d34-2514-ef2c-2b18b2247049/422e69c3-b955-4c42-8534-20eb402e68df_AppStore_5_5_03.jpg/392x696bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/70/42/65/704265ea-71ba-0f9f-fba4-71cac948c7da/eba2a7ca-8259-48b1-8220-2ef286609200_AppStore_5_5_04.jpg/392x696bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/e0/78/8b/e0788b5c-2b7b-d0fa-5db5-d2f97dbc0360/69592f33-f921-4389-8d6f-ba94c53c7a23_AppStore_5_5_05.jpg/392x696bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/3d/07/10/3d0710a2-a640-2a15-28d4-36651bf61cda/0fa0b3c8-ade3-4d87-a378-36e13af82ff3_AppStore_5_5_06.jpg/392x696bb.jpg"
+      ],
+      "ipadScreenshotUrls": [],
+      "iconUrl": "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/71/29/7d/71297dd3-35e8-c1f5-2b8b-022fa87adc94/AppIcon-0-0-1x_U007ephone-0-1-0-sRGB-85-220.png/512x512bb.jpg",
+      "rankBySeed": {
+        "alışkanlık takibi": 4,
+        "alışkanlık": 7,
+        "günlük rutin": 6,
+        "hedef takip": 23
+      },
+      "screenshotText": [],
+      "palette": [
+        "#E4E9FB",
+        "#C4CDF8",
+        "#C5978B",
+        "#31597B",
+        "#301D12"
+      ],
+      "reviews": []
+    },
+    {
+      "trackId": 6446997766,
+      "name": "Grit: Habits, Routines, Goals",
+      "sellerName": "GrittyApps",
+      "bundleId": "stoope.Grit",
+      "storefront": "tr",
+      "averageUserRating": 4.66249,
+      "userRatingCount": 877,
+      "price": 0,
+      "formattedPrice": "Free",
+      "primaryGenre": "Productivity",
+      "genres": [
+        "Productivity",
+        "Health & Fitness"
+      ],
+      "version": "6.0.2",
+      "currentVersionReleaseDate": "2026-10-09T08:52:38Z",
+      "screenshotUrls": [
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/b2/0a/26/b20a2615-10bf-9e57-ebb8-2b3d872327eb/1.png/320x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/fd/3f/20/fd3f2025-b522-ed92-80fc-3cc3837ced65/2.png/320x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/19/c4/7b/19c47b53-be2b-3e6c-ee52-4aa4037de6c4/3.png/320x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/ea/12/f9/ea12f924-0b48-4a05-54c6-352db7a4292f/4.png/320x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/7b/e2/02/7be202eb-cdb4-26aa-8168-e3dc9f3c0ca2/5.png/320x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/6a/df/d3/6adfd3ee-dd96-23ab-4433-85757df548dd/6.png/320x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/29/9d/f2/299df243-261f-29b9-04d6-669e73ec545b/7.png/320x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/39/b3/c7/39b3c718-266b-b07d-2860-fc681b10a8ed/8.png/320x480bb.jpg"
+      ],
+      "ipadScreenshotUrls": [
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/bf/47/30/bf473016-c505-3441-091e-b925e76c55b9/1.png/360x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/06/aa/a1/06aaa1de-0896-74e4-3eee-587b186b3eab/2.png/360x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/97/43/17/97431716-02c3-9266-444c-1de95edb1a7f/3.png/360x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/bc/68/bc/bc68bc76-e6f9-18c2-c95b-219e868e0a2a/4.png/360x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/7b/a9/09/7ba909e1-95b5-c741-9bd3-9bbcabdfd870/5.png/360x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/5c/67/6c/5c676c37-e5aa-4610-3138-d21abf22127b/6.png/360x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/ee/12/21/ee1221aa-4e89-4e74-5d92-44e547d23399/7.png/360x480bb.jpg"
+      ],
+      "iconUrl": "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/6b/0b/87/6b0b8716-6f21-b9b7-a302-c94d2bc37151/AppIcon-0-0-1x_U007epad-0-1-85-220.png/512x512bb.jpg",
+      "rankBySeed": {
+        "alışkanlık takibi": 31,
+        "alışkanlık": 14,
+        "günlük rutin": 35,
+        "hedef takip": 9
+      },
+      "screenshotText": [],
+      "palette": [
+        "#131215",
+        "#B4DFF5",
+        "#4AA4DB",
+        "#447E6F",
+        "#E14489"
+      ],
+      "reviews": []
+    },
+    {
+      "trackId": 1477345602,
+      "name": "Habit Tracker: Plan Your Day",
+      "sellerName": "CREATIVE TECHNOLOGIES LLC",
+      "bundleId": "net.habittracker",
+      "storefront": "tr",
+      "averageUserRating": 4.57732,
+      "userRatingCount": 194,
+      "price": 0,
+      "formattedPrice": "Free",
+      "primaryGenre": "Productivity",
+      "genres": [
+        "Productivity",
+        "Health & Fitness"
+      ],
+      "version": "4.7.1",
+      "currentVersionReleaseDate": "2025-08-22T07:28:18Z",
+      "screenshotUrls": [
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/54/11/bd/5411bd62-a711-5b95-ee34-0de8fb548cd3/d766cb18-b23f-4019-b6bf-f5527297040b_small1.png/392x696bb.png",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/9b/7c/f0/9b7cf00a-dcc2-062a-f6b1-80d8c12276cf/54116545-243d-411a-9956-95dd6633847e_8_2.png/392x696bb.png",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/66/16/c1/6616c1c2-8508-043a-6950-7229a3fabed3/d0797dd9-2539-4403-911f-bc6b998faaeb_EN_Stat_8_3.png/392x696bb.png",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/a8/4e/c9/a84ec914-d891-bd95-6120-a3f80b7ef634/620821b7-d0ae-465e-b930-5eb85da861c6_8_4.png/392x696bb.png",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/6f/f1/da/6ff1dab4-d361-9d12-2901-12c067b584ec/796ccead-8a37-440c-9868-e03e015df3b0_8_5.png/392x696bb.png",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/22/8e/03/228e039b-f43e-68c4-39cb-a79180815ce4/71747db0-6b8e-4690-ac04-d11164cdc8c8_8_6.png/392x696bb.png",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/44/25/d1/4425d117-2f68-5fe1-1862-5e767e659a43/82da919e-3914-49b4-8715-815a26033885_8_7.png/392x696bb.png",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/52/06/1f/52061f90-e375-1148-d006-304a2e16079d/7769205f-6193-4e13-bab0-9dd7a2407022_8_8.png/392x696bb.png"
+      ],
+      "ipadScreenshotUrls": [],
+      "iconUrl": "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/f4/92/4e/f4924ed1-4a10-710e-7529-71ea8ab8fa2e/AppIcon-0-0-1x_U007ephone-0-1-0-0-85-220.png/512x512bb.jpg",
+      "rankBySeed": {
+        "alışkanlık takibi": 5,
+        "alışkanlık": 1,
+        "hedef takip": 2
+      },
+      "screenshotText": [],
+      "palette": [
+        "#F4FCFB",
+        "#EBB4F7",
+        "#8C8392",
+        "#C0BBC7",
+        "#585F5C"
+      ],
+      "reviews": []
+    },
+    {
+      "trackId": 6475956795,
+      "name": "Dear Me: Daily Routine Tracker",
+      "sellerName": "Fitself Dijital Hizmetler Anonim Sirketi",
+      "bundleId": "com.kompanion.habit.ios",
+      "storefront": "tr",
+      "averageUserRating": 4.80955,
+      "userRatingCount": 13358,
+      "price": 0,
+      "formattedPrice": "Free",
+      "primaryGenre": "Health & Fitness",
+      "genres": [
+        "Health & Fitness",
+        "Productivity"
+      ],
+      "version": "1.1.51",
+      "currentVersionReleaseDate": "2026-10-22T06:34:39Z",
+      "screenshotUrls": [
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/cb/2f/b4/cb2fb49c-caf8-7387-d814-7ae8076a7816/9960fbe6-2387-4641-932a-02beea1b1d6d_1.jpg/392x696bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/4e/3d/b8/4e3db8f6-6d85-4675-7309-5c186957a1b0/a8e90dda-e8c1-43a5-9400-067c01c44400_5.jpg/392x696bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/c8/32/15/c8321561-6625-02ae-c6fb-8c0337064e0f/165aa44c-7b90-4285-8536-90a6b3c4f93d_6.jpg/392x696bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/89/2f/9c/892f9caa-f0ad-9ba4-ea88-c8596bde8039/b74ca587-b70f-4384-a2b9-6d9230504741_4.jpg/392x696bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/15/8f/01/158f01f2-1ce4-5d28-aa65-38ea347429e6/a800e718-50e9-4749-9f4c-ece7ed94b6c5_2.jpg/392x696bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/24/63/57/24635777-9d77-1057-29d2-132fbf335f40/7c925339-b6fa-4c66-a257-8f3a3dbdf1d1_9.jpg/392x696bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/ee/1d/ea/ee1dea21-d08c-ba20-8e5f-1953756a7a51/52faea9c-d5e0-42fc-a8a0-2b3a1d32a005_3.jpg/392x696bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/03/b6/94/03b694a4-cd7a-8f7b-dabb-63a71f09ecbe/8c8c8bae-a930-4ade-9e09-6a90be7ce986_7.jpg/392x696bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/dd/f3/c0/ddf3c04a-2f65-a142-ead1-9ae089cd66cf/c4fbe6b8-607e-4f38-a7cf-ccc2bcff84dd_8.jpg/392x696bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/b5/87/ce/b587ce09-58ab-ddf2-c231-621d755c8a84/eef3138a-abcf-4e06-950d-ee83a62b54bf_10.jpg/392x696bb.jpg"
+      ],
+      "ipadScreenshotUrls": [],
+      "iconUrl": "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/58/9e/a6/589ea666-1fcf-b1db-9e1c-37f42f655f22/AppIcon-0-0-1x_U007emarketing-0-11-0-85-220.png/512x512bb.jpg",
+      "rankBySeed": {
+        "günlük rutin": 1,
+        "rutin planlayıcı": 2
+      },
+      "screenshotText": [],
+      "palette": [],
+      "reviews": []
+    },
+    {
+      "trackId": 1504660612,
+      "name": "Trackly",
+      "sellerName": "Ersel Tarhan",
+      "bundleId": "com.app.nsfw.trackly",
+      "storefront": "tr",
+      "averageUserRating": 4.18492,
+      "userRatingCount": 3212,
+      "price": 0,
+      "formattedPrice": "Free",
+      "primaryGenre": "Utilities",
+      "genres": [
+        "Utilities",
+        "Productivity"
+      ],
+      "version": "5.1.0",
+      "currentVersionReleaseDate": "2026-03-30T20:17:00Z",
+      "screenshotUrls": [
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/b2/9e/5e/b29e5ed6-3baa-77c7-4e71-8c08a2f19b56/iPhone_14_Plus-0_01-hero.png/320x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/63/f4/68/63f4680e-2e45-ccf6-cae7-a486e1735ab3/iPhone_14_Plus-1_02-timer.png/320x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/90/d3/db/90d3db4a-be76-3fc7-ab72-ff4e63074711/iPhone_14_Plus-2_03-stats.png/320x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/24/73/1b/24731b73-72ab-2f2a-b756-8b4d15a2f86c/iPhone_14_Plus-3_04-widget.png/320x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/6e/e7/2b/6ee72bd2-d078-f3f9-68fc-cd0a0e96d2f2/iPhone_14_Plus-4_05-add-habit.png/320x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/fd/c0/bb/fdc0bb3b-1ef3-557f-7fd1-29be6cdbaf5c/iPhone_14_Plus-5_06-more.png/320x480bb.jpg"
+      ],
+      "ipadScreenshotUrls": [
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/cf/0f/97/cf0f9777-d10f-0be6-9270-ad4ab86c0e8f/iPad_Pro_12.9-0_01-hero.png/360x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/5f/69/07/5f6907b7-887a-58b4-f7e1-16f5b141416f/iPad_Pro_12.9-1_02-timer.png/360x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/c8/a9/40/c8a94014-537c-51fe-280c-7731fc095a92/iPad_Pro_12.9-2_03-stats.png/360x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/e6/74/69/e6746962-1b6c-bcf8-70e3-a5d346a84380/iPad_Pro_12.9-3_04-widget.png/360x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/e5/8a/cc/e58acc08-9765-a047-27e4-28caf7168b88/iPad_Pro__U002812.9-inch_U0029__U00286th_generation_U0029-4_05-add-habit.png/360x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/cb/c4/46/cbc44660-2553-3a93-1a53-d230f9eab58f/iPad_Pro__U002812.9-inch_U0029__U00286th_generation_U0029-5_06-more.png/360x480bb.jpg"
+      ],
+      "iconUrl": "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/34/73/e5/3473e5c0-c5c1-763b-9b6b-1a36a2d84dde/AppIcon-0-0-1x_U007emarketing-0-8-0-85-220.png/512x512bb.jpg",
+      "rankBySeed": {
+        "günlük rutin": 33,
+        "seri takibi": 3
+      },
+      "screenshotText": [],
+      "palette": [],
+      "reviews": []
+    },
+    {
+      "trackId": 6476888812,
+      "name": "Habit Tracker: Daily Habits",
+      "sellerName": "Oleksandr Khomenko",
+      "bundleId": "com.khomenKO.HabitTracker",
+      "storefront": "tr",
+      "averageUserRating": 5,
+      "userRatingCount": 2,
+      "price": 0,
+      "formattedPrice": "Free",
+      "primaryGenre": "Productivity",
+      "genres": [
+        "Productivity"
+      ],
+      "version": "2.1.6",
+      "currentVersionReleaseDate": "2025-12-10T13:37:50Z",
+      "screenshotUrls": [
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/8d/7d/c3/8d7dc305-5efb-6327-c87a-74d4bb0336f5/Frame_120.png/320x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/23/2d/bf/232dbf1e-2d60-7daa-cd0a-5918257a6047/Frame_126.png/320x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/49/8b/ed/498bed01-13da-bca8-5662-2df769fd9196/Frame_125.png/320x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/bd/c0/2d/bdc02df8-4a13-0c2a-7729-0d6bb0f65949/Frame_123.png/320x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/0d/d6/bd/0dd6bd01-068f-20dd-cad9-e2e63f0632ce/Frame_121.png/320x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/49/52/d6/4952d67f-25d7-d503-3527-04f1a102eb2a/Frame_127.png/320x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/c8/ea/90/c8ea907e-64d0-22fe-8462-0a7128e42dac/Frame_128.png/320x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/fd/cd/e1/fdcde1c1-a8c1-1c54-d514-3a359bb3f7d8/Frame_124.png/320x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/d3/28/b2/d328b2bc-96d3-f401-2b6a-8d5684b4aeb6/Frame_122.png/320x480bb.jpg"
+      ],
+      "ipadScreenshotUrls": [],
+      "iconUrl": "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/4b/3f/e6/4b3fe692-2bf6-4014-defc-f94f045855db/AppIcon-0-0-1x_U007ephone-0-1-0-85-220.png/512x512bb.jpg",
+      "rankBySeed": {
+        "alışkanlık takibi": 9,
+        "alışkanlık": 40,
+        "hedef takip": 24,
+        "rutin planlayıcı": 42
+      },
+      "screenshotText": [],
+      "palette": [],
+      "reviews": []
+    },
+    {
+      "trackId": 1499198946,
+      "name": "Structured: Daily Planner Todo",
+      "sellerName": "unorderly GmbH",
+      "bundleId": "com.leomehlig.today",
+      "storefront": "tr",
+      "averageUserRating": 4.81087,
+      "userRatingCount": 5023,
+      "price": 0,
+      "formattedPrice": "Free",
+      "primaryGenre": "Productivity",
+      "genres": [
+        "Productivity",
+        "Education"
+      ],
+      "version": "4.6.6",
+      "currentVersionReleaseDate": "2026-10-22T21:09:56Z",
+      "screenshotUrls": [
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/84/da/9b/84da9bd8-1c70-1f39-a5be-21d964f842e8/6.9_baseline_1.jpg/320x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/3d/18/90/3d1890b0-748a-63d8-8c30-cafc21ffe0ae/6.9__baseline_2.jpg/320x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/22/88/28/228828b7-723d-3672-6148-28f2798119c7/6.9__baseline_3.jpg/320x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/03/3c/1a/033c1ad8-0a02-fb77-a014-f61b603fc036/6.9__baseline_4.jpg/320x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/c0/20/8d/c0208d19-fa42-7c19-c9f1-65531e1ae5e4/6.9__baseline_7.jpg/320x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/38/9d/87/389d8781-9e96-3914-94bb-836bd3b2c1a6/6.9__baseline_5.jpg/320x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/c1/48/6f/c1486f64-82f8-8577-b4e3-002fea127f8f/6.9__baseline_6.jpg/320x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/fd/96/02/fd9602d9-4989-9de3-916d-91e7e7298d36/6.9__baseline_8.jpg/320x480bb.jpg"
+      ],
+      "ipadScreenshotUrls": [
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/48/7d/92/487d924b-ffea-d5af-c777-966bf161f8da/1.jpg/360x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/9a/69/d8/9a69d853-f35d-969f-8d3a-afb18e917474/2.jpg/360x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/1f/48/e1/1f48e1bd-7209-f674-1ccd-84995a1970d7/3.jpg/360x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/62/2e/c0/622ec0cf-253e-db6d-8ba2-0f110e66fe33/4.jpg/360x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/d2/cc/ae/d2ccaedd-89e1-78e6-3c74-8749c37dcff5/5.jpg/360x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/e0/22/05/e022055f-528d-7e9d-2361-44498f162f4e/6.jpg/360x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/10/b3/cc/10b3cc82-8f25-2c16-7eb1-bc8c4ee9a19d/7.jpg/360x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/e8/c0/12/e8c0128f-6d5e-c820-177d-cc2aafb1b261/8.jpg/360x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/63/65/3f/63653f37-2ac7-e32d-7126-d3a157739baf/9.jpg/360x480bb.jpg"
+      ],
+      "iconUrl": "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/79/5a/4e/795a4e8b-1629-1441-2bb9-db135a059115/AppIcon-0-0-1x_U007epad-0-1-0-sRGB-85-220.png/512x512bb.jpg",
+      "rankBySeed": {
+        "günlük rutin": 7,
+        "rutin planlayıcı": 6
+      },
+      "screenshotText": [],
+      "palette": [],
+      "reviews": []
+    },
+    {
+      "trackId": 1589243137,
+      "name": "Eden: Daily Routine Planner",
+      "sellerName": "Millefeuille Agency",
+      "bundleId": "com.mfagency.nurture",
+      "storefront": "tr",
+      "averageUserRating": 4.54467,
+      "userRatingCount": 470,
+      "price": 0,
+      "formattedPrice": "Free",
+      "primaryGenre": "Health & Fitness",
+      "genres": [
+        "Health & Fitness",
+        "Productivity"
+      ],
+      "version": "5.3.6",
+      "currentVersionReleaseDate": "2026-10-19T22:05:30Z",
+      "screenshotUrls": [
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/23/3c/70/233c70b6-f678-9122-4cca-b821c0487762/69c8cff7-92ce-4c18-8237-64e430c5cb9c_iPhone01.jpg/392x696bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/86/8b/24/868b2420-831d-3421-b59f-a275083122db/28e7ece8-695a-4d4f-af7b-5c3752e3eeba_iPhone02.jpg/392x696bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/09/22/50/092250d1-a4cd-73fd-9ef6-fcb9bff33a52/435e2de5-fb76-468f-adbb-aa90166e7b6e_iPhone03.jpg/392x696bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/39/40/5c/39405c0b-2953-a3c0-8672-e331890004e4/6ccf17f7-46a4-45cb-9f01-2d295b23cdb8_iPhone04.jpg/392x696bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/89/75/88/89758865-59d3-c1b8-9eb2-575ecb3f2373/ea40596d-e0e1-4ae9-9590-12d48e771ca8_iPhone05.jpg/392x696bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/67/2f/23/672f23d7-2ccf-f525-2ca3-69dcf643f67d/3ac8374d-e5e2-48e4-958f-8acf665da622_iPhone06.jpg/392x696bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/a5/60/5b/a5605b26-f34d-5bde-4c87-bd674a35f643/5c4e990c-77db-4111-84b4-9387dd6c7054_iPhone07.jpg/392x696bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/71/30/a5/7130a5d2-c1d7-9e3c-d870-12eb7c225560/dadcb872-9a32-41df-a2f4-7ec100f85752_iPhone08.jpg/392x696bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/9c/e3/fe/9ce3fe3a-914a-c049-21f0-a2f0c81db24d/3a54934c-13c1-4d51-9fee-14a7a45d08d0_iPhone09.jpg/392x696bb.jpg"
+      ],
+      "ipadScreenshotUrls": [
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/ab/7f/21/ab7f21ee-096b-2722-ad0c-a1520bc8aaf2/e5bb1730-6e6f-4630-9eb2-f769d3a18fd2_iPad01.jpg/552x414bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/58/1c/97/581c97f5-d080-4749-950a-0007d0ff2885/5e9fe569-2fa5-4703-b9bb-4f0257212252_iPad02.jpg/552x414bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/3e/24/f0/3e24f0b9-cbd7-d736-f622-0c907ff7cadd/3ad12e9c-503d-41f2-a15f-e78d95cf8689_iPad03.jpg/552x414bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/f5/70/92/f57092be-830e-7011-1caf-058c14e82247/bbe5a0df-efa8-485a-83cc-6e047048c36a_iPad04.jpg/552x414bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/dd/73/e9/dd73e95d-59be-9201-73de-ecf3180241d4/987ca824-71fc-480a-b8eb-fb4b17e8e2f8_iPad05.jpg/552x414bb.jpg"
+      ],
+      "iconUrl": "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/49/66/7d/49667df0-7db7-56ee-231a-85708a9ec833/AppIcon-0-0-1x_U007epad-0-1-0-sRGB-85-220.png/512x512bb.jpg",
+      "rankBySeed": {
+        "günlük rutin": 4,
+        "rutin planlayıcı": 13
+      },
+      "screenshotText": [],
+      "palette": [],
+      "reviews": []
+    },
+    {
+      "trackId": 6759334860,
+      "name": "Eva - Calendar & Daily Planner",
+      "sellerName": "Dmitriy Biserov",
+      "bundleId": "biser.eva",
+      "storefront": "tr",
+      "averageUserRating": 4.98479,
+      "userRatingCount": 263,
+      "price": 0,
+      "formattedPrice": "Free",
+      "primaryGenre": "Productivity",
+      "genres": [
+        "Productivity",
+        "Lifestyle"
+      ],
+      "version": "1.7",
+      "currentVersionReleaseDate": "2026-08-28T00:30:26Z",
+      "screenshotUrls": [
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/c8/43/a3/c843a340-1659-8b2f-015e-f00aba48dfaa/01.png/320x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/91/79/f9/9179f980-ca71-b761-0a91-7a6bf0e5f008/02.png/320x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/ee/7a/1e/ee7a1e9d-8562-c379-0322-34eb3a0beb64/03.png/320x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/f3/8e/b2/f38eb215-959b-2b42-c031-b80c85370190/04.png/320x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/c7/6f/95/c76f951c-b431-d8d8-c09c-809e3848959b/05.png/320x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/67/58/50/67585090-2f1b-98ab-aff9-e4377a658401/06.png/320x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/06/1a/c7/061ac793-3102-40fb-4ee1-6b138e491799/07.png/320x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/3c/de/60/3cde609f-922d-ef51-cad4-4ca60884b680/08.png/320x480bb.jpg",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/62/64/41/62644159-9f22-a93c-b95f-48402c27d9c3/09.png/320x480bb.jpg"
+      ],
+      "ipadScreenshotUrls": [],
+      "iconUrl": "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/82/26/b5/8226b585-deab-74d0-4726-e32f8ad5ca78/AppIcon-0-0-1x_U007ephone-0-1-0-85-220.png/512x512bb.jpg",
+      "rankBySeed": {
+        "günlük rutin": 46,
+        "rutin planlayıcı": 3
+      },
+      "screenshotText": [],
+      "palette": [],
+      "reviews": []
+    },
+    {
+      "trackId": 1474375861,
+      "name": "Habit Tracker - Day Counter",
+      "sellerName": "Mustafa Yuksel",
+      "bundleId": "com.mustafayuksel.HabitTracker",
+      "storefront": "tr",
+      "averageUserRating": 3.74219,
+      "userRatingCount": 128,
+      "price": 0,
+      "formattedPrice": "Free",
+      "primaryGenre": "Productivity",
+      "genres": [
+        "Productivity",
+        "Lifestyle"
+      ],
+      "version": "1.5.5",
+      "currentVersionReleaseDate": "2026-08-28T09:27:18Z",
+      "screenshotUrls": [
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource114/v4/40/58/8c/40588c78-ca34-59a0-c8f0-fa9083bc1879/77abacaa-cb61-4bea-adce-1b65984dbfc8_Apple_iPhone_8_Plus_Screenshot_0.png/392x696bb.png",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource114/v4/fc/f6/d1/fcf6d1ef-048f-d002-f6c7-7f672682f82a/3e2dc815-67b6-41c5-b5b8-8680afe3fe1e_Apple_iPhone_8_Plus_Screenshot_1.png/392x696bb.png",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource114/v4/6c/fa/c8/6cfac8a3-8f18-d453-b837-28d08297f9b9/12cc9e0b-988f-4a70-937e-c5eba5efcd13_Apple_iPhone_8_Plus_Screenshot_2.png/392x696bb.png",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource114/v4/65/dc/a9/65dca9f3-56e4-a8f1-f85c-7b6adfd25d66/c410a8d9-8992-4c26-8c24-c70e08600388_Apple_iPhone_8_Plus_Screenshot_3.png/392x696bb.png",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource114/v4/74/2a/3a/742a3a52-8cbf-9cc5-edec-6ae36d7e1f16/4afe2023-3a5a-45de-98e3-e536d20ffde7_Apple_iPhone_8_Plus_Screenshot_4.png/392x696bb.png",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource124/v4/88/b0/b8/88b0b8dc-34b1-54dc-5e15-55036b3e6ed0/fba7ace5-9532-4a71-9d4b-af5f8fde9968_Apple_iPhone_8_Plus_Screenshot_6.png/392x696bb.png",
+        "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource114/v4/b6/b7/85/b6b7856c-0272-9797-f429-e63b219487ba/8c5d4cfe-5536-4945-84bc-476103d1ff5c_Apple_iPhone_8_Plus_Screenshot_5.png/392x696bb.png"
+      ],
+      "ipadScreenshotUrls": [
+        "https://is1-ssl.mzstatic.com/image/thumb/Purple114/v4/95/1e/cb/951ecb43-b053-f6d8-05a2-b3e2313aa832/pr_source.png/576x768bb.png",
+        "https://is1-ssl.mzstatic.com/image/thumb/Purple114/v4/9c/0e/56/9c0e563e-3c78-0609-f028-53c06f35005c/pr_source.png/576x768bb.png",
+        "https://is1-ssl.mzstatic.com/image/thumb/Purple124/v4/56/e3/8c/56e38c2e-7cd0-75f2-4619-ab3d16e1827f/pr_source.png/576x768bb.png",
+        "https://is1-ssl.mzstatic.com/image/thumb/Purple114/v4/c8/89/8b/c8898b11-9028-a0c3-1844-6f97c77a6b6b/pr_source.png/576x768bb.png"
+      ],
+      "iconUrl": "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/7b/a2/c1/7ba2c1c0-65b6-a625-6f1f-8b29cc8ed958/AppIcon-0-0-1x_U007emarketing-0-8-0-85-220.png/512x512bb.jpg",
+      "rankBySeed": {
+        "alışkanlık takibi": 12,
+        "alışkanlık": 38,
+        "hedef takip": 19
+      },
+      "screenshotText": [],
+      "palette": [],
+      "reviews": []
+    }
+  ],
+  "topCharts": [
+    {
+      "storefront": "us",
+      "genreId": 6013,
+      "chart": "topfreeapplications",
+      "trackIds": [
+        426826309,
+        1038369065,
+        399857015,
+        1092799236,
+        1502936453,
+        405075943,
+        6480417616,
+        1043837948,
+        6738506984,
+        1638253339,
+        6746144481,
+        1454213029,
+        1453884781,
+        1528595748,
+        341232718,
+        1145935738,
+        6759914925,
+        398210959,
+        583446403,
+        1477782599,
+        876080126,
+        1261033071,
+        912947244,
+        6773569672,
+        1037595083,
+        462638897,
+        1158048301,
+        6477549878,
+        6742904990,
+        6791916451,
+        1458862350,
+        689501356,
+        569266174,
+        6749600204,
+        6752903766,
+        1495829322,
+        493390354,
+        1041517543,
+        896501514,
+        6472631698,
+        979101825,
+        6478134595,
+        571800810,
+        1089747982,
+        657189652,
+        6744920106,
+        6474598021,
+        314498713,
+        971023427,
+        874656917,
+        1264546236,
+        287529757,
+        1291447822,
+        6504838951,
+        6448732070,
+        6477849675,
+        933944389,
+        1166317885,
+        1192326768,
+        1083248251,
+        6758370070,
+        6464382652,
+        387771637,
+        6744178534,
+        1594204443,
+        6476465403,
+        6755553298,
+        6443740936,
+        1543340610,
+        297368629,
+        6758021281,
+        376098999,
+        6447434453,
+        1316004998,
+        884923678,
+        6471596320,
+        6447674634,
+        995252384,
+        1313192037,
+        6448081563,
+        6446033161,
+        712286167,
+        6514310473,
+        6760378459,
+        1598355340,
+        6444737095,
+        6751931427,
+        1516248105,
+        1490078804,
+        1489944782,
+        337472899,
+        1074367771,
+        1027312824,
+        596132953,
+        907295335,
+        1447851477,
+        1513988468,
+        6744416231,
+        6757347283,
+        1553503471
+      ]
+    },
+    {
+      "storefront": "us",
+      "genreId": 6013,
+      "chart": "topgrossingapplications",
+      "trackIds": [
+        341232718,
+        1502936453,
+        426826309,
+        1038369065,
+        405075943,
+        571800810,
+        792750948,
+        1477782599,
+        462638897,
+        1158048301,
+        6480417616,
+        1553503471,
+        493145008,
+        1528595748,
+        337472899,
+        1145935738,
+        1594204443,
+        287529757,
+        1041517543,
+        876080126,
+        314498713,
+        657189652,
+        297368629,
+        331308914,
+        1092799236,
+        1264546236,
+        874656917,
+        765535549,
+        1489944782,
+        6744920106,
+        1279295922,
+        6463719381,
+        1049234587,
+        6744178534,
+        6447674634,
+        6746144481,
+        1048454034,
+        1134655040,
+        1074367771,
+        1458862350,
+        6477549878,
+        634598719,
+        320606217,
+        1513988468,
+        6742904990,
+        1274601042,
+        1490078804,
+        1488020055,
+        1083248251,
+        6474290049,
+        6447434453,
+        6472631698,
+        1562132169,
+        1307736395,
+        1031660123,
+        6773569672,
+        6474598021,
+        6477849675,
+        1573298047,
+        1064020872,
+        1037595083,
+        464254577,
+        542701020,
+        6448081563,
+        1495829322,
+        1454213029,
+        1453884781,
+        893687399,
+        1446447749,
+        1636176641,
+        6499510249,
+        6757347283,
+        6456176249,
+        1578636146,
+        1346247457,
+        6762130998,
+        1669413773,
+        6444737095,
+        1158555867,
+        6450921637,
+        1044867788,
+        529815782,
+        6444850772,
+        1467720176,
+        6443740936,
+        1538397461,
+        447374873,
+        1138066420,
+        1534757407,
+        1470065487,
+        1574460221,
+        1445819600,
+        1557238647,
+        6736740146,
+        6467655857,
+        1488181674,
+        6739987348,
+        1457956232,
+        1361356590
+      ]
+    },
+    {
+      "storefront": "tr",
+      "genreId": 6013,
+      "chart": "topfreeapplications",
+      "trackIds": [
+        1573778936,
+        896501514,
+        6742904990,
+        6474852610,
+        6499576872,
+        426826309,
+        1028294311,
+        347184248,
+        6639614109,
+        6768453683,
+        946099227,
+        1064020872,
+        6738115267,
+        1038369065,
+        1580231861,
+        1493500777,
+        1114387800,
+        1586788607,
+        6798161200,
+        6760195623,
+        6476280449,
+        6741707862,
+        1037595083,
+        6739488599,
+        1130242486,
+        1387360716,
+        1313192037,
+        1457975722,
+        6744392154,
+        1190294015,
+        1512947756,
+        736071203,
+        1087358475,
+        6802658063,
+        657189652,
+        1032267351,
+        6748586049,
+        6757120107,
+        1662980687,
+        1221965482,
+        6787922283,
+        6802047206,
+        1266612768,
+        1526363832,
+        6761256100,
+        1626800413,
+        6772944583,
+        971023427,
+        6802218987,
+        1629868074,
+        1506664037,
+        301521403,
+        1458862350,
+        387771637,
+        1337553938,
+        1566330853,
+        6759560230,
+        1454778585,
+        6740784584,
+        1631884007,
+        6742649363,
+        6790774706,
+        1264546236,
+        1357527742,
+        922744883,
+        6738465219,
+        1316004998,
+        341232718,
+        938688461,
+        462638897,
+        1338858362,
+        933944389,
+        6790262051,
+        1641900526,
+        6748324995,
+        6742198781,
+        1459096552,
+        6514320683,
+        1446919166,
+        1513988468,
+        600446812,
+        976506047,
+        1027151285,
+        6757132839,
+        1563624436,
+        1616453947,
+        1631792129,
+        6478942469,
+        6767903567,
+        525441365,
+        6743346157,
+        6480417616,
+        6517356871,
+        1587451906,
+        712286167,
+        1338655056,
+        1145461906,
+        1237479843,
+        1166317885,
+        889574511
+      ]
+    },
+    {
+      "storefront": "tr",
+      "genreId": 6013,
+      "chart": "topgrossingapplications",
+      "trackIds": [
+        6639614109,
+        946099227,
+        426826309,
+        6742904990,
+        1130242486,
+        1064020872,
+        1038369065,
+        6444080701,
+        6738115267,
+        1580231861,
+        1190294015,
+        6739488599,
+        1264546236,
+        6760195623,
+        6741707862,
+        1114387800,
+        896501514,
+        1037595083,
+        347184248,
+        6474852610,
+        6514310473,
+        6456176249,
+        1028294311,
+        529815782,
+        6471547318,
+        1313192037,
+        6739214787,
+        1604600894,
+        1134655040,
+        1662980687,
+        1630768985,
+        6769829694,
+        6761256100,
+        341232718,
+        6772944583,
+        654810212,
+        1502936453,
+        409625068,
+        1527058035,
+        657189652,
+        6753301974,
+        1553503471,
+        6757120107,
+        6742730138,
+        6775904259,
+        6748324995,
+        6474290049,
+        6748586049,
+        320606217,
+        1612755038,
+        6787922283,
+        6746929680,
+        1387360716,
+        6462593274,
+        1594204443,
+        1032267351,
+        6447434453,
+        6480417616,
+        1513988468,
+        1609021075,
+        1346247457,
+        6478942469,
+        6752930312,
+        1576161548,
+        1531494892,
+        6448081563,
+        646991927,
+        1551928101,
+        6450840109,
+        1629602915,
+        1457975722,
+        558076089,
+        1526363832,
+        1563624436,
+        6761764274,
+        525441365,
+        6743346157,
+        6504535443,
+        1279716547,
+        6802658063,
+        6463793132,
+        1458862350,
+        1463386686,
+        447374873,
+        6479529917,
+        6739807377,
+        1477782599,
+        6477621228,
+        6758916201,
+        6469593203,
+        1594167292,
+        6747115599,
+        1041517543,
+        6463719381,
+        408047715,
+        6786163208,
+        1505788141,
+        6802218987,
+        1357527742,
+        337472899
+      ]
+    }
+  ],
+  "analysis": {
+    "nameTerms": [
+      {
+        "term": "habit",
+        "count": 11,
+        "storefront": "us"
+      },
+      {
+        "term": "habit tracker",
+        "count": 11,
+        "storefront": "us"
+      },
+      {
+        "term": "tracker",
+        "count": 11,
+        "storefront": "us"
+      },
+      {
+        "term": "daily",
+        "count": 3,
+        "storefront": "us"
+      },
+      {
+        "term": "daily habit",
+        "count": 2,
+        "storefront": "us"
+      },
+      {
+        "term": "planner",
+        "count": 2,
+        "storefront": "us"
+      },
+      {
+        "term": "routine",
+        "count": 2,
+        "storefront": "us"
+      },
+      {
+        "term": "care",
+        "count": 1,
+        "storefront": "us"
+      },
+      {
+        "term": "care pet",
+        "count": 1,
+        "storefront": "us"
+      },
+      {
+        "term": "daily planner",
+        "count": 1,
+        "storefront": "us"
+      },
+      {
+        "term": "days",
+        "count": 1,
+        "storefront": "us"
+      },
+      {
+        "term": "days since",
+        "count": 1,
+        "storefront": "us"
+      },
+      {
+        "term": "do",
+        "count": 1,
+        "storefront": "us"
+      },
+      {
+        "term": "do habits",
+        "count": 1,
+        "storefront": "us"
+      },
+      {
+        "term": "done",
+        "count": 1,
+        "storefront": "us"
+      },
+      {
+        "term": "everyday",
+        "count": 1,
+        "storefront": "us"
+      },
+      {
+        "term": "everyday habit",
+        "count": 1,
+        "storefront": "us"
+      },
+      {
+        "term": "fabulous",
+        "count": 1,
+        "storefront": "us"
+      },
+      {
+        "term": "fabulous daily",
+        "count": 1,
+        "storefront": "us"
+      },
+      {
+        "term": "finch",
+        "count": 1,
+        "storefront": "us"
+      },
+      {
+        "term": "finch self",
+        "count": 1,
+        "storefront": "us"
+      },
+      {
+        "term": "focus",
+        "count": 1,
+        "storefront": "us"
+      },
+      {
+        "term": "get",
+        "count": 1,
+        "storefront": "us"
+      },
+      {
+        "term": "goals",
+        "count": 1,
+        "storefront": "us"
+      },
+      {
+        "term": "grit",
+        "count": 1,
+        "storefront": "us"
+      },
+      {
+        "term": "grit daily",
+        "count": 1,
+        "storefront": "us"
+      },
+      {
+        "term": "habit rabbit",
+        "count": 1,
+        "storefront": "us"
+      },
+      {
+        "term": "habitkit",
+        "count": 1,
+        "storefront": "us"
+      },
+      {
+        "term": "habits",
+        "count": 1,
+        "storefront": "us"
+      },
+      {
+        "term": "habits get",
+        "count": 1,
+        "storefront": "us"
+      },
+      {
+        "term": "lifestyle",
+        "count": 1,
+        "storefront": "us"
+      },
+      {
+        "term": "lifestyle routine",
+        "count": 1,
+        "storefront": "us"
+      },
+      {
+        "term": "me",
+        "count": 1,
+        "storefront": "us"
+      },
+      {
+        "term": "me lifestyle",
+        "count": 1,
+        "storefront": "us"
+      },
+      {
+        "term": "onrise",
+        "count": 1,
+        "storefront": "us"
+      },
+      {
+        "term": "onrise habit",
+        "count": 1,
+        "storefront": "us"
+      },
+      {
+        "term": "pet",
+        "count": 1,
+        "storefront": "us"
+      },
+      {
+        "term": "planner habit",
+        "count": 1,
+        "storefront": "us"
+      },
+      {
+        "term": "planner todo",
+        "count": 1,
+        "storefront": "us"
+      },
+      {
+        "term": "productive",
+        "count": 1,
+        "storefront": "us"
+      },
+      {
+        "term": "productive habit",
+        "count": 1,
+        "storefront": "us"
+      },
+      {
+        "term": "quit",
+        "count": 1,
+        "storefront": "us"
+      },
+      {
+        "term": "quit habit",
+        "count": 1,
+        "storefront": "us"
+      },
+      {
+        "term": "rabbit",
+        "count": 1,
+        "storefront": "us"
+      },
+      {
+        "term": "rabbit habit",
+        "count": 1,
+        "storefront": "us"
+      },
+      {
+        "term": "routine planner",
+        "count": 1,
+        "storefront": "us"
+      },
+      {
+        "term": "self",
+        "count": 1,
+        "storefront": "us"
+      },
+      {
+        "term": "self care",
+        "count": 1,
+        "storefront": "us"
+      },
+      {
+        "term": "since",
+        "count": 1,
+        "storefront": "us"
+      },
+      {
+        "term": "since quit",
+        "count": 1,
+        "storefront": "us"
+      },
+      {
+        "term": "strides",
+        "count": 1,
+        "storefront": "us"
+      },
+      {
+        "term": "strides habit",
+        "count": 1,
+        "storefront": "us"
+      },
+      {
+        "term": "structured",
+        "count": 1,
+        "storefront": "us"
+      },
+      {
+        "term": "structured daily",
+        "count": 1,
+        "storefront": "us"
+      },
+      {
+        "term": "todo",
+        "count": 1,
+        "storefront": "us"
+      },
+      {
+        "term": "tracker focus",
+        "count": 1,
+        "storefront": "us"
+      },
+      {
+        "term": "tracker goals",
+        "count": 1,
+        "storefront": "us"
+      },
+      {
+        "term": "tracker habitkit",
+        "count": 1,
+        "storefront": "us"
+      },
+      {
+        "term": "tracker",
+        "count": 10,
+        "storefront": "tr"
+      },
+      {
+        "term": "habit",
+        "count": 9,
+        "storefront": "tr"
+      },
+      {
+        "term": "habit tracker",
+        "count": 9,
+        "storefront": "tr"
+      },
+      {
+        "term": "daily",
+        "count": 6,
+        "storefront": "tr"
+      },
+      {
+        "term": "planner",
+        "count": 3,
+        "storefront": "tr"
+      },
+      {
+        "term": "daily planner",
+        "count": 2,
+        "storefront": "tr"
+      },
+      {
+        "term": "daily routine",
+        "count": 2,
+        "storefront": "tr"
+      },
+      {
+        "term": "day",
+        "count": 2,
+        "storefront": "tr"
+      },
+      {
+        "term": "habits",
+        "count": 2,
+        "storefront": "tr"
+      },
+      {
+        "term": "routine",
+        "count": 2,
+        "storefront": "tr"
+      },
+      {
+        "term": "atomic",
+        "count": 1,
+        "storefront": "tr"
+      },
+      {
+        "term": "atomic goal",
+        "count": 1,
+        "storefront": "tr"
+      },
+      {
+        "term": "calendar",
+        "count": 1,
+        "storefront": "tr"
+      },
+      {
+        "term": "calendar daily",
+        "count": 1,
+        "storefront": "tr"
+      },
+      {
+        "term": "counter",
+        "count": 1,
+        "storefront": "tr"
+      },
+      {
+        "term": "daily habit",
+        "count": 1,
+        "storefront": "tr"
+      },
+      {
+        "term": "daily habits",
+        "count": 1,
+        "storefront": "tr"
+      },
+      {
+        "term": "day counter",
+        "count": 1,
+        "storefront": "tr"
+      },
+      {
+        "term": "dear",
+        "count": 1,
+        "storefront": "tr"
+      },
+      {
+        "term": "dear me",
+        "count": 1,
+        "storefront": "tr"
+      },
+      {
+        "term": "eden",
+        "count": 1,
+        "storefront": "tr"
+      },
+      {
+        "term": "eden daily",
+        "count": 1,
+        "storefront": "tr"
+      },
+      {
+        "term": "eva",
+        "count": 1,
+        "storefront": "tr"
+      },
+      {
+        "term": "eva calendar",
+        "count": 1,
+        "storefront": "tr"
+      },
+      {
+        "term": "everyday",
+        "count": 1,
+        "storefront": "tr"
+      },
+      {
+        "term": "everyday habit",
+        "count": 1,
+        "storefront": "tr"
+      },
+      {
+        "term": "evolveme",
+        "count": 1,
+        "storefront": "tr"
+      },
+      {
+        "term": "evolveme habit",
+        "count": 1,
+        "storefront": "tr"
+      },
+      {
+        "term": "goal",
+        "count": 1,
+        "storefront": "tr"
+      },
+      {
+        "term": "goal habit",
+        "count": 1,
+        "storefront": "tr"
+      },
+      {
+        "term": "goals",
+        "count": 1,
+        "storefront": "tr"
+      },
+      {
+        "term": "grit",
+        "count": 1,
+        "storefront": "tr"
+      },
+      {
+        "term": "grit habits",
+        "count": 1,
+        "storefront": "tr"
+      },
+      {
+        "term": "habitier",
+        "count": 1,
+        "storefront": "tr"
+      },
+      {
+        "term": "habits routines",
+        "count": 1,
+        "storefront": "tr"
+      },
+      {
+        "term": "me",
+        "count": 1,
+        "storefront": "tr"
+      },
+      {
+        "term": "me daily",
+        "count": 1,
+        "storefront": "tr"
+      },
+      {
+        "term": "plan",
+        "count": 1,
+        "storefront": "tr"
+      },
+      {
+        "term": "planner todo",
+        "count": 1,
+        "storefront": "tr"
+      },
+      {
+        "term": "productive",
+        "count": 1,
+        "storefront": "tr"
+      },
+      {
+        "term": "productive habit",
+        "count": 1,
+        "storefront": "tr"
+      },
+      {
+        "term": "routine planner",
+        "count": 1,
+        "storefront": "tr"
+      },
+      {
+        "term": "routine tracker",
+        "count": 1,
+        "storefront": "tr"
+      },
+      {
+        "term": "routines",
+        "count": 1,
+        "storefront": "tr"
+      },
+      {
+        "term": "routines goals",
+        "count": 1,
+        "storefront": "tr"
+      },
+      {
+        "term": "structured",
+        "count": 1,
+        "storefront": "tr"
+      },
+      {
+        "term": "structured daily",
+        "count": 1,
+        "storefront": "tr"
+      },
+      {
+        "term": "todo",
+        "count": 1,
+        "storefront": "tr"
+      },
+      {
+        "term": "tracker daily",
+        "count": 1,
+        "storefront": "tr"
+      },
+      {
+        "term": "tracker day",
+        "count": 1,
+        "storefront": "tr"
+      },
+      {
+        "term": "tracker habitier",
+        "count": 1,
+        "storefront": "tr"
+      },
+      {
+        "term": "tracker plan",
+        "count": 1,
+        "storefront": "tr"
+      },
+      {
+        "term": "trackly",
+        "count": 1,
+        "storefront": "tr"
+      }
+    ],
+    "screenshotHeadlineTerms": [
+      {
+        "term": "your",
+        "count": 19
+      },
+      {
+        "term": "habits",
+        "count": 18
+      },
+      {
+        "term": "build",
+        "count": 8
+      },
+      {
+        "term": "habit",
+        "count": 7
+      },
+      {
+        "term": "plan",
+        "count": 6
+      },
+      {
+        "term": "widgets",
+        "count": 6
+      },
+      {
+        "term": "goals",
+        "count": 5
+      },
+      {
+        "term": "progress",
+        "count": 5
+      },
+      {
+        "term": "tracker",
+        "count": 5
+      },
+      {
+        "term": "with",
+        "count": 5
+      },
+      {
+        "term": "self",
+        "count": 5
+      },
+      {
+        "term": "good",
+        "count": 5
+      },
+      {
+        "term": "interactive",
+        "count": 4
+      },
+      {
+        "term": "life",
+        "count": 4
+      },
+      {
+        "term": "track",
+        "count": 4
+      },
+      {
+        "term": "better",
+        "count": 4
+      },
+      {
+        "term": "today",
+        "count": 4
+      },
+      {
+        "term": "routine",
+        "count": 4
+      },
+      {
+        "term": "stay",
+        "count": 4
+      },
+      {
+        "term": "drink",
+        "count": 4
+      },
+      {
+        "term": "water",
+        "count": 4
+      },
+      {
+        "term": "simple",
+        "count": 3
+      },
+      {
+        "term": "take",
+        "count": 3
+      },
+      {
+        "term": "shower",
+        "count": 3
+      },
+      {
+        "term": "routines",
+        "count": 3
+      },
+      {
+        "term": "care",
+        "count": 3
+      },
+      {
+        "term": "daily",
+        "count": 3
+      },
+      {
+        "term": "meditate",
+        "count": 3
+      },
+      {
+        "term": "small",
+        "count": 3
+      },
+      {
+        "term": "morning",
+        "count": 3
+      },
+      {
+        "term": "version",
+        "count": 3
+      },
+      {
+        "term": "every",
+        "count": 3
+      },
+      {
+        "term": "breakfast",
+        "count": 2
+      },
+      {
+        "term": "walk",
+        "count": 2
+      },
+      {
+        "term": "reports",
+        "count": 2
+      },
+      {
+        "term": "review",
+        "count": 2
+      },
+      {
+        "term": "planner",
+        "count": 2
+      },
+      {
+        "term": "tools",
+        "count": 2
+      },
+      {
+        "term": "editors",
+        "count": 2
+      },
+      {
+        "term": "wake",
+        "count": 2
+      }
+    ],
+    "paletteUsage": [
+      {
+        "hex": "#FFFFFF",
+        "count": 6
+      },
+      {
+        "hex": "#202020",
+        "count": 4
+      },
+      {
+        "hex": "#FFE0E0",
+        "count": 3
+      },
+      {
+        "hex": "#FFE0A0",
+        "count": 3
+      },
+      {
+        "hex": "#C0E0A0",
+        "count": 2
+      },
+      {
+        "hex": "#60C0A0",
+        "count": 2
+      },
+      {
+        "hex": "#606040",
+        "count": 2
+      },
+      {
+        "hex": "#E0E0E0",
+        "count": 2
+      },
+      {
+        "hex": "#40A0E0",
+        "count": 2
+      },
+      {
+        "hex": "#E0FFFF",
+        "count": 2
+      },
+      {
+        "hex": "#C0E0FF",
+        "count": 2
+      },
+      {
+        "hex": "#E0E0FF",
+        "count": 2
+      }
+    ],
+    "gaps": []
+  }
+}

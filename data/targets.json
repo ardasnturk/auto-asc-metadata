@@ -1,0 +1,459 @@
+{
+  "updatedAt": "2026-10-24",
+  "source": [
+    "https://developer.apple.com/help/app-store-connect/reference/app-information/screenshot-specifications",
+    "https://developer.apple.com/help/app-store-connect/reference/app-information/app-preview-specifications",
+    "https://developer.apple.com/help/app-store-connect/reference/app-information/creative-assets-specifications"
+  ],
+  "targets": [
+    {
+      "id": "iphone-6.3",
+      "kind": "screenshot",
+      "label": "iPhone 6.3\" (Dynamic Island, orta)",
+      "family": "iphone",
+      "width": 1206,
+      "height": 2622,
+      "logical": {
+        "width": 402,
+        "height": 874,
+        "scale": 3
+      },
+      "acceptedSizes": [
+        [
+          1206,
+          2622
+        ],
+        [
+          1179,
+          2556
+        ]
+      ],
+      "requirement": "always",
+      "defaultEnabled": true,
+      "formats": [
+        "png",
+        "jpeg"
+      ],
+      "simulator": "iPhone 17 Pro",
+      "assetLibraryDisplayClass": "IPHONE_61",
+      "notes": "Zorunlu iPhone sınıfı (en az bir set)."
+    },
+    {
+      "id": "iphone-6.9",
+      "kind": "screenshot",
+      "label": "iPhone 6.9\" (Dynamic Island, büyük)",
+      "family": "iphone",
+      "width": 1320,
+      "height": 2868,
+      "logical": {
+        "width": 440,
+        "height": 956,
+        "scale": 3
+      },
+      "acceptedSizes": [
+        [
+          1320,
+          2868
+        ],
+        [
+          1290,
+          2796
+        ],
+        [
+          1260,
+          2736
+        ]
+      ],
+      "requirement": "optional",
+      "defaultEnabled": true,
+      "formats": [
+        "png",
+        "jpeg"
+      ],
+      "simulator": "iPhone 17 Pro Max",
+      "assetLibraryDisplayClass": "IPHONE_69",
+      "notes": "Önerilir; üçüncü parti rehberler hâlâ zorunlu gösteriyor, her zaman üret."
+    },
+    {
+      "id": "ipad-13",
+      "kind": "screenshot",
+      "label": "iPad 13\"",
+      "family": "ipad",
+      "width": 2064,
+      "height": 2752,
+      "logical": {
+        "width": 1032,
+        "height": 1376,
+        "scale": 2
+      },
+      "acceptedSizes": [
+        [
+          2064,
+          2752
+        ],
+        [
+          2048,
+          2732
+        ]
+      ],
+      "requirement": "if-ipad",
+      "defaultEnabled": true,
+      "formats": [
+        "png",
+        "jpeg"
+      ],
+      "simulator": "iPad Pro 13-inch (M5)",
+      "assetLibraryDisplayClass": "IPAD_PRO_3GEN_129"
+    },
+    {
+      "id": "duo-outer",
+      "kind": "screenshot",
+      "label": "iPhone Duo dış ekran",
+      "family": "duo",
+      "width": 1398,
+      "height": 2034,
+      "logical": {
+        "width": 699,
+        "height": 1017,
+        "scale": 2
+      },
+      "acceptedSizes": [
+        [
+          1398,
+          2034
+        ]
+      ],
+      "requirement": "from-2027-04",
+      "defaultEnabled": true,
+      "formats": [
+        "png",
+        "jpeg"
+      ],
+      "simulator": "iPhone Duo",
+      "assetLibraryDisplayClass": "IPHONE_DUO",
+      "notes": "iOS 27.1 SDK ile Nisan 2027 itibarıyla zorunlu; fastlane >= 2.241.1."
+    },
+    {
+      "id": "duo-inner",
+      "kind": "screenshot",
+      "label": "iPhone Duo iç ekran",
+      "family": "duo",
+      "width": 2007,
+      "height": 2853,
+      "logical": {
+        "width": 669,
+        "height": 951,
+        "scale": 3
+      },
+      "acceptedSizes": [
+        [
+          2007,
+          2853
+        ]
+      ],
+      "requirement": "from-2027-04",
+      "defaultEnabled": true,
+      "formats": [
+        "png",
+        "jpeg"
+      ],
+      "simulator": "iPhone Duo",
+      "assetLibraryDisplayClass": "IPHONE_DUO",
+      "notes": "Katlama pozisyonu simülatörde elle ayarlanır (otomasyon komutu yok)."
+    },
+    {
+      "id": "preview-iphone",
+      "kind": "preview",
+      "label": "App Preview iPhone (tüm modern sınıflar, Duo dahil)",
+      "family": "iphone",
+      "width": 886,
+      "height": 1920,
+      "logical": {
+        "width": 443,
+        "height": 960,
+        "scale": 2
+      },
+      "requirement": "optional",
+      "defaultEnabled": true,
+      "formats": [
+        "mp4"
+      ],
+      "assetLibraryDisplayClass": "IPHONE_61",
+      "video": {
+        "minSec": 15,
+        "maxSec": 30,
+        "fps": [
+          30
+        ],
+        "maxBytes": 500000000,
+        "h264Level": "4.0"
+      }
+    },
+    {
+      "id": "preview-ipad",
+      "kind": "preview",
+      "label": "App Preview iPad 13\"/11\"",
+      "family": "ipad",
+      "width": 1200,
+      "height": 1600,
+      "logical": {
+        "width": 600,
+        "height": 800,
+        "scale": 2
+      },
+      "requirement": "optional",
+      "defaultEnabled": false,
+      "formats": [
+        "mp4"
+      ],
+      "assetLibraryDisplayClass": "IPAD_PRO_3GEN_129",
+      "video": {
+        "minSec": 15,
+        "maxSec": 30,
+        "fps": [
+          30
+        ],
+        "maxBytes": 500000000,
+        "h264Level": "4.0"
+      }
+    },
+    {
+      "id": "header",
+      "kind": "creative",
+      "label": "Ürün sayfası başlığı (21:9)",
+      "family": "any",
+      "width": 3840,
+      "height": 1646,
+      "logical": {
+        "width": 1920,
+        "height": 823,
+        "scale": 2
+      },
+      "requirement": "optional",
+      "defaultEnabled": true,
+      "formats": [
+        "png",
+        "jpeg",
+        "mp4"
+      ],
+      "video": {
+        "minSec": 5,
+        "maxSec": 30,
+        "fps": [
+          30,
+          60
+        ],
+        "maxBytes": 500000000
+      }
+    },
+    {
+      "id": "search",
+      "kind": "creative",
+      "label": "Arama sonucu kreatifi (3:2)",
+      "family": "any",
+      "width": 3840,
+      "height": 2560,
+      "logical": {
+        "width": 1920,
+        "height": 1280,
+        "scale": 2
+      },
+      "sizeRange": {
+        "min": [
+          1920,
+          1280
+        ],
+        "max": [
+          3840,
+          2560
+        ]
+      },
+      "requirement": "optional",
+      "defaultEnabled": true,
+      "formats": [
+        "png",
+        "jpeg",
+        "mp4"
+      ],
+      "video": {
+        "minSec": 5,
+        "maxSec": 30,
+        "fps": [
+          30,
+          60
+        ],
+        "maxBytes": 500000000
+      },
+      "notes": "Aramada sessiz oynar."
+    },
+    {
+      "id": "event-card",
+      "kind": "event",
+      "label": "In-App Event kartı (16:9)",
+      "family": "any",
+      "width": 3840,
+      "height": 2160,
+      "logical": {
+        "width": 1920,
+        "height": 1080,
+        "scale": 2
+      },
+      "sizeRange": {
+        "min": [
+          1920,
+          1080
+        ],
+        "max": [
+          3840,
+          2160
+        ]
+      },
+      "requirement": "optional",
+      "defaultEnabled": false,
+      "formats": [
+        "png",
+        "jpeg",
+        "mp4"
+      ],
+      "video": {
+        "minSec": 15,
+        "maxSec": 30,
+        "fps": [
+          30,
+          60
+        ],
+        "maxBytes": 500000000
+      }
+    },
+    {
+      "id": "event-detail",
+      "kind": "event",
+      "label": "In-App Event detay (9:16)",
+      "family": "any",
+      "width": 2160,
+      "height": 3840,
+      "logical": {
+        "width": 1080,
+        "height": 1920,
+        "scale": 2
+      },
+      "sizeRange": {
+        "min": [
+          1080,
+          1920
+        ],
+        "max": [
+          2160,
+          3840
+        ]
+      },
+      "requirement": "optional",
+      "defaultEnabled": false,
+      "formats": [
+        "png",
+        "jpeg",
+        "mp4"
+      ],
+      "video": {
+        "minSec": 15,
+        "maxSec": 30,
+        "fps": [
+          30,
+          60
+        ],
+        "maxBytes": 500000000
+      }
+    },
+    {
+      "id": "mac",
+      "kind": "screenshot",
+      "label": "Mac (16:10)",
+      "family": "mac",
+      "width": 2880,
+      "height": 1800,
+      "logical": {
+        "width": 1440,
+        "height": 900,
+        "scale": 2
+      },
+      "acceptedSizes": [
+        [
+          2880,
+          1800
+        ],
+        [
+          2560,
+          1600
+        ],
+        [
+          1440,
+          900
+        ],
+        [
+          1280,
+          800
+        ]
+      ],
+      "requirement": "optional",
+      "defaultEnabled": false,
+      "formats": [
+        "png",
+        "jpeg"
+      ]
+    },
+    {
+      "id": "tv",
+      "kind": "screenshot",
+      "label": "Apple TV",
+      "family": "tv",
+      "width": 3840,
+      "height": 2160,
+      "logical": {
+        "width": 1920,
+        "height": 1080,
+        "scale": 2
+      },
+      "acceptedSizes": [
+        [
+          3840,
+          2160
+        ],
+        [
+          1920,
+          1080
+        ]
+      ],
+      "requirement": "optional",
+      "defaultEnabled": false,
+      "formats": [
+        "png",
+        "jpeg"
+      ]
+    },
+    {
+      "id": "vision",
+      "kind": "screenshot",
+      "label": "Apple Vision Pro",
+      "family": "vision",
+      "width": 3840,
+      "height": 2160,
+      "logical": {
+        "width": 1920,
+        "height": 1080,
+        "scale": 2
+      },
+      "acceptedSizes": [
+        [
+          3840,
+          2160
+        ]
+      ],
+      "requirement": "optional",
+      "defaultEnabled": false,
+      "formats": [
+        "png",
+        "jpeg"
+      ]
+    }
+  ]
+}

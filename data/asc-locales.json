@@ -1,0 +1,517 @@
+{
+  "updatedAt": "2026-10-24",
+  "source": "https://docs.fastlane.tools/actions/deliver/ (language codes) + App Store localizations",
+  "locales": [
+    {
+      "code": "ar-SA",
+      "name": "Arabic",
+      "nameTr": "Arapça",
+      "xcode": [
+        "ar"
+      ],
+      "dir": "rtl",
+      "script": "arabic"
+    },
+    {
+      "code": "bn-BD",
+      "name": "Bangla",
+      "nameTr": "Bengalce",
+      "xcode": [
+        "bn"
+      ],
+      "dir": "ltr",
+      "script": "bengali"
+    },
+    {
+      "code": "ca",
+      "name": "Catalan",
+      "nameTr": "Katalanca",
+      "xcode": [
+        "ca"
+      ],
+      "dir": "ltr",
+      "script": "latin"
+    },
+    {
+      "code": "cs",
+      "name": "Czech",
+      "nameTr": "Çekçe",
+      "xcode": [
+        "cs"
+      ],
+      "dir": "ltr",
+      "script": "latin"
+    },
+    {
+      "code": "da",
+      "name": "Danish",
+      "nameTr": "Danca",
+      "xcode": [
+        "da"
+      ],
+      "dir": "ltr",
+      "script": "latin"
+    },
+    {
+      "code": "de-DE",
+      "name": "German",
+      "nameTr": "Almanca",
+      "xcode": [
+        "de"
+      ],
+      "dir": "ltr",
+      "script": "latin"
+    },
+    {
+      "code": "el",
+      "name": "Greek",
+      "nameTr": "Yunanca",
+      "xcode": [
+        "el"
+      ],
+      "dir": "ltr",
+      "script": "latin"
+    },
+    {
+      "code": "en-AU",
+      "name": "English (Australia)",
+      "nameTr": "İngilizce (Avustralya)",
+      "xcode": [
+        "en-AU"
+      ],
+      "dir": "ltr",
+      "script": "latin"
+    },
+    {
+      "code": "en-CA",
+      "name": "English (Canada)",
+      "nameTr": "İngilizce (Kanada)",
+      "xcode": [
+        "en-CA"
+      ],
+      "dir": "ltr",
+      "script": "latin"
+    },
+    {
+      "code": "en-GB",
+      "name": "English (U.K.)",
+      "nameTr": "İngilizce (B.K.)",
+      "xcode": [
+        "en-GB"
+      ],
+      "dir": "ltr",
+      "script": "latin"
+    },
+    {
+      "code": "en-US",
+      "name": "English (U.S.)",
+      "nameTr": "İngilizce (ABD)",
+      "xcode": [
+        "en",
+        "en-US",
+        "Base"
+      ],
+      "dir": "ltr",
+      "script": "latin"
+    },
+    {
+      "code": "es-ES",
+      "name": "Spanish (Spain)",
+      "nameTr": "İspanyolca (İspanya)",
+      "xcode": [
+        "es",
+        "es-ES"
+      ],
+      "dir": "ltr",
+      "script": "latin"
+    },
+    {
+      "code": "es-MX",
+      "name": "Spanish (Mexico)",
+      "nameTr": "İspanyolca (Meksika)",
+      "xcode": [
+        "es-MX",
+        "es-419"
+      ],
+      "dir": "ltr",
+      "script": "latin"
+    },
+    {
+      "code": "fi",
+      "name": "Finnish",
+      "nameTr": "Fince",
+      "xcode": [
+        "fi"
+      ],
+      "dir": "ltr",
+      "script": "latin"
+    },
+    {
+      "code": "fr-CA",
+      "name": "French (Canada)",
+      "nameTr": "Fransızca (Kanada)",
+      "xcode": [
+        "fr-CA"
+      ],
+      "dir": "ltr",
+      "script": "latin"
+    },
+    {
+      "code": "fr-FR",
+      "name": "French",
+      "nameTr": "Fransızca",
+      "xcode": [
+        "fr",
+        "fr-FR"
+      ],
+      "dir": "ltr",
+      "script": "latin"
+    },
+    {
+      "code": "gu-IN",
+      "name": "Gujarati",
+      "nameTr": "Guceratça",
+      "xcode": [
+        "gu"
+      ],
+      "dir": "ltr",
+      "script": "gujarati"
+    },
+    {
+      "code": "he",
+      "name": "Hebrew",
+      "nameTr": "İbranice",
+      "xcode": [
+        "he"
+      ],
+      "dir": "rtl",
+      "script": "hebrew"
+    },
+    {
+      "code": "hi",
+      "name": "Hindi",
+      "nameTr": "Hintçe",
+      "xcode": [
+        "hi"
+      ],
+      "dir": "ltr",
+      "script": "devanagari"
+    },
+    {
+      "code": "hr",
+      "name": "Croatian",
+      "nameTr": "Hırvatça",
+      "xcode": [
+        "hr"
+      ],
+      "dir": "ltr",
+      "script": "latin"
+    },
+    {
+      "code": "hu",
+      "name": "Hungarian",
+      "nameTr": "Macarca",
+      "xcode": [
+        "hu"
+      ],
+      "dir": "ltr",
+      "script": "latin"
+    },
+    {
+      "code": "id",
+      "name": "Indonesian",
+      "nameTr": "Endonezce",
+      "xcode": [
+        "id"
+      ],
+      "dir": "ltr",
+      "script": "latin"
+    },
+    {
+      "code": "it",
+      "name": "Italian",
+      "nameTr": "İtalyanca",
+      "xcode": [
+        "it"
+      ],
+      "dir": "ltr",
+      "script": "latin"
+    },
+    {
+      "code": "ja",
+      "name": "Japanese",
+      "nameTr": "Japonca",
+      "xcode": [
+        "ja"
+      ],
+      "dir": "ltr",
+      "script": "jp"
+    },
+    {
+      "code": "kn-IN",
+      "name": "Kannada",
+      "nameTr": "Kannada",
+      "xcode": [
+        "kn"
+      ],
+      "dir": "ltr",
+      "script": "kannada"
+    },
+    {
+      "code": "ko",
+      "name": "Korean",
+      "nameTr": "Korece",
+      "xcode": [
+        "ko"
+      ],
+      "dir": "ltr",
+      "script": "kr"
+    },
+    {
+      "code": "ml-IN",
+      "name": "Malayalam",
+      "nameTr": "Malayalam",
+      "xcode": [
+        "ml"
+      ],
+      "dir": "ltr",
+      "script": "malayalam"
+    },
+    {
+      "code": "mr-IN",
+      "name": "Marathi",
+      "nameTr": "Marathi",
+      "xcode": [
+        "mr"
+      ],
+      "dir": "ltr",
+      "script": "devanagari"
+    },
+    {
+      "code": "ms",
+      "name": "Malay",
+      "nameTr": "Malayca",
+      "xcode": [
+        "ms"
+      ],
+      "dir": "ltr",
+      "script": "latin"
+    },
+    {
+      "code": "nl-NL",
+      "name": "Dutch",
+      "nameTr": "Felemenkçe",
+      "xcode": [
+        "nl"
+      ],
+      "dir": "ltr",
+      "script": "latin"
+    },
+    {
+      "code": "no",
+      "name": "Norwegian",
+      "nameTr": "Norveççe",
+      "xcode": [
+        "nb",
+        "no"
+      ],
+      "dir": "ltr",
+      "script": "latin"
+    },
+    {
+      "code": "or-IN",
+      "name": "Odia",
+      "nameTr": "Odia",
+      "xcode": [
+        "or"
+      ],
+      "dir": "ltr",
+      "script": "oriya"
+    },
+    {
+      "code": "pa-IN",
+      "name": "Punjabi",
+      "nameTr": "Pencapça",
+      "xcode": [
+        "pa"
+      ],
+      "dir": "ltr",
+      "script": "gurmukhi"
+    },
+    {
+      "code": "pl",
+      "name": "Polish",
+      "nameTr": "Lehçe",
+      "xcode": [
+        "pl"
+      ],
+      "dir": "ltr",
+      "script": "latin"
+    },
+    {
+      "code": "pt-BR",
+      "name": "Portuguese (Brazil)",
+      "nameTr": "Portekizce (Brezilya)",
+      "xcode": [
+        "pt-BR",
+        "pt"
+      ],
+      "dir": "ltr",
+      "script": "latin"
+    },
+    {
+      "code": "pt-PT",
+      "name": "Portuguese (Portugal)",
+      "nameTr": "Portekizce (Portekiz)",
+      "xcode": [
+        "pt-PT"
+      ],
+      "dir": "ltr",
+      "script": "latin"
+    },
+    {
+      "code": "ro",
+      "name": "Romanian",
+      "nameTr": "Rumence",
+      "xcode": [
+        "ro"
+      ],
+      "dir": "ltr",
+      "script": "latin"
+    },
+    {
+      "code": "ru",
+      "name": "Russian",
+      "nameTr": "Rusça",
+      "xcode": [
+        "ru"
+      ],
+      "dir": "ltr",
+      "script": "latin"
+    },
+    {
+      "code": "sk",
+      "name": "Slovak",
+      "nameTr": "Slovakça",
+      "xcode": [
+        "sk"
+      ],
+      "dir": "ltr",
+      "script": "latin"
+    },
+    {
+      "code": "sl-SI",
+      "name": "Slovenian",
+      "nameTr": "Slovence",
+      "xcode": [
+        "sl"
+      ],
+      "dir": "ltr",
+      "script": "latin"
+    },
+    {
+      "code": "sv",
+      "name": "Swedish",
+      "nameTr": "İsveççe",
+      "xcode": [
+        "sv"
+      ],
+      "dir": "ltr",
+      "script": "latin"
+    },
+    {
+      "code": "ta-IN",
+      "name": "Tamil",
+      "nameTr": "Tamil",
+      "xcode": [
+        "ta"
+      ],
+      "dir": "ltr",
+      "script": "tamil"
+    },
+    {
+      "code": "te-IN",
+      "name": "Telugu",
+      "nameTr": "Telugu",
+      "xcode": [
+        "te"
+      ],
+      "dir": "ltr",
+      "script": "telugu"
+    },
+    {
+      "code": "th",
+      "name": "Thai",
+      "nameTr": "Tay",
+      "xcode": [
+        "th"
+      ],
+      "dir": "ltr",
+      "script": "thai"
+    },
+    {
+      "code": "tr",
+      "name": "Turkish",
+      "nameTr": "Türkçe",
+      "xcode": [
+        "tr"
+      ],
+      "dir": "ltr",
+      "script": "latin"
+    },
+    {
+      "code": "uk",
+      "name": "Ukrainian",
+      "nameTr": "Ukraynaca",
+      "xcode": [
+        "uk"
+      ],
+      "dir": "ltr",
+      "script": "latin"
+    },
+    {
+      "code": "ur-PK",
+      "name": "Urdu",
+      "nameTr": "Urduca",
+      "xcode": [
+        "ur"
+      ],
+      "dir": "rtl",
+      "script": "arabic"
+    },
+    {
+      "code": "vi",
+      "name": "Vietnamese",
+      "nameTr": "Vietnamca",
+      "xcode": [
+        "vi"
+      ],
+      "dir": "ltr",
+      "script": "latin"
+    },
+    {
+      "code": "zh-Hans",
+      "name": "Chinese (Simplified)",
+      "nameTr": "Çince (Basit)",
+      "xcode": [
+        "zh-Hans",
+        "zh-CN",
+        "zh"
+      ],
+      "dir": "ltr",
+      "script": "sc"
+    },
+    {
+      "code": "zh-Hant",
+      "name": "Chinese (Traditional)",
+      "nameTr": "Çince (Geleneksel)",
+      "xcode": [
+        "zh-Hant",
+        "zh-TW",
+        "zh-HK"
+      ],
+      "dir": "ltr",
+      "script": "tc"
+    }
+  ]
+}

@@ -1,0 +1,5 @@
+# Vitrin — fastlane köprüsü.
+# 2.241.1 öncesi deliver iPhone Duo boyutlarını (APP_IPHONE_DUO) tanımıyor ve tüm yüklemeyi durduruyor.
+source "https://rubygems.org"
+
+gem "fastlane", ">= 2.241.1"

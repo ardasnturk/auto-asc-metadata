@@ -1,0 +1,249 @@
+{
+  "generatedAt": "2026-10-24T09:34:43.805Z",
+  "bundleId": "com.jastech.ritim",
+  "uploader": "deliver",
+  "remoteKnown": false,
+  "items": [
+    {
+      "area": "metadata",
+      "locale": "en-US",
+      "field": "name",
+      "change": "unknown",
+      "local": "Ritim: Habit Tracker",
+      "via": "deliver"
+    },
+    {
+      "area": "metadata",
+      "locale": "en-US",
+      "field": "subtitle",
+      "change": "unknown",
+      "local": "Daily routine & streak goals",
+      "via": "deliver"
+    },
+    {
+      "area": "metadata",
+      "locale": "en-US",
+      "field": "privacyUrl",
+      "change": "unknown",
+      "local": "https://example.com/privacy",
+      "via": "deliver"
+    },
+    {
+      "area": "metadata",
+      "locale": "en-US",
+      "field": "description",
+      "change": "unknown",
+      "local": "Build habits that stick with one tap a day. Keep your str…",
+      "via": "deliver"
+    },
+    {
+      "area": "metadata",
+      "locale": "en-US",
+      "field": "keywords",
+      "change": "unknown",
+      "local": "planner,calendar,reminder,motivation,checklist,progress,h…",
+      "via": "deliver"
+    },
+    {
+      "area": "metadata",
+      "locale": "en-US",
+      "field": "promotionalText",
+      "change": "unknown",
+      "local": "New in 1.2: a statistics tab with weekly charts and a 12-…",
+      "via": "deliver"
+    },
+    {
+      "area": "metadata",
+      "locale": "en-US",
+      "field": "whatsNew",
+      "change": "unknown",
+      "local": "• New Statistics tab: weekly completion chart, 30-day tre…",
+      "via": "deliver"
+    },
+    {
+      "area": "metadata",
+      "locale": "en-US",
+      "field": "supportUrl",
+      "change": "unknown",
+      "local": "https://example.com/support",
+      "via": "deliver"
+    },
+    {
+      "area": "metadata",
+      "locale": "tr",
+      "field": "name",
+      "change": "unknown",
+      "local": "Ritim: Alışkanlık Takibi",
+      "via": "deliver"
+    },
+    {
+      "area": "metadata",
+      "locale": "tr",
+      "field": "subtitle",
+      "change": "unknown",
+      "local": "Günlük rutin ve seri hedefi",
+      "via": "deliver"
+    },
+    {
+      "area": "metadata",
+      "locale": "tr",
+      "field": "privacyUrl",
+      "change": "unknown",
+      "local": "https://example.com/privacy",
+      "via": "deliver"
+    },
+    {
+      "area": "metadata",
+      "locale": "tr",
+      "field": "description",
+      "change": "unknown",
+      "local": "Günde tek dokunuşla kalıcı alışkanlıklar edin. Serini kor…",
+      "via": "deliver"
+    },
+    {
+      "area": "metadata",
+      "locale": "tr",
+      "field": "keywords",
+      "change": "unknown",
+      "local": "planlayıcı,takvim,hatırlatıcı,motivasyon,ilerleme,düzen,d…",
+      "via": "deliver"
+    },
+    {
+      "area": "metadata",
+      "locale": "tr",
+      "field": "promotionalText",
+      "change": "unknown",
+      "local": "1.2 ile yeni: haftalık grafiklerle İstatistikler sekmesi …",
+      "via": "deliver"
+    },
+    {
+      "area": "metadata",
+      "locale": "tr",
+      "field": "whatsNew",
+      "change": "unknown",
+      "local": "• Yeni İstatistikler sekmesi: haftalık tamamlama grafiği,…",
+      "via": "deliver"
+    },
+    {
+      "area": "metadata",
+      "locale": "tr",
+      "field": "supportUrl",
+      "change": "unknown",
+      "local": "https://example.com/support",
+      "via": "deliver"
+    },
+    {
+      "area": "screenshots",
+      "locale": "en-US",
+      "field": "duo-inner",
+      "change": "update",
+      "local": "6 görsel",
+      "via": "deliver",
+      "note": "mevcut set değiştirilir"
+    },
+    {
+      "area": "screenshots",
+      "locale": "en-US",
+      "field": "duo-outer",
+      "change": "update",
+      "local": "6 görsel",
+      "via": "deliver",
+      "note": "mevcut set değiştirilir"
+    },
+    {
+      "area": "screenshots",
+      "locale": "en-US",
+      "field": "ipad-13",
+      "change": "update",
+      "local": "6 görsel",
+      "via": "deliver",
+      "note": "mevcut set değiştirilir"
+    },
+    {
+      "area": "screenshots",
+      "locale": "en-US",
+      "field": "iphone-6.3",
+      "change": "update",
+      "local": "6 görsel",
+      "via": "deliver",
+      "note": "mevcut set değiştirilir"
+    },
+    {
+      "area": "screenshots",
+      "locale": "en-US",
+      "field": "iphone-6.9",
+      "change": "update",
+      "local": "6 görsel",
+      "via": "deliver",
+      "note": "mevcut set değiştirilir"
+    },
+    {
+      "area": "previews",
+      "locale": "en-US",
+      "change": "update",
+      "local": "01_IPHONE_67.mp4",
+      "via": "deliver",
+      "note": "işlenmesi 24 saate kadar sürebilir"
+    },
+    {
+      "area": "screenshots",
+      "locale": "tr",
+      "field": "duo-inner",
+      "change": "update",
+      "local": "6 görsel",
+      "via": "deliver",
+      "note": "mevcut set değiştirilir"
+    },
+    {
+      "area": "screenshots",
+      "locale": "tr",
+      "field": "duo-outer",
+      "change": "update",
+      "local": "6 görsel",
+      "via": "deliver",
+      "note": "mevcut set değiştirilir"
+    },
+    {
+      "area": "screenshots",
+      "locale": "tr",
+      "field": "ipad-13",
+      "change": "update",
+      "local": "6 görsel",
+      "via": "deliver",
+      "note": "mevcut set değiştirilir"
+    },
+    {
+      "area": "screenshots",
+      "locale": "tr",
+      "field": "iphone-6.3",
+      "change": "update",
+      "local": "6 görsel",
+      "via": "deliver",
+      "note": "mevcut set değiştirilir"
+    },
+    {
+      "area": "screenshots",
+      "locale": "tr",
+      "field": "iphone-6.9",
+      "change": "update",
+      "local": "6 görsel",
+      "via": "deliver",
+      "note": "mevcut set değiştirilir"
+    },
+    {
+      "area": "previews",
+      "locale": "tr",
+      "change": "update",
+      "local": "01_IPHONE_67.mp4",
+      "via": "deliver",
+      "note": "işlenmesi 24 saate kadar sürebilir"
+    },
+    {
+      "area": "creatives",
+      "change": "skip",
+      "via": "asset-library",
+      "note": "--creatives verilmedi"
+    }
+  ],
+  "blockers": []
+}
