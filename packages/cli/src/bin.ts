@@ -13,12 +13,12 @@ import { buildReport } from './report.js';
 const program = new Command();
 program
   .name('vitrin')
-  .description('iOS App Store Connect metadata, ekran görüntüsü, kreatif ve App Preview otomasyonu')
+  .description('iOS App Store Connect metadata, screenshot, creative and App Preview automation')
   .version('0.3.0')
-  .option('-C, --cwd <dir>', 'uygulama reposu (varsayılan: çalışma dizini)')
-  .option('-f, --force', 'girdiler değişmemiş olsa da aşamayı yeniden çalıştır')
-  .option('--json', 'makine okunur çıktı')
-  .option('-q, --quiet', 'yalnız uyarı ve hatalar');
+  .option('-C, --cwd <dir>', 'app repository (default: current directory)')
+  .option('-f, --force', 're-run the stage even if its inputs are unchanged')
+  .option('--json', 'machine-readable output')
+  .option('-q, --quiet', 'warnings and errors only');
 
 function globals(): GlobalOptions {
   return program.opts<GlobalOptions>();
@@ -51,14 +51,14 @@ function action<A extends unknown[]>(fn: (...args: A) => Promise<number>) {
 
 program
   .command('init')
-  .description('vitrin.config.yaml, .env.example, .gitignore ve fastlane şablonlarını oluşturur')
+  .description('creates vitrin.config.yaml, .env.example, .gitignore and the fastlane templates')
   .action(action(async () => initCommand({ cwd: globals().cwd, force: globals().force })));
 
 program
   .command('doctor')
-  .description('araçları, anahtarları, ASC erişimini, sürümü, URL’leri ve refData’yı kontrol eder')
-  .option('--create-version <version>', 'düzenlenebilir sürüm yoksa deliver ile açmayı dene')
-  .option('--offline', 'ağ isteği yapma')
+  .description('checks tools, keys, ASC access, the app version, URLs and refData')
+  .option('--create-version <version>', 'if there is no editable version, try to create one with deliver')
+  .option('--offline', 'make no network requests')
   .action(
     action(async (o: { createVersion?: string; offline?: boolean }) => {
       const ctx = await createContext(globals());
@@ -68,39 +68,39 @@ program
     }),
   );
 
-program.command('analyze').description('Xcode projesini okur → .vitrin/app_profile.json').action(action(async () => analyzeCommand(await createContext(globals()))));
+program.command('analyze').description('reads the Xcode project → .vitrin/app_profile.json').action(action(async () => analyzeCommand(await createContext(globals()))));
 
 program
   .command('research')
-  .description('rakip ve anahtar kelime araştırması → competitors.json, keywords/<locale>.json')
-  .option('--no-images', 'rakip görsellerini indirme (OCR/palet yok)')
+  .description('competitor and keyword research → competitors.json, keywords/<locale>.json')
+  .option('--no-images', 'do not download competitor screenshots (no OCR/palette)')
   .action(action(async (o: { images: boolean }) => researchCommand(await createContext(globals()), { skipImages: !o.images })));
 
-program.command('write').description('Claude’un yazdığı metadata’yı doğrular ve fastlane/metadata’ya aktarır').action(action(async () => writeCommand(await createContext(globals()))));
+program.command('write').description('validates the metadata Claude wrote and exports it to fastlane/metadata').action(action(async () => writeCommand(await createContext(globals()))));
 
 program
   .command('capture')
-  .description('simülatörde ham ekran görüntüleri ve kayıtlar → .vitrin/raw')
+  .description('raw screenshots and recordings in the simulator → .vitrin/raw')
   .option('--family <families>', 'iphone,ipad,duo')
-  .option('--locale <locales>', 'virgülle ayrılmış diller')
+  .option('--locale <locales>', 'comma-separated locales')
   .action(action(async (o: { family?: string; locale?: string }) => captureCommand(await createContext(globals()), { families: o.family?.split(','), locales: o.locale?.split(',') })));
 
 program
   .command('design')
-  .description('HTML şablonlarından rozetli ekran görüntüleri ve kreatifler üretir')
-  .option('--only <ids>', 'yalnız bu görsel numaraları (01,02)')
+  .description('renders badged screenshots and creatives from HTML templates')
+  .option('--only <ids>', 'only these shot ids (01,02)')
   .action(action(async (o: { only?: string }) => designCommand(await createContext(globals()), { only: o.only?.split(',') })));
 
 program
   .command('video')
-  .description('Remotion ile App Preview ve başlık/arama döngüleri')
-  .option('--styles <styles>', 'ilk önizlemeyi bu stillerde karşılaştırma için render et: classic,showcase,kinetic,energetic | all')
-  .option('--locale <locales>', '--styles için diller (varsayılan: birincil dil)')
+  .description('App Previews and header/search loops with Remotion')
+  .option('--styles <styles>', 'render the first preview in these styles for comparison: classic,showcase,kinetic,energetic | all')
+  .option('--locale <locales>', 'locales for --styles (default: primary locale)')
   .action(action(async (o: { styles?: string; locale?: string }) => videoCommand(await createContext(globals()), { styles: o.styles?.split(','), locales: o.locale?.split(',') })));
 
 program
   .command('validate')
-  .description('metin, görsel, video ve iddia-kanıt kontrolleri → .vitrin/validation.json')
+  .description('text, image, video and claim-evidence checks → .vitrin/validation.json')
   .action(
     action(async () => {
       const ctx = await createContext(globals());
@@ -112,12 +112,12 @@ program
 
 program
   .command('review')
-  .description('önizleme raporu → .vitrin/report.html')
+  .description('preview report → .vitrin/report.html')
   .action(
     action(async () => {
       const ctx = await createContext(globals());
       const file = await buildReport(ctx);
-      log.ok(`Rapor: ${relative(process.cwd(), file) || file}`);
+      log.ok(`Report: ${relative(process.cwd(), file) || file}`);
       log.result({ report: file });
       return EXIT.OK;
     }),
@@ -125,33 +125,33 @@ program
 
 program
   .command('upload')
-  .description('fastlane + ASC API ile yükler (önce plan; --dry-run yalnız plan)')
-  .option('--dry-run', 'yalnız planı göster')
-  .option('--yes', 'plan onaylandı (yalnız kullanıcı açıkça onayladıysa)')
+  .description('uploads with fastlane + the ASC API (plan first; --dry-run shows the plan only)')
+  .option('--dry-run', 'show the plan only')
+  .option('--yes', 'plan approved (only if the user explicitly approved it)')
   .option('--uploader <name>', 'deliver | asset-library')
-  .option('--creatives', 'ürün sayfası başlığı ve arama kreatiflerini de yükle')
-  .option('--cpp', 'Custom Product Page önerilerini oluştur')
-  .option('--events', 'In-App Event taslaklarını oluştur')
-  .option('--skip-screenshots', 'görsel ve videoları atla')
+  .option('--creatives', 'also upload the product page header and search creatives')
+  .option('--cpp', 'create the Custom Product Page suggestions')
+  .option('--events', 'create the In-App Event drafts')
+  .option('--skip-screenshots', 'skip screenshots and videos')
   .action(action(async (o) => uploadCommand(await createContext(globals()), o)));
 
 program
   .command('submit')
-  .description('incelemeye gönderir — açık onay ister')
-  .option('--confirm <bundleId>', 'onay için bundle id’yi yaz')
+  .description('submits for review — requires explicit confirmation')
+  .option('--confirm <bundleId>', 'type the bundle id to confirm')
   .action(action(async (o: { confirm?: string }) => submitCommand(await createContext(globals()), o)));
 
 program
   .command('all')
   .description('analyze → research → write → capture → design → video → validate → review → upload --dry-run')
-  .option('--skip-capture', 'mevcut ham görüntüleri kullan')
-  .option('--no-images', 'research: rakip görsellerini indirme')
+  .option('--skip-capture', 'use the existing raw captures')
+  .option('--no-images', 'research: do not download competitor screenshots')
   .action(
     action(async (o: { skipCapture?: boolean; images: boolean }) => {
       const ctx = await createContext(globals());
-      log.step(pc.bold('doctor (erken uyarı)'));
+      log.step(pc.bold('doctor (early warning)'));
       const early = await runDoctor(ctx, { offline: true });
-      if (early.missingKeys.length) log.warn('Anahtarlar eksik; üretim devam ediyor, yükleme kapıda duracak.');
+      if (early.missingKeys.length) log.warn('Keys are missing; generation continues, the upload step will stop at the gate.');
       const steps: Array<[string, () => Promise<number>]> = [
         ['analyze', () => analyzeCommand(ctx)],
         ['research', () => researchCommand(ctx, { skipImages: !o.images })],
@@ -168,11 +168,11 @@ program
         log.step(pc.bold(name));
         const code = await fn();
         if (code !== EXIT.OK) {
-          log.warn(`“${name}” ${code === EXIT.NEEDS_INPUT ? 'girdi bekliyor' : 'başarısız'}; düzeltip \`vitrin all\` ile devam et (tamamlanan aşamalar atlanır).`);
+          log.warn(`“${name}” ${code === EXIT.NEEDS_INPUT ? 'is waiting for input' : 'failed'}; fix it and continue with \`vitrin all\` (completed stages are skipped).`);
           return code;
         }
       }
-      log.ok('Tüm aşamalar tamam. Yükleme için: `vitrin doctor`, ardından kullanıcı onayıyla `vitrin upload --yes`.');
+      log.ok('All stages done. To upload: `vitrin doctor`, then `vitrin upload --yes` once the user approves.');
       return EXIT.OK;
     }),
   );

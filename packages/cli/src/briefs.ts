@@ -25,28 +25,28 @@ export async function profileBrief(ctx: Ctx, profile: AppProfile): Promise<strin
   return writeBrief(
     ctx,
     'analyze',
-    `# Brief: app_profile’ı tamamla
+    `# Brief: complete app_profile
 
-Dosya: \`.vitrin/app_profile.json\` (şema: AppProfile). Analyzer deterministik kısmı doldurdu. Sen şunları yap:
+File: \`.vitrin/app_profile.json\` (schema: AppProfile). The analyzer filled in the deterministic part. Your tasks:
 
-1. Kaynak kodu (özellikle ekran/görünüm dosyalarını) oku ve analyzer’ın göremediği **çekirdek özellikleri** \`features\` listesine ekle:
-   \`{ "id": "kebab-case", "title": "…", "description": "…", "kind": "core", "evidence": [{ "path": "proje köküne göre yol", "line": 12 }], "confidence": "high", "source": "claude" }\`
-   Kanıt gerçek bir dosya olmalı; uygulamada olmayan hiçbir özelliği ekleme (App Review 2.3). Pazarlama metni (paywall maddeleri vb.) kanıt değildir, çalışan kod kanıttır.
-2. \`positioning\` alanını doldur: \`{ "audience": "…", "jobToBeDone": "…", "tone": "…" }\`.
-3. \`categorySuggestion\` gerekirse düzelt (ASC kategori sabiti, ör. HEALTH_AND_FITNESS) ve gerekçesini yaz.
-4. \`vitrin.config.yaml\` içinde \`research.seeds\` alanına her dil için 4–8 tohum arama terimi yaz (kullanıcının App Store’da gerçekten yazacağı ifadeler; rakip markası değil).
-5. \`capture.screens\` listesini uygulamanın gösterilmeye değer 5–8 ekranıyla doldur (\`-VitrinScreen <id>\` vb. launch argümanları). Uygulamada \`-VitrinDemo\` yoksa kullanıcıya eklenecek dosyayı göster (skill/references/troubleshooting.md).
+1. Read the source code (especially screen/view files) and add the **core features** the analyzer could not see to the \`features\` list:
+   \`{ "id": "kebab-case", "title": "…", "description": "…", "kind": "core", "evidence": [{ "path": "path relative to the project root", "line": 12 }], "confidence": "high", "source": "claude" }\`
+   Evidence must be a real file; never add a feature the app does not have (App Review 2.3). Marketing copy (paywall bullets etc.) is not evidence; working code is.
+2. Fill in \`positioning\`: \`{ "audience": "…", "jobToBeDone": "…", "tone": "…" }\`.
+3. Correct \`categorySuggestion\` if needed (an ASC category constant, e.g. HEALTH_AND_FITNESS) and write down the reasoning.
+4. In \`vitrin.config.yaml\`, write 4–8 seed search terms per locale under \`research.seeds\` (phrases users would actually type in the App Store; not competitor brands).
+5. Fill \`capture.screens\` with the app's 5–8 screens worth showing (launch arguments such as \`-VitrinScreen <id>\`). If the app has no \`-VitrinDemo\` support, show the user the file to add (skill/references/troubleshooting.md).
 
-Bekleyen notlar (todo):
-${profile.todo.map((t) => `- ${t}`).join('\n') || '- yok'}
+Open notes (todo):
+${profile.todo.map((t) => `- ${t}`).join('\n') || '- none'}
 
-Mevcut özellikler:
+Current features:
 
-| id | başlık | tür | kanıt |
+| id | title | kind | evidence |
 |---|---|---|---|
 ${featureTable(profile)}
 
-Bitince \`vitrin analyze\` yeniden çalıştırılmaz (eklemelerin korunur); \`vitrin research\` ile devam et.
+When done, there is no need to re-run \`vitrin analyze\` (your additions survive re-analysis anyway); continue with \`vitrin research\`.
 `,
   );
 }
@@ -61,12 +61,12 @@ export async function metadataBrief(ctx: Ctx, profile: AppProfile): Promise<stri
       .slice()
       .sort((a, b) => b.popularity.score * (1 - b.competition.score) - a.popularity.score * (1 - a.competition.score))
       .slice(0, 30)
-      .map((c) => `${c.term} (pop ${c.popularity.score}${c.popularity.source === 'estimate' ? '~' : ''}, rek ${c.competition.score}${c.relevance !== null ? `, alaka ${c.relevance}` : ''})`)
+      .map((c) => `${c.term} (pop ${c.popularity.score}${c.popularity.source === 'estimate' ? '~' : ''}, comp ${c.competition.score}${c.relevance !== null ? `, rel ${c.relevance}` : ''})`)
       .join('; ');
-    sections.push(`### ${locale} — ${localeInfo(locale)?.nameTr ?? locale}
-- Storefront: ${sf ? `${sf.country} (varsayılan ${sf.default}; ek: ${sf.additional.join(', ') || 'yok'})` : '?'}
-- Aday kelimeler (~ = tahmini popülerlik): ${top || '(research çalışmadı)'}
-- Dosyalar: \`.vitrin/metadata/${locale}.json\`; ayrıca \`.vitrin/keywords/${locale}.json\` içinde her adayın \`relevance\` (0–1) alanını doldur ve \`selected\` yaz.`);
+    sections.push(`### ${locale} — ${localeInfo(locale)?.name ?? locale}
+- Storefront: ${sf ? `${sf.country} (default ${sf.default}; additional: ${sf.additional.join(', ') || 'none'})` : '?'}
+- Candidate keywords (~ = estimated popularity): ${top || '(research has not run)'}
+- Files: \`.vitrin/metadata/${locale}.json\`; also fill in each candidate's \`relevance\` (0–1) in \`.vitrin/keywords/${locale}.json\` and write \`selected\`.`);
   }
   const rivals = (competitors?.apps ?? [])
     .slice(0, 12)
@@ -75,44 +75,44 @@ export async function metadataBrief(ctx: Ctx, profile: AppProfile): Promise<stri
   return writeBrief(
     ctx,
     'write',
-    `# Brief: metadata yaz
+    `# Brief: write metadata
 
-Uygulama: **${profile.app.displayName}** (${profile.app.bundleId}). Kitle: ${profile.positioning?.audience ?? '?'}. İş: ${profile.positioning?.jobToBeDone ?? '?'}. Ton: ${profile.positioning?.tone ?? '?'}.
-Geliştirici: ${ctx.config.copyrightHolder ?? '?'} — bu ad kelime alanına yazılmaz.
+App: **${profile.app.displayName}** (${profile.app.bundleId}). Audience: ${profile.positioning?.audience ?? '?'}. Job to be done: ${profile.positioning?.jobToBeDone ?? '?'}. Tone: ${profile.positioning?.tone ?? '?'}.
+Developer: ${ctx.config.copyrightHolder ?? '?'} — this name does not go in the keyword field.
 
-## Kurallar (validate bunları denetler)
-- Ad 2–30 karakter = marka + birincil kelime. Alt başlık ≤ 30 = fayda + ikincil kelime; addaki kelimeyi tekrar etme.
-- Anahtar kelimeler ≤ **100 bayt** (UTF-8; ç ş ğ ı ö ü 2 bayt, CJK 3 bayt), virgülle ve boşluksuz, tekil, her terim > 2 karakter, ad/alt başlıktaki kelimeleri tekrar etme, rakip/şirket adı, Apple markası ve fiyat yok.
-- Açıklama ≤ 4000, düz metin; ilk 3 satır kanca. Kelime doldurma yok. “#1 / en iyi / ücretsiz” gibi kanıtsız ve fiyat ifadeleri yok.
-- Promosyon metni ≤ 170 (incelemesiz değişir). Yenilikler ≤ 4000, git log’dan kullanıcı diliyle (ilk sürümde boş bırak).
-- Her dilde çeviri değil **yerel yeniden yazım**. Aynı storefront’ta sayılabilecek ek dillere farklı kelimeler yaz.
-- Her iddia \`claims\` içinde app_profile’daki bir özelliğe bağlanır.
-- en-US metni App Store etiketleri için hedef kavramları net kullansın (etiketler yalnız ABD’de en-US’ten atanır).
+## Rules (validate checks these)
+- Name 2–30 characters = brand + primary keyword. Subtitle ≤ 30 = benefit + secondary keyword; do not repeat words from the name.
+- Keywords ≤ **100 bytes** (UTF-8; accented Latin letters such as ç ş ğ ö ü are 2 bytes, CJK 3 bytes), comma-separated with no spaces, singular, each term > 2 characters, no words repeated from the name/subtitle, no competitor/company names, Apple trademarks or prices.
+- Description ≤ 4000, plain text; the first 3 lines are the hook. No keyword stuffing. No unproven or price claims such as “#1 / best / free”.
+- Promotional text ≤ 170 (changes without review). What’s New ≤ 4000, written from git log in user language (leave empty on the first release).
+- Every locale is a **local rewrite**, not a translation. Write different keywords for additional locales that count toward the same storefront.
+- Every claim is linked in \`claims\` to a feature in app_profile.
+- en-US copy should use the target concepts clearly for App Store tags (tags are assigned only in the US, from en-US).
 
-## Yazılacak dosyalar
-\`.vitrin/metadata/<locale>.json\`:
+## Files to write
+\`.vitrin/metadata/<locale>.json\` (one per locale, e.g. \`en-US\`, \`tr\`):
 \`\`\`json
-{ "locale": "tr", "name": "", "subtitle": "", "promotionalText": "", "description": "", "keywords": "kelime1,kelime2",
-  "whatsNew": "", "claims": [{ "text": "açıklamadan birebir ifade", "featureIds": ["icloud-sync"] }] }
+{ "locale": "en-US", "name": "", "subtitle": "", "promotionalText": "", "description": "", "keywords": "keyword1,keyword2",
+  "whatsNew": "", "claims": [{ "text": "exact phrase from the description", "featureIds": ["icloud-sync"] }] }
 \`\`\`
 \`.vitrin/metadata/app.json\`:
 \`\`\`json
-{ "copyright": "${new Date().getFullYear()} ${ctx.config.copyrightHolder ?? 'Şirket'}", "primaryCategory": "${profile.categorySuggestion?.primary ?? 'PRODUCTIVITY'}", "secondaryCategory": "",
-  "reviewNotes": "Demo modu, test adımları…", "ageRatingDraft": { "answers": {}, "rationale": "", "needsUserConfirmation": true },
+{ "copyright": "${new Date().getFullYear()} ${ctx.config.copyrightHolder ?? 'Company'}", "primaryCategory": "${profile.categorySuggestion?.primary ?? 'PRODUCTIVITY'}", "secondaryCategory": "",
+  "reviewNotes": "Demo mode, test steps…", "ageRatingDraft": { "answers": {}, "rationale": "", "needsUserConfirmation": true },
   "accessibilityDraft": [{ "criterion": "VoiceOver", "supported": "partial", "evidence": "…" }] }
 \`\`\`
-İsteğe bağlı \`.vitrin/cpp-suggestions.json\`: 2–5 Custom Product Page önerisi (segment, gerekçe, çakışmayan kelime kümesi, kullanılacak görsel id’leri).
+Optional \`.vitrin/cpp-suggestions.json\`: 2–5 Custom Product Page suggestions (segment, rationale, non-overlapping keyword set, shot ids to use).
 
-Yaş anketi ve erişilebilirlik için app_profile.signals’a bak (age.*, accessibility.*); bunlar taslaktır, son onay kullanıcıdadır.
+For the age rating questionnaire and accessibility, see app_profile.signals (age.*, accessibility.*); these are drafts, the user gives final approval.
 
-## Diller
+## Locales
 ${sections.join('\n\n')}
 
-## Rakipler (yalnız analiz; metin veya marka kopyalanmaz)
-${rivals || '- (yok)'}
-Boşluklar: ${(competitors?.analysis.gaps ?? []).join('; ') || '(competitors.json analysis.gaps alanına sen yaz)'}
+## Competitors (analysis only; never copy their copy or branding)
+${rivals || '- (none)'}
+Gaps: ${(competitors?.analysis.gaps ?? []).join('; ') || '(write them yourself in competitors.json analysis.gaps)'}
 
-Bitince: \`vitrin write\` (doğrular ve fastlane/metadata’ya aktarır).
+When done: \`vitrin write\` (validates and exports to fastlane/metadata).
 `,
   );
 }
@@ -125,18 +125,18 @@ export async function designBrief(ctx: Ctx, profile: AppProfile): Promise<string
   return writeBrief(
     ctx,
     'design',
-    `# Brief: sanat yönü ve görsel listesi
+    `# Brief: art direction and shot list
 
-## Girdi
-- Marka renkleri: ${profile.brand.accentColor ?? '?'} ${profile.brand.colors.map((c) => `${c.name}=${c.hex}`).join(', ')}
-- Rakip paletleri (sık): ${palettes || '?'}
-- Rakip ilk görsel başlıkları (OCR, yalnız analiz): ${headlines.map((h) => `“${h}”`).join(', ') || '?'}
-- Yakalanan ekranlar (capture.screens): ${screens || '(yok)'}
-- Fontlar (yalnız bunlar): ${Object.keys(FONT_FAMILIES).join(', ')}
-- İkonlar: Lucide adları (ör. cloud, chart-column, bell, lock, sparkles). SF Symbols kullanma.
+## Input
+- Brand colors: ${profile.brand.accentColor ?? '?'} ${profile.brand.colors.map((c) => `${c.name}=${c.hex}`).join(', ')}
+- Competitor palettes (most common): ${palettes || '?'}
+- Competitor first-screenshot headlines (OCR, analysis only): ${headlines.map((h) => `“${h}”`).join(', ') || '?'}
+- Captured screens (capture.screens): ${screens || '(none)'}
+- Fonts (only these): ${Object.keys(FONT_FAMILIES).join(', ')}
+- Icons: Lucide names (e.g. cloud, chart-column, bell, lock, sparkles). Do not use SF Symbols.
 
 ## 1) \`.vitrin/art-direction.json\`
-2–3 yön öner (palet, tipografi, arka plan dili, cihaz çerçevesi) ve **rakiplerden en çok ayrışanı** seç.
+Propose 2–3 directions (palette, typography, background language, device frame) and pick the one that **stands out most from the competitors**.
 \`\`\`json
 { "options": [{ "id": "deep-night", "name": "…", "rationale": "…", "differentiation": "…",
   "palette": { "background": ["#0F1029","#2B2D7A","#6C3CE0"], "surface": "#1B1C3F", "primary": "#7C7CFF", "accent": "#FFB547",
@@ -146,27 +146,27 @@ export async function designBrief(ctx: Ctx, profile: AppProfile): Promise<string
   "device": { "frame": "minimal", "shadow": true, "tilt": 0 } }],
   "selected": "deep-night", "selectionReason": "…" }
 \`\`\`
-Arka plan stilleri: solid, linear, radial, mesh, grid, dots, panoramic (ardışık görsellerde devam eder). Metin/arka plan kontrastı ≥ 3:1 (validate ölçer).
+Background styles: solid, linear, radial, mesh, grid, dots, panoramic (continues across consecutive shots). Text/background contrast ≥ 3:1 (validate measures it).
 
 ## 2) \`.vitrin/shots.json\`
-5–7 görsel (iPad için 3–5 yeterli). Arketipler: hero, feature, callout, fullbleed, tilted, split, collage, before-after, stat, social-proof, panoramic, statement, testimonial (bkz. skill/references/art-direction.md).
-- İlk 3 görsel = kanca (sonuç) → kanıt (çekirdek eylem, gerçek UI) → güven/kazanç. En az %60 gerçek UI; ilk 3’te en az bir UI.
-- Başlık en çok 5 kelime önerilir (7 sınır), en çok 2 satır, ad/alt başlıktaki **ana kelimeyi pekiştirir**. \`kicker\` küçük üst satır (≤ 3 kelime); \`*kelime*\` vurgu renginde çizilir.
-- Eylem çağrısı (“Hemen indir”), başka platform adı, fiyat yok. Set boyunca tek başlık konumu (\`captionPosition\`: top/bottom).
-- callout: \`"callouts": [{ "screen": 0, "rect": { "x": 0.04, "y": 0.47, "w": 0.92, "h": 0.3 }, "scale": 1.45, "side": "center", "at": 0.6 }]\` — rect yakalanan iPhone ekranının kesirleri; iPad düzeni farklıysa \`"rects": { "ipad": {…} }\`. Kesirleri bulmak için .vitrin/raw/<dil>/iphone/<id>.png dosyasını aç ve bölgeyi ölç.
-- testimonial: yalnız competitors.json → self.reviews içindeki gerçek yorumların birebir metni, kendi dilinde (\`"quotes": { "tr": [{ "text": "…", "rating": 5 }] }\`).
-- Her görselde başlık, (isteğe bağlı) alt başlık, ekran ve 0–3 rozet. \`featureIds\` zorunlu.
-- Rozet türleri: feature (featureId zorunlu), new (featureId zorunlu), proof (yalnız Lookup’taki gerçek puan ya da belgeli ödül), platform (ipad / apple-watch / iphone-duo / widgets — yalnız gerçekten destekleniyorsa). Fiyat rozeti yok. Stil: pill | sticker | laurel (laurel yalnız proof).
+5–7 shots (3–5 are enough for iPad). Archetypes: hero, feature, callout, fullbleed, tilted, split, collage, before-after, stat, social-proof, panoramic, statement, testimonial (see skill/references/art-direction.md).
+- First 3 shots = hook (outcome) → proof (core action, real UI) → trust/payoff. At least 60% real UI; at least one UI in the first 3.
+- Headlines: 5 words or fewer recommended (limit 7), at most 2 lines, and they **reinforce the main keyword** from the name/subtitle. \`kicker\` is a small line above (≤ 3 words); \`*word*\` is drawn in the accent color.
+- No calls to action (“Download now”), other platform names or prices. One caption position for the whole set (\`captionPosition\`: top/bottom).
+- callout: \`"callouts": [{ "screen": 0, "rect": { "x": 0.04, "y": 0.47, "w": 0.92, "h": 0.3 }, "scale": 1.45, "side": "center", "at": 0.6 }]\` — rect is in fractions of the captured iPhone screen; if the iPad layout differs, add \`"rects": { "ipad": {…} }\`. To find the fractions, open .vitrin/raw/<locale>/iphone/<id>.png and measure the region.
+- testimonial: only verbatim text of real reviews from competitors.json → self.reviews, in their own language (\`"quotes": { "tr": [{ "text": "…", "rating": 5 }] }\`).
+- Every shot has a headline, an (optional) subheadline, a screen and 0–3 badges. \`featureIds\` is required.
+- Badge types: feature (featureId required), new (featureId required), proof (only a real rating from Lookup or a documented award), platform (ipad / apple-watch / iphone-duo / widgets — only if actually supported). No price badges. Style: pill | sticker | laurel (laurel for proof only).
 \`\`\`json
 { "shots": [{ "id": "01", "slug": "hero", "archetype": "hero", "screens": ["home"], "featureIds": ["…"],
-    "copy": { "tr": { "kicker": "…", "headline": "… *vurgu*", "subheadline": "…" }, "en-US": { "kicker": "…", "headline": "… *accent*", "subheadline": "…" } },
-    "badges": [{ "type": "feature", "icon": "cloud", "featureId": "icloud-sync", "label": { "tr": "iCloud senkron", "en-US": "iCloud sync" } }] }],
+    "copy": { "en-US": { "kicker": "…", "headline": "… *accent*", "subheadline": "…" }, "tr": { "kicker": "…", "headline": "… *vurgu*", "subheadline": "…" } },
+    "badges": [{ "type": "feature", "icon": "cloud", "featureId": "icloud-sync", "label": { "en-US": "iCloud sync", "tr": "iCloud senkron" } }] }],
   "creatives": { "header": { "copy": {…}, "screens": ["home","stats"], "featureIds": ["…"] },
                  "search": { "copy": {…}, "screens": ["home"], "featureIds": ["…"] }, "events": [] } }
 \`\`\`
-\`stat\` arketipi için \`"stat": { "value": "42 gün", "featureId": "…" }\` — değer kanıtlı olmalı (demo verisi pazarlama iddiası değildir; genel ifade seç).
+For the \`stat\` archetype: \`"stat": { "value": "42 days", "featureId": "…" }\` — the value must be backed by evidence (demo data is not a marketing claim; prefer a general statement).
 
-Bitince: \`vitrin design\`.
+When done: \`vitrin design\`.
 `,
   );
 }
@@ -176,30 +176,30 @@ export async function videoBrief(ctx: Ctx): Promise<string> {
   return writeBrief(
     ctx,
     'video',
-    `# Brief: video planı
+    `# Brief: video plan
 
-\`.vitrin/video-plan.json\` yaz (ayrıntı: skill/references/video.md). App Preview: 886×1920, 30 fps, 15–30 sn (hedef 20–25).
-Gerçek uygulama görüntüsü ağırlıkta; metin kartları kısa. Kayıtların ilk ~1,5 sn’si açılıştır: \`from\` ≥ 1,5.
-Kaynaklar: kayıtlar (${recs.join(', ') || 'capture.recordings boş'}) veya ekran id’leri (${ctx.config.capture.screens.map((s) => s.id).join(', ')}).
+Write \`.vitrin/video-plan.json\` (details: skill/references/video.md). App Preview: 886×1920, 30 fps, 15–30 s (target 20–25).
+Real app footage should dominate; keep text cards short. The first ~1.5 s of each recording is the app launch: \`from\` ≥ 1.5.
+Sources: recordings (${recs.join(', ') || 'capture.recordings is empty'}) or screen ids (${ctx.config.capture.screens.map((s) => s.id).join(', ')}).
 
-Stil: \`classic\` | \`showcase\` (3B cihaz, kamera itişi, ışık sızması) | \`kinetic\` (kelime kelime metin kartları) | \`energetic\` (eğik cihaz, bant başlık, hızlı geçişler).
-Emin değilsen önce \`vitrin video --styles all\` ile dördünü üret, kullanıcıya göster.
-Sahneler: device, zoom (\`zoom\` dikdörtgeni), split (\`secondSource\`), stat (\`stat\`), badges (\`badges\`), text. \`*vurgu*\` desteklenir.
+Style: \`classic\` | \`showcase\` (3D device, camera push, light leaks) | \`kinetic\` (word-by-word text cards) | \`energetic\` (tilted device, banner headline, fast transitions).
+If unsure, first render all four with \`vitrin video --styles all\` and show them to the user.
+Scenes: device, zoom (\`zoom\` rectangle), split (\`secondSource\`), stat (\`stat\`), badges (\`badges\`), text. \`*accent*\` is supported.
 
 \`\`\`json
 { "previews": [{ "id": "01", "device": "iphone", "style": "showcase", "transition": "auto",
-    "hookSource": "home-flow", "hookFrom": 1.5, "hook": { "tr": "Günde *tek dokunuş*", "en-US": "One tap, *every day*" },
+    "hookSource": "home-flow", "hookFrom": 1.5, "hook": { "en-US": "One tap, *every day*", "tr": "Günde *tek dokunuş*" },
     "beats": [
-      { "scene": "device", "source": "home-flow", "from": 1.5, "to": 5, "caption": { "tr": "…", "en-US": "…" }, "featureIds": ["…"] },
+      { "scene": "device", "source": "home-flow", "from": 1.5, "to": 5, "caption": { "en-US": "…", "tr": "…" }, "featureIds": ["…"] },
       { "scene": "zoom", "source": "detail", "from": 0, "to": 4, "zoom": { "x": 0.04, "y": 0.47, "w": 0.92, "h": 0.3 }, "caption": { … }, "featureIds": ["…"] },
-      { "scene": "stat", "source": "stats-flow", "from": 1.5, "to": 5, "stat": { "value": 12, "suffix": { "tr": "hafta" }, "label": { "tr": "…" }, "featureId": "…" }, "caption": { … }, "featureIds": ["…"] },
+      { "scene": "stat", "source": "stats-flow", "from": 1.5, "to": 5, "stat": { "value": 12, "suffix": { "en-US": "weeks" }, "label": { "en-US": "…" }, "featureId": "…" }, "caption": { … }, "featureIds": ["…"] },
       { "scene": "badges", "source": "stats-flow", "from": 2, "to": 5.5, "badges": [{ "icon": "bell", "label": { … }, "featureId": "…" }], "caption": { … }, "featureIds": ["…"] }
     ],
-    "outro": { "title": { "tr": "…", "en-US": "…" }, "subtitle": { "tr": "…", "en-US": "…" } } }],
+    "outro": { "title": { "en-US": "…", "tr": "…" }, "subtitle": { "en-US": "…", "tr": "…" } } }],
   "loops": { "header": { "durationSec": 12, "fps": 30, "copy": { … }, "sources": ["home","stats","detail"], "featureIds": ["…"] },
              "search": { "durationSec": 10, "fps": 30, "copy": { … }, "sources": ["home","stats"], "featureIds": ["…"] } } }
 \`\`\`
-Bitince: \`vitrin video\`.
+When done: \`vitrin video\`.
 `,
   );
 }

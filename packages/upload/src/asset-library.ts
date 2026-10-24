@@ -31,7 +31,7 @@ export class AssetLibraryClient {
   async libraryId(appId: string): Promise<string> {
     const doc = await this.asc.get<JsonApiDocument>(`/v1/apps/${appId}/assetLibrary`);
     const data = Array.isArray(doc.data) ? doc.data[0] : doc.data;
-    if (!data?.id) throw new Error('Asset Library kimliği okunamadı (GET /v1/apps/{id}/assetLibrary yanıtı beklenmedik).');
+    if (!data?.id) throw new Error('Could not read the Asset Library id (unexpected GET /v1/apps/{id}/assetLibrary response).');
     return data.id;
   }
 
@@ -53,11 +53,11 @@ export class AssetLibraryClient {
     });
     const res = reserve.data as JsonApiResource<{ uploadOperations?: UploadOperation[] }>;
     const ops = res.attributes.uploadOperations;
-    if (!res.id || !Array.isArray(ops)) throw new Error(`${type} rezervasyonu beklenmeyen yanıt döndü (uploadOperations yok).`);
+    if (!res.id || !Array.isArray(ops)) throw new Error(`${type} reservation returned an unexpected response (no uploadOperations).`);
     for (const op of ops) {
       const headers = Object.fromEntries((op.requestHeaders ?? []).map((h) => [h.name, h.value]));
       const r = await fetch(op.url, { method: op.method, headers, body: bytes.subarray(op.offset, op.offset + op.length) });
-      if (!r.ok) throw new Error(`Parça yüklenemedi (${r.status}) ${basename(file)} @${op.offset}`);
+      if (!r.ok) throw new Error(`Could not upload part (${r.status}) ${basename(file)} @${op.offset}`);
     }
     const checksum = createHash('md5').update(bytes).digest('hex');
     await this.asc.request('PATCH', `/v1/${type}/${res.id}`, {
@@ -74,9 +74,9 @@ export class AssetLibraryClient {
       const attrs = (doc.data as JsonApiResource<{ assetDeliveryState?: { state?: string; errors?: Array<{ description?: string }> }; deliveryState?: { state?: string } }>).attributes;
       const state = attrs.assetDeliveryState?.state ?? attrs.deliveryState?.state;
       if (state === 'COMPLETE') return;
-      if (state === 'FAILED') throw new Error(`İşleme başarısız: ${attrs.assetDeliveryState?.errors?.map((e) => e.description).join('; ') ?? id}`);
+      if (state === 'FAILED') throw new Error(`Processing failed: ${attrs.assetDeliveryState?.errors?.map((e) => e.description).join('; ') ?? id}`);
       if (Date.now() - started > timeoutMs) {
-        log.warn(`${id} hâlâ işleniyor (${state ?? 'durum yok'}); videolar 24 saate kadar sürebilir. Yerleşim sonra eklenebilir.`);
+        log.warn(`${id} is still processing (${state ?? 'no state'}); videos can take up to 24 hours. The placement can be added later.`);
         return;
       }
       await new Promise((r) => setTimeout(r, 10_000));
@@ -153,10 +153,10 @@ export function diffRefData(refData: unknown, known: Array<{ width: number; heig
   const knownSizes = new Set(known.flatMap((k) => [`${k.width}x${k.height}`, `${k.height}x${k.width}`]));
   const knownClasses = new Set(known.map((k) => k.assetLibraryDisplayClass).filter(Boolean));
   for (const f of found) {
-    if (f.cls && !knownClasses.has(f.cls)) out.push(`refData yeni/eşleşmeyen sınıf: ${f.cls}${f.w ? ` (${f.w}×${f.h})` : ''}`);
-    else if (f.w && f.h && !knownSizes.has(`${f.w}x${f.h}`)) out.push(`refData targets.json’da olmayan boyut: ${f.w}×${f.h}${f.cls ? ` (${f.cls})` : ''}`);
+    if (f.cls && !knownClasses.has(f.cls)) out.push(`refData new/unmatched class: ${f.cls}${f.w ? ` (${f.w}×${f.h})` : ''}`);
+    else if (f.w && f.h && !knownSizes.has(`${f.w}x${f.h}`)) out.push(`refData size not in targets.json: ${f.w}×${f.h}${f.cls ? ` (${f.cls})` : ''}`);
   }
-  if (!found.length) out.push('refData yanıtında boyut/sınıf bulunamadı; yanıt biçimi beklenenden farklı olabilir (.vitrin/cache/refdata.json’a bak).');
+  if (!found.length) out.push('No sizes/classes found in the refData response; its shape may differ from what we expect (see .vitrin/cache/refdata.json).');
   return [...new Set(out)];
 }
 

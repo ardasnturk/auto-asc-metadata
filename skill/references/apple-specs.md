@@ -1,47 +1,47 @@
-# Apple özellikleri (Ekim 2026)
+# Apple specifications (October 2026)
 
-Tek doğru kaynak `data/targets.json` ve `docs/apple-notes.md`’dir; bu dosya özet.
+The single source of truth is `data/targets.json` and `docs/apple-notes.md`; this file is a summary.
 
-## Render matrisi
+## Render matrix
 
-| Hedef id | Varlık | px | Durum |
+| Target id | Asset | px | Status |
 | --- | --- | --- | --- |
-| `iphone-6.3` | iPhone Dynamic Island orta | 1206×2622 (1179×2556 da kabul) | **Zorunlu** |
-| `iphone-6.9` | iPhone Dynamic Island büyük | 1320×2868 | Önerilen, her zaman üretilir |
-| `ipad-13` | iPad 13" | 2064×2752 | iPad destekleniyorsa zorunlu |
-| `duo-outer` | iPhone Duo dış | 1398×2034 | Nisan 2027’den itibaren zorunlu (iOS 27.1 SDK) |
-| `duo-inner` | iPhone Duo iç | 2007×2853 | Aynı |
-| `preview-iphone` | App Preview iPhone (Duo dahil) | 886×1920 | İsteğe bağlı, ≤ 3 |
-| `preview-ipad` | App Preview iPad | 1200×1600 | İsteğe bağlı (config ile aç) |
-| `header` | Ürün sayfası başlığı 21:9 | 3840×1646 | İsteğe bağlı, Asset Library |
-| `search` | Arama sonucu 3:2 | 1920×1280 – 3840×2560 | İsteğe bağlı, Asset Library |
-| `event-card` / `event-detail` | In-App Event 16:9 / 9:16 | aralık | Etkinlik varsa |
+| `iphone-6.3` | iPhone Dynamic Island medium | 1206×2622 (1179×2556 also accepted) | **Required** |
+| `iphone-6.9` | iPhone Dynamic Island large | 1320×2868 | Recommended, always generated |
+| `ipad-13` | iPad 13" | 2064×2752 | Required if iPad is supported |
+| `duo-outer` | iPhone Duo outer | 1398×2034 | Required from April 2027 (iOS 27.1 SDK) |
+| `duo-inner` | iPhone Duo inner | 2007×2853 | Same |
+| `preview-iphone` | App Preview iPhone (including Duo) | 886×1920 | Optional, ≤ 3 |
+| `preview-ipad` | App Preview iPad | 1200×1600 | Optional (enable in config) |
+| `header` | Product page header 21:9 | 3840×1646 | Optional, Asset Library |
+| `search` | Search result 3:2 | 1920×1280 – 3840×2560 | Optional, Asset Library |
+| `event-card` / `event-detail` | In-App Event 16:9 / 9:16 | range | If there are events |
 
-Mac, Apple TV, Vision Pro hedefleri `targets.enable` ile açılır.
+Mac, Apple TV and Vision Pro targets are enabled with `targets.enable`.
 
-## Ekran görüntüsü
+## Screenshots
 
-- Dil ve cihaz başına 1–10; PNG/JPEG; **alfa yok** (Vitrin flatten + removeAlpha uygular).
-- İçerik gerçek arayüzü göstermeli (App Review 2.3).
-- 6,9" görselde başlık ≥ 96 px; WCAG AA kontrast (büyük metin ≥ 3:1).
+- 1–10 per locale and device; PNG/JPEG; **no alpha** (Vitrin applies flatten + removeAlpha).
+- Content must show the real UI (App Review 2.3).
+- On the 6.9" screenshot, headline ≥ 96 px; WCAG AA contrast (large text ≥ 3:1).
 
 ## App Preview
 
-- 15–30 sn (hedef 20–25), **30 fps sabit**, H.264 High@4.0 10–12 Mbps, stereo AAC 256 kbps 48 kHz, ≤ 500 MB.
-- Müzik yoksa sessiz stereo kanal (Vitrin ekler). Poster karesi 5. saniye — o anda okunur bir kare olsun.
-- Farklı en-boy oranı “A Closer Look” bölümüne düşer. Önizlemeler görsellerden önce görünür; işleme 24 saate kadar sürer.
-- Yalnız uygulama görüntüsü + metin/hareket; el veya kişi yok.
+- 15–30 s (target 20–25), **constant 30 fps**, H.264 High@4.0 10–12 Mbps, stereo AAC 256 kbps 48 kHz, ≤ 500 MB.
+- Without music, a silent stereo track (Vitrin adds it). The poster frame is at 5 seconds — make that frame legible.
+- A different aspect ratio ends up in the "A Closer Look" section. Previews appear before screenshots; processing can take up to 24 hours.
+- Only app footage + text/motion; no hands or people.
 
-## Kreatif varlıklar
+## Creative assets
 
-- Başlık 21:9 ve arama 3:2: görsel veya 5–30 sn video (30/60 fps). Aramada sessiz ve sürekli döner → sessiz izlenince anlaşılmalı.
-- Sürümden bağımsız onaylanır; CPP, In-App Event ve PPO’da tekrar kullanılır.
+- Header 21:9 and search 3:2: image or 5–30 s video (30/60 fps). In search they are muted and loop continuously → they must make sense when watched without sound.
+- Approved independently of app versions; reused in CPP, In-App Events and PPO.
 
-## Metin limitleri
+## Text limits
 
-Ad 2–30 · alt başlık 30 · promosyon 170 · açıklama 4000 · yenilikler 4000 · **anahtar kelimeler 100 bayt** · inceleme notları 4000 bayt.
+Name 2–30 · subtitle 30 · promotional text 170 · description 4000 · What's New 4000 · **keywords 100 bytes** · review notes 4000 bytes.
 
 ## API
 
-- ASC API 4.5.1: Screenshot/Preview Sets deprecated → App Asset Library (images, videos, placements). `GET /v1/appAssetLibraryRefData` desteklenen yerleşim/boyutları döndürür; doctor bunu targets.json ile karşılaştırır.
-- Uygulama kaydı API anahtarıyla açılamaz (403). İlk App Store sürümü yalnız TestFlight’taki uygulamada elle açılmalı olabilir.
+- ASC API 4.5.1: Screenshot/Preview Sets deprecated → App Asset Library (images, videos, placements). `GET /v1/appAssetLibraryRefData` returns the supported placements/sizes; doctor compares it with targets.json.
+- An app record cannot be created with an API key (403). For an app that is only on TestFlight, the first App Store version may have to be created manually.

@@ -55,8 +55,8 @@ export interface FontSetup {
 export function fontSetup(headline: string, body: string, locale: string): FontSetup {
   const h = FONT_FAMILIES[headline];
   const b = FONT_FAMILIES[body];
-  if (!h) throw new Error(`Bilinmeyen başlık fontu “${headline}”. Kullanılabilir: ${Object.keys(FONT_FAMILIES).join(', ')}`);
-  if (!b) throw new Error(`Bilinmeyen gövde fontu “${body}”. Kullanılabilir: ${Object.keys(FONT_FAMILIES).join(', ')}`);
+  if (!h) throw new Error(`Unknown headline font “${headline}”. Available: ${Object.keys(FONT_FAMILIES).join(', ')}`);
+  if (!b) throw new Error(`Unknown body font “${body}”. Available: ${Object.keys(FONT_FAMILIES).join(', ')}`);
   const info = localeInfo(locale);
   const script = info?.script ?? 'latin';
   const fallback = SCRIPT_FALLBACK[script];

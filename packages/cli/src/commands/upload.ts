@@ -15,7 +15,7 @@ import {
 } from '@vitrin/upload';
 import { validateAll } from '@vitrin/validate';
 import { readdir, rm } from 'node:fs/promises';
-import { join } from 'node:path';
+import { join, relative } from 'node:path';
 import { createInterface } from 'node:readline/promises';
 import pc from 'picocolors';
 import { bundleIdOf, EXIT, loadProfile, NeedsInput, type Ctx } from '../context.js';
@@ -35,9 +35,9 @@ export interface UploadOptions {
 async function confirm(question: string): Promise<boolean> {
   if (!process.stdin.isTTY) return false;
   const rl = createInterface({ input: process.stdin, output: process.stdout });
-  const answer = (await rl.question(`${question} (evet/hayır) `)).trim().toLowerCase();
+  const answer = (await rl.question(`${question} (yes/no) `)).trim().toLowerCase();
   rl.close();
-  return ['evet', 'e', 'yes', 'y'].includes(answer);
+  return ['yes', 'y'].includes(answer);
 }
 
 export async function uploadCommand(ctx: Ctx, opts: UploadOptions): Promise<number> {
@@ -45,17 +45,17 @@ export async function uploadCommand(ctx: Ctx, opts: UploadOptions): Promise<numb
   const profile = await loadProfile(ctx);
   const bundleId = bundleIdOf(ctx, profile);
   const metadata = await loadLocaleMetadata(ctx);
-  if (!existsSync(ctx.paths.appMetadata) || metadata.length !== ctx.config.app.locales.length) throw new NeedsInput('Metadata eksik; önce `vitrin write`.');
+  if (!existsSync(ctx.paths.appMetadata) || metadata.length !== ctx.config.app.locales.length) throw new NeedsInput('Metadata is missing; run `vitrin write` first.');
   const app = await readJson(ctx.paths.appMetadata, AppMetadata);
 
   const validation = await validateAll(ctx.paths, ctx.config);
   if (!validation.ok) {
     printIssues(validation.issues.filter((i) => i.severity === 'error'));
     if (!opts.dryRun) {
-      log.error('Doğrulama hataları varken yükleme yapılmaz.');
+      log.error('Not uploading while there are validation errors.');
       return EXIT.FAIL;
     }
-    log.warn('Doğrulama hataları var; plan yine de gösteriliyor.');
+    log.warn('There are validation errors; showing the plan anyway.');
   }
 
   // Early warning vs. late gate: a dry run works without keys (remote state unknown); a real upload does not.
@@ -72,7 +72,7 @@ export async function uploadCommand(ctx: Ctx, opts: UploadOptions): Promise<numb
     const doctor = await runDoctor(ctx, { offline: true });
     return doctor.exitCode;
   } else {
-    log.warn(`ASC anahtarları eksik (${missing.map((m) => m.name).join(', ')}); plan uzak durumu bilmeden gösteriliyor.`);
+    log.warn(`ASC keys missing (${missing.map((m) => m.name).join(', ')}); showing the plan without the remote state.`);
   }
 
   await exportFastlaneMetadata(ctx.paths, ctx.config, app, metadata);
@@ -91,35 +91,35 @@ export async function uploadCommand(ctx: Ctx, opts: UploadOptions): Promise<numb
   await writeJson(ctx.paths.uploadPlan, plan);
   log.info('\n' + formatPlan(plan) + '\n');
   if (opts.dryRun) {
-    log.ok(`Plan: .vitrin/upload-plan.json (--dry-run, hiçbir şey yüklenmedi)`);
+    log.ok(`Plan: .vitrin/upload-plan.json (--dry-run, nothing was uploaded)`);
     return plan.blockers.length ? EXIT.NEEDS_INPUT : EXIT.OK;
   }
 
   // Late gate: full doctor must pass.
   const doctor = await runDoctor(ctx);
   if (doctor.exitCode !== EXIT.OK) {
-    log.error('doctor geçmedi; yükleme başlamadı.');
+    log.error('doctor did not pass; the upload did not start.');
     return doctor.exitCode;
   }
-  if (plan.blockers.length) throw new NeedsInput('Yükleme engellendi.', plan.blockers);
+  if (plan.blockers.length) throw new NeedsInput('Upload blocked.', plan.blockers);
   const configured = ctx.config.upload.appVersion;
   if (configured && plan.version && configured !== plan.version.versionString) {
-    throw new NeedsInput(`vitrin.config.yaml upload.appVersion (${configured}) ASC’deki düzenlenebilir sürümle (${plan.version.versionString}) aynı değil. Vitrin sürüm adını değiştirmez; config’i düzelt ya da sürümü ASC’de aç.`);
+    throw new NeedsInput(`vitrin.config.yaml upload.appVersion (${configured}) does not match the editable version in ASC (${plan.version.versionString}). Vitrin does not rename versions; fix the config or create the version in ASC.`);
   }
-  if (!opts.yes && !(await confirm(pc.bold('Bu plan App Store Connect’e yüklensin mi?')))) {
-    throw new NeedsInput('Yükleme için açık onay gerekli: kullanıcı onaylarsa `vitrin upload --yes`.');
+  if (!opts.yes && !(await confirm(pc.bold('Upload this plan to App Store Connect?')))) {
+    throw new NeedsInput('Upload needs explicit approval: if the user approves, run `vitrin upload --yes`.');
   }
 
   const languages = ctx.config.app.locales;
   if (plan.firstRelease) {
     for (const l of languages) await rm(join(ctx.paths.fastlaneMetadata, l, 'release_notes.txt'), { force: true });
-    log.dim('İlk sürüm: “Yenilikler” alanı App Store Connect’te yok, release_notes.txt yüklenmiyor.');
+    log.dim('First release: App Store Connect has no “What’s New” field yet, so release_notes.txt is not uploaded.');
   }
   if (ctx.config.upload.uploader === 'deliver') {
-    log.step('fastlane deliver (metin, ekran görüntüleri, App Preview)…');
+    log.step('fastlane deliver (text, screenshots, App Previews)…');
     await runLane(ctx.paths, 'vitrin_upload', { bundleId, languages, appVersion: plan.version?.versionString, platform: ctx.config.upload.platform, skipScreenshots: opts.skipScreenshots });
   } else {
-    log.step('fastlane deliver (yalnız metin) + App Asset Library (görsel/video)…');
+    log.step('fastlane deliver (text only) + App Asset Library (images/videos)…');
     await runLane(ctx.paths, 'vitrin_upload', { bundleId, languages, appVersion: plan.version?.versionString, platform: ctx.config.upload.platform, skipScreenshots: true });
     if (!opts.skipScreenshots) await uploadMediaViaAssetLibrary(ctx, client!, plan);
   }
@@ -129,34 +129,34 @@ export async function uploadCommand(ctx: Ctx, opts: UploadOptions): Promise<numb
     const existing = new Set((await client!.getAll<{ name?: string }>(`/v1/apps/${plan.appId}/appCustomProductPages?limit=200`)).map((p) => p.attributes.name));
     for (const page of cpp.pages) {
       if (existing.has(page.name)) {
-        log.dim(`CPP “${page.name}” zaten var; atlandı.`);
+        log.dim(`CPP “${page.name}” already exists; skipped.`);
         continue;
       }
       const res = await createCustomProductPage(client!, plan.appId!, page, languages);
-      log.ok(`CPP “${page.name}” oluşturuldu (${res.pageId}); görseller --creatives akışıyla yerleştirilir, Apple onayı gerekir.`);
+      log.ok(`Created CPP “${page.name}” (${res.pageId}); images are placed by the --creatives flow, Apple approval required.`);
     }
   }
   if (opts.events && shots) {
     const existing = new Set((await client!.getAll<{ referenceName?: string }>(`/v1/apps/${plan.appId}/appEvents?limit=200`)).map((e) => e.attributes.referenceName));
     for (const e of shots.creatives.events) {
       if (existing.has(e.id)) {
-        log.dim(`In-App Event “${e.id}” zaten var; atlandı.`);
+        log.dim(`In-App Event “${e.id}” already exists; skipped.`);
         continue;
       }
       const res = await createInAppEvent(client!, plan.appId!, e, ctx.config.app.primaryLocale, languages);
-      log.ok(`In-App Event “${e.id}” taslak olarak oluşturuldu (${res.eventId}).`);
+      log.ok(`Created In-App Event “${e.id}” as a draft (${res.eventId}).`);
     }
   }
 
-  log.step('ASC’den geri okuma…');
+  log.step('Reading back from ASC…');
   const diffs = await readBack({ paths: ctx.paths, config: ctx.config, bundleId, metadata, client: client! });
   if (diffs.length) {
     for (const d of diffs) log.warn(d);
     return EXIT.FAIL;
   }
-  log.ok('ASC’deki metinler yerel dosyalarla aynı.');
-  await ctx.state.mark('upload', plan.generatedAt, [ctx.paths.uploadPlan]);
-  log.info('Hatırlatma: gizlilik etiketleri ve yaş anketinin son onayı sende; ABD’de App Store etiketlerini (tags) yükleme sonrası kontrol et.');
+  log.ok('Text in ASC matches the local files.');
+  await ctx.state.mark('upload', plan.generatedAt, [relative(ctx.root, ctx.paths.uploadPlan)]);
+  log.info('Reminder: final approval of the privacy labels and age rating questionnaire is yours; check the App Store tags (US) after the upload.');
   return EXIT.OK;
 }
 
@@ -167,7 +167,7 @@ async function uploadMediaViaAssetLibrary(ctx: Ctx, client: AscClient, plan: Upl
   for (const locale of ctx.config.app.locales) {
     const loc = locs.find((l) => l.attributes.locale === locale);
     if (!loc) {
-      log.warn(`${locale}: sürüm yerelleştirmesi yok (önce metin yüklemesi).`);
+      log.warn(`${locale}: no version localization (upload the text first).`);
       continue;
     }
     const owner = { type: 'appStoreVersionLocalizations', id: loc.id };
@@ -193,7 +193,7 @@ async function uploadMediaViaAssetLibrary(ctx: Ctx, client: AscClient, plan: Upl
     }
     for (const g of groups.values()) {
       const removed = await lib.clearPlacements(owner, g.placement, g.displayClass);
-      if (removed) log.dim(`  ${locale} ${g.placement}/${g.displayClass}: ${removed} eski yerleşim kaldırıldı`);
+      if (removed) log.dim(`  ${locale} ${g.placement}/${g.displayClass}: removed ${removed} old placements`);
       const placements: string[] = [];
       for (const file of g.files) {
         const assetId = await lib.upload(libraryId, file, g.kind);
@@ -232,12 +232,12 @@ export async function submitCommand(ctx: Ctx, opts: { confirm?: string }): Promi
   const profile = await loadProfile(ctx);
   const bundleId = bundleIdOf(ctx, profile);
   if (opts.confirm !== bundleId) {
-    throw new NeedsInput(`İncelemeye gönderme geri alınması zor bir işlem. Kullanıcı açıkça onaylarsa: \`vitrin submit --confirm ${bundleId}\``);
+    throw new NeedsInput(`Submitting for review is hard to undo. If the user explicitly approves: \`vitrin submit --confirm ${bundleId}\``);
   }
   const doctor = await runDoctor(ctx);
   if (doctor.exitCode !== EXIT.OK) return doctor.exitCode;
   await runLane(ctx.paths, 'vitrin_submit', { bundleId, languages: ctx.config.app.locales, appVersion: ctx.config.upload.appVersion, platform: ctx.config.upload.platform });
   await ctx.state.mark('submit', new Date().toISOString());
-  log.ok('İncelemeye gönderildi.');
+  log.ok('Submitted for review.');
   return EXIT.OK;
 }

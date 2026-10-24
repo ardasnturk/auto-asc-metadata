@@ -85,7 +85,7 @@ export async function analyzeProject(opts: AnalyzeOptions): Promise<AppProfile> 
     if (p) xcodeproj = join(dirname(loc.workspace), p);
   }
   if (!xcodeproj || !existsSync(join(xcodeproj, 'project.pbxproj'))) {
-    throw new Error(`Xcode projesi bulunamadı (${root}). vitrin.config.yaml içinde app.project ile yolu belirt.`);
+    throw new Error(`No Xcode project found (${root}). Set its path with app.project in vitrin.config.yaml.`);
   }
   const projDir = dirname(xcodeproj);
   const pbx = readPbxproj(await readFile(join(xcodeproj, 'project.pbxproj'), 'utf8'));
@@ -116,7 +116,7 @@ export async function analyzeProject(opts: AnalyzeOptions): Promise<AppProfile> 
     appTargets.find((t) => t.name === opts.scheme) ??
     appTargets.find((t) => t.bundleId && opts.bundleIdOverride && t.bundleId === opts.bundleIdOverride) ??
     appTargets[0];
-  if (!main) throw new Error('Projede uygulama hedefi (com.apple.product-type.application) bulunamadı.');
+  if (!main) throw new Error('No app target (com.apple.product-type.application) found in the project.');
   const mainPbx = pbxByName.get(main.name)!;
   const ms = settingsOf(mainPbx);
 
@@ -162,9 +162,9 @@ export async function analyzeProject(opts: AnalyzeOptions): Promise<AppProfile> 
     for (const [k, v] of Object.entries(ent)) {
       if (!entitlements.includes(k)) entitlements.push(k);
       const ev = { path: rel(p), note: k };
-      if (k === 'com.apple.developer.healthkit') addFeature({ id: 'apple-health', title: 'Apple Health entegrasyonu', kind: 'integration', description: 'HealthKit izni ile sağlık verisi okur/yazar.', evidence: [ev] });
-      if (k === 'com.apple.developer.icloud-services' && Array.isArray(v) && v.length) addFeature({ id: 'icloud-sync', title: 'iCloud senkronizasyonu', kind: 'capability', description: 'Veriler iCloud ile cihazlar arasında eşitlenir.', evidence: [ev] });
-      if (k === 'com.apple.developer.applesignin') addFeature({ id: 'sign-in-with-apple', title: 'Apple ile Giriş', kind: 'capability', description: 'Apple ile Giriş desteği.', evidence: [ev] });
+      if (k === 'com.apple.developer.healthkit') addFeature({ id: 'apple-health', title: 'Apple Health integration', kind: 'integration', description: 'Reads and writes health data with HealthKit permission.', evidence: [ev] });
+      if (k === 'com.apple.developer.icloud-services' && Array.isArray(v) && v.length) addFeature({ id: 'icloud-sync', title: 'iCloud sync', kind: 'capability', description: 'Data syncs across devices via iCloud.', evidence: [ev] });
+      if (k === 'com.apple.developer.applesignin') addFeature({ id: 'sign-in-with-apple', title: 'Sign in with Apple', kind: 'capability', description: 'Supports Sign in with Apple.', evidence: [ev] });
       if (k === 'aps-environment') addSignal('push.remote', ev);
       if (k === 'com.apple.developer.family-controls') addSignal('age.family-controls', ev);
     }
@@ -172,12 +172,12 @@ export async function analyzeProject(opts: AnalyzeOptions): Promise<AppProfile> 
 
   // ---------- Platform features from targets ----------
   const supportsIPad = main.devices.includes('ipad');
-  if (supportsIPad) addFeature({ id: 'ipad', title: 'iPad desteği', kind: 'platform', description: 'iPad için uyarlanmış arayüz.', evidence: [{ path: rel(join(xcodeproj, 'project.pbxproj')), note: `TARGETED_DEVICE_FAMILY=${ms.TARGETED_DEVICE_FAMILY}` }] });
+  if (supportsIPad) addFeature({ id: 'ipad', title: 'iPad support', kind: 'platform', description: 'Interface adapted for iPad.', evidence: [{ path: rel(join(xcodeproj, 'project.pbxproj')), note: `TARGETED_DEVICE_FAMILY=${ms.TARGETED_DEVICE_FAMILY}` }] });
   for (const t of targets) {
     const ev = { path: rel(join(xcodeproj, 'project.pbxproj')), note: `${t.name} (${t.productType})` };
-    if (t.kind === 'widget') addFeature({ id: 'widgets', title: 'Ana ekran widget’ları', kind: 'platform', description: 'Ana ekran ve kilit ekranı widget’ları.', evidence: [ev] });
-    if (t.kind === 'watch') addFeature({ id: 'apple-watch', title: 'Apple Watch uygulaması', kind: 'platform', description: 'Apple Watch için ayrı uygulama.', evidence: [ev] });
-    if (t.kind === 'app-clip') addFeature({ id: 'app-clip', title: 'App Clip', kind: 'platform', description: 'İndirmeden hızlı deneme.', evidence: [ev] });
+    if (t.kind === 'widget') addFeature({ id: 'widgets', title: 'Home Screen widgets', kind: 'platform', description: 'Home Screen and Lock Screen widgets.', evidence: [ev] });
+    if (t.kind === 'watch') addFeature({ id: 'apple-watch', title: 'Apple Watch app', kind: 'platform', description: 'A dedicated Apple Watch app.', evidence: [ev] });
+    if (t.kind === 'app-clip') addFeature({ id: 'app-clip', title: 'App Clip', kind: 'platform', description: 'Try it quickly without downloading the full app.', evidence: [ev] });
   }
 
   // ---------- Source scan ----------
@@ -198,7 +198,7 @@ export async function analyzeProject(opts: AnalyzeOptions): Promise<AppProfile> 
   if (appIntents.length) {
     addFeature({
       id: 'siri-shortcuts',
-      title: 'Siri ve Kestirmeler',
+      title: 'Siri and Shortcuts',
       kind: 'integration',
       description: `App Intents: ${appIntents.map((a) => a.name).slice(0, 5).join(', ')}`,
       evidence: appIntents.slice(0, 3).map((a) => ({ path: a.file, note: a.name })),
@@ -216,7 +216,7 @@ export async function analyzeProject(opts: AnalyzeOptions): Promise<AppProfile> 
         for (const p of g.subscriptions ?? []) iap.push({ productId: p.productID, type: 'AutoRenewableSubscription', displayName: p.localizations?.[0]?.displayName, file: rel(f) });
       }
     } catch {
-      todo.push(`${rel(f)} okunamadı (StoreKit yapılandırması).`);
+      todo.push(`Could not read ${rel(f)} (StoreKit configuration).`);
     }
   }
   const hasSubs = iap.some((p) => /Subscription/i.test(p.type));
@@ -224,7 +224,7 @@ export async function analyzeProject(opts: AnalyzeOptions): Promise<AppProfile> 
   if (iap.length) {
     addFeature({
       id: hasSubs ? 'premium-subscription' : 'in-app-purchases',
-      title: hasSubs ? 'Premium abonelik' : 'Uygulama içi satın alma',
+      title: hasSubs ? 'Premium subscription' : 'In-app purchases',
       kind: 'monetization',
       description: iap.map((p) => p.displayName ?? p.productId).join(', '),
       evidence: [{ path: iap[0]!.file }],
@@ -240,7 +240,7 @@ export async function analyzeProject(opts: AnalyzeOptions): Promise<AppProfile> 
       if (json.sourceLanguage) regions.add(json.sourceLanguage);
       for (const s of Object.values(json.strings ?? {})) for (const l of Object.keys(s.localizations ?? {})) regions.add(l);
     } catch {
-      todo.push(`${rel(f)} okunamadı (String Catalog).`);
+      todo.push(`Could not read ${rel(f)} (String Catalog).`);
     }
   }
   for (const f of allFiles) {
@@ -248,11 +248,11 @@ export async function analyzeProject(opts: AnalyzeOptions): Promise<AppProfile> 
     if (m && m[1] !== 'Base') regions.add(m[1]!);
   }
   const locales = [...regions].sort().map((r) => ({ xcode: r, asc: xcodeToAsc(r) }));
-  for (const l of locales) if (!l.asc) todo.push(`Xcode bölgesi "${l.xcode}" için ASC dili yok; metadata bu dilde yazılamaz.`);
+  for (const l of locales) if (!l.asc) todo.push(`Xcode region "${l.xcode}" has no ASC locale; metadata cannot be written in this language.`);
   if (locales.length > 1) {
     addFeature({
       id: 'localization',
-      title: `${locales.length} dil desteği`,
+      title: `${locales.length} languages`,
       kind: 'core',
       description: locales.map((l) => l.xcode).join(', '),
       evidence: [{ path: xcstrings[0] ? rel(xcstrings[0]) : rel(join(xcodeproj, 'project.pbxproj')), note: 'knownRegions / String Catalog' }],
@@ -273,16 +273,16 @@ export async function analyzeProject(opts: AnalyzeOptions): Promise<AppProfile> 
   // ---------- Category ----------
   const voted = [...categoryVotes.entries()].sort((a, b) => b[1] - a[1])[0];
   const categorySuggestion = voted
-    ? { primary: voted[0], reason: `Kod sinyali: ${voted[0]} çerçeveleri (${voted[1]} dosya).` }
-    : { primary: 'PRODUCTIVITY', reason: 'Belirgin çerçeve sinyali yok; Claude uygulama işlevine göre doğrulamalı.' };
-  if (!voted) todo.push('Kategori önerisi zayıf; Claude app_profile.categorySuggestion alanını işleve göre düzeltmeli.');
+    ? { primary: voted[0], reason: `Code signal: ${voted[0]} frameworks (${voted[1]} files).` }
+    : { primary: 'PRODUCTIVITY', reason: 'No clear framework signal; Claude should verify based on what the app does.' };
+  if (!voted) todo.push('Weak category suggestion; Claude should correct app_profile.categorySuggestion based on what the app does.');
 
   if (!features.some((f) => f.kind === 'core')) {
-    todo.push('Çekirdek özellik bulunamadı. Claude kaynak kodu okuyup ana ekranlar için kanıtlı özellikler eklemeli (source: "claude").');
+    todo.push('No core features found. Claude should read the source code and add evidence-backed features for the main screens (source: "claude").');
   }
-  todo.push('positioning (hedef kitle, kullanıcının işi, ton) Claude tarafından doldurulmalı.');
+  todo.push('positioning (audience, user job, tone) must be filled in by Claude.');
   if (!signals['vitrin.demo-mode']) {
-    todo.push('Uygulamada -VitrinDemo seed veri modu yok. capture için kullanıcıya hangi dosyaya ekleneceği gösterilmeli (skill/references/troubleshooting.md).');
+    todo.push('The app has no -VitrinDemo seed-data mode. For capture, show the user which file to add it to (skill/references/troubleshooting.md).');
   }
 
   return {

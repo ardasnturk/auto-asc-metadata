@@ -40,8 +40,10 @@ export async function validateAll(paths: AppPaths, config: VitrinConfig, scope: 
     }
   };
 
-  const profile = await load(paths.profile, AppProfile);
-  if (!profile) issues.error('profile.missing', 'app_profile.json yok; önce `vitrin analyze`.');
+  const loaded = await load(paths.profile, AppProfile);
+  // app_profile.json stores the project root relative to the app repo.
+  const profile = loaded && { ...loaded, project: { ...loaded.project, root: paths.root } };
+  if (!profile) issues.error('profile.missing', 'app_profile.json is missing; run `vitrin analyze` first.');
   const competitors = await load(paths.competitors, Competitors);
   const appMetadata = await load(paths.appMetadata, AppMetadata);
   const shots = await load(paths.shots, ShotList);
@@ -55,12 +57,12 @@ export async function validateAll(paths: AppPaths, config: VitrinConfig, scope: 
     for (const locale of config.app.locales) {
       const m = await load(paths.metadataFile(locale), LocaleMetadata);
       if (m) {
-        if (m.locale !== locale) issues.error('metadata.locale-mismatch', `${locale}.json içindeki locale alanı “${m.locale}”.`, { locale });
+        if (m.locale !== locale) issues.error('metadata.locale-mismatch', `The locale field in ${locale}.json is “${m.locale}”.`, { locale });
         locales.set(locale, m);
       }
     }
     for (const extra of await strayLocaleDirs(paths.fastlaneMetadata, config.app.locales)) {
-      if (!['default'].includes(extra)) issues.error('metadata.stray-locale', `fastlane/metadata/${extra} config’te olmayan bir dil; deliver bunu da yükler.`);
+      if (!['default'].includes(extra)) issues.error('metadata.stray-locale', `fastlane/metadata/${extra} is a locale not in the config; deliver will upload it too.`);
     }
     const text = validateText({ config, profile, competitors, appMetadata, locales });
     issues.push(...text.issues.items);
@@ -75,7 +77,7 @@ export async function validateAll(paths: AppPaths, config: VitrinConfig, scope: 
     if (existsSync(paths.screenshots)) {
       issues.push(...(await validateScreenshots({ screenshotsDir: paths.screenshots, locales: config.app.locales, targets: targets.filter((t) => t.kind === 'screenshot'), manifest })).items);
     } else {
-      issues.warn('image.none', 'fastlane/screenshots henüz yok (vitrin design).');
+      issues.warn('image.none', 'fastlane/screenshots does not exist yet (run vitrin design).');
     }
   }
 
@@ -93,7 +95,7 @@ export async function validateAll(paths: AppPaths, config: VitrinConfig, scope: 
     );
     const recordingIds = new Set(config.capture.recordings.map((r) => r.id));
     if (videoPlan && videoPlan.previews.some((p) => p.beats.every((b) => !recordingIds.has(b.source)))) {
-      issues.warn('video.no-recording', 'App Preview yalnız ekran görüntülerinden oluşuyor; gerçek ekran kaydı (capture.recordings) önerilir.');
+      issues.warn('video.no-recording', 'The App Preview is built only from screenshots; a real screen recording (capture.recordings) is recommended.');
     }
   }
 

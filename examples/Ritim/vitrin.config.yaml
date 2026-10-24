@@ -1,6 +1,6 @@
-# Vitrin yapılandırması — gizli olmayan değerler. Anahtarlar .env içinde durur.
-# urls, copyrightHolder ve review alanlarını gerçek değerlerle doldur.
-# research.seeds ve capture.screens /vitrin skill’i çalışırken Claude tarafından doldurulur.
+# Vitrin configuration — non-secret values only. Keys live in .env.
+# Fill in urls, copyrightHolder and review with real values.
+# research.seeds and capture.screens are filled in by Claude while the /vitrin skill runs.
 app:
   bundleId: com.jastech.ritim
   project: Ritim.xcodeproj

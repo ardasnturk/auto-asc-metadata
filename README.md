@@ -1,80 +1,135 @@
 # Vitrin
 
-Vitrin bir iOS projesini okur, rakip ve anahtar kelime araştırması yapar; App Store Connect için ASO uyumlu metadata, rozetli ekran görüntüleri, ürün sayfası/arama kreatifleri ve App Preview videoları üretir, doğrular ve fastlane + ASC API ile yükler. Akışın tamamı Claude Code’da `/vitrin` skill’i ile çalışır.
+[![CI](https://github.com/ardasnturk/auto-asc-metadata/actions/workflows/ci.yml/badge.svg)](https://github.com/ardasnturk/auto-asc-metadata/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-**İş bölümü:** yaratıcı kararlar (metin, kelime seçimi, sanat yönü, görsel ve video planı) Claude’da; veri toplama, render, doğrulama ve yükleme bu TypeScript CLI’da. Ek LLM anahtarı gerekmez. Apple’ın Ekim 2026 kuralları ve doğrulanamayan noktalar için: [docs/apple-notes.md](docs/apple-notes.md).
+Vitrin reads an iOS project, researches competitors and keywords, and produces everything an App Store Connect listing needs: ASO-friendly metadata, badged screenshots, product page and search creatives, and App Preview videos. It validates all of it against Apple's current rules and uploads it with fastlane and the App Store Connect API. The whole flow runs inside Claude Code through the `/vitrin` skill: Claude makes the creative decisions (copy, keyword selection, art direction, shot list, video plan), while this TypeScript CLI does the deterministic work (data collection, rendering, validation, upload). No additional LLM API key is required.
 
-## Kurulum
+> Vitrin is an independent open-source project. It is not affiliated with, endorsed by, or sponsored by Apple Inc. App Store, App Store Connect, iPhone, iPad and other Apple marks are trademarks of Apple Inc.
 
-Gereksinimler: macOS, Node.js ≥ 22, pnpm, Xcode (simctl), Ruby + Bundler, ffmpeg.
+Apple's rules as of October 2026, and the points that could not be verified, are documented in [docs/apple-notes.md](docs/apple-notes.md).
+
+## Features
+
+- **Project analysis** — reads `.pbxproj`, `Info.plist`, entitlements, String Catalogs, asset catalogs, StoreKit configuration, App Intents and code signals to build an app profile with evidence-backed features.
+- **Competitor and keyword research** — iTunes Search/Lookup, RSS top charts and reviews (cached, rate-limited), macOS Vision OCR of competitor screenshots, k-means color palettes, and keyword scoring (relevance × popularity × competition). Optional Apple Ads and AppTweak providers.
+- **Metadata** — validates Claude-written name, subtitle, keyword field, description, promotional text and release notes (grapheme and UTF-8 byte counts, duplicates across fields, forbidden terms, competitor brands, claim-to-evidence checks) and exports them to `fastlane/metadata/`.
+- **Screenshots** — captures raw screens in dedicated simulators (9:41 status bar, per-locale system language), then renders HTML templates with Playwright: 13 layout archetypes, CSS device frames, Lucide badges, embedded OFL fonts, RTL support, automatic text fitting and legibility checks, exact pixel sizes without alpha.
+- **App Previews and creatives** — Remotion compositions in four styles (`classic`, `showcase`, `kinetic`, `energetic`) with six scene types, normalized with ffmpeg to H.264 High@4.0, 30 fps CFR, stereo AAC; header and search loops; In-App Event cards.
+- **Validation** — text, image, video and claim-to-evidence checks in one report (`.vitrin/validation.json`).
+- **Review report** — an HTML preview of the search result row, product page, contact sheets, counters and competitor comparison.
+- **Upload** — fastlane `deliver` or the App Asset Library API, Custom Product Pages and In-App Events; always a dry-run plan first, explicit approval, and a read-back after upload.
+- **Idempotent, resumable stages** — `.vitrin/state.json` tracks input hashes so unchanged stages are skipped.
+
+## Requirements
+
+- macOS (simulators, Vision OCR)
+- Node.js ≥ 22 and pnpm
+- Xcode (with `simctl`)
+- Ruby + Bundler (fastlane ≥ 2.241.1 is pinned in the generated `Gemfile`)
+- ffmpeg / ffprobe
+- [Claude Code](https://claude.com/claude-code) for the `/vitrin` skill
+
+## Installation
 
 ```bash
 skill/scripts/install.sh
 ```
 
-Betik bağımlılıkları kurar, CLI’ı derler, Playwright Chromium’u indirir, `vitrin` komutunu npm’in global bin klasörüne (`npm prefix -g`/bin; `VITRIN_BIN_DIR` ile değiştirilebilir) yazar ve skill’i `~/.claude/skills/vitrin` altına kopyalar (`CLAUDE_SKILLS_DIR`). Repoyu taşırsan betiği yeniden çalıştır; komut repodaki derlemeyi çalıştırır. Uygulama reposunda:
+The script installs dependencies, builds the CLI, downloads Playwright Chromium, writes a `vitrin` launcher into npm's global bin directory (`npm prefix -g`/bin; override with `VITRIN_BIN_DIR`), and copies the skill to `~/.claude/skills/vitrin` (override with `CLAUDE_SKILLS_DIR`). The launcher runs the build inside this repository, so if you move the repository, run the script again.
+
+## Quick start
+
+In your app's repository:
 
 ```bash
 vitrin init
 ```
 
-ardından Claude Code’da `/vitrin`.
+Then open Claude Code in that repository and run:
 
-## Komutlar
+```
+/vitrin
+```
 
-| Komut | Çıktı |
+The skill walks through every stage, writes the creative inputs itself, stops when it needs your keys or your approval, and never uploads or submits without an explicit "yes".
+
+## Commands
+
+| Command | Output |
 | --- | --- |
-| `vitrin init` | `vitrin.config.yaml`, `.env.example`, `.gitignore` satırları, `Gemfile` (fastlane ≥ 2.241.1), `fastlane/Fastfile` |
-| `vitrin doctor` | Araçlar, `.env`, `.p8`, canlı JWT testi, uygulama kaydı, düzenlenebilir sürüm, URL’ler, Asset Library refData |
-| `vitrin analyze` | `.vitrin/app_profile.json` — hedefler, iPad, diller, entitlements, izinler, IAP, App Intents, renkler, kanıtlı özellikler |
-| `vitrin research` | `.vitrin/competitors.json`, `.vitrin/keywords/<dil>.json` — iTunes Search/Lookup, RSS, yorumlar, OCR, palet, rekabet/popülerlik |
-| `vitrin write` | Claude’un metadata’sını doğrular → `fastlane/metadata/` |
-| `vitrin capture` | Simülatörde ham görüntüler ve kayıtlar → `.vitrin/raw/<dil>/<aile>/` |
-| `vitrin design` | HTML → Playwright → `fastlane/screenshots/<dil>/NN_<slug>_<hedef>.png`, `.vitrin/creative/` |
-| `vitrin video` | Remotion → `fastlane/app-previews/<dil>/NN_IPHONE_67.mp4`, başlık/arama döngüleri |
-| `vitrin validate` | `.vitrin/validation.json` (hata varsa çıkış 1) |
-| `vitrin review` | `.vitrin/report.html` — arama satırı, ürün sayfası, temas sayfaları, sayaçlar, rakipler |
-| `vitrin upload [--dry-run]` | Plan; onaydan sonra deliver / Asset Library / CPP / In-App Events, ardından geri okuma |
-| `vitrin submit --confirm <bundleId>` | İncelemeye gönderir (yalnız açık onayla) |
-| `vitrin all` | Hepsini sırayla; girdi beklenen aşamada durur |
+| `vitrin init` | `vitrin.config.yaml`, `.env.example`, `.gitignore` entries, `Gemfile` (fastlane ≥ 2.241.1), `fastlane/Fastfile` |
+| `vitrin doctor` | Tools, `.env`, `.p8`, live JWT test, app record, editable version, URLs, Asset Library refData |
+| `vitrin analyze` | `.vitrin/app_profile.json` — targets, iPad, locales, entitlements, permissions, IAP, App Intents, colors, evidence-backed features |
+| `vitrin research` | `.vitrin/competitors.json`, `.vitrin/keywords/<locale>.json` — iTunes Search/Lookup, RSS, reviews, OCR, palettes, competition/popularity |
+| `vitrin write` | Validates Claude's metadata → `fastlane/metadata/` |
+| `vitrin capture` | Raw screenshots and recordings from the simulator → `.vitrin/raw/<locale>/<family>/` |
+| `vitrin design` | HTML → Playwright → `fastlane/screenshots/<locale>/NN_<slug>_<target>.png`, `.vitrin/creative/` |
+| `vitrin video` | Remotion → `fastlane/app-previews/<locale>/NN_IPHONE_67.mp4`, header/search loops |
+| `vitrin validate` | `.vitrin/validation.json` (exit code 1 on errors) |
+| `vitrin review` | `.vitrin/report.html` — search row, product page, contact sheets, counters, competitors |
+| `vitrin upload [--dry-run]` | Plan; after approval: deliver / Asset Library / CPP / In-App Events, then read-back |
+| `vitrin submit --confirm <bundleId>` | Submits for review (only with explicit confirmation) |
+| `vitrin all` | Runs every stage in order; stops at the stage that needs input |
 
-Çıkış kodları: `0` tamam, `1` hata, `2` girdi bekleniyor (Claude için brief `.vitrin/briefs/<aşama>.md` ya da kullanıcı için eksik anahtar). Aşamalar `.vitrin/state.json` ile idempotenttir; `--force` yeniden çalıştırır.
+Global options: `-C, --cwd <dir>`, `-f, --force`, `--json`, `-q, --quiet`. Run `vitrin <command> --help` for command-specific flags.
 
-## Anahtarlar
+### Exit codes
 
-`.env` (asla commit edilmez):
+| Code | Meaning |
+| --- | --- |
+| `0` | Done |
+| `1` | Error or validation failure |
+| `2` | Waiting for input — a brief for Claude in `.vitrin/briefs/<stage>.md`, or missing keys for the user |
+
+Stages are idempotent through `.vitrin/state.json`; `--force` re-runs a stage.
+
+## Keys and `.env`
+
+`.env` (never committed):
 
 ```
 ASC_KEY_ID=          # ASC > Users and Access > Integrations > App Store Connect API (Team Key, ≥ App Manager)
 ASC_ISSUER_ID=
-ASC_KEY_PATH=./secrets/AuthKey_XXXXXXXXXX.p8   # veya ASC_KEY_CONTENT_BASE64
+ASC_KEY_PATH=./secrets/AuthKey_XXXXXXXXXX.p8   # or ASC_KEY_CONTENT_BASE64
 ```
 
-Opsiyonel: Apple Ads, AppTweak, `FASTLANE_USER/PASSWORD` (yalnız `produce`), `REVIEW_DEMO_USER/PASSWORD`. Anahtarlar eksikken analiz ve üretim devam eder; yükleme `doctor` geçmeden başlamaz (erken uyarı, geç kapı).
+Optional: Apple Ads, AppTweak, `FASTLANE_USER/PASSWORD` (only for `produce`), `REVIEW_DEMO_USER/PASSWORD`. While keys are missing, analysis and generation continue; upload does not start until `doctor` passes ("warn early, gate late"). Secret values are masked in all logs.
 
-## Render matrisi
+## Render matrix
 
-iPhone 6,3" 1206×2622 (zorunlu), 6,9" 1320×2868, iPad 13" 2064×2752 (iPad varsa), iPhone Duo dış 1398×2034 / iç 2007×2853, App Preview 886×1920 (30 fps, H.264 High@4.0, stereo AAC), ürün sayfası başlığı 3840×1646, arama 3:2. Tam liste: [data/targets.json](data/targets.json).
+| Asset | Size (px) |
+| --- | --- |
+| iPhone 6.3" (required) | 1206×2622 |
+| iPhone 6.9" | 1320×2868 |
+| iPad 13" (if the app supports iPad) | 2064×2752 |
+| iPhone Duo outer / inner | 1398×2034 / 2007×2853 |
+| App Preview (30 fps, H.264 High@4.0, stereo AAC) | 886×1920 |
+| Product page header (21:9) | 3840×1646 |
+| Search result (3:2) | 1920×1280 – 3840×2560 |
 
-## Repo yapısı
+Full list: [data/targets.json](data/targets.json).
+
+## Repository layout
 
 ```
-packages/cli        komutlar, state, brief’ler, simülatör, rapor
-packages/schemas    zod şemaları (AppProfile, Competitors, KeywordPlan, Metadata, ArtDirection, ShotList, VideoPlan, Report, Config)
-packages/core       maskeleyen logger, exec, state, config/.env, veri dosyaları, önbellekli HTTP
-packages/analyzer   pbxproj / Info.plist / entitlements / xcstrings / xcassets / storekit / kod sinyalleri
-packages/research   iTunes Search/Lookup, RSS, yorumlar, Vision OCR (Swift), k-means palet, kelime puanı
-packages/validate   metin, görsel, video ve iddia-kanıt kontrolleri
-packages/render     HTML şablon motoru (Background, DeviceFrame, Caption, Badge), Playwright + sharp
-packages/video      Remotion: AppPreview, HeaderLoop, SearchLoop, EventCard; ffmpeg normalizasyonu
-packages/upload     fastlane köprüsü, ASC API (JWT), App Asset Library, CPP, In-App Events, plan ve geri okuma
-fastlane/           Gemfile ve Fastfile şablonları
+packages/cli        commands, state, briefs, simulator, report
+packages/schemas    zod schemas (AppProfile, Competitors, KeywordPlan, Metadata, ArtDirection, ShotList, VideoPlan, Report, Config)
+packages/core       masking logger, exec, state, config/.env, data files, cached HTTP
+packages/analyzer   pbxproj / Info.plist / entitlements / xcstrings / xcassets / storekit / code signals
+packages/research   iTunes Search/Lookup, RSS, reviews, Vision OCR (Swift), k-means palette, keyword scoring
+packages/validate   text, image, video and claim-to-evidence checks
+packages/render     HTML template engine (Background, DeviceFrame, Caption, Badge), Playwright + sharp
+packages/video      Remotion: AppPreview, HeaderLoop, SearchLoop, EventCard; ffmpeg normalization
+packages/upload     fastlane bridge, ASC API (JWT), App Asset Library, CPP, In-App Events, plan and read-back
+fastlane/           Gemfile and Fastfile templates
 data/               targets.json, asc-locales.json, storefront-languages.json, forbidden-terms.json
 skill/              SKILL.md, references/, scripts/install.sh
-examples/Ritim      uçtan uca test için SwiftUI örnek uygulama (tr + en)
+docs/               apple-notes.md, design/master-prompt.md (original design spec)
+examples/Ritim      SwiftUI sample app for end-to-end testing (tr + en)
 ```
 
-## Geliştirme
+## Development
 
 ```bash
 pnpm install
@@ -83,6 +138,20 @@ pnpm test
 node packages/cli/dist/bin.js --cwd examples/Ritim validate
 ```
 
-## Lisanslar
+## Example app
 
-Fontlar OFL (via @fontsource), ikonlar Lucide (ISC). Remotion bireyler ve ≤ 3 çalışanlı şirketler için ücretsizdir; daha büyük ekipler Remotion şirket lisansı almalıdır.
+[`examples/Ritim`](examples/Ritim) is a small SwiftUI habit tracker (Turkish and English) used for end-to-end runs. It includes a `-VitrinDemo` launch-argument demo mode (`examples/Ritim/Ritim/Support/VitrinDemo.swift`) that you can copy into your own app so screenshots show stable, non-personal data.
+
+## Contributing
+
+Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) and the [Code of Conduct](CODE_OF_CONDUCT.md). To report a security issue, follow [SECURITY.md](SECURITY.md) instead of opening a public issue.
+
+## License
+
+[MIT](LICENSE)
+
+### Licenses of dependencies
+
+- Fonts are licensed under the SIL Open Font License (OFL), bundled via [@fontsource](https://fontsource.org).
+- Icons are from [Lucide](https://lucide.dev) (ISC).
+- [Remotion](https://www.remotion.dev) is free for individuals and for companies with up to 3 employees; larger teams need a [Remotion company license](https://github.com/remotion-dev/remotion/blob/main/LICENSE.md).

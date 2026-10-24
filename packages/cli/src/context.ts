@@ -41,13 +41,15 @@ export async function createContext(opts: GlobalOptions): Promise<Ctx> {
 }
 
 export async function loadProfile(ctx: Ctx): Promise<AppProfile> {
-  if (!existsSync(ctx.paths.profile)) throw new NeedsInput('app_profile.json yok; önce `vitrin analyze` çalıştır.');
-  return readJson(ctx.paths.profile, AppProfile);
+  if (!existsSync(ctx.paths.profile)) throw new NeedsInput('app_profile.json not found; run `vitrin analyze` first.');
+  const profile = await readJson(ctx.paths.profile, AppProfile);
+  // app_profile.json stores the project root relative to the app repo.
+  return { ...profile, project: { ...profile.project, root: ctx.root } };
 }
 
 export function bundleIdOf(ctx: Ctx, profile?: AppProfile): string {
   const id = ctx.config.app.bundleId || ctx.env.APP_BUNDLE_ID || profile?.app.bundleId;
-  if (!id) throw new NeedsInput('Bundle ID bulunamadı: vitrin.config.yaml app.bundleId, APP_BUNDLE_ID ya da Xcode projesi.');
+  if (!id) throw new NeedsInput('Bundle ID not found: set vitrin.config.yaml app.bundleId or APP_BUNDLE_ID, or check the Xcode project.');
   return id;
 }
 
@@ -55,7 +57,7 @@ export function bundleIdOf(ctx: Ctx, profile?: AppProfile): string {
 export async function stage(ctx: Ctx, name: StageName, inputs: unknown, fn: () => Promise<string[] | void>): Promise<boolean> {
   const hash = typeof inputs === 'string' ? inputs : hashValue(inputs);
   if (!ctx.force && ctx.state.isFresh(name, hash)) {
-    log.ok(`${name}: girdiler değişmedi, atlandı (zorla: --force).`);
+    log.ok(`${name}: inputs unchanged, skipped (use --force to re-run).`);
     return false;
   }
   const outputs = (await fn()) ?? [];

@@ -16,5 +16,11 @@
   ],
   "dependencies": {
     "zod": "^4.6.7"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ardasnturk/auto-asc-metadata.git",
+    "directory": "packages/schemas"
   }
 }

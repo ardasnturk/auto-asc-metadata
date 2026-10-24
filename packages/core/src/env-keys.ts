@@ -1,5 +1,5 @@
 /**
- * Every environment variable Vitrin understands, with a Turkish explanation of where to get it.
+ * Every environment variable Vitrin understands, with an explanation of where to get it.
  * `.env.example` is generated from this list, and doctor uses it to explain missing keys.
  */
 export interface EnvKey {
@@ -18,7 +18,7 @@ export const ENV_KEYS: EnvKey[] = [
     group: 'asc',
     required: 'upload',
     example: '',
-    where: 'App Store Connect > Users and Access > Integrations > App Store Connect API > Team Keys. Rol en az “App Manager” olmalı; listedeki “Key ID” sütunu.',
+    where: 'App Store Connect > Users and Access > Integrations > App Store Connect API > Team Keys. The role must be at least “App Manager”; use the “Key ID” column in the list.',
     secret: true,
   },
   {
@@ -26,7 +26,7 @@ export const ENV_KEYS: EnvKey[] = [
     group: 'asc',
     required: 'upload',
     example: '',
-    where: 'Aynı sayfanın üstündeki “Issuer ID” (UUID).',
+    where: 'The “Issuer ID” (UUID) at the top of the same page.',
     secret: true,
   },
   {
@@ -34,7 +34,7 @@ export const ENV_KEYS: EnvKey[] = [
     group: 'asc',
     required: 'upload',
     example: './secrets/AuthKey_XXXXXXXXXX.p8',
-    where: 'Anahtarı oluştururken bir kez indirilebilen AuthKey_<KEYID>.p8 dosyasının yolu. Repo dışında ya da .gitignore’daki secrets/ klasöründe tut. Alternatif: ASC_KEY_CONTENT_BASE64.',
+    where: 'Path to the AuthKey_<KEYID>.p8 file, which can be downloaded only once when the key is created. Keep it outside the repo or in the git-ignored secrets/ folder. Alternative: ASC_KEY_CONTENT_BASE64.',
     secret: false,
   },
   {
@@ -42,7 +42,7 @@ export const ENV_KEYS: EnvKey[] = [
     group: 'asc',
     required: 'optional',
     example: '',
-    where: 'CI için: `base64 -i AuthKey_XXXX.p8` çıktısı. ASC_KEY_PATH doluysa gerekmez.',
+    where: 'For CI: the output of `base64 -i AuthKey_XXXX.p8`. Not needed when ASC_KEY_PATH is set.',
     secret: true,
   },
   {
@@ -50,7 +50,7 @@ export const ENV_KEYS: EnvKey[] = [
     group: 'app',
     required: 'optional',
     example: '',
-    where: 'Boş bırakılırsa Xcode projesinden (PRODUCT_BUNDLE_IDENTIFIER) okunur.',
+    where: 'If left empty, it is read from the Xcode project (PRODUCT_BUNDLE_IDENTIFIER).',
     secret: false,
   },
   {
@@ -58,26 +58,26 @@ export const ENV_KEYS: EnvKey[] = [
     group: 'apple-ads',
     required: 'optional',
     example: '',
-    where: 'Apple Ads > Account Settings > API. Anahtar kelime popülerliği için; yoksa popülerlik “tahmin” olarak işaretlenir.',
+    where: 'Apple Ads > Account Settings > API. Used for keyword popularity; without it, popularity is marked as “estimated”.',
     secret: true,
   },
-  { name: 'APPLE_ADS_TEAM_ID', group: 'apple-ads', required: 'optional', example: '', where: 'Apple Ads API ayarlarındaki Team ID.', secret: true },
-  { name: 'APPLE_ADS_KEY_ID', group: 'apple-ads', required: 'optional', example: '', where: 'Apple Ads API ayarlarındaki Key ID.', secret: true },
+  { name: 'APPLE_ADS_TEAM_ID', group: 'apple-ads', required: 'optional', example: '', where: 'The Team ID from the Apple Ads API settings.', secret: true },
+  { name: 'APPLE_ADS_KEY_ID', group: 'apple-ads', required: 'optional', example: '', where: 'The Key ID from the Apple Ads API settings.', secret: true },
   {
     name: 'APPLE_ADS_PRIVATE_KEY_PATH',
     group: 'apple-ads',
     required: 'optional',
     example: '',
-    where: 'Apple Ads API için oluşturduğun EC özel anahtarın (.pem) yolu.',
+    where: 'Path to the EC private key (.pem) you created for the Apple Ads API.',
     secret: false,
   },
-  { name: 'APPLE_ADS_ORG_ID', group: 'apple-ads', required: 'optional', example: '', where: 'Apple Ads hesabındaki Organization ID (orgId).', secret: true },
+  { name: 'APPLE_ADS_ORG_ID', group: 'apple-ads', required: 'optional', example: '', where: 'The Organization ID (orgId) of your Apple Ads account.', secret: true },
   {
     name: 'APPTWEAK_API_KEY',
     group: 'apptweak',
     required: 'optional',
     example: '',
-    where: 'AppTweak > Account > API. Opsiyonel popülerlik kaynağı.',
+    where: 'AppTweak > Account > API. Optional popularity source.',
     secret: true,
   },
   {
@@ -85,7 +85,7 @@ export const ENV_KEYS: EnvKey[] = [
     group: 'fastlane',
     required: 'optional',
     example: '',
-    where: 'Yalnız uygulama kaydını `fastlane produce` ile açmak için Apple ID e-postası. Normal akışta gerekmez.',
+    where: 'Apple ID email, only for creating the app record with `fastlane produce`. Not needed in the normal flow.',
     secret: true,
   },
   {
@@ -93,7 +93,7 @@ export const ENV_KEYS: EnvKey[] = [
     group: 'fastlane',
     required: 'optional',
     example: '',
-    where: 'Yalnız `produce` için. Uygulamaya özel parola değil, Apple ID parolası (2FA ister).',
+    where: 'Only for `produce`. Your Apple ID password, not an app-specific password (requires 2FA).',
     secret: true,
   },
   {
@@ -101,7 +101,7 @@ export const ENV_KEYS: EnvKey[] = [
     group: 'review',
     required: 'optional',
     example: '',
-    where: 'App Review için demo hesap kullanıcı adı (giriş gerektiren uygulamalarda).',
+    where: 'Demo account username for App Review (for apps that require sign-in).',
     secret: true,
   },
   {
@@ -109,25 +109,25 @@ export const ENV_KEYS: EnvKey[] = [
     group: 'review',
     required: 'optional',
     example: '',
-    where: 'App Review demo hesabının parolası. Süresi dolmamalı.',
+    where: 'Password of the App Review demo account. It must not expire.',
     secret: true,
   },
 ];
 
 const GROUP_TITLES: Record<EnvKey['group'], string> = {
-  asc: 'App Store Connect API (yükleme için zorunlu)',
-  app: 'Uygulama',
-  'apple-ads': 'Opsiyonel: Apple Ads (anahtar kelime popülerliği)',
-  apptweak: 'Opsiyonel: AppTweak',
-  fastlane: 'Opsiyonel: yalnız uygulama kaydı oluşturmak (fastlane produce) için',
-  review: 'Opsiyonel: App Review demo hesabı',
+  asc: 'App Store Connect API (required for upload)',
+  app: 'App',
+  'apple-ads': 'Optional: Apple Ads (keyword popularity)',
+  apptweak: 'Optional: AppTweak',
+  fastlane: 'Optional: only for creating the app record (fastlane produce)',
+  review: 'Optional: App Review demo account',
 };
 
 /** Renders .env.example, keeping any keys the user added that Vitrin does not know about. */
 export function renderEnvExample(extraLines: string[] = []): string {
   const lines: string[] = [
-    '# Vitrin ortam değişkenleri. Bu dosyayı .env olarak kopyalayıp doldur.',
-    '# .env ve *.p8 dosyaları asla commit edilmez; değerleri sohbete yapıştırma.',
+    '# Vitrin environment variables. Copy this file to .env and fill it in.',
+    '# Never commit .env or *.p8 files; do not paste these values into a chat.',
     '',
   ];
   let group: EnvKey['group'] | undefined;
@@ -140,6 +140,6 @@ export function renderEnvExample(extraLines: string[] = []): string {
     lines.push(`# ${k.where}`);
     lines.push(`${k.name}=${k.example}`);
   }
-  if (extraLines.length) lines.push('', '# --- Proje özel ---', ...extraLines);
+  if (extraLines.length) lines.push('', '# --- Project-specific ---', ...extraLines);
   return lines.join('\n') + '\n';
 }

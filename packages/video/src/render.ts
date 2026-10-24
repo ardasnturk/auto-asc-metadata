@@ -40,19 +40,19 @@ export async function resolveMedia(paths: AppPaths, locale: string, primary: str
       const video = paths.rawVideo(loc, fam, id);
       const image = paths.rawShot(loc, fam, id);
       if (existsSync(video)) {
-        if (loc !== locale) warnings.push(`${id}: ${locale} kaydı yok, ${loc} kullanıldı`);
+        if (loc !== locale) warnings.push(`${id}: no ${locale} recording, used ${loc}`);
         const aspect = await videoAspect(video);
         return { ref: { path: relative(paths.raw, video), kind: 'video', from, aspect }, aspect };
       }
       if (existsSync(image)) {
-        if (loc !== locale) warnings.push(`${id}: ${locale} görüntüsü yok, ${loc} kullanıldı`);
+        if (loc !== locale) warnings.push(`${id}: no ${locale} screenshot, used ${loc}`);
         const m = await sharp(image).metadata();
         const aspect = (m.height ?? 1) / (m.width ?? 1);
         return { ref: { path: relative(paths.raw, image), kind: 'image', from: 0, aspect }, aspect };
       }
     }
   }
-  throw new Error(`Video kaynağı yok: ${id} (${locale}/${family}). capture.recordings veya capture.screens içinde tanımlanmalı.`);
+  throw new Error(`Video source missing: ${id} (${locale}/${family}). Define it in capture.recordings or capture.screens.`);
 }
 
 async function videoAspect(file: string): Promise<number> {
@@ -138,7 +138,7 @@ export function buildPreviewProps(opts: {
       beatScenes.push({ kind: 'text', frames: sec(Math.min(len, 1.5)), text: caption });
       return;
     }
-    if (!media) throw new Error(`Video ${plan.id} vuruş ${i + 1}: kaynak yok (${b.source}).`);
+    if (!media) throw new Error(`Video ${plan.id} beat ${i + 1}: source missing (${b.source}).`);
     if (textCards && caption) beatScenes.push({ kind: 'text', frames: sec(TEXT_CARD_SEC), text: caption });
     const shown = textCards ? '' : caption;
     const frames = sec(len);
@@ -199,7 +199,7 @@ export async function renderVideos(opts: VideoRenderOptions): Promise<VideoRende
 
   const { bundle } = await import('@remotion/bundler');
   const { renderMedia, selectComposition } = await import('@remotion/renderer');
-  log.step('Remotion projesi paketleniyor…');
+  log.step('Bundling the Remotion project…');
   const serveUrl = await bundle({
     entryPoint: ENTRY,
     publicDir: paths.raw,
@@ -233,7 +233,7 @@ export async function renderVideos(opts: VideoRenderOptions): Promise<VideoRende
         const pct = Math.floor(progress * 10) * 10;
         if (pct > last) {
           last = pct;
-          log.dim(`    %${pct}`);
+          log.dim(`    ${pct}%`);
         }
       },
     });
@@ -243,7 +243,7 @@ export async function renderVideos(opts: VideoRenderOptions): Promise<VideoRende
 
   if (opts.styleVariants?.length) {
     const base = plan.previews[0];
-    if (!base) throw new Error('video-plan.json’da önizleme yok.');
+    if (!base) throw new Error('video-plan.json has no previews.');
     for (const locale of locales) {
       const hook = await resolveMedia(paths, locale, opts.primaryLocale, base.device, base.hookSource, base.hookFrom, warnings);
       const beats: ResolvedBeat[] = [];
@@ -257,7 +257,7 @@ export async function renderVideos(opts: VideoRenderOptions): Promise<VideoRende
         const p = { ...base, style, transition: 'auto' as const, lightLeaks: undefined };
         const props = buildPreviewProps({ plan: p, locale, look: lookFrom(ad, locale, base.device, hook.aspect), hookMedia: hook.ref, beats, icon });
         const out = join(paths.vitrin, 'video-styles', locale, `${base.id}_${style}.mp4`);
-        log.step(`Stil denemesi ${style} (${locale}) — ${props.scenes.length} sahne, ${previewDurationSec(props).toFixed(1)} sn`);
+        log.step(`Style variant ${style} (${locale}) — ${props.scenes.length} scenes, ${previewDurationSec(props).toFixed(1)} s`);
         await render('AppPreview', props, out, true);
         videos.push({ file: out, target: 'preview-variant', locale, id: `${base.id}-${style}`, durationSec: previewDurationSec(props) });
       }
@@ -273,7 +273,7 @@ export async function renderVideos(opts: VideoRenderOptions): Promise<VideoRende
       for (const p of plan.previews) {
         const family = p.device;
         if (!opts.enabledPreviewTargets.includes(family === 'ipad' ? 'preview-ipad' : 'preview-iphone')) {
-          warnings.push(`Önizleme ${p.id} (${family}) atlandı: hedef etkin değil (targets.enable: [preview-${family}]).`);
+          warnings.push(`Preview ${p.id} (${family}) skipped: target not enabled (targets.enable: [preview-${family}]).`);
           continue;
         }
         const target = getTarget(family === 'ipad' ? 'preview-ipad' : 'preview-iphone');
@@ -287,9 +287,9 @@ export async function renderVideos(opts: VideoRenderOptions): Promise<VideoRende
         }
         const props = buildPreviewProps({ plan: p, locale, look: lookFrom(ad, locale, family, hook.aspect), hookMedia: hook.ref, beats, icon });
         const total = previewDurationSec(props);
-        if (total < 15 || total > 30) throw new Error(`App Preview ${p.id} süresi ${total.toFixed(1)} sn; 15–30 sn olmalı (vuruş sayısını azalt).`);
+        if (total < 15 || total > 30) throw new Error(`App Preview ${p.id} is ${total.toFixed(1)} s long; it must be 15–30 s (reduce the number of beats).`);
         const out = join(dir, `${p.id}_${DELIVER_PREVIEW_DEVICE[target.id]}.mp4`);
-        log.step(`App Preview ${p.id} (${locale}, ${family}, ${p.style}) — ${props.scenes.length} sahne, ${total.toFixed(1)} sn @ ${FPS_PREVIEW} fps`);
+        log.step(`App Preview ${p.id} (${locale}, ${family}, ${p.style}) — ${props.scenes.length} scenes, ${total.toFixed(1)} s @ ${FPS_PREVIEW} fps`);
         await render('AppPreview', props, out, true);
         videos.push({ file: out, target: target.id, locale, id: p.id, durationSec: total });
       }
@@ -304,7 +304,7 @@ export async function renderVideos(opts: VideoRenderOptions): Promise<VideoRende
     for (const locale of locales) {
       for (const [targetId, loop, comp, layout] of loops) {
         if (!loop) continue;
-        if (loop.fps !== 30) warnings.push(`${targetId}: döngüler 30 fps üretilir (60 fps istendi).`);
+        if (loop.fps !== 30) warnings.push(`${targetId}: loops are rendered at 30 fps (60 fps was requested).`);
         const media = await Promise.all(loop.sources.map((s) => resolveMedia(paths, locale, opts.primaryLocale, 'iphone', s, 0, warnings)));
         const props: LoopProps = {
           look: lookFrom(ad, locale, 'iphone', media[0]!.aspect),
@@ -314,7 +314,7 @@ export async function renderVideos(opts: VideoRenderOptions): Promise<VideoRende
           layout,
         };
         const out = join(paths.creative, locale, `${targetId}_loop.mp4`);
-        log.step(`Kreatif döngü ${targetId} (${locale}) — ${loop.durationSec} sn`);
+        log.step(`Creative loop ${targetId} (${locale}) — ${loop.durationSec} s`);
         await render(comp, props, out, false);
         videos.push({ file: out, target: targetId, locale, id: `${targetId}-loop`, durationSec: loop.durationSec });
       }

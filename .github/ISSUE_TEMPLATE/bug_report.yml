@@ -1,0 +1,41 @@
+name: Bug report
+description: Something in Vitrin does not work as documented
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting! Please **never paste API keys, `.p8` contents or `.env` values** here — Vitrin masks them in its own logs, but double-check anything you copy.
+  - type: input
+    id: command
+    attributes:
+      label: Command
+      description: The vitrin command you ran (e.g. `vitrin design --only 02`).
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: Include the output and the exit code (`echo $?`).
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect?
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Output of `vitrin doctor --offline` (tool versions), macOS version, Xcode version.
+      render: text
+  - type: textarea
+    id: files
+    attributes:
+      label: Relevant files
+      description: Excerpts of vitrin.config.yaml, shots.json, video-plan.json or .vitrin/validation.json if relevant.
+      render: json

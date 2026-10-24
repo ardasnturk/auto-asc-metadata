@@ -1,52 +1,62 @@
 # Changelog
 
+All notable changes to this project are documented in this file. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
+
 ## 0.3.0 — 2026-10-24
 
-### Animasyonlu App Preview
-- Remotion skill rehberine göre yeniden yazıldı: `TransitionSeries` ile sahne geçişleri (fade, slide, wipe, flip, push-cut, iris), `@remotion/effects` ışık sızması katmanları, `@remotion/media` `<Video>` ile kırpılmış gerçek kayıtlar; tüm animasyonlar `interpolate` + `Easing` ile kare tabanlı.
-- 4 stil: `classic`, `showcase` (3B cihaz girişi, kamera itişi, ışık sızması), `kinetic` (kelime kelime tam ekran metin kartları, punch-in), `energetic` (eğik/sallanan cihaz, vurgu bandı, şeritli arka plan).
-- 6 sahne türü: `device`, `zoom` (kamera UI bölgesine uçar), `split`, `stat` (sayaç), `badges` (özellik çipleri), `text`; başlıklarda `*vurgu*` ve animasyonlu alt çizgi.
-- `vitrin video --styles all`: ilk önizlemeyi dört stilde karşılaştırma için üretir (yüklenmez).
-- Süre otomatik 15–30 sn’ye uyar (geçiş bindirmeleri hesaba katılır); `hookFrom` ile kaydın açılış kısmı atlanır.
-- Doğrulama: sahne türüne göre gerekli alanlar, metin kartı sayısı/süresi, sayaç ve rozet iddialarının kanıtlı özelliğe bağlanması.
-- skill/references/video.md eklendi; video brief’i yeni şemaya göre güncellendi.
+### Added — Animated App Previews
+- Four styles: `classic`, `showcase` (3D device entrance, camera push, light leaks), `kinetic` (word-by-word full-screen text cards, punch-in), `energetic` (tilted/shaking device, highlight band, striped background).
+- Six scene types: `device`, `zoom` (the camera flies to a region of the UI), `split`, `stat` (counter), `badges` (feature chips), `text`; `*emphasis*` markup and an animated underline in captions.
+- `vitrin video --styles all`: renders the first preview in all four styles for comparison (not uploaded).
+- `skill/references/video.md`.
+
+### Changed
+- App Preview rendering rewritten following the Remotion skill guide: scene transitions with `TransitionSeries` (fade, slide, wipe, flip, push-cut, iris), `@remotion/effects` light-leak layers, trimmed real recordings via `@remotion/media` `<Video>`; all animation is frame-based with `interpolate` + `Easing`.
+- Duration automatically fits 15–30 s (transition overlaps are accounted for); `hookFrom` skips the opening part of a recording.
+- Validation: required fields per scene type, text card count/duration, and counter and badge claims tied to an evidence-backed feature.
+- The video brief was updated for the new schema.
 
 ## 0.2.0 — 2026-10-24
 
-### Ekran görüntüsü tipleri ve best practice kuralları
-- Yeni arketipler: `callout` (gerçek arayüzden büyütülmüş kesit; aileye göre ayrı dikdörtgen), `fullbleed` (çerçevesiz tam ekran UI), `tilted` (eğik büyük cihaz), `statement` (ikon + büyük ifade + rozetler), `testimonial` (yalnız uygulamanın gerçek App Store yorumları, birebir).
-- İki katmanlı başlık (`kicker`), `*vurgu*` işaretlemesi, alt başlık konumu (`captionPosition: bottom`).
-- Rozet stilleri: `sticker` ve `laurel` (yalnız doğrulanabilir proof).
-- Doğrulama: başlık ≤ 5 kelime önerisi ve ≤ 2 satır ölçümü, %60 gerçek arayüz oranı, ilk 3 görselde gerçek arayüz, eylem çağrısı ve başka platform yasağı, tekrar eden başlıklar, arketip gereksinimleri, uydurma/çeviri yorum tespiti.
-- research artık yayındaki uygulamanın kendi yorumlarını da çeker (testimonial kaynağı).
-- skill/references/art-direction.md: set stratejisi (kanca → kanıt → güven), başlık kuralları, arketip seçimi; kaynaklar AppScreenshotStudio ve MobileAction 2026 rehberleri, Apple Screenshot specifications ve screensdesign.com örnekleri.
+### Added — Screenshot types and best-practice rules
+- New archetypes: `callout` (a magnified excerpt of the real UI; separate rectangle per device family), `fullbleed` (frameless full-screen UI), `tilted` (large tilted device), `statement` (icon + large statement + badges), `testimonial` (only the app's own real App Store reviews, verbatim).
+- Two-tier headlines (`kicker`), `*emphasis*` markup, bottom caption position (`captionPosition: bottom`).
+- Badge styles: `sticker` and `laurel` (verifiable proof only).
+- Validation: ≤ 5-word headline recommendation and ≤ 2-line measurement, 60% real-UI ratio, real UI within the first 3 screenshots, ban on calls to action and other platform names, repeated headlines, archetype requirements, detection of invented or translated reviews.
+- `skill/references/art-direction.md`: set strategy (hook → proof → trust), headline rules, archetype selection; sources: the AppScreenshotStudio and MobileAction 2026 guides, Apple's Screenshot specifications and examples from screensdesign.com.
+
+### Changed
+- `research` now also fetches the published app's own reviews (source for testimonials).
 
 ## 0.1.0 — 2026-10-24
 
-### Faz 0 — iskelet, şemalar, init, doctor
-- pnpm workspace (Node ≥ 22, TypeScript 6, ESM), zod şemaları: AppProfile, Competitors, KeywordPlan, LocaleMetadata/AppMetadata, CppSuggestions, ArtDirection, ShotList, VideoPlan, ValidationReport, RenderManifest, VitrinConfig, State.
-- `data/targets.json` (Ekim 2026 boyutları, iPhone Duo dahil), `asc-locales.json` (50 dil), `storefront-languages.json` (175 storefront), `forbidden-terms.json`.
-- Gizli değerleri maskeleyen logger, idempotent `.vitrin/state.json`, `vitrin init`, `vitrin doctor` (6 adım; eksik anahtarda Türkçe liste + çıkış 2).
-- `docs/apple-notes.md`: Apple sayfalarından doğrulanan değerler ve açık sorular.
+### Added
 
-### Faz 1 — analyze + research
-- pbxproj (OpenStep plist) ayrıştırıcı, Info.plist/INFOPLIST_KEY_*, entitlements, String Catalog, asset catalog renkleri ve ikon, StoreKit ürünleri, App Intents, hedef türleri, kod sinyalleri (erişilebilirlik ve yaş derecelendirmesi taslağı için), git log.
-- iTunes Search/Lookup, RSS top chart ve yorumlar (24 saat önbellek, hız sınırı), macOS Vision OCR, k-means palet, ad terim frekansı, rekabet ve tahmini popülerlik; AppTweak sağlayıcısı.
+#### Phase 0 — skeleton, schemas, init, doctor
+- pnpm workspace (Node ≥ 22, TypeScript 6, ESM) and zod schemas: AppProfile, Competitors, KeywordPlan, LocaleMetadata/AppMetadata, CppSuggestions, ArtDirection, ShotList, VideoPlan, ValidationReport, RenderManifest, VitrinConfig, State.
+- `data/targets.json` (October 2026 sizes, including iPhone Duo), `asc-locales.json` (50 locales), `storefront-languages.json` (175 storefronts), `forbidden-terms.json`.
+- Logger that masks secret values, idempotent `.vitrin/state.json`, `vitrin init`, `vitrin doctor` (6 steps; missing keys produce a list and exit code 2).
+- `docs/apple-notes.md`: values verified against Apple's pages, plus open questions.
 
-### Faz 2 — write + validate + fastlane
-- Grafem/bayt sayımı, limitler, ad/alt başlık/kelime tekrarı, tekil/çoğul, yasaklı terimler, jenerik terimleri ayıran rakip marka tespiti, HTML, URL, telif, iddia-kanıt.
-- fastlane metadata dışa aktarımı (demo hesap dosyaya yazılmaz), Fastfile lane’leri, `upload --dry-run` planı (ASC ile alan alan karşılaştırma).
+#### Phase 1 — analyze + research
+- `pbxproj` (OpenStep plist) parser, Info.plist/`INFOPLIST_KEY_*`, entitlements, String Catalog, asset catalog colors and icon, StoreKit products, App Intents, target types, code signals (for draft accessibility and age-rating answers), git log.
+- iTunes Search/Lookup, RSS top charts and reviews (24-hour cache, rate limiting), macOS Vision OCR, k-means palette, name term frequency, competition and estimated popularity; AppTweak provider.
 
-### Faz 3 — capture + design
-- Ayrı “Vitrin · <cihaz>” simülatörleri, 9:41 durum çubuğu, dil başına sistem dili ve yeniden başlatma, launch-argument ile ekran açma, boş/siyah yakalama tespiti, ekran kaydı.
-- HTML şablon motoru: 8 arketip, 7 arka plan stili, CSS cihaz çerçevesi, Lucide rozetleri, OFL fontlar ve script yedekleri, RTL; otomatik metin sığdırma, taşma/kontrast/güvenli alan/küçük boyut okunurluk ölçümü; sharp ile flatten + alfa kaldırma ve kesin boyut doğrulaması.
+#### Phase 2 — write + validate + fastlane
+- Grapheme/byte counting, limits, duplicates across name/subtitle/keyword field, singular/plural, forbidden terms, competitor brand detection that separates generic terms, HTML, URL, copyright, claim-to-evidence checks.
+- fastlane metadata export (the demo account is never written to disk), Fastfile lanes, `upload --dry-run` plan (field-by-field comparison with ASC).
 
-### Faz 4 — video
-- Remotion 4 kompozisyonları (AppPreview, HeaderLoop, SearchLoop, EventCard), 15–30 sn süre uydurma, ffmpeg ile H.264 High@4.0 / 30 fps CFR / stereo AAC 48 kHz normalizasyonu, ffprobe doğrulaması.
+#### Phase 3 — capture + design
+- Dedicated "Vitrin · <device>" simulators, 9:41 status bar, per-locale system language and relaunch, opening screens via launch arguments, blank/black capture detection, screen recording.
+- HTML template engine: 8 archetypes, 7 background styles, CSS device frame, Lucide badges, OFL fonts with script fallbacks, RTL; automatic text fitting, overflow/contrast/safe-area/small-size legibility measurement; flatten + alpha removal with sharp and exact size verification.
 
-### Faz 5 — Asset Library, CPP, In-App Events
-- App Asset Library istemcisi (rezervasyon → parça yükleme → MD5 commit → işleme bekleme → placement → sıralama), refData karşılaştırması, Custom Product Page ve In-App Event oluşturma, yükleme sonrası geri okuma.
+#### Phase 4 — video
+- Remotion 4 compositions (AppPreview, HeaderLoop, SearchLoop, EventCard), 15–30 s duration fitting, ffmpeg normalization to H.264 High@4.0 / 30 fps CFR / stereo AAC 48 kHz, ffprobe verification.
 
-### Faz 6 — skill ve uçtan uca deneme
-- `/vitrin` SKILL.md ve references/, `skill/scripts/install.sh`, `vitrin review` HTML raporu, `vitrin all`.
-- `examples/Ritim` SwiftUI örnek uygulaması üzerinde uçtan uca çalıştırma.
+#### Phase 5 — Asset Library, CPP, In-App Events
+- App Asset Library client (reservation → chunked upload → MD5 commit → wait for processing → placement → ordering), refData comparison, Custom Product Page and In-App Event creation, post-upload read-back.
+
+#### Phase 6 — skill and end-to-end run
+- `/vitrin` SKILL.md and references/, `skill/scripts/install.sh`, `vitrin review` HTML report, `vitrin all`.
+- End-to-end run on the `examples/Ritim` SwiftUI sample app.
+

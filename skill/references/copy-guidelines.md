@@ -1,36 +1,36 @@
-# Metin yazım rehberi
+# Copy guidelines
 
-## Genel
+## General
 
-- **Doğruluk önce:** her iddia `claims` ile kanıtlı bir özelliğe bağlanır. Demo verisindeki sayılar (ör. “42 günlük seri”) pazarlama iddiası değildir.
-- **Yerel yeniden yazım, çeviri değil:** her dilde o pazarın arama dilini ve tonunu kullan. Türkçede “alışkanlık takibi”, İngilizcede “habit tracker”; birebir çeviri değil, aranan ifade.
-- Ton `app_profile.positioning.tone`’a uyar. Ünlem ve emoji ölçülü.
-- Yasak: fiyat, “ücretsiz/free”, kanıtsız “#1/en iyi/tek”, rakip adları, HTML, kelime doldurma.
+- **Accuracy first:** every claim is tied to an evidence-backed feature via `claims`. Numbers in demo data (e.g. "42-day streak") are not marketing claims.
+- **Rewrite for each locale, don't translate:** in every language, use that market's search vocabulary and tone. In Turkish "alışkanlık takibi", in English "habit tracker" — not a literal translation, but the phrase people actually search for.
+- Match `app_profile.positioning.tone`. Use exclamation marks and emoji sparingly.
+- Forbidden: prices, "free", unsupported "#1/best/only", competitor names, HTML, keyword stuffing.
 
-## Açıklama (≤ 4000, düz metin)
+## Description (≤ 4000, plain text)
 
-- **İlk 3 satır** “devamını oku” öncesi görünür: 1) ana fayda + birincil kelime, 2) ikinci fayda, 3) güven/ayrışma.
-- Sonra kısa bölümler: özellik madde işaretleri (•), kimler için, gizlilik/veri yaklaşımı (yalnız kanıtlıysa), abonelik bilgisi (varsa: süre, otomatik yenileme, Ayarlar’dan iptal; fiyat yazma).
-- Aynı kelimeyi 6’dan fazla kullanma.
+- **The first 3 lines** are visible before "more": 1) main benefit + primary keyword, 2) second benefit, 3) trust/differentiation.
+- Then short sections: feature bullets (•), who it is for, privacy/data approach (only if backed by evidence), subscription information (if any: duration, auto-renewal, cancel in Settings; never state the price).
+- Do not use the same word more than 6 times.
 
-## Promosyon metni (≤ 170)
+## Promotional text (≤ 170)
 
-- İncelemesiz değişir: güncel kampanya, mevsim, yeni özellik. Fiyat ve indirim yazma.
+- Can change without review: current campaign, season, new feature. Never mention prices or discounts.
 
-## Yenilikler (≤ 4000)
+## What's New (≤ 4000)
 
-- `app_profile.docs.commitsSinceTag` ve CHANGELOG’dan **kullanıcı diliyle**: “Takvim görünümü artık 12 haftayı gösteriyor.” Teknik iç detay (refactor, CI) yazma. İlk sürümde boş bırak.
+- From `app_profile.docs.commitsSinceTag` and the CHANGELOG, **in the user's language**: "The calendar view now shows 12 weeks." No technical internals (refactors, CI). Leave it empty for the first version.
 
-## İnceleme notları (≤ 4000 bayt)
+## Review notes (≤ 4000 bytes)
 
-- Demo hesap (varsa `.env` REVIEW_DEMO_* — dosyaya yazma), test adımları, özel donanım/izin gereksinimleri. Müşteri görmez.
+- Demo account (from `.env` REVIEW_DEMO_* if present — never write it to a file), test steps, special hardware/permission requirements. Customers never see this.
 
-## Ekran görüntüsü başlıkları
+## Screenshot headlines
 
-- 2–7 kelime, fiil veya fayda ile başla: “Serini kırma”, “İlerlemeni grafiklerle gör”.
-- İlk 3 görsel en güçlü 3 mesaj; ana kelimeyi pekiştir.
-- Alt başlık isteğe bağlı, tek satır.
+- 2–7 words, start with a verb or a benefit: "Keep your streak", "See your progress in charts".
+- The first 3 screenshots carry the 3 strongest messages; reinforce the primary keyword.
+- The subheadline is optional, one line.
 
-## Video metinleri
+## Video copy
 
-- Kanca ≤ 5 kelime; her vuruş tek fikir; kapanış: uygulama adı + kısa vaat. Sessiz izlenince anlaşılmalı.
+- Hook ≤ 5 words; one idea per beat; closing: app name + a short promise. It must make sense when watched without sound.

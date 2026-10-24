@@ -7,5 +7,5 @@ import type { AppPaths } from '@vitrin/core';
 export async function readBack(opts: { paths: AppPaths; config: VitrinConfig; bundleId: string; metadata: LocaleMetadata[]; client: AscClient }): Promise<string[]> {
   const plan = await buildPlan({ ...opts, include: { creatives: false, cpp: false, events: false } });
   const diffs = plan.items.filter((i) => i.area === 'metadata' && i.change !== 'unchanged');
-  return [...plan.blockers, ...diffs.map((d) => `${d.locale} ${d.field}: ASC “${d.remote ?? '(boş)'}”, yerel “${d.local}”`)];
+  return [...plan.blockers, ...diffs.map((d) => `${d.locale} ${d.field}: ASC “${d.remote ?? '(empty)'}”, local “${d.local}”`)];
 }

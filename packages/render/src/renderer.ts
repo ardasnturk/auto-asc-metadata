@@ -36,7 +36,7 @@ export interface RenderResult {
 
 export function selectedOption(ad: ArtDirection): ArtDirectionOption {
   const opt = ad.options.find((o) => o.id === ad.selected);
-  if (!opt) throw new Error(`art-direction.json: selected “${ad.selected}” seçeneklerde yok.`);
+  if (!opt) throw new Error(`art-direction.json: selected “${ad.selected}” is not among the options.`);
   return opt;
 }
 
@@ -62,9 +62,9 @@ export class RawLibrary {
   async get(locale: string, family: 'iphone' | 'ipad' | 'duo', id: string): Promise<ScreenImage> {
     const candidates: Array<[string, 'iphone' | 'ipad' | 'duo', string]> = [
       [locale, family, ''],
-      [locale, 'iphone', family !== 'iphone' ? `${family} yakalaması yok, iPhone görüntüsü kullanıldı` : ''],
-      [this.primaryLocale, family, `${locale} yakalaması yok, ${this.primaryLocale} kullanıldı (dil uyuşmazlığı!)`],
-      [this.primaryLocale, 'iphone', `${locale}/${family} yakalaması yok, ${this.primaryLocale}/iphone kullanıldı (dil uyuşmazlığı!)`],
+      [locale, 'iphone', family !== 'iphone' ? `no ${family} capture, used the iPhone capture` : ''],
+      [this.primaryLocale, family, `no ${locale} capture, used ${this.primaryLocale} (language mismatch!)`],
+      [this.primaryLocale, 'iphone', `no ${locale}/${family} capture, used ${this.primaryLocale}/iphone (language mismatch!)`],
     ];
     for (const [loc, fam, warning] of candidates) {
       const file = this.paths.rawShot(loc, fam, id);
@@ -79,7 +79,7 @@ export class RawLibrary {
         return { src: pathToFileURL(file).href, aspect, family: fam };
       }
     }
-    throw new Error(`Ham ekran görüntüsü yok: ${id} (${locale}/${family}). Önce \`vitrin capture\` çalıştır.`);
+    throw new Error(`Raw screenshot missing: ${id} (${locale}/${family}). Run \`vitrin capture\` first.`);
   }
 
   private warn(msg: string): void {
@@ -101,9 +101,9 @@ async function renderOne(page: Page, html: string, htmlFile: string, out: string
   await sharp(png).flatten({ background }).removeAlpha().png({ compressionLevel: 9 }).toFile(out);
   const meta = await sharp(out).metadata();
   if (meta.width !== target.width || meta.height !== target.height) {
-    throw new Error(`Render boyutu hatalı: ${out} ${meta.width}×${meta.height}, beklenen ${target.width}×${target.height}`);
+    throw new Error(`Wrong render size: ${out} ${meta.width}×${meta.height}, expected ${target.width}×${target.height}`);
   }
-  if (meta.hasAlpha) throw new Error(`Alfa kanalı kaldırılamadı: ${out}`);
+  if (meta.hasAlpha) throw new Error(`Could not remove the alpha channel: ${out}`);
   const minContrast = await measureTextContrast(page, target.logical.scale);
   return { ...measured, minContrast };
 }
@@ -181,7 +181,7 @@ export async function renderDesign(opts: RenderOptions): Promise<RenderResult> {
         for (const shot of list) {
           if (shot.targets && !shot.targets.includes(target.id)) continue;
           const copy = shot.copy[locale];
-          if (!copy) throw new Error(`shots.json: ${shot.id} için ${locale} metni yok.`);
+          if (!copy) throw new Error(`shots.json: ${shot.id} has no ${locale} copy.`);
           const screens = await Promise.all(shot.screens.map((id) => raw.get(locale, familyOfTarget(target), id)));
           const input: PageInput = {
             target,
@@ -220,7 +220,7 @@ export async function renderDesign(opts: RenderOptions): Promise<RenderResult> {
             // First three shots are what search results show: check legibility at 25 %.
             thumbnailLegible: idx < 3 ? (headlinePx * 0.25) / (target.width / 1206) >= 22 : undefined,
           });
-          log.dim(`  ${locale} ${target.id} ${name}${m.overflow.length ? '  ⚠ taşma' : ''}`);
+          log.dim(`  ${locale} ${target.id} ${name}${m.overflow.length ? '  ⚠ overflow' : ''}`);
         }
       }
       await context.close();
@@ -241,7 +241,7 @@ export async function renderDesign(opts: RenderOptions): Promise<RenderResult> {
       for (const locale of opts.locales) {
         for (const { key, spec } of specs) {
           const copy = spec.copy[locale];
-          if (!copy) throw new Error(`shots.json creatives.${key}: ${locale} metni yok.`);
+          if (!copy) throw new Error(`shots.json creatives.${key}: no ${locale} copy.`);
           const screens = await Promise.all(spec.screens.map((id) => raw.get(locale, 'iphone', id)));
           const input: PageInput = { target, locale, ad, archetype: 'hero', headline: copy.headline, subheadline: copy.subheadline, kicker: copy.kicker, badges: spec.badges as Badge[], screens };
           const out = join(paths.creative, locale, `${target.id}_${key}.png`);

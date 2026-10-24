@@ -1,13 +1,13 @@
 import { z } from 'zod';
 
 /** ASC locale code as used by fastlane deliver (e.g. `tr`, `en-US`, `zh-Hans`). */
-export const AscLocale = z.string().regex(/^[a-z]{2,3}(-[A-Za-z]{2,4})?$/, 'Geçersiz ASC locale kodu');
+export const AscLocale = z.string().regex(/^[a-z]{2,3}(-[A-Za-z]{2,4})?$/, 'Invalid ASC locale code');
 export type AscLocale = z.infer<typeof AscLocale>;
 
-export const HexColor = z.string().regex(/^#([0-9a-fA-F]{6})$/, 'Renk #RRGGBB biçiminde olmalı');
+export const HexColor = z.string().regex(/^#([0-9a-fA-F]{6})$/, 'Color must be in #RRGGBB format');
 
 /** kebab-case identifier used to link claims to features. */
-export const FeatureId = z.string().regex(/^[a-z0-9]+(-[a-z0-9]+)*$/, 'Özellik kimliği kebab-case olmalı');
+export const FeatureId = z.string().regex(/^[a-z0-9]+(-[a-z0-9]+)*$/, 'Feature id must be kebab-case');
 
 /** A string that differs per locale: `{ "tr": "…", "en-US": "…" }`. */
 export const Localized = z.record(AscLocale, z.string());

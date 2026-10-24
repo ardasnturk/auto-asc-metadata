@@ -1,40 +1,40 @@
-# App Preview ve kreatif videolar
+# App Previews and creative videos
 
-Vitrin videoları Remotion ile üretir. Sen `.vitrin/video-plan.json` yazarsın; CLI sahne listesini kurar, 15–30 sn’ye uydurur, render eder ve App Store formatına (H.264 High@4.0, 30 fps, stereo AAC) normalize eder.
+Vitrin renders videos with Remotion. You write `.vitrin/video-plan.json`; the CLI builds the scene list, fits it to 15–30 s, renders it and normalizes it to the App Store format (H.264 High@4.0, 30 fps, stereo AAC).
 
-## Kurallar (Apple)
+## Rules (Apple)
 
-- 15–30 sn, 30 fps, 886×1920 (iPhone, Duo dahil) / 1200×1600 (iPad); dil ve cihaz başına en çok 3.
-- **Gerçek uygulama görüntüsü ağırlıkta olmalı.** Metin kartları kısa (≤ 1,5 sn) ve az (≤ 2 açık `text` vuruşu); el, kişi, cihaz dışı çekim yok.
-- Sessiz izlenince anlaşılmalı (aramada sessiz oynar). Poster karesi 5. saniye: o anda okunur bir UI sahnesi olsun.
-- Kayıtların ilk ~1,5 sn’si uygulama açılışıdır: `from` ≥ 1,5 (kanca için `hookFrom`, varsayılan 1,5).
+- 15–30 s, 30 fps, 886×1920 (iPhone, including Duo) / 1200×1600 (iPad); at most 3 per locale and device.
+- **Real app footage must dominate.** Text cards are short (≤ 1.5 s) and few (≤ 2 explicit `text` beats); no hands, people or footage outside the device.
+- It must make sense without sound (it plays muted in search). The poster frame is at 5 seconds: put a legible UI scene there.
+- The first ~1.5 s of a recording is the app launch: `from` ≥ 1.5 (for the hook, `hookFrom`, default 1.5).
 
-## Stiller (`previews[].style`)
+## Styles (`previews[].style`)
 
-| Stil | His | Ne yapar |
+| Style | Feel | What it does |
 | --- | --- | --- |
-| `classic` | Sakin, kurumsal | Yumuşak giriş, fade geçişler |
-| `showcase` (varsayılan) | Premium, ürün odaklı | 3B dönerek giren cihaz, yavaş kamera itişi, push/iris geçişler, kesimlerde ışık sızması |
-| `kinetic` | Modern, tipografik | Her vuruştan önce kelime kelime patlayan tam ekran metin kartı, cihaz “punch-in”, slide/push/wipe geçişler |
-| `energetic` | Oyun, spor, müzik | Eğik ve sallanan cihaz, vurgu renginde başlık bandı, hareketli şeritli arka plan, wipe/flip/slide |
+| `classic` | Calm, corporate | Soft entrance, fade transitions |
+| `showcase` (default) | Premium, product-focused | Device enters with a 3D rotation, slow camera push, push/iris transitions, light leaks on cuts |
+| `kinetic` | Modern, typographic | A full-screen text card that bursts in word by word before each beat, device "punch-in", slide/push/wipe transitions |
+| `energetic` | Games, sports, music | Tilted, shaking device, caption band in the accent color, moving striped background, wipe/flip/slide |
 
-Kararsızsan `vitrin video --styles all` ilk önizlemeyi dört stilde `.vitrin/video-styles/<dil>/` altına üretir (yüklenmez). Kullanıcıya göster, seçileni `style` alanına yaz. `transition` (`fade|slide|wipe|flip|push|iris|none`) tek tip geçişe zorlar; `lightLeaks` ışık sızmasını açar/kapatır.
+If unsure, `vitrin video --styles all` renders the first preview in all four styles under `.vitrin/video-styles/<locale>/` (not uploaded). Show them to the user and write the chosen one to the `style` field. `transition` (`fade|slide|wipe|flip|push|iris|none`) forces a single transition type; `lightLeaks` turns light leaks on/off.
 
-## Sahneler (`beats[].scene`)
+## Scenes (`beats[].scene`)
 
-| Sahne | Ne zaman | Gerekli alanlar |
+| Scene | When | Required fields |
 | --- | --- | --- |
-| `device` | Varsayılan: cihazda kayıt/ekran + animasyonlu başlık | `source` |
-| `zoom` | Kamera UI’nin bir bölgesine uçar ve halka ile işaretler (ısı haritası, grafik, kart) | `source`, `zoom {x,y,w,h}` (yakalamanın kesirleri) |
-| `split` | İki ekran yan yana kayarak gelir | `source`, `secondSource` |
-| `stat` | Büyük sayaç + etiket + cihaz | `source`, `stat {value, suffix, label, featureId}` — değer **ürün gerçeği** olmalı (“12 hafta geçmiş”), demo verisi değil |
-| `badges` | Özellik çipleri cihazın etrafında patlar | `source`, `badges[{icon, label, featureId}]` (Lucide ikon adları) |
-| `text` | Tam ekran kinetik metin kartı | yalnız `caption`; kısa tut |
+| `device` | Default: recording/screen on the device + animated caption | `source` |
+| `zoom` | The camera flies to a region of the UI and marks it with a ring (heat map, chart, card) | `source`, `zoom {x,y,w,h}` (fractions of the capture) |
+| `split` | Two screens slide in side by side | `source`, `secondSource` |
+| `stat` | Large counter + label + device | `source`, `stat {value, suffix, label, featureId}` — the value must be a **product fact** ("12 weeks of history"), not demo data |
+| `badges` | Feature chips pop out around the device | `source`, `badges[{icon, label, featureId}]` (Lucide icon names) |
+| `text` | Full-screen kinetic text card | only `caption`; keep it short |
 
-Başlıklarda `*kelime*` vurgu renginde ve altı çizili animasyonla çıkar. Her vuruş tek fikir, ≤ 5 kelime.
+In captions, `*word*` appears in the accent color with an animated underline. One idea per beat, ≤ 5 words.
 
-Önerilen akış (≈ 20–25 sn): kanca (2,6 sn, gerçek kayıt) → 3–5 vuruş (3,5–5 sn) → kapanış (ikon + ad + vaat, 2,6 sn). Vuruş türlerini çeşitlendir: aynı sahneyi art arda kullanma.
+Suggested flow (≈ 20–25 s): hook (2.6 s, real recording) → 3–5 beats (3.5–5 s) → closing (icon + name + promise, 2.6 s). Vary beat types: do not use the same scene back to back.
 
-## Kreatif döngüler
+## Creative loops
 
-`loops.header` (21:9) ve `loops.search` (3:2) kesintisiz döner; aramada sessizdir. Kısa, büyük metin; 3 kaynak ekran.
+`loops.header` (21:9) and `loops.search` (3:2) loop seamlessly; they are muted in search. Short, large text; 3 source screens.

@@ -14,7 +14,7 @@ export interface AscCredentials {
 
 export class AscCredentialError extends Error {}
 
-/** Reads ASC_KEY_ID / ASC_ISSUER_ID / ASC_KEY_PATH (or ASC_KEY_CONTENT_BASE64). Throws with a Turkish message. */
+/** Reads ASC_KEY_ID / ASC_ISSUER_ID / ASC_KEY_PATH (or ASC_KEY_CONTENT_BASE64). Throws with a readable message. */
 export function credentialsFromEnv(env: NodeJS.ProcessEnv = process.env): AscCredentials {
   const keyId = env.ASC_KEY_ID?.trim();
   const issuerId = env.ASC_ISSUER_ID?.trim();
@@ -22,11 +22,11 @@ export function credentialsFromEnv(env: NodeJS.ProcessEnv = process.env): AscCre
   if (env.ASC_KEY_CONTENT_BASE64?.trim()) {
     privateKey = Buffer.from(env.ASC_KEY_CONTENT_BASE64.trim(), 'base64').toString('utf8');
   } else if (env.ASC_KEY_PATH?.trim()) {
-    if (!existsSync(env.ASC_KEY_PATH.trim())) throw new AscCredentialError(`.p8 dosyası bulunamadı: ${env.ASC_KEY_PATH}`);
+    if (!existsSync(env.ASC_KEY_PATH.trim())) throw new AscCredentialError(`.p8 file not found: ${env.ASC_KEY_PATH}`);
     privateKey = readFileSync(env.ASC_KEY_PATH.trim(), 'utf8');
   }
-  if (!keyId || !issuerId || !privateKey) throw new AscCredentialError('ASC API anahtarı eksik (ASC_KEY_ID, ASC_ISSUER_ID, ASC_KEY_PATH).');
-  if (!isPem(privateKey)) throw new AscCredentialError('.p8 içeriği PEM biçiminde değil (-----BEGIN PRIVATE KEY----- bekleniyor).');
+  if (!keyId || !issuerId || !privateKey) throw new AscCredentialError('ASC API key is missing (ASC_KEY_ID, ASC_ISSUER_ID, ASC_KEY_PATH).');
+  if (!isPem(privateKey)) throw new AscCredentialError('.p8 content is not in PEM format (expected -----BEGIN PRIVATE KEY-----).');
   addSecret(keyId);
   addSecret(issuerId);
   return { keyId, issuerId, privateKey };

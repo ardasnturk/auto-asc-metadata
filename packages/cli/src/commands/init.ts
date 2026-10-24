@@ -5,12 +5,13 @@ import { readFile } from 'node:fs/promises';
 import { relative, resolve } from 'node:path';
 import { stringify } from 'yaml';
 
-const GITIGNORE_LINES = ['.env', '*.p8', 'secrets/', '.vitrin/cache/', '.vitrin/raw/', 'fastlane/report.xml', 'fastlane/README.md'];
+// Secrets, caches and machine-local pipeline state stay out of git; the JSON Claude writes is meant to be committed.
+const GITIGNORE_LINES = ['.env', '*.p8', 'secrets/', '.vitrin/cache/', '.vitrin/raw/', '.vitrin/briefs/', '.vitrin/state.json', '.vitrin/upload-plan.json', 'fastlane/report.xml', 'fastlane/README.md'];
 
 export async function initCommand(opts: { cwd?: string; force?: boolean }): Promise<number> {
   const root = resolve(opts.cwd ?? process.cwd());
   const paths = appPaths(root);
-  log.step(`Vitrin kurulumu: ${root}`);
+  log.step(`Vitrin setup: ${root}`);
 
   if (!existsSync(paths.config) || opts.force) {
     let detected: { project?: string; scheme?: string; bundleId?: string; locales: string[]; primary: string; holder?: string } = { locales: ['en-US'], primary: 'en-US' };
@@ -26,9 +27,9 @@ export async function initCommand(opts: { cwd?: string; force?: boolean }): Prom
         locales: asc.length ? [...new Set(asc)] : ['en-US'],
         primary: dev,
       };
-      log.ok(`Xcode projesi: ${detected.project} (şema ${detected.scheme}, ${detected.locales.join(', ')})`);
+      log.ok(`Xcode project: ${detected.project} (scheme ${detected.scheme}, ${detected.locales.join(', ')})`);
     } catch (err) {
-      log.warn(`Proje otomatik okunamadı: ${(err as Error).message}`);
+      log.warn(`Could not read the project automatically: ${(err as Error).message}`);
     }
     const storefronts = [...new Set([...detected.locales.map((l) => storefrontForLocale(l)), "us"])];
     const config = {
@@ -41,7 +42,7 @@ export async function initCommand(opts: { cwd?: string; force?: boolean }): Prom
       },
       storefronts,
       urls: { support: 'https://example.com/support', privacy: 'https://example.com/privacy', marketing: undefined },
-      copyrightHolder: 'Şirket Adı',
+      copyrightHolder: 'Company Name',
       review: { firstName: '', lastName: '', phone: '', email: '' },
       research: { seeds: Object.fromEntries(detected.locales.map((l) => [l, []])), competitors: 15, candidates: 40, limit: 50, cacheHours: 24, reviewsPerApp: 50, ocr: true },
       targets: { enable: [], disable: [] },
@@ -59,15 +60,15 @@ export async function initCommand(opts: { cwd?: string; force?: boolean }): Prom
       upload: { uploader: 'deliver', platform: 'ios' },
     };
     const header = [
-      '# Vitrin yapılandırması — gizli olmayan değerler. Anahtarlar .env içinde durur.',
-      '# urls, copyrightHolder ve review alanlarını gerçek değerlerle doldur.',
-      '# research.seeds ve capture.screens /vitrin skill’i çalışırken Claude tarafından doldurulur.',
+      '# Vitrin configuration — non-secret values only. Keys live in .env.',
+      '# Fill in urls, copyrightHolder and review with real values.',
+      '# research.seeds and capture.screens are filled in by Claude while the /vitrin skill runs.',
       '',
     ].join('\n');
     await writeText(paths.config, header + stringify(config, { lineWidth: 120 }));
-    log.ok('vitrin.config.yaml oluşturuldu');
+    log.ok('Created vitrin.config.yaml');
   } else {
-    log.dim('vitrin.config.yaml zaten var (üzerine yazmak için --force).');
+    log.dim('vitrin.config.yaml already exists (use --force to overwrite).');
   }
 
   // .env.example — keep keys the user added.
@@ -80,7 +81,7 @@ export async function initCommand(opts: { cwd?: string; force?: boolean }): Prom
     }
   }
   await writeText(paths.envExample, renderEnvExample(extra));
-  log.ok('.env.example güncellendi');
+  log.ok('Updated .env.example');
 
   // .gitignore
   const gi = `${root}/.gitignore`;
@@ -88,13 +89,13 @@ export async function initCommand(opts: { cwd?: string; force?: boolean }): Prom
   const missing = GITIGNORE_LINES.filter((l) => !current.split('\n').some((x) => x.trim() === l));
   if (missing.length) {
     await writeText(gi, `${current}${current && !current.endsWith('\n') ? '\n' : ''}\n# Vitrin\n${missing.join('\n')}\n`);
-    log.ok(`.gitignore: ${missing.join(', ')} eklendi`);
+    log.ok(`.gitignore: added ${missing.join(', ')}`);
   }
 
   await ensureDir(paths.vitrin);
   const installed = await installFastlaneTemplates(paths, opts.force);
-  for (const f of installed) log.ok(`${relative(root, f)} yazıldı`);
-  log.info('\nSonraki adım: `vitrin doctor` (anahtarlar eksikse üretim yine devam eder).');
+  for (const f of installed) log.ok(`Wrote ${relative(root, f)}`);
+  log.info('\nNext step: `vitrin doctor` (generation still works if keys are missing).');
   return 0;
 }
 

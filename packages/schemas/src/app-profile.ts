@@ -24,7 +24,7 @@ export const Feature = z.object({
   description: z.string().default(''),
   kind: FeatureKind.default('core'),
   /** Every feature must point to at least one file in the project (App Review 2.3). */
-  evidence: z.array(Evidence).min(1, 'Her özelliğin en az bir kanıtı olmalı'),
+  evidence: z.array(Evidence).min(1, 'Every feature needs at least one piece of evidence'),
   confidence: z.enum(['high', 'medium', 'low']).default('medium'),
   /** `analyzer` = deterministic detection, `claude` = added during the skill run. */
   source: z.enum(['analyzer', 'claude']).default('analyzer'),

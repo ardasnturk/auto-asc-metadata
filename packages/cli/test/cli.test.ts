@@ -47,15 +47,15 @@ describe('analyze merge', () => {
 });
 
 describe('cli', () => {
-  it('doctor stops with exit 2 and a Turkish list when keys are missing', async () => {
+  it('doctor stops with exit 2 and a list of missing keys', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'vitrin-cli-'));
     writeFileSync(join(dir, 'vitrin.config.yaml'), 'app:\n  bundleId: com.example.app\nurls: {}\n');
     const res = await vitrin(dir, 'doctor', '--offline');
     expect(res.code).toBe(2);
-    expect(res.out).toContain('Yükleme için eksik anahtarlar');
+    expect(res.out).toContain('Missing keys required for upload');
     expect(res.out).toContain('ASC_KEY_ID');
     expect(res.out).toContain('Users and Access');
-    expect(res.out).toContain('Ekleyince devam yaz.');
+    expect(res.out).toContain('Add them to .env, then reply "continue".');
     expect(readFileSync(join(dir, '.env.example'), 'utf8')).toContain('ASC_ISSUER_ID=');
   }, 120_000);
 
@@ -68,6 +68,6 @@ describe('cli', () => {
     writeFileSync(join(dir, '.vitrin', 'app_profile.json'), JSON.stringify(profile));
     const res = await vitrin(dir, 'write');
     expect(res.code).toBe(2);
-    expect(readFileSync(join(dir, '.vitrin', 'briefs', 'write.md'), 'utf8')).toContain('100 bayt');
+    expect(readFileSync(join(dir, '.vitrin', 'briefs', 'write.md'), 'utf8')).toContain('100 bytes');
   }, 60_000);
 });

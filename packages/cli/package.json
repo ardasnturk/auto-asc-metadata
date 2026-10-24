@@ -32,5 +32,27 @@
   },
   "bin": {
     "vitrin": "./dist/bin.js"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ardasnturk/auto-asc-metadata.git",
+    "directory": "packages/cli"
+  },
+  "description": "Vitrin CLI — App Store Connect metadata, screenshot and App Preview automation",
+  "keywords": [
+    "app-store",
+    "app-store-connect",
+    "aso",
+    "fastlane",
+    "screenshots",
+    "app-preview",
+    "remotion",
+    "ios",
+    "claude-code"
+  ],
+  "author": "Arda Sentürk",
+  "engines": {
+    "node": ">=22"
   }
 }

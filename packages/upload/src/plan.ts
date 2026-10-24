@@ -75,7 +75,7 @@ export async function buildPlan(opts: {
   if (client) {
     const app = await client.findApp(opts.bundleId);
     if (!app) {
-      plan.blockers.push(`ASC’de ${opts.bundleId} kaydı yok. Uygulama kaydı API anahtarıyla açılamaz; App Store Connect’te elle oluştur.`);
+      plan.blockers.push(`No app record for ${opts.bundleId} in ASC. App records cannot be created with an API key; create it once in App Store Connect.`);
     } else {
       plan.appId = app.id;
       const platform = config.upload.platform === 'osx' ? 'MAC_OS' : config.upload.platform === 'appletvos' ? 'TV_OS' : config.upload.platform === 'xros' ? 'VISION_OS' : 'IOS';
@@ -84,7 +84,7 @@ export async function buildPlan(opts: {
       // App Store Connect has no release notes for an app that was never released.
       firstRelease = versions.every((v) => isEditableVersion(v) || ['REJECTED', 'DEVELOPER_REMOVED_FROM_SALE'].includes(String(v.attributes.appVersionState ?? v.attributes.appStoreState)));
       if (!editable) {
-        plan.blockers.push('Düzenlenebilir App Store sürümü yok. `vitrin doctor --create-version <x.y.z>` dene; yalnız TestFlight’taki uygulamalarda ilk sürüm ASC’de elle açılmalı.');
+        plan.blockers.push('No editable App Store version. Try `vitrin doctor --create-version <x.y.z>`; for apps that are only on TestFlight, the first version must be created manually in ASC.');
       } else {
         plan.version = { id: editable.id, versionString: editable.attributes.versionString, state: editable.attributes.appVersionState ?? editable.attributes.appStoreState ?? '' };
         versionLocs = await client.versionLocalizations(editable.id);
@@ -119,7 +119,7 @@ export async function buildPlan(opts: {
           locale: m.locale,
           field: local,
           change: !remote ? 'create' : rv === value ? 'unchanged' : 'update',
-          local: value ? short(value) : '(boş — silinecek)',
+          local: value ? short(value) : '(empty — will be cleared)',
           remote: rv ? short(rv) : undefined,
           via: 'deliver',
         });
@@ -139,36 +139,36 @@ export async function buildPlan(opts: {
       byTarget.set(t, (byTarget.get(t) ?? 0) + 1);
     }
     for (const [t, n] of byTarget) {
-      plan.items.push({ area: 'screenshots', locale, field: t, change: 'update', local: `${n} görsel`, via: uploader, note: 'mevcut set değiştirilir' });
+      plan.items.push({ area: 'screenshots', locale, field: t, change: 'update', local: `${n} images`, via: uploader, note: 'replaces the existing set' });
     }
     const pdir = join(opts.paths.appPreviews, locale);
     const previews = existsSync(pdir) ? (await readdir(pdir)).filter((f) => /\.(mp4|mov)$/.test(f)) : [];
-    if (previews.length) plan.items.push({ area: 'previews', locale, change: 'update', local: previews.join(', '), via: uploader, note: 'işlenmesi 24 saate kadar sürebilir' });
+    if (previews.length) plan.items.push({ area: 'previews', locale, change: 'update', local: previews.join(', '), via: uploader, note: 'processing can take up to 24 hours' });
   }
 
   if (opts.include.creatives) {
     for (const locale of config.app.locales) {
       const dir = join(opts.paths.creative, locale);
       const files = existsSync(dir) ? (await readdir(dir)).filter((f) => /^(header|search)_/.test(f)) : [];
-      for (const f of files) plan.items.push({ area: 'creatives', locale, field: f, change: 'create', via: 'asset-library', note: 'App Asset Library; sürümden bağımsız onaylanır' });
+      for (const f of files) plan.items.push({ area: 'creatives', locale, field: f, change: 'create', via: 'asset-library', note: 'App Asset Library; reviewed independently of the version' });
     }
   } else if (opts.shots?.creatives.header || opts.shots?.creatives.search) {
-    plan.items.push({ area: 'creatives', change: 'skip', via: 'asset-library', note: '--creatives verilmedi' });
+    plan.items.push({ area: 'creatives', change: 'skip', via: 'asset-library', note: '--creatives not passed' });
   }
   if (opts.include.cpp && opts.cpp) {
-    for (const p of opts.cpp.pages) plan.items.push({ area: 'cpp', field: p.name, change: 'create', via: 'asc-api', note: `${p.keywords.length} kelime, ${p.shots.length} görsel; Apple onayı gerekir` });
+    for (const p of opts.cpp.pages) plan.items.push({ area: 'cpp', field: p.name, change: 'create', via: 'asc-api', note: `${p.keywords.length} keywords, ${p.shots.length} images; requires Apple review` });
   }
   if (opts.include.events) {
-    for (const e of opts.shots?.creatives.events ?? []) plan.items.push({ area: 'events', field: e.id, change: 'create', via: 'asc-api', note: 'taslak olarak oluşturulur' });
+    for (const e of opts.shots?.creatives.events ?? []) plan.items.push({ area: 'events', field: e.id, change: 'create', via: 'asc-api', note: 'created as a draft' });
   }
   return plan;
 }
 
 export function formatPlan(plan: UploadPlan): string {
   const lines: string[] = [];
-  lines.push(`Uygulama: ${plan.bundleId}${plan.appId ? ` (ASC id ${plan.appId})` : ''}`);
-  if (plan.version) lines.push(`Sürüm: ${plan.version.versionString} — ${plan.version.state}`);
-  lines.push(`Yükleyici: ${plan.uploader}${plan.remoteKnown ? '' : '  (ASC’ye bağlanılmadı: uzak durum bilinmiyor)'}`);
+  lines.push(`App: ${plan.bundleId}${plan.appId ? ` (ASC id ${plan.appId})` : ''}`);
+  if (plan.version) lines.push(`Version: ${plan.version.versionString} — ${plan.version.state}`);
+  lines.push(`Uploader: ${plan.uploader}${plan.remoteKnown ? '' : '  (not connected to ASC: remote state unknown)'}`);
   const symbol: Record<ChangeKind, string> = { create: '+', update: '~', unchanged: '=', unknown: '?', skip: '-' };
   let area = '';
   for (const it of plan.items) {
@@ -181,7 +181,7 @@ export function formatPlan(plan: UploadPlan): string {
     lines.push(`${head} ${body}${it.note ? `  (${it.note})` : ''}`);
   }
   const counts = plan.items.reduce<Record<string, number>>((a, i) => ((a[i.change] = (a[i.change] ?? 0) + 1), a), {});
-  lines.push('', `Özet: ${Object.entries(counts).map(([k, v]) => `${k}=${v}`).join(', ')}`);
-  for (const b of plan.blockers) lines.push(`ENGEL: ${b}`);
+  lines.push('', `Summary: ${Object.entries(counts).map(([k, v]) => `${k}=${v}`).join(', ')}`);
+  for (const b of plan.blockers) lines.push(`BLOCKED: ${b}`);
   return lines.join('\n');
 }

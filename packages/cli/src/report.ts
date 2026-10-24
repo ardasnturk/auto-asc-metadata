@@ -34,45 +34,45 @@ export async function buildReport(ctx: Ctx): Promise<string> {
         const used = v.unit === 'bytes' ? v.bytes : v.chars;
         const pct = Math.min(100, Math.round((used / v.limit) * 100));
         const cls = used > v.limit ? 'bad' : pct > 90 ? 'warn' : 'ok';
-        return `<tr><td>${field}</td><td class="num">${used} / ${v.limit} ${v.unit === 'bytes' ? 'bayt' : 'kr.'}</td><td><div class="bar"><i class="${cls}" style="width:${pct}%"></i></div></td></tr>`;
+        return `<tr><td>${field}</td><td class="num">${used} / ${v.limit} ${v.unit === 'bytes' ? 'bytes' : 'chars'}</td><td><div class="bar"><i class="${cls}" style="width:${pct}%"></i></div></td></tr>`;
       })
       .join('');
     const descLines = (m?.description ?? '').split('\n').filter(Boolean);
     localeSections.push(`
 <section class="locale" dir="${dir}">
-  <h2>${esc(localeInfo(locale)?.nameTr ?? locale)} <small>${locale}</small></h2>
+  <h2>${esc(localeInfo(locale)?.name ?? locale)} <small>${locale}</small></h2>
   <div class="grid2">
     <div>
-      <h3>Arama sonucu</h3>
+      <h3>Search result</h3>
       <div class="search-row">
         <div class="sr-head">${icon ? `<img class="icon" src="${icon}">` : '<div class="icon ph"></div>'}
           <div><b>${esc(m?.name ?? '—')}</b><div class="muted">${esc(m?.subtitle ?? '')}</div>
           <div class="muted small">${rating?.averageUserRating ? `★ ${rating.averageUserRating.toFixed(1)} · ${rating.userRatingCount}` : '★ —'}</div></div>
-          <span class="get">AL</span></div>
+          <span class="get">GET</span></div>
         <div class="sr-shots">${(previews.length ? [] : iphone.slice(0, 3)).map((s) => `<img src="${s}">`).join('')}${previews.slice(0, 1).map((v) => `<video src="${v}" muted autoplay loop playsinline></video>`).join('')}${previews.length ? iphone.slice(0, 2).map((s) => `<img src="${s}">`).join('') : ''}</div>
       </div>
-      <h3>Sayaçlar</h3>
-      <table class="counters">${counters || '<tr><td>validate çalışmadı</td></tr>'}</table>
-      <h3>Anahtar kelimeler</h3>
+      <h3>Counters</h3>
+      <table class="counters">${counters || '<tr><td>validate has not run</td></tr>'}</table>
+      <h3>Keywords</h3>
       <div class="chips">${splitKeywords(m?.keywords ?? '').map((k) => `<span>${esc(k)}</span>`).join('')}</div>
     </div>
     <div>
-      <h3>Ürün sayfası</h3>
+      <h3>Product page</h3>
       <div class="pp">
         <div class="pp-head">${icon ? `<img class="icon big" src="${icon}">` : ''}<div><h4>${esc(m?.name ?? '')}</h4><div class="muted">${esc(m?.subtitle ?? '')}</div></div></div>
         <div class="pp-shots">${previews.map((v) => `<video src="${v}" controls muted playsinline></video>`).join('')}${iphone.map((s) => `<img src="${s}">`).join('')}</div>
         ${m?.promotionalText ? `<p class="promo">${esc(m.promotionalText)}</p>` : ''}
-        <p class="desc">${descLines.slice(0, 3).map(esc).join('<br>')}<span class="more"> … devamı</span></p>
-        ${m?.whatsNew ? `<h5>Yenilikler</h5><p class="small">${esc(m.whatsNew).replace(/\n/g, '<br>')}</p>` : ''}
+        <p class="desc">${descLines.slice(0, 3).map(esc).join('<br>')}<span class="more"> … more</span></p>
+        ${m?.whatsNew ? `<h5>What’s New</h5><p class="small">${esc(m.whatsNew).replace(/\n/g, '<br>')}</p>` : ''}
       </div>
     </div>
   </div>
-  <h3>Temas sayfası</h3>
+  <h3>Contact sheet</h3>
   ${targets
     .filter((t) => t.kind === 'screenshot')
     .map((t) => {
       const list = byTarget(t.id);
-      return `<div class="sheet"><div class="sheet-label">${esc(t.label)} · ${t.width}×${t.height} · ${list.length}</div><div class="sheet-row">${list.map((s) => `<a href="${s}"><img src="${s}" loading="lazy"></a>`).join('') || '<em>yok</em>'}</div></div>`;
+      return `<div class="sheet"><div class="sheet-label">${esc(t.label)} · ${t.width}×${t.height} · ${list.length}</div><div class="sheet-row">${list.map((s) => `<a href="${s}"><img src="${s}" loading="lazy"></a>`).join('') || '<em>none</em>'}</div></div>`;
     })
     .join('')}
   ${await creativesBlock(p.creative, locale, rel)}
@@ -87,12 +87,12 @@ export async function buildReport(ctx: Ctx): Promise<string> {
   const own = existsSync(join(p.screenshots, firstLocale)) ? (await readdir(join(p.screenshots, firstLocale))).filter((f) => f.endsWith('_iphone-6.3.png')).sort().slice(0, 3) : [];
 
   const issues = (validation?.issues ?? [])
-    .map((i) => `<tr class="${i.severity}"><td>${i.severity === 'error' ? 'HATA' : i.severity === 'warning' ? 'UYARI' : 'bilgi'}</td><td><code>${esc(i.code)}</code></td><td>${esc(i.locale ?? '')}</td><td>${esc(i.message)}${i.fix ? `<div class="muted small">→ ${esc(i.fix)}</div>` : ''}</td></tr>`)
+    .map((i) => `<tr class="${i.severity}"><td>${i.severity === 'error' ? 'ERROR' : i.severity === 'warning' ? 'WARNING' : 'info'}</td><td><code>${esc(i.code)}</code></td><td>${esc(i.locale ?? '')}</td><td>${esc(i.message)}${i.fix ? `<div class="muted small">→ ${esc(i.fix)}</div>` : ''}</td></tr>`)
     .join('');
 
   const html = `<!doctype html>
-<html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Vitrin raporu — ${esc(profile?.app.displayName ?? '')}</title>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Vitrin report — ${esc(profile?.app.displayName ?? '')}</title>
 <style>
 :root{--bg:#F5F5F7;--card:#FFF;--text:#1D1D1F;--muted:#6E6E73;--line:#E5E5EA;--ok:#34C759;--warn:#FF9F0A;--bad:#FF3B30;--accent:#0A84FF}
 @media (prefers-color-scheme:dark){:root{--bg:#000;--card:#1C1C1E;--text:#F5F5F7;--muted:#98989D;--line:#38383A}}
@@ -117,20 +117,20 @@ table.issues{width:100%;border-collapse:collapse;font-size:14px}table.issues td{
 @media(max-width:600px){.rival{grid-template-columns:1fr}.pp-shots img,.pp-shots video{height:260px}}
 </style></head><body><main>
 <h1>${esc(profile?.app.displayName ?? 'Vitrin')}</h1>
-<div class="muted">${esc(profile?.app.bundleId ?? '')} · ${esc(app?.primaryCategory ?? '')}${app?.secondaryCategory ? ` / ${esc(app.secondaryCategory)}` : ''} · ${esc(app?.copyright ?? '')} · ${new Date().toLocaleString('tr-TR')}</div>
+<div class="muted">${esc(profile?.app.bundleId ?? '')} · ${esc(app?.primaryCategory ?? '')}${app?.secondaryCategory ? ` / ${esc(app.secondaryCategory)}` : ''} · ${esc(app?.copyright ?? '')} · ${new Date().toLocaleString('en-US')}</div>
 <div class="summary">
-  <span class="pill ${validation?.ok ? 'ok' : 'bad'}">${validation ? (validation.ok ? 'Doğrulama geçti' : 'Doğrulama kaldı') : 'validate çalışmadı'}</span>
-  <span class="pill">${validation?.counts.error ?? '–'} hata</span><span class="pill">${validation?.counts.warning ?? '–'} uyarı</span>
-  <span class="pill">${manifest?.images.length ?? 0} görsel</span><span class="pill">${manifest?.videos.length ?? 0} video</span>
-  <span class="pill">Sanat yönü: ${esc(manifest?.artDirection ?? '–')}</span>
+  <span class="pill ${validation?.ok ? 'ok' : 'bad'}">${validation ? (validation.ok ? 'Validation passed' : 'Validation failed') : 'validate has not run'}</span>
+  <span class="pill">${validation?.counts.error ?? '–'} errors</span><span class="pill">${validation?.counts.warning ?? '–'} warnings</span>
+  <span class="pill">${manifest?.images.length ?? 0} images</span><span class="pill">${manifest?.videos.length ?? 0} videos</span>
+  <span class="pill">Art direction: ${esc(manifest?.artDirection ?? '–')}</span>
 </div>
 ${localeSections.join('\n')}
 ${await styleVariantsBlock(p.vitrin, ctx.config.app.locales, rel)}
-<section><h2>Rakip karşılaştırması</h2>
-<div class="rival"><div><b>${esc(profile?.app.displayName ?? '')}</b><div class="muted small">Bizim ilk 3 görsel (${firstLocale})</div></div><div class="rival-shots">${own.map((f) => `<img src="${rel(join(p.screenshots, firstLocale, f))}">`).join('')}</div></div>
-${rivalRows || '<p class="muted">research çalışmadı</p>'}
+<section><h2>Competitor comparison</h2>
+<div class="rival"><div><b>${esc(profile?.app.displayName ?? '')}</b><div class="muted small">Our first 3 screenshots (${firstLocale})</div></div><div class="rival-shots">${own.map((f) => `<img src="${rel(join(p.screenshots, firstLocale, f))}">`).join('')}</div></div>
+${rivalRows || '<p class="muted">research has not run</p>'}
 </section>
-<section><h2>Doğrulama</h2><table class="issues">${issues || '<tr><td>Sorun yok.</td></tr>'}</table></section>
+<section><h2>Validation</h2><table class="issues">${issues || '<tr><td>No issues.</td></tr>'}</table></section>
 </main></body></html>`;
   await writeText(p.report, html);
   return p.report;
@@ -149,7 +149,7 @@ async function styleVariantsBlock(vitrinDir: string, locales: string[], rel: (f:
       .join('')}</div>`);
   }
   if (!rows.length) return '';
-  return `<section><h2>Video stilleri <small>vitrin video --styles · yüklenmez</small></h2>${rows.join('')}</section>`;
+  return `<section><h2>Video styles <small>vitrin video --styles · not uploaded</small></h2>${rows.join('')}</section>`;
 }
 
 async function creativesBlock(dir: string, locale: string, rel: (f: string) => string): Promise<string> {
@@ -157,7 +157,7 @@ async function creativesBlock(dir: string, locale: string, rel: (f: string) => s
   if (!existsSync(d)) return '';
   const files = (await readdir(d)).filter((f) => /\.(png|mp4)$/.test(f) && !f.includes('.remotion.')).sort();
   if (!files.length) return '';
-  return `<h3>Kreatifler</h3><div class="creatives">${files
+  return `<h3>Creatives</h3><div class="creatives">${files
     .map((f) => (f.endsWith('.mp4') ? `<div class="small muted">${esc(f)}</div><video src="${rel(join(d, f))}" muted autoplay loop playsinline></video>` : `<div class="small muted">${esc(f)}</div><img src="${rel(join(d, f))}">`))
     .join('')}</div>`;
 }

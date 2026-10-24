@@ -45,5 +45,11 @@
     "playwright": "^1.64.1",
     "sharp": "^0.35.5",
     "zod": "^4.6.7"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ardasnturk/auto-asc-metadata.git",
+    "directory": "packages/render"
   }
 }

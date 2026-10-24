@@ -59,7 +59,7 @@ export async function exportFastlaneMetadata(paths: AppPaths, config: VitrinConf
     const f = join(root, 'review_information', legacy);
     if (existsSync(f)) {
       await rm(f);
-      log.warn(`${legacy} silindi: demo hesap bilgisi dosyada tutulmaz, .env (REVIEW_DEMO_*) kullanılır.`);
+      log.warn(`${legacy} deleted: demo account credentials are never stored in files; .env (REVIEW_DEMO_*) is used instead.`);
     }
   }
   return written;
@@ -77,9 +77,9 @@ export async function installFastlaneTemplates(paths: AppPaths, force = false): 
     if (existsSync(dest) && !force) {
       const cur = await readFile(dest, 'utf8');
       if (dest.endsWith('Gemfile') && !/fastlane/.test(cur)) {
-        log.warn('Mevcut Gemfile fastlane içermiyor; `gem "fastlane", ">= 2.241.1"` satırını ekle.');
+        log.warn('The existing Gemfile does not include fastlane; add the line `gem "fastlane", ">= 2.241.1"`.');
       } else if (dest.endsWith('Fastfile') && !cur.includes('vitrin_upload')) {
-        log.warn('Mevcut Fastfile’da vitrin lane’leri yok; şablon fastlane/Fastfile.vitrin olarak yazıldı, içeri aktar (import "Fastfile.vitrin").');
+        log.warn('The existing Fastfile has no vitrin lanes; the template was written to fastlane/Fastfile.vitrin, import it (import "Fastfile.vitrin").');
         await copyFile(src, `${dest}.vitrin`);
         out.push(`${dest}.vitrin`);
       }
@@ -103,12 +103,12 @@ export interface LaneEnv {
 /** Runs `bundle exec fastlane ios <lane>` in the app root, installing gems first if needed. */
 export async function runLane(paths: AppPaths, lane: string, env: LaneEnv): Promise<void> {
   const gemfile = join(paths.root, 'Gemfile');
-  if (!existsSync(gemfile)) throw new Error('Gemfile yok; `vitrin init` fastlane şablonlarını kurar.');
+  if (!existsSync(gemfile)) throw new Error('No Gemfile; `vitrin init` installs the fastlane templates.');
   const check = await exec('bundle', ['check'], { cwd: paths.root });
   if (check.code !== 0) {
     log.step('bundle install (fastlane >= 2.241.1)…');
     const res = await exec('bundle', ['install'], { cwd: paths.root, stream: true });
-    if (res.code !== 0) throw new Error('bundle install başarısız.');
+    if (res.code !== 0) throw new Error('bundle install failed.');
   }
   const res = await exec('bundle', ['exec', 'fastlane', 'ios', lane], {
     cwd: paths.root,
@@ -127,12 +127,12 @@ export async function runLane(paths: AppPaths, lane: string, env: LaneEnv): Prom
   if (res.code !== 0) {
     const text = res.stdout + res.stderr;
     if (/deprecat|appScreenshotSets|appPreviewSets|410 Gone/i.test(text)) {
-      throw new Error('fastlane eski görsel uç noktalarında hata verdi (ASC API 4.5.1 deprecation). `vitrin upload --uploader=asset-library` ile tekrar dene.');
+      throw new Error('fastlane failed on the legacy media endpoints (ASC API 4.5.1 deprecation). Retry with `vitrin upload --uploader=asset-library`.');
     }
     if (/Could not find (a )?version|no editable|cannot create.*version/i.test(text)) {
-      throw new Error('Düzenlenebilir App Store sürümü yok. İlk sürümü App Store Connect’te bir kez elle aç, sonra “devam” de.');
+      throw new Error('No editable App Store version. Create the first version once in App Store Connect, then say “continue”.');
     }
-    throw new Error(`fastlane ${lane} başarısız (çıkış ${res.code}). Ayrıntı yukarıda.`);
+    throw new Error(`fastlane ${lane} failed (exit ${res.code}). See the details above.`);
   }
 }
 

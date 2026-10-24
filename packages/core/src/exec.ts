@@ -21,7 +21,7 @@ export class CommandError extends Error {
     public readonly command: string,
     public readonly result: ExecResult,
   ) {
-    super(mask(`Komut başarısız (${result.code}): ${command}\n${result.stderr.slice(-2000) || result.stdout.slice(-2000)}`));
+    super(mask(`Command failed (${result.code}): ${command}\n${result.stderr.slice(-2000) || result.stdout.slice(-2000)}`));
   }
 }
 

@@ -9,7 +9,7 @@
     {
       "id": "iphone-6.3",
       "kind": "screenshot",
-      "label": "iPhone 6.3\" (Dynamic Island, orta)",
+      "label": "iPhone 6.3\" (Dynamic Island, medium)",
       "family": "iphone",
       "width": 1206,
       "height": 2622,
@@ -36,12 +36,12 @@
       ],
       "simulator": "iPhone 17 Pro",
       "assetLibraryDisplayClass": "IPHONE_61",
-      "notes": "Zorunlu iPhone sınıfı (en az bir set)."
+      "notes": "Required iPhone class (at least one set)."
     },
     {
       "id": "iphone-6.9",
       "kind": "screenshot",
-      "label": "iPhone 6.9\" (Dynamic Island, büyük)",
+      "label": "iPhone 6.9\" (Dynamic Island, large)",
       "family": "iphone",
       "width": 1320,
       "height": 2868,
@@ -72,7 +72,7 @@
       ],
       "simulator": "iPhone 17 Pro Max",
       "assetLibraryDisplayClass": "IPHONE_69",
-      "notes": "Önerilir; üçüncü parti rehberler hâlâ zorunlu gösteriyor, her zaman üret."
+      "notes": "Recommended; third-party guides still list it as required, so always produce it."
     },
     {
       "id": "ipad-13",
@@ -108,7 +108,7 @@
     {
       "id": "duo-outer",
       "kind": "screenshot",
-      "label": "iPhone Duo dış ekran",
+      "label": "iPhone Duo outer display",
       "family": "duo",
       "width": 1398,
       "height": 2034,
@@ -131,12 +131,12 @@
       ],
       "simulator": "iPhone Duo",
       "assetLibraryDisplayClass": "IPHONE_DUO",
-      "notes": "iOS 27.1 SDK ile Nisan 2027 itibarıyla zorunlu; fastlane >= 2.241.1."
+      "notes": "Required from April 2027 with the iOS 27.1 SDK; fastlane >= 2.241.1."
     },
     {
       "id": "duo-inner",
       "kind": "screenshot",
-      "label": "iPhone Duo iç ekran",
+      "label": "iPhone Duo inner display",
       "family": "duo",
       "width": 2007,
       "height": 2853,
@@ -159,12 +159,12 @@
       ],
       "simulator": "iPhone Duo",
       "assetLibraryDisplayClass": "IPHONE_DUO",
-      "notes": "Katlama pozisyonu simülatörde elle ayarlanır (otomasyon komutu yok)."
+      "notes": "The fold posture is set manually in the simulator (there is no automation command)."
     },
     {
       "id": "preview-iphone",
       "kind": "preview",
-      "label": "App Preview iPhone (tüm modern sınıflar, Duo dahil)",
+      "label": "App Preview iPhone (all modern classes, including Duo)",
       "family": "iphone",
       "width": 886,
       "height": 1920,
@@ -220,7 +220,7 @@
     {
       "id": "header",
       "kind": "creative",
-      "label": "Ürün sayfası başlığı (21:9)",
+      "label": "Product page header (21:9)",
       "family": "any",
       "width": 3840,
       "height": 1646,
@@ -249,7 +249,7 @@
     {
       "id": "search",
       "kind": "creative",
-      "label": "Arama sonucu kreatifi (3:2)",
+      "label": "Search result creative (3:2)",
       "family": "any",
       "width": 3840,
       "height": 2560,
@@ -284,12 +284,12 @@
         ],
         "maxBytes": 500000000
       },
-      "notes": "Aramada sessiz oynar."
+      "notes": "Plays muted in search."
     },
     {
       "id": "event-card",
       "kind": "event",
-      "label": "In-App Event kartı (16:9)",
+      "label": "In-App Event card (16:9)",
       "family": "any",
       "width": 3840,
       "height": 2160,
@@ -328,7 +328,7 @@
     {
       "id": "event-detail",
       "kind": "event",
-      "label": "In-App Event detay (9:16)",
+      "label": "In-App Event detail (9:16)",
       "family": "any",
       "width": 2160,
       "height": 3840,

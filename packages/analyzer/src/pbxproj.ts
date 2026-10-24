@@ -44,7 +44,7 @@ export function parseOpenStepPlist(text: string): PlistValue {
   function parseBare(): string {
     const start = i;
     while (i < n && /[A-Za-z0-9_$+./:\-<>@\\]/.test(text[i]!)) i++;
-    if (start === i) throw new Error(`pbxproj ayrıştırılamadı: konum ${i}, karakter "${text[i]}"`);
+    if (start === i) throw new Error(`Could not parse pbxproj: position ${i}, character "${text[i]}"`);
     return text.slice(start, i);
   }
 
@@ -62,7 +62,7 @@ export function parseOpenStepPlist(text: string): PlistValue {
         }
         const key = text[i] === '"' || text[i] === "'" ? parseQuoted() : parseBare();
         skipWs();
-        if (text[i] !== '=') throw new Error(`pbxproj: "=" bekleniyordu, konum ${i}`);
+        if (text[i] !== '=') throw new Error(`pbxproj: expected "=" at position ${i}`);
         i++;
         obj[key] = parseValue();
         skipWs();

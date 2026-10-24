@@ -30,12 +30,12 @@ export async function validateScreenshots(opts: {
   const issues = new IssueList();
   const counts = new Map<string, Map<string, number>>(); // target → locale → n
   for (const extra of await strayLocaleDirs(opts.screenshotsDir, opts.locales)) {
-    issues.error('image.stray-locale', `fastlane/screenshots/${extra} config’te olmayan bir dil; deliver bunu da yükler. Klasörü kaldır ya da dili ekle.`);
+    issues.error('image.stray-locale', `fastlane/screenshots/${extra} is a locale not in the config; deliver will upload it too. Remove the folder or add the locale.`);
   }
   for (const locale of opts.locales) {
     const dir = join(opts.screenshotsDir, locale);
     if (!existsSync(dir)) {
-      issues.error('image.missing-locale', `${locale} için ekran görüntüsü klasörü yok (${dir}).`, { locale });
+      issues.error('image.missing-locale', `No screenshot folder for ${locale} (${dir}).`, { locale });
       continue;
     }
     const files = (await readdir(dir)).filter((f) => /\.(png|jpe?g)$/i.test(f)).sort();
@@ -43,22 +43,22 @@ export async function validateScreenshots(opts: {
       const m = SCREENSHOT_RE.exec(f);
       const file = join(dir, f);
       if (!m) {
-        issues.error('image.unknown-file', `Beklenmeyen dosya: ${locale}/${f} (NN_slug_hedef.png bekleniyor). deliver klasördeki her görseli yükler; dosyayı kaldır.`, { locale, file });
+        issues.error('image.unknown-file', `Unexpected file: ${locale}/${f} (expected NN_slug_target.png). deliver uploads every image in the folder; remove the file.`, { locale, file });
         continue;
       }
       const target = opts.targets.find((t) => t.id === m[3]);
       if (!target) {
-        issues.error('image.unknown-target', `${locale}/${f}: bilinmeyen hedef “${m[3]}”.`, { locale, file });
+        issues.error('image.unknown-target', `${locale}/${f}: unknown target “${m[3]}”.`, { locale, file });
         continue;
       }
       const meta = await sharp(file).metadata();
       if (!sizeAccepted(target, meta.width ?? 0, meta.height ?? 0)) {
-        issues.error('image.size', `${locale}/${f}: ${meta.width}×${meta.height} px, ${target.label} için ${target.width}×${target.height} bekleniyor.`, { locale, file });
+        issues.error('image.size', `${locale}/${f}: ${meta.width}×${meta.height} px; ${target.label} expects ${target.width}×${target.height}.`, { locale, file });
       }
       if (meta.hasAlpha || meta.channels === 4) {
-        issues.error('image.alpha', `${locale}/${f}: alfa kanalı var; App Store saydamlık kabul etmez.`, { locale, file, fix: 'sharp ile flatten + removeAlpha uygula (vitrin design bunu yapar).' });
+        issues.error('image.alpha', `${locale}/${f}: has an alpha channel; the App Store does not accept transparency.`, { locale, file, fix: 'Apply flatten + removeAlpha with sharp (vitrin design does this).' });
       }
-      if (!['png', 'jpeg'].includes(meta.format ?? '')) issues.error('image.format', `${locale}/${f}: biçim ${meta.format}; PNG veya JPEG olmalı.`, { locale, file });
+      if (!['png', 'jpeg'].includes(meta.format ?? '')) issues.error('image.format', `${locale}/${f}: format is ${meta.format}; must be PNG or JPEG.`, { locale, file });
       const byLocale = counts.get(target.id) ?? new Map<string, number>();
       byLocale.set(locale, (byLocale.get(locale) ?? 0) + 1);
       counts.set(target.id, byLocale);
@@ -71,32 +71,32 @@ export async function validateScreenshots(opts: {
       const n = byLocale?.get(locale) ?? 0;
       if (n === 0) {
         const sev = t.requirement === 'always' || t.requirement === 'if-ipad' ? 'error' : 'warning';
-        issues[sev === 'error' ? 'error' : 'warn']('image.missing-target', `${locale}: ${t.label} için görsel yok.`, { locale });
+        issues[sev === 'error' ? 'error' : 'warn']('image.missing-target', `${locale}: no screenshots for ${t.label}.`, { locale });
       } else if (n > MAX_SCREENSHOTS) {
-        issues.error('image.too-many', `${locale}: ${t.label} için ${n} görsel; en çok ${MAX_SCREENSHOTS}.`, { locale });
+        issues.error('image.too-many', `${locale}: ${n} screenshots for ${t.label}; maximum ${MAX_SCREENSHOTS}.`, { locale });
       }
     }
     const values = [...(byLocale?.values() ?? [])];
     if (values.length && new Set(values).size > 1) {
-      issues.warn('image.count-mismatch', `${t.label}: dillere göre görsel sayısı farklı (${[...(byLocale?.entries() ?? [])].map(([l, n]) => `${l}=${n}`).join(', ')}).`);
+      issues.warn('image.count-mismatch', `${t.label}: screenshot count differs between locales (${[...(byLocale?.entries() ?? [])].map(([l, n]) => `${l}=${n}`).join(', ')}).`);
     }
   }
 
   // Render-time quality measurements
   for (const img of opts.manifest?.images ?? []) {
     const where = `${img.locale}/${basename(img.file)}`;
-    for (const o of img.overflow) issues.error('image.overflow', `${where}: metin taşıyor/kesiliyor (${o}).`, { locale: img.locale, file: img.file, fix: 'Başlığı kısalt ya da alt başlığı kaldır.' });
+    for (const o of img.overflow) issues.error('image.overflow', `${where}: text overflows/is clipped (${o}).`, { locale: img.locale, file: img.file, fix: 'Shorten the headline or remove the subheadline.' });
     if (img.target === 'iphone-6.9' && img.headlinePx !== undefined && img.headlinePx < MIN_HEADLINE_PX_69) {
-      issues.error('image.headline-small', `${where}: başlık ${Math.round(img.headlinePx)} px; 6,9" görselde en az ${MIN_HEADLINE_PX_69} px olmalı.`, { locale: img.locale, file: img.file });
+      issues.error('image.headline-small', `${where}: headline is ${Math.round(img.headlinePx)} px; must be at least ${MIN_HEADLINE_PX_69} px on a 6.9" screenshot.`, { locale: img.locale, file: img.file });
     }
     if (img.minContrast !== undefined && img.minContrast < WCAG_AA_LARGE) {
-      issues.error('image.contrast', `${where}: metin kontrastı ${img.minContrast.toFixed(2)}:1; WCAG AA büyük metin için en az 3:1.`, { locale: img.locale, file: img.file });
+      issues.error('image.contrast', `${where}: text contrast is ${img.minContrast.toFixed(2)}:1; WCAG AA requires at least 3:1 for large text.`, { locale: img.locale, file: img.file });
     }
-    for (const v of img.safeAreaViolations) issues.warn('image.safe-area', `${where}: güvenli alan dışında öğe (${v}).`, { locale: img.locale, file: img.file });
+    for (const v of img.safeAreaViolations) issues.warn('image.safe-area', `${where}: element outside the safe area (${v}).`, { locale: img.locale, file: img.file });
     if (img.headlineLines !== undefined && img.headlineLines > MAX_HEADLINE_LINES && SCREENSHOT_RE.test(basename(img.file))) {
-      issues.warn('image.headline-lines', `${where}: başlık ${img.headlineLines} satır; en fazla ${MAX_HEADLINE_LINES} satır önerilir.`, { locale: img.locale, file: img.file, fix: 'Başlığı kısalt.' });
+      issues.warn('image.headline-lines', `${where}: headline is ${img.headlineLines} lines; at most ${MAX_HEADLINE_LINES} lines is recommended.`, { locale: img.locale, file: img.file, fix: 'Shorten the headline.' });
     }
-    if (img.thumbnailLegible === false) issues.warn('image.thumbnail', `${where}: %25 boyutta başlık okunaksız; daha kısa ve büyük başlık kullan.`, { locale: img.locale, file: img.file });
+    if (img.thumbnailLegible === false) issues.warn('image.thumbnail', `${where}: headline is illegible at 25% size; use a shorter, larger headline.`, { locale: img.locale, file: img.file });
   }
   return issues;
 }
@@ -126,7 +126,7 @@ export interface ProbeResult {
 
 export async function ffprobe(file: string): Promise<ProbeResult> {
   const res = await exec('ffprobe', ['-v', 'error', '-print_format', 'json', '-show_streams', '-show_format', file]);
-  if (res.code !== 0) throw new Error(`ffprobe başarısız: ${file}: ${res.stderr}`);
+  if (res.code !== 0) throw new Error(`ffprobe failed: ${file}: ${res.stderr}`);
   const json = JSON.parse(res.stdout) as {
     streams: Array<Record<string, string | number | undefined>>;
     format: { duration?: string; size?: string; bit_rate?: string };
@@ -156,53 +156,53 @@ export function checkVideo(p: ProbeResult, target: RenderTarget, where: string):
   const issues = new IssueList();
   const v = target.video!;
   if (p.durationSec < v.minSec - 0.05 || p.durationSec > v.maxSec + 0.05) {
-    issues.error('video.duration', `${where}: ${p.durationSec.toFixed(1)} sn; ${v.minSec}–${v.maxSec} sn olmalı.`);
+    issues.error('video.duration', `${where}: ${p.durationSec.toFixed(1)} s; must be ${v.minSec}–${v.maxSec} s.`);
   }
-  if (!v.fps.some((f) => Math.abs(p.fps - f) < 0.05)) issues.error('video.fps', `${where}: ${p.fps.toFixed(2)} fps; izin verilen: ${v.fps.join('/')}.`);
-  if (!sizeAccepted(target, p.width, p.height)) issues.error('video.size', `${where}: ${p.width}×${p.height}; ${target.width}×${target.height} bekleniyor.`);
-  if (p.videoCodec !== 'h264' && p.videoCodec !== 'prores') issues.error('video.codec', `${where}: codec ${p.videoCodec}; H.264 ya da ProRes 422 HQ olmalı.`);
+  if (!v.fps.some((f) => Math.abs(p.fps - f) < 0.05)) issues.error('video.fps', `${where}: ${p.fps.toFixed(2)} fps; allowed: ${v.fps.join('/')}.`);
+  if (!sizeAccepted(target, p.width, p.height)) issues.error('video.size', `${where}: ${p.width}×${p.height}; expected ${target.width}×${target.height}.`);
+  if (p.videoCodec !== 'h264' && p.videoCodec !== 'prores') issues.error('video.codec', `${where}: codec is ${p.videoCodec}; must be H.264 or ProRes 422 HQ.`);
   if (v.h264Level && p.videoCodec === 'h264') {
-    if (p.profile && !/^(High|Main|Constrained Baseline|Baseline)$/i.test(p.profile)) issues.error('video.profile', `${where}: H.264 profili ${p.profile}; en çok High olmalı.`);
-    if (p.level !== undefined && p.level > 40) issues.error('video.level', `${where}: H.264 seviye ${p.level / 10}; en çok 4.0.`);
-    if (p.bitrate && (p.bitrate < 6_000_000 || p.bitrate > 14_000_000)) issues.warn('video.bitrate', `${where}: bit hızı ${(p.bitrate / 1e6).toFixed(1)} Mbps; hedef 10–12 Mbps.`);
+    if (p.profile && !/^(High|Main|Constrained Baseline|Baseline)$/i.test(p.profile)) issues.error('video.profile', `${where}: H.264 profile is ${p.profile}; must be High or lower.`);
+    if (p.level !== undefined && p.level > 40) issues.error('video.level', `${where}: H.264 level is ${p.level / 10}; maximum 4.0.`);
+    if (p.bitrate && (p.bitrate < 6_000_000 || p.bitrate > 14_000_000)) issues.warn('video.bitrate', `${where}: bitrate is ${(p.bitrate / 1e6).toFixed(1)} Mbps; target 10–12 Mbps.`);
   }
   if (target.kind === 'preview') {
-    if (!p.audioCodec) issues.error('video.audio-missing', `${where}: ses kanalı yok; sessiz stereo AAC eklenmeli.`);
+    if (!p.audioCodec) issues.error('video.audio-missing', `${where}: no audio track; add a silent stereo AAC track.`);
     else {
-      if (p.audioCodec !== 'aac' && !p.audioCodec.startsWith('pcm')) issues.error('video.audio-codec', `${where}: ses ${p.audioCodec}; AAC olmalı.`);
-      if (p.audioChannels !== 2) issues.error('video.audio-channels', `${where}: ${p.audioChannels} kanal; stereo olmalı.`);
-      if (p.audioSampleRate && ![44100, 48000].includes(p.audioSampleRate)) issues.error('video.audio-rate', `${where}: ${p.audioSampleRate} Hz; 44,1 veya 48 kHz olmalı.`);
+      if (p.audioCodec !== 'aac' && !p.audioCodec.startsWith('pcm')) issues.error('video.audio-codec', `${where}: audio is ${p.audioCodec}; must be AAC.`);
+      if (p.audioChannels !== 2) issues.error('video.audio-channels', `${where}: ${p.audioChannels} channel(s); must be stereo.`);
+      if (p.audioSampleRate && ![44100, 48000].includes(p.audioSampleRate)) issues.error('video.audio-rate', `${where}: ${p.audioSampleRate} Hz; must be 44.1 or 48 kHz.`);
     }
   }
-  if (p.sizeBytes > v.maxBytes) issues.error('video.too-large', `${where}: ${(p.sizeBytes / 1e6).toFixed(0)} MB; en çok ${v.maxBytes / 1e6} MB.`);
+  if (p.sizeBytes > v.maxBytes) issues.error('video.too-large', `${where}: ${(p.sizeBytes / 1e6).toFixed(0)} MB; maximum ${v.maxBytes / 1e6} MB.`);
   return issues;
 }
 
 export async function validateVideos(opts: { previewsDir: string; creativeDir: string; locales: string[]; targets: RenderTarget[]; expectPreview: boolean }): Promise<IssueList> {
   const issues = new IssueList();
   const previewTargets = opts.targets.filter((t) => t.kind === 'preview');
-  for (const extra of await strayLocaleDirs(opts.previewsDir, opts.locales)) issues.error('video.stray-locale', `fastlane/app-previews/${extra} config’te olmayan bir dil.`);
+  for (const extra of await strayLocaleDirs(opts.previewsDir, opts.locales)) issues.error('video.stray-locale', `fastlane/app-previews/${extra} is a locale not in the config.`);
   for (const locale of opts.locales) {
     const dir = join(opts.previewsDir, locale);
     const files = existsSync(dir) ? (await readdir(dir)).filter((f) => /\.(mp4|mov|m4v)$/i.test(f)).sort() : [];
-    if (!files.length && opts.expectPreview) issues.warn('video.none', `${locale}: App Preview yok.`, { locale });
+    if (!files.length && opts.expectPreview) issues.warn('video.none', `${locale}: no App Preview.`, { locale });
     const perDevice = new Map<string, number>();
     for (const f of files) {
       const m = PREVIEW_RE.exec(f);
       if (!m) {
-        issues.error('video.name', `${locale}/${f}: dosya adı NN_<CİHAZ>.mp4 olmalı (ör. 01_IPHONE_67.mp4).`, { locale });
+        issues.error('video.name', `${locale}/${f}: file name must be NN_<DEVICE>.mp4 (e.g. 01_IPHONE_67.mp4).`, { locale });
         continue;
       }
       perDevice.set(m[2]!, (perDevice.get(m[2]!) ?? 0) + 1);
       const target = previewTargets.find((t) => (m[2]!.startsWith('IPAD') ? t.family === 'ipad' : t.family === 'iphone'));
       if (!target) {
-        issues.error('video.disabled-target', `${locale}/${f}: bu cihaz için önizleme hedefi etkin değil (targets.enable); deliver yine de yükler.`, { locale });
+        issues.error('video.disabled-target', `${locale}/${f}: no preview target is enabled for this device (targets.enable); deliver will upload it anyway.`, { locale });
         continue;
       }
       const probe = await ffprobe(join(dir, f));
       issues.push(...checkVideo(probe, target, `${locale}/${f}`).items.map((i) => ({ ...i, locale })));
     }
-    for (const [dev, n] of perDevice) if (n > MAX_PREVIEWS) issues.error('video.too-many', `${locale}: ${dev} için ${n} önizleme; en çok ${MAX_PREVIEWS}.`, { locale });
+    for (const [dev, n] of perDevice) if (n > MAX_PREVIEWS) issues.error('video.too-many', `${locale}: ${n} previews for ${dev}; maximum ${MAX_PREVIEWS}.`, { locale });
   }
   if (existsSync(opts.creativeDir)) {
     for (const f of (await readdir(opts.creativeDir, { recursive: true })).map(String).filter((x) => x.endsWith('.mp4'))) {

@@ -9,7 +9,7 @@ export class SchemaError extends Error {
     public readonly file: string,
     public readonly issues: string[],
   ) {
-    super(`${file} şemaya uymuyor:\n${issues.map((i) => `  - ${i}`).join('\n')}`);
+    super(`${file} does not match the schema:\n${issues.map((i) => `  - ${i}`).join('\n')}`);
   }
 }
 
@@ -23,7 +23,7 @@ export async function readJson<T>(file: string, schema: z.ZodType<T>): Promise<T
   try {
     data = JSON.parse(raw);
   } catch (err) {
-    throw new SchemaError(file, [`Geçersiz JSON: ${(err as Error).message}`]);
+    throw new SchemaError(file, [`Invalid JSON: ${(err as Error).message}`]);
   }
   return parseWith(file, data, schema);
 }
@@ -37,7 +37,7 @@ export function parseWith<T>(file: string, data: unknown, schema: z.ZodType<T>):
   if (!res.success) {
     throw new SchemaError(
       file,
-      res.error.issues.map((i) => `${i.path.join('.') || '(kök)'}: ${i.message}`),
+      res.error.issues.map((i) => `${i.path.join('.') || '(root)'}: ${i.message}`),
     );
   }
   return res.data;

@@ -6,7 +6,7 @@ type EventSpec = z.infer<typeof InAppEventSpec>;
 
 function idOf(doc: JsonApiDocument): string {
   const d = Array.isArray(doc.data) ? doc.data[0] : doc.data;
-  if (!d?.id) throw new Error('ASC yanıtında kaynak kimliği yok.');
+  if (!d?.id) throw new Error('The ASC response has no resource id.');
   return d.id;
 }
 

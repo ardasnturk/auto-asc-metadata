@@ -39,7 +39,7 @@ describe('page builder', () => {
     expect(ar.dir).toBe('rtl');
     expect(ar.headlineStack).toContain('Noto Sans Arabic Variable');
     expect(fontSetup('Inter', 'Inter', 'ja').headlineStack).toContain('Noto Sans JP Variable');
-    expect(() => fontSetup('Comic Sans', 'Inter', 'tr')).toThrow(/Bilinmeyen/);
+    expect(() => fontSetup('Comic Sans', 'Inter', 'tr')).toThrow(/Unknown headline font/);
   });
 
   it('uses a landscape layout for the 21:9 header', () => {

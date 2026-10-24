@@ -35,7 +35,7 @@ export function appTweakProvider(apiKey: string, cacheDir: string): PopularityPr
             if (typeof v === 'number') out.set(term, Math.max(0, Math.min(1, (v - 5) / 95)));
           }
         } catch (err) {
-          log.warn(`AppTweak isteği başarısız, tahmine dönülüyor: ${(err as Error).message}`);
+          log.warn(`AppTweak request failed, falling back to the estimate: ${(err as Error).message}`);
           break;
         }
       }

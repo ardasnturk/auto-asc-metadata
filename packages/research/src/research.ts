@@ -52,7 +52,7 @@ export async function runResearch(opts: ResearchOptions): Promise<ResearchResult
 
   const provider: PopularityProvider | undefined = env.APPTWEAK_API_KEY ? appTweakProvider(env.APPTWEAK_API_KEY, cacheDir) : undefined;
   if (!provider && appleAdsAvailable(env)) {
-    log.warn('Apple Ads anahtarı var ancak Apple Ads API rastgele terimler için popülerlik döndürmüyor; popülerlik “tahmin” olarak işaretlenecek.');
+    log.warn('Apple Ads credentials are set, but the Apple Ads API does not return popularity for arbitrary terms; popularity will be marked as “estimated”.');
   }
 
   const apps = new Map<string, CompetitorApp>(); // key: storefront:trackId
@@ -63,8 +63,8 @@ export async function runResearch(opts: ResearchOptions): Promise<ResearchResult
 
   for (const { locale, storefront } of plan) {
     const seeds = seedsFor(config, locale);
-    if (!seeds.length) throw new Error(`research.seeds boş (${locale}). Claude vitrin.config.yaml içine tohum terimleri yazmalı.`);
-    log.step(`Araştırma: ${storefront.toUpperCase()} / ${locale} — ${seeds.length} tohum terim`);
+    if (!seeds.length) throw new Error(`research.seeds is empty (${locale}). Claude should add seed terms to vitrin.config.yaml.`);
+    log.step(`Research: ${storefront.toUpperCase()} / ${locale} — ${seeds.length} seed terms`);
     for (const seed of seeds) {
       const res = await itunes.search(seed, storefront, config.research.limit);
       searchCache.set(`${storefront}:${seed.toLowerCase()}`, res.results);
@@ -122,7 +122,7 @@ export async function runResearch(opts: ResearchOptions): Promise<ResearchResult
           files.push(file);
           if (idx === 0) app.palette = await extractPalette(buf, 5);
         } catch (err) {
-          log.dim(`  görsel indirilemedi (${app.name}): ${(err as Error).message}`);
+          log.dim(`  could not download image (${app.name}): ${(err as Error).message}`);
         }
       }
       if (ocrBin && files.length) {
@@ -180,7 +180,7 @@ export async function runResearch(opts: ResearchOptions): Promise<ResearchResult
     const candidates: KeywordCandidate[] = [];
     const terms_ = [...terms].slice(0, config.research.candidates);
     const pop = provider ? await provider.fetch(terms_, storefront, locale) : new Map<string, number>();
-    log.step(`Anahtar kelime puanlama: ${locale} (${terms_.length} terim)`);
+    log.step(`Keyword scoring: ${locale} (${terms_.length} terms)`);
     for (const term of terms_) {
       const key = `${storefront}:${term}`;
       let results = searchCache.get(key);

@@ -313,7 +313,7 @@ export const MEASURE_SCRIPT = `(() => {
   }
   const overflow = [];
   for (const el of fits) if (wide(el)) overflow.push(el.className.split(' ')[0] + ': ' + el.textContent.trim().slice(0, 40));
-  if (captionOver()) overflow.push('caption: başlık bloğu ayrılan alana sığmıyor');
+  if (captionOver()) overflow.push('caption: the caption block does not fit its allotted area');
   for (const el of document.querySelectorAll('.fit-one')) if (el.scrollWidth > el.clientWidth + 1) overflow.push('badge: ' + el.textContent.trim().slice(0, 30));
   // Portrait layouts: pull the devices up so the gap under a short caption stays constant.
   if (document.body.dataset.layout === 'portrait' && caption) {

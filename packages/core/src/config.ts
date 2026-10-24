@@ -8,7 +8,7 @@ import { registerEnvSecrets } from './logger.js';
 
 export function loadConfig(file: string): VitrinConfig {
   if (!existsSync(file)) {
-    throw new Error(`vitrin.config.yaml bulunamadı (${file}). Önce \`vitrin init\` çalıştır.`);
+    throw new Error(`vitrin.config.yaml not found (${file}). Run \`vitrin init\` first.`);
   }
   const data = parseYaml(readFileSync(file, 'utf8')) ?? {};
   return parseWith(file, data, VitrinConfig);

@@ -66,7 +66,7 @@ export function validateText(input: TextValidationInput): { issues: IssueList; m
 
   for (const locale of config.app.locales) {
     if (!locales.has(locale)) {
-      issues.error('metadata.missing-locale', `${locale} için metadata dosyası yok (.vitrin/metadata/${locale}.json).`, { locale });
+      issues.error('metadata.missing-locale', `No metadata file for ${locale} (.vitrin/metadata/${locale}.json).`, { locale });
     }
   }
 
@@ -92,15 +92,15 @@ export function validateText(input: TextValidationInput): { issues: IssueList; m
       const bytes = byteLength(v);
       const n = limit.unit === 'bytes' ? bytes : chars;
       lm[field] = { chars, bytes, limit: limit.max, unit: limit.unit };
-      if (limit.required && !v.trim()) issues.error('text.required', `${field} boş olamaz.`, at(field));
+      if (limit.required && !v.trim()) issues.error('text.required', `${field} cannot be empty.`, at(field));
       else if (n > limit.max) {
-        issues.error('text.too-long', `${field} ${n}/${limit.max} ${limit.unit === 'bytes' ? 'bayt' : 'karakter'}.`, {
+        issues.error('text.too-long', `${field} is ${n}/${limit.max} ${limit.unit === 'bytes' ? 'bytes' : 'characters'}.`, {
           ...at(field),
-          fix: `${n - limit.max} ${limit.unit === 'bytes' ? 'bayt' : 'karakter'} kısalt.`,
+          fix: `Shorten by ${n - limit.max} ${limit.unit === 'bytes' ? 'bytes' : 'characters'}.`,
         });
-      } else if (v.trim() && n < limit.min) issues.error('text.too-short', `${field} en az ${limit.min} karakter olmalı.`, at(field));
-      if (v !== v.trim()) issues.warn('text.whitespace', `${field} başında/sonunda boşluk var.`, at(field));
-      if (HTML_RE.test(v)) issues.error('text.html', `${field} HTML içeriyor; App Store yalnız düz metin kabul eder.`, at(field));
+      } else if (v.trim() && n < limit.min) issues.error('text.too-short', `${field} must be at least ${limit.min} characters.`, at(field));
+      if (v !== v.trim()) issues.warn('text.whitespace', `${field} has leading/trailing whitespace.`, at(field));
+      if (HTML_RE.test(v)) issues.error('text.html', `${field} contains HTML; the App Store accepts plain text only.`, at(field));
     }
 
     // ---- name / subtitle ----
@@ -108,51 +108,51 @@ export function validateText(input: TextValidationInput): { issues: IssueList; m
     const subWords = tokenize(m.subtitle, locale).filter((w) => !STOP_FOR_DUPES.has(w));
     const repeated = subWords.filter((w) => nameWords.includes(w));
     if (repeated.length) {
-      issues.error('aso.subtitle-repeats-name', `Alt başlık addaki kelimeleri tekrar ediyor: ${[...new Set(repeated)].join(', ')}.`, {
+      issues.error('aso.subtitle-repeats-name', `Subtitle repeats words from the name: ${[...new Set(repeated)].join(', ')}.`, {
         ...at('subtitle'),
-        fix: 'Alt başlıkta addan farklı, ikincil anahtar kelime kullan.',
+        fix: 'Use secondary keywords in the subtitle that differ from the name.',
       });
     }
 
     // ---- keywords ----
     const kwField = m.keywords;
     if (/,\s|\s,/.test(kwField)) {
-      issues.error('keywords.spaces', 'Virgüllerin etrafında boşluk var; her boşluk bir bayt harcar.', { ...at('keywords'), fix: 'Virgülleri boşluksuz yaz: kelime1,kelime2' });
+      issues.error('keywords.spaces', 'Spaces around commas; every space costs a byte.', { ...at('keywords'), fix: 'Write commas without spaces: keyword1,keyword2' });
     }
     const terms = splitKeywords(kwField);
     const seen = new Set<string>();
     const isCjk = /^(ja|ko|zh)/.test(locale);
     for (const term of terms) {
       const lower = term.toLocaleLowerCase(locale);
-      if (seen.has(lower)) issues.error('keywords.duplicate', `“${term}” kelime alanında birden fazla geçiyor.`, at('keywords'));
+      if (seen.has(lower)) issues.error('keywords.duplicate', `“${term}” appears more than once in the keyword field.`, at('keywords'));
       seen.add(lower);
       if (graphemeLength(term) <= 2 && !isCjk) {
-        issues.error('keywords.too-short', `“${term}” 2 karakterden uzun olmalı.`, at('keywords'));
+        issues.error('keywords.too-short', `“${term}” must be longer than 2 characters.`, at('keywords'));
       }
       for (const w of tokenize(term, locale)) {
         if (nameWords.includes(w) || subWords.includes(w)) {
-          issues.error('keywords.repeats-name', `“${w}” zaten ad/alt başlıkta; kelime alanında tekrar etmek bayt israfı.`, { ...at('keywords'), fix: `“${w}” kelimesini çıkar.` });
+          issues.error('keywords.repeats-name', `“${w}” is already in the name/subtitle; repeating it in the keyword field wastes bytes.`, { ...at('keywords'), fix: `Remove “${w}”.` });
         }
       }
       if (developer && containsTerm(term, developer, locale)) {
-        issues.error('keywords.developer-name', `Geliştirici adı (“${developer}”) kelime alanında olmamalı.`, at('keywords'));
+        issues.error('keywords.developer-name', `The developer name (“${developer}”) should not be in the keyword field.`, at('keywords'));
       }
       for (const tm of forbidden.appleTrademarks) {
-        if (containsTerm(term, tm, locale)) issues.error('keywords.apple-trademark', `Apple markası “${tm}” kelime alanında kullanılamaz.`, at('keywords'));
+        if (containsTerm(term, tm, locale)) issues.error('keywords.apple-trademark', `The Apple trademark “${tm}” cannot be used in the keyword field.`, at('keywords'));
       }
     }
     for (const t of terms) {
       const lower = t.toLocaleLowerCase(locale);
       const plurals = pluralForms(lower, locale);
       for (const p of plurals) {
-        if (seen.has(p)) issues.warn('keywords.plural', `“${t}” ve “${p}” birlikte var; App Store tekil/çoğulu eşleştirir, birini çıkar.`, at('keywords'));
+        if (seen.has(p)) issues.warn('keywords.plural', `Both “${t}” and “${p}” are present; the App Store matches singular/plural forms, so remove one.`, at('keywords'));
       }
     }
     for (const noise of forbidden.keywordNoise) {
-      if (seen.has(noise.toLowerCase())) issues.warn('keywords.noise', `“${noise}” düşük değerli; bu baytı başka kelimeye ver.`, at('keywords'));
+      if (seen.has(noise.toLowerCase())) issues.warn('keywords.noise', `“${noise}” is low-value; spend these bytes on another keyword.`, at('keywords'));
     }
     if (byteLength(kwField) < 80) {
-      issues.info('keywords.underused', `Kelime alanı ${byteLength(kwField)}/100 bayt; kalan baytları kullan.`, at('keywords'));
+      issues.info('keywords.underused', `Keyword field is ${byteLength(kwField)}/100 bytes; use the remaining bytes.`, at('keywords'));
     }
 
     // ---- forbidden terms ----
@@ -168,32 +168,32 @@ export function validateText(input: TextValidationInput): { issues: IssueList; m
       for (const t of priceTerms) {
         if (!containsTerm(text, t, locale)) continue;
         // Promotional text is meant for campaigns; flag it, but do not block.
-        if (field === 'promotionalText') issues.warn('text.price', `${field} fiyat ifadesi içeriyor (“${t}”); fiyat App Store’da zaten görünür.`, at(field));
-        else issues.error('text.price', `${field} fiyat ifadesi içeriyor (“${t}”).`, at(field));
+        if (field === 'promotionalText') issues.warn('text.price', `${field} contains a price term (“${t}”); the price is already shown on the App Store.`, at(field));
+        else issues.error('text.price', `${field} contains a price term (“${t}”).`, at(field));
       }
-      for (const t of superTerms) if (containsTerm(text, t, locale)) issues.error('text.superlative', `${field} kanıtsız üstünlük iddiası içeriyor (“${t}”).`, at(field));
+      for (const t of superTerms) if (containsTerm(text, t, locale)) issues.error('text.superlative', `${field} contains an unproven superlative (“${t}”).`, at(field));
     }
     for (const t of superTerms) {
-      if (containsTerm(m.description, t, locale)) issues.warn('text.superlative', `Açıklamada “${t}” var; belgeli değilse kaldır.`, at('description'));
+      if (containsTerm(m.description, t, locale)) issues.warn('text.superlative', `The description contains “${t}”; remove it unless it is documented.`, at('description'));
     }
     for (const t of priceTerms.filter((x) => x.length > 1)) {
-      if (containsTerm(m.description, t, locale)) issues.warn('text.price', `Açıklamada fiyat ifadesi (“${t}”); abonelik bilgisi değilse kaldır.`, at('description'));
+      if (containsTerm(m.description, t, locale)) issues.warn('text.price', `The description contains a price term (“${t}”); remove it unless it is subscription information.`, at('description'));
     }
     for (const brand of brands) {
       for (const [field, text] of [...strictFields, ['description', m.description] as [string, string], ['whatsNew', m.whatsNew] as [string, string]]) {
         if (containsTerm(text, brand, locale)) {
-          issues.error('text.competitor-brand', `${field} rakip marka adı içeriyor (“${brand}”).`, { ...at(field), fix: 'Başka uygulama veya şirket adı kullanılamaz.' });
+          issues.error('text.competitor-brand', `${field} contains a competitor brand name (“${brand}”).`, { ...at(field), fix: 'Other app or company names cannot be used.' });
         }
       }
     }
 
     // ---- description quality ----
     const firstLines = m.description.split('\n').filter((l) => l.trim()).slice(0, 3).join(' ');
-    if (graphemeLength(firstLines) < 40) issues.warn('description.hook', 'Açıklamanın ilk 3 satırı “devamını oku” öncesi görünür; güçlü bir kanca yaz.', at('description'));
+    if (graphemeLength(firstLines) < 40) issues.warn('description.hook', 'The first 3 lines of the description are visible before “more”; write a strong hook.', at('description'));
     const counts = new Map<string, number>();
     for (const w of tokenize(m.description, locale)) if (w.length > 3 && !STOP_FOR_DUPES.has(w)) counts.set(w, (counts.get(w) ?? 0) + 1);
     for (const [w, c] of counts) {
-      if (c > 6) issues.warn('description.stuffing', `“${w}” açıklamada ${c} kez geçiyor; kelime doldurma gibi görünebilir.`, at('description'));
+      if (c > 6) issues.warn('description.stuffing', `“${w}” appears ${c} times in the description; it may look like keyword stuffing.`, at('description'));
     }
 
     // ---- URLs ----
@@ -204,27 +204,27 @@ export function validateText(input: TextValidationInput): { issues: IssueList; m
     ];
     for (const [field, url, required] of urlChecks) {
       if (!url) {
-        if (required) issues.error('url.missing', `${field} zorunlu (metadata ya da vitrin.config.yaml urls).`, at(field));
+        if (required) issues.error('url.missing', `${field} is required (metadata or vitrin.config.yaml urls).`, at(field));
         continue;
       }
-      if (!/^https?:\/\/[^\s/$.?#].[^\s]*$/i.test(url)) issues.error('url.invalid', `${field} geçerli bir URL değil: ${url}`, at(field));
-      else if (!url.startsWith('https://')) issues.warn('url.http', `${field} https kullanmalı.`, at(field));
-      if (/\/\/(www\.)?example\.(com|org|net)\b/i.test(url)) issues.warn('url.placeholder', `${field} yer tutucu (${url}); yüklemeden önce gerçek adresi yaz.`, at(field));
+      if (!/^https?:\/\/[^\s/$.?#].[^\s]*$/i.test(url)) issues.error('url.invalid', `${field} is not a valid URL: ${url}`, at(field));
+      else if (!url.startsWith('https://')) issues.warn('url.http', `${field} should use https.`, at(field));
+      if (/\/\/(www\.)?example\.(com|org|net)\b/i.test(url)) issues.warn('url.placeholder', `${field} is a placeholder (${url}); set the real address before uploading.`, at(field));
     }
 
     // ---- claims ----
     for (const claim of m.claims) {
       for (const id of claim.featureIds) {
         if (!featureIds.has(id)) {
-          issues.error('claim.unknown-feature', `İddia “${claim.text}” bilinmeyen özelliğe bağlı: ${id}.`, { ...at('claims'), fix: 'app_profile.json features içinde kanıtlı bir özelliğe bağla ya da iddiayı kaldır (App Review 2.3).' });
+          issues.error('claim.unknown-feature', `Claim “${claim.text}” references an unknown feature: ${id}.`, { ...at('claims'), fix: 'Link it to an evidenced feature in app_profile.json features, or remove the claim (App Review 2.3).' });
         }
       }
       const all = [m.name, m.subtitle, m.promotionalText, m.description, m.whatsNew].join('\n');
       if (!all.toLocaleLowerCase(locale).includes(claim.text.toLocaleLowerCase(locale))) {
-        issues.warn('claim.not-in-copy', `İddia metni metinde birebir geçmiyor: “${claim.text}”.`, at('claims'));
+        issues.warn('claim.not-in-copy', `Claim text does not appear verbatim in the copy: “${claim.text}”.`, at('claims'));
       }
     }
-    if (!m.claims.length) issues.warn('claim.none', 'claims listesi boş; açıklamadaki özellik iddialarını app_profile özelliklerine bağla.', at('claims'));
+    if (!m.claims.length) issues.warn('claim.none', 'The claims list is empty; link the feature claims in the description to app_profile features.', at('claims'));
   }
 
   // ---- cross-locale: additional storefront languages should carry different keywords ----
@@ -242,7 +242,7 @@ export function validateText(input: TextValidationInput): { issues: IssueList; m
       const ta = new Set(splitKeywords(a.keywords).map((x) => x.toLowerCase()));
       const shared = splitKeywords(b.keywords).filter((x) => ta.has(x.toLowerCase()));
       if (shared.length > 3) {
-        issues.warn('keywords.cross-locale-duplicate', `${a.locale} ve ${b.locale} ${shared.length} ortak kelime taşıyor; aynı storefront’ta sayılabilecek ek dillere farklı kelimeler yaz.`, { locale: b.locale, field: 'keywords' });
+        issues.warn('keywords.cross-locale-duplicate', `${a.locale} and ${b.locale} share ${shared.length} keywords; give additional languages that may count toward the same storefront different keywords.`, { locale: b.locale, field: 'keywords' });
       }
     }
   }
@@ -250,16 +250,16 @@ export function validateText(input: TextValidationInput): { issues: IssueList; m
   // ---- app level ----
   if (appMetadata) {
     if (!/^\d{4}\s+\S/.test(appMetadata.copyright)) {
-      issues.error('copyright.format', `Telif “2026 Şirket Adı” biçiminde olmalı: “${appMetadata.copyright}”.`, { field: 'copyright', file: '.vitrin/metadata/app.json' });
+      issues.error('copyright.format', `Copyright must be in the form “2026 Company Name”: “${appMetadata.copyright}”.`, { field: 'copyright', file: '.vitrin/metadata/app.json' });
     }
-    if (appMetadata.copyright.includes('©')) issues.warn('copyright.symbol', '© işaretini yazma; App Store ekler.', { field: 'copyright' });
+    if (appMetadata.copyright.includes('©')) issues.warn('copyright.symbol', 'Do not include the © symbol; the App Store adds it.', { field: 'copyright' });
     const notesBytes = byteLength(appMetadata.reviewNotes);
-    if (notesBytes > TEXT_LIMITS.reviewNotes.max) issues.error('text.too-long', `İnceleme notları ${notesBytes}/4000 bayt.`, { field: 'reviewNotes' });
+    if (notesBytes > TEXT_LIMITS.reviewNotes.max) issues.error('text.too-long', `Review notes are ${notesBytes}/4000 bytes.`, { field: 'reviewNotes' });
     if (appMetadata.secondaryCategory && appMetadata.secondaryCategory === appMetadata.primaryCategory) {
-      issues.error('category.same', 'Birincil ve ikincil kategori aynı olamaz.', { field: 'secondaryCategory' });
+      issues.error('category.same', 'Primary and secondary category cannot be the same.', { field: 'secondaryCategory' });
     }
   } else {
-    issues.error('metadata.app-missing', '.vitrin/metadata/app.json yok (telif, kategori, inceleme notları).');
+    issues.error('metadata.app-missing', '.vitrin/metadata/app.json is missing (copyright, categories, review notes).');
   }
 
   return { issues, measurements };

@@ -2,10 +2,12 @@
   "name": "vitrin-monorepo",
   "private": true,
   "version": "0.1.0",
-  "description": "Vitrin — iOS App Store Connect metadata, screenshot, creative and App Preview automation",
+  "description": "Vitrin — automate App Store Connect metadata, screenshots, creatives and App Previews for iOS apps",
   "type": "module",
   "packageManager": "pnpm@12.15.0",
-  "engines": { "node": ">=22" },
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "build": "tsc -b packages/cli",
     "clean": "tsc -b --clean packages/cli",
@@ -17,5 +19,15 @@
     "@types/node": "^26.6.5",
     "typescript": "6.0.3",
     "vitest": "^5.0.5"
+  },
+  "license": "MIT",
+  "author": "Arda Sentürk",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ardasnturk/auto-asc-metadata.git"
+  },
+  "homepage": "https://github.com/ardasnturk/auto-asc-metadata#readme",
+  "bugs": {
+    "url": "https://github.com/ardasnturk/auto-asc-metadata/issues"
   }
 }

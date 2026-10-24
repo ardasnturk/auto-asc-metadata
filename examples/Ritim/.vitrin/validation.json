@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-24T09:41:24.168Z",
+  "generatedAt": "2026-10-24T10:01:01.233Z",
   "ok": true,
   "counts": {
     "error": 0,
@@ -10,7 +10,7 @@
     {
       "severity": "warning",
       "code": "text.superlative",
-      "message": "Açıklamada “best” var; belgeli değilse kaldır.",
+      "message": "The description contains “best”; remove it unless it is documented.",
       "locale": "en-US",
       "field": "description",
       "file": ".vitrin/metadata/en-US.json"
@@ -18,7 +18,7 @@
     {
       "severity": "warning",
       "code": "text.price",
-      "message": "Açıklamada fiyat ifadesi (“free”); abonelik bilgisi değilse kaldır.",
+      "message": "The description contains a price term (“free”); remove it unless it is subscription information.",
       "locale": "en-US",
       "field": "description",
       "file": ".vitrin/metadata/en-US.json"
@@ -26,7 +26,7 @@
     {
       "severity": "warning",
       "code": "url.placeholder",
-      "message": "supportUrl yer tutucu (https://example.com/support); yüklemeden önce gerçek adresi yaz.",
+      "message": "supportUrl is a placeholder (https://example.com/support); set the real address before uploading.",
       "locale": "en-US",
       "field": "supportUrl",
       "file": ".vitrin/metadata/en-US.json"
@@ -34,7 +34,7 @@
     {
       "severity": "warning",
       "code": "url.placeholder",
-      "message": "privacyUrl yer tutucu (https://example.com/privacy); yüklemeden önce gerçek adresi yaz.",
+      "message": "privacyUrl is a placeholder (https://example.com/privacy); set the real address before uploading.",
       "locale": "en-US",
       "field": "privacyUrl",
       "file": ".vitrin/metadata/en-US.json"
@@ -42,7 +42,7 @@
     {
       "severity": "warning",
       "code": "text.price",
-      "message": "Açıklamada fiyat ifadesi (“ücretsiz”); abonelik bilgisi değilse kaldır.",
+      "message": "The description contains a price term (“ücretsiz”); remove it unless it is subscription information.",
       "locale": "tr",
       "field": "description",
       "file": ".vitrin/metadata/tr.json"
@@ -50,7 +50,7 @@
     {
       "severity": "warning",
       "code": "url.placeholder",
-      "message": "supportUrl yer tutucu (https://example.com/support); yüklemeden önce gerçek adresi yaz.",
+      "message": "supportUrl is a placeholder (https://example.com/support); set the real address before uploading.",
       "locale": "tr",
       "field": "supportUrl",
       "file": ".vitrin/metadata/tr.json"
@@ -58,7 +58,7 @@
     {
       "severity": "warning",
       "code": "url.placeholder",
-      "message": "privacyUrl yer tutucu (https://example.com/privacy); yüklemeden önce gerçek adresi yaz.",
+      "message": "privacyUrl is a placeholder (https://example.com/privacy); set the real address before uploading.",
       "locale": "tr",
       "field": "privacyUrl",
       "file": ".vitrin/metadata/tr.json"

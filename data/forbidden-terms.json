@@ -1,6 +1,6 @@
 {
   "updatedAt": "2026-10-24",
-  "notes": "Fiyat ve kanıtsız üstünlük ifadeleri metadata'da hata, açıklamada uyarıdır. Rakip marka adları çalışma anında competitors.json'dan eklenir. cta: ekran görüntüsü metinlerinde eylem çağrısı yasak; otherPlatforms: başka platform adları yasak.",
+  "notes": "Price terms and unproven superlatives are errors in metadata and warnings in the description. Competitor brand names are added at runtime from competitors.json. cta: calls to action are forbidden in screenshot captions; otherPlatforms: names of other platforms are forbidden.",
   "price": {
     "*": [
       "$",

@@ -81,7 +81,7 @@ describe('upload plan', () => {
   it('reports a blocker when the app record does not exist', async () => {
     const client = new AscClient(creds, fakeFetch({ '/v1/apps?filter': { data: [] } }));
     const plan = await buildPlan({ paths: appPaths(mkdtempSync(join(tmpdir(), 'v-'))), config: VitrinConfig.parse({ app: {}, urls: {} }), bundleId: 'com.none', metadata: [], client, include: { creatives: false, cpp: false, events: false } });
-    expect(plan.blockers[0]).toContain('elle oluştur');
+    expect(plan.blockers[0]).toContain('create it once in App Store Connect');
   });
 });
 

@@ -14,3 +14,8 @@ fastlane/app-previews/
 .vitrin/report.html
 .vitrin/render-manifest.json
 .vitrin/video-styles/
+
+# Vitrin
+.vitrin/briefs/
+.vitrin/state.json
+.vitrin/upload-plan.json

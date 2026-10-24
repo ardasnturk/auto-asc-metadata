@@ -1,14 +1,14 @@
-# Sorun giderme
+# Troubleshooting
 
-## Demo modu (-VitrinDemo)
+## Demo mode (-VitrinDemo)
 
-Ekran görüntüleri gerçek kullanıcı verisi göstermemeli ve her çalışmada aynı olmalı. Uygulamada yoksa kullanıcıya şunu öner (onay almadan uygulama koduna dokunma):
+Screenshots must not show real user data and must be identical on every run. If the app does not have this yet, suggest the following to the user (do not touch the app's code without approval):
 
 ```swift
 // Support/VitrinDemo.swift
 enum VitrinDemo {
     static var isEnabled: Bool { ProcessInfo.processInfo.arguments.contains("-VitrinDemo") }
-    /// -VitrinScreen <id> → açılışta gösterilecek ekran
+    /// -VitrinScreen <id> → screen to show at launch
     static var screen: String? {
         let args = ProcessInfo.processInfo.arguments
         guard let i = args.firstIndex(of: "-VitrinScreen"), i + 1 < args.count else { return nil }
@@ -17,43 +17,43 @@ enum VitrinDemo {
 }
 ```
 
-- `isEnabled` iken bellek içi depo + sabit, dile göre demo verisi; izin istemleri ve ağ/StoreKit çağrıları kapalı.
-- Kök görünümde `VitrinDemo.screen`’e göre sekme seç / push / sheet aç.
-- Dil `-AppleLanguages (tr) -AppleLocale tr_TR` ile gelir; sabit metin kullanma.
-- Örnek uygulama: `examples/Ritim/Ritim/Support/VitrinDemo.swift`.
+- While `isEnabled`: in-memory store + fixed, locale-specific demo data; permission prompts and network/StoreKit calls disabled.
+- In the root view, select a tab / push / present a sheet based on `VitrinDemo.screen`.
+- The language comes from `-AppleLanguages (tr) -AppleLocale tr_TR`; do not hard-code strings.
+- Sample app: `examples/Ritim/Ritim/Support/VitrinDemo.swift`.
 
 ## iPhone Duo
 
-- fastlane < 2.241.1 Duo boyutlarını tanımaz ve **tüm yüklemeyi durdurur** → Gemfile’da `>= 2.241.1`, `bundle update fastlane`.
-- deliver dokümanında Duo sınıfı geçmiyor; yükleme hatası olursa `vitrin upload --uploader=asset-library` (API’de `IPHONE_DUO` doğrulanmış).
-- Simülatörde katlama pozisyonu (dış/iç ekran) otomatikleştirilemiyor: capture sırasında simülatörde elle seç ya da Duo ham görüntülerini `capture.mode: manual` ile koy. Duo ham görüntüsü yoksa iPhone görüntüsü kullanılır ve uyarı verilir.
+- fastlane < 2.241.1 does not recognize the Duo sizes and **aborts the whole upload** → `>= 2.241.1` in the Gemfile, `bundle update fastlane`.
+- The deliver documentation does not mention a Duo class; if the upload fails, use `vitrin upload --uploader=asset-library` (`IPHONE_DUO` is verified in the API).
+- The fold posture (outer/inner display) cannot be automated in the simulator: select it manually in the simulator during capture, or provide the Duo raw screenshots with `capture.mode: manual`. If there is no Duo raw screenshot, the iPhone screenshot is used and a warning is shown.
 
-## Uygulama kaydı yok / 403
+## No app record / 403
 
-- API anahtarıyla uygulama oluşturulamaz. ASC > Apps > + ile bir kez elle oluştur (bundle id, SKU, birincil dil). `fastlane produce` yalnız Apple ID + 2FA ile çalışır (FASTLANE_USER/PASSWORD).
-- 401: Key ID / Issuer ID / .p8 eşleşmiyor ya da anahtar iptal edilmiş.
-- 403: anahtar rolü yetersiz (en az App Manager, Team Key).
+- An app cannot be created with an API key. Create it once manually via ASC > Apps > + (bundle id, SKU, primary language). `fastlane produce` only works with an Apple ID + 2FA (FASTLANE_USER/PASSWORD).
+- 401: Key ID / Issuer ID / .p8 do not match, or the key has been revoked.
+- 403: insufficient key role (at least App Manager, Team Key).
 
-## Düzenlenebilir sürüm yok
+## No editable version
 
-- `vitrin doctor --create-version 1.2.0` deliver ile açmayı dener.
-- Yalnız TestFlight’ta olan uygulamada API ilk App Store sürümünü reddedebilir → ASC’de “+ Version” ile bir kez elle aç, sonra “devam”.
+- `vitrin doctor --create-version 1.2.0` tries to create one with deliver.
+- For an app that is only on TestFlight, the API may reject the first App Store version → create it once manually with "+ Version" in ASC, then "continue".
 
-## Video işlenmiyor
+## Video stuck processing
 
-- ASC’de önizleme “Processing” 24 saate kadar sürebilir. `ffprobe` kontrolleri geçtiyse bekle.
-- Reddedilme nedenleri: 60 fps, ses kanalı yok, mono ses, süre < 15 sn, yanlış çözünürlük. `vitrin validate` bunların hepsini ölçer; Vitrin videoları ffmpeg ile High@4.0, 30 fps CFR, stereo AAC 48 kHz’e normalize eder.
-- Remotion ilk çalışmada Chrome Headless Shell indirir; ağ yoksa `vitrin video` başarısız olur.
+- In ASC, preview "Processing" can take up to 24 hours. If the `ffprobe` checks passed, wait.
+- Rejection reasons: 60 fps, no audio track, mono audio, duration < 15 s, wrong resolution. `vitrin validate` measures all of these; Vitrin normalizes videos with ffmpeg to High@4.0, 30 fps CFR, stereo AAC 48 kHz.
+- Remotion downloads Chrome Headless Shell on the first run; without network access, `vitrin video` fails.
 
-## deliver deprecation / eski görsel uçları
+## deliver deprecation / legacy screenshot endpoints
 
-- ASC API 4.5.1 Screenshot/Preview Sets’i kullanımdan kaldırdı. deliver bu uçlarda hata verirse Vitrin mesajı `--uploader=asset-library` önerir. Asset Library öznitelik adları tam doğrulanmadı (docs/apple-notes.md); ilk çalışmada `.vitrin/cache/refdata.json`’a bak.
+- ASC API 4.5.1 deprecated Screenshot/Preview Sets. If deliver fails on these endpoints, Vitrin's message suggests `--uploader=asset-library`. The Asset Library attribute names are not fully verified (docs/apple-notes.md); on the first run, check `.vitrin/cache/refdata.json`.
 
-## Playwright / fontlar
+## Playwright / fonts
 
 - `npx playwright install chromium`.
-- Yazı tipi eksik görünüyorsa `art-direction.json` → typography yalnız gömülü ailelerden olmalı (Inter, Manrope, Space Grotesk, Plus Jakarta Sans, DM Sans, Fraunces, Playfair Display, Noto Sans).
+- If a typeface looks missing, `art-direction.json` → typography must use only the embedded families (Inter, Manrope, Space Grotesk, Plus Jakarta Sans, DM Sans, Fraunces, Playfair Display, Noto Sans).
 
-## Aşama atlanıyor
+## A stage is skipped
 
-- Girdi hash’i aynıysa aşama atlanır. Zorlamak için `vitrin --force <komut>`; tamamen sıfırlamak için `.vitrin/state.json`’ı sil.
+- If the input hash is unchanged, the stage is skipped. To force it, `vitrin --force <command>`; to reset completely, delete `.vitrin/state.json`.

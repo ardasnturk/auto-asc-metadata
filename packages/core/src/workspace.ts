@@ -57,7 +57,7 @@ export function loadTargets(): RenderTarget[] {
 
 export function getTarget(id: string): RenderTarget {
   const t = loadTargets().find((x) => x.id === id);
-  if (!t) throw new Error(`Bilinmeyen hedef: ${id}`);
+  if (!t) throw new Error(`Unknown target: ${id}`);
   return t;
 }
 

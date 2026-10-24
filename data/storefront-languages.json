@@ -1,7 +1,7 @@
 {
  "updatedAt": "2026-10-24",
  "source": "https://developer.apple.com/help/app-store-connect/reference/app-information/app-store-localizations",
- "note": "Ek dillerin aramada sayıldığı ASO topluluğunun gözlemi; Apple taahhüdü değil.",
+ "note": "That additional languages count in search is an observation from the ASO community, not an Apple commitment.",
  "storefronts": [
   {
    "code": "af",

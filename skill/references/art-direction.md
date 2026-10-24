@@ -1,78 +1,78 @@
-# Sanat yönü
+# Art direction
 
-Sabit şablon yok. `app_profile.brand` ve rakip görsel analizinden (`competitors.analysis.paletteUsage`, `screenshotHeadlineTerms`) **2–3 yön** öner ve rakiplerden en çok ayrışanı seç. Seçim gerekçesini `selectionReason`’a yaz.
+There is no fixed template. From `app_profile.brand` and the competitor visual analysis (`competitors.analysis.paletteUsage`, `screenshotHeadlineTerms`), propose **2–3 directions** and pick the one that differs most from competitors. Write the rationale to `selectionReason`.
 
-## Bir yönün parçaları
+## Parts of a direction
 
-- **Palet:** `background` (1–4 renk; gradyan/mesh durakları), `surface`, `primary`, `accent`, `text`, `textMuted`, `badgeBackground`, `badgeText`. Metin her arka plan durağına karşı ≥ 3:1 olmalı (validate ölçer). Marka rengini koru ama rakiplerin baskın tonundan uzaklaş.
-- **Tipografi:** yalnız gömülü OFL aileler — Inter, Manrope, Space Grotesk, Plus Jakarta Sans, DM Sans, Fraunces, Playfair Display, Noto Sans. CJK, Arapça, İbranice, Hint dilleri için Noto yedekleri otomatik; RTL dillerde `dir=rtl` otomatik.
-- **Arka plan:** solid, linear, radial, mesh, grid, dots, panoramic (ardışık görsellerde kesintisiz şerit). `intensity` 0–1.
-- **Cihaz:** `frame` none/minimal/realistic (Apple ürün görseli kullanılmaz, CSS çerçeve), `shadow`, `tilt` (−12…12).
+- **Palette:** `background` (1–4 colors; gradient/mesh stops), `surface`, `primary`, `accent`, `text`, `textMuted`, `badgeBackground`, `badgeText`. Text must reach ≥ 3:1 against every background stop (validate measures it). Keep the brand color, but move away from the dominant competitor hue.
+- **Typography:** embedded OFL families only — Inter, Manrope, Space Grotesk, Plus Jakarta Sans, DM Sans, Fraunces, Playfair Display, Noto Sans. Noto fallbacks for CJK, Arabic, Hebrew and Indic scripts are automatic; `dir=rtl` is automatic for RTL languages.
+- **Background:** solid, linear, radial, mesh, grid, dots, panoramic (a continuous strip across consecutive screenshots). `intensity` 0–1.
+- **Device:** `frame` none/minimal/realistic (no Apple product imagery; CSS frame), `shadow`, `tilt` (−12…12).
 
-## Set stratejisi (önce bu)
+## Set strategy (start here)
 
-Kaynaklar: AppScreenshotStudio 2026 rehberi, MobileAction 2026 rehberi, Apple Screenshot specifications; örnek galeri screensdesign.com.
+Sources: the AppScreenshotStudio 2026 guide, the MobileAction 2026 guide, Apple's Screenshot specifications; example gallery: screensdesign.com.
 
-- **İlk 3 görsel hikâyedir**, çoğu kullanıcı 3. görselden sonrasını görmez ve ilk izlenime 3–6 sn ayırır:
-  1. **Kanca** — sonuç/fayda (“Her gün tek dokunuş”), özellik adı değil.
-  2. **Kanıt** — çekirdek eylem, gerçek arayüzle.
-  3. **Güven / kazanç** — sonuç, seri, gerçek puan ya da en güçlü ikinci fayda.
-  4–10. Derinlemesine bakanlar için: tek görsel = tek fikir.
-- **Tutarlılık:** tek sanat yönü, tek vurgu rengi + nötr, tek başlık yazı tipi, benzer başlık uzunlukları, benzer cihaz konumları, tek arka plan dili. Başlık konumunu (üst/alt) set boyunca sabit tut; karışırsa validate bilgi verir.
-- **Gerçek arayüz oranı:** görsellerin en az %60’ı gerçek UI (statement/testimonial bu oranı düşürür). İlk 3 görselden en az biri UI olmak zorunda.
-- **Koyu zemin + tek parlak vurgu** 2026’da öne çıkıyor; rakipler açık pastel ise koyu zemin ayrışır. App Store’un açık ve koyu temasında ikisinde de okunmalı.
-- **5–7 iyi görsel** çoğu uygulamaya yeter; iPad için 3–5 ayrı görsel (iPhone görselleri iPad’e kopyalanmaz — Vitrin iPad’i iPad yakalamasından üretir).
-- **Kaçın:** giriş/login ekranıyla başlamak, uygulamada olmayan mockup, özellik yığını, “iki telefon + bir paragraf”, eylem çağrısı (“Hemen indir”), başka platform adları (Android, Google Play), fiyat/indirim, kanıtsız ödül/sıralama.
+- **The first 3 screenshots are the story** — most users never look past the third and spend 3–6 seconds on the first impression:
+  1. **Hook** — the outcome/benefit ("One tap a day"), not a feature name.
+  2. **Proof** — the core action, with the real UI.
+  3. **Trust / payoff** — the result, a streak, the real rating, or the second strongest benefit.
+  4–10. For people who dig deeper: one screenshot = one idea.
+- **Consistency:** one art direction, one accent color + neutrals, one headline typeface, similar headline lengths, similar device positions, one background language. Keep the caption position (top/bottom) fixed across the set; validate reports an info message if it is mixed.
+- **Real-UI ratio:** at least 60% of screenshots show real UI (statement/testimonial lower the ratio). At least one of the first 3 screenshots must show UI.
+- **Dark background + one bright accent** stands out in 2026; if competitors use light pastels, a dark background differentiates. It must read well in both the light and dark App Store themes.
+- **5–7 good screenshots** are enough for most apps; 3–5 separate screenshots for iPad (iPhone screenshots are not copied to iPad — Vitrin renders iPad from iPad captures).
+- **Avoid:** opening with a sign-in/login screen, mockups of things the app does not have, feature dumps, "two phones + a paragraph", calls to action ("Download now"), other platform names (Android, Google Play), prices/discounts, unsupported awards/rankings.
 
-## Başlık
+## Headline
 
-- **En çok 5 kelime önerilir** (7 sert sınır), **en çok 2 satır**, 2 saniyede anlaşılmalı. Kalın, ince olmayan yazı tipi; yüksek kontrast.
-- Özellik değil **sonuç** yaz: “Kalori takibi” değil “Saymadan kilo ver” tarzı — ama yalnız kanıtlı sonuç.
-- İki katmanlı başlık: `kicker` küçük üst satır (“Alışkanlık takibi”, “Measure”), `headline` büyük ana mesaj. Kicker ≤ 3 kelime; ana anahtar kelimeyi kicker’a koymak ASO’yu da destekler.
-- Vurgu: başlıkta `*kelime*` yazınca o kelime vurgu renginde çizilir (“Serini *kırma*”). Başlık başına 1 vurgu yeter.
+- **At most 5 words recommended** (7 is the hard limit), **at most 2 lines**, understandable in 2 seconds. A bold, not thin, typeface; high contrast.
+- Write the **outcome**, not the feature: not "Calorie tracking" but something like "Lose weight without counting" — and only outcomes backed by evidence.
+- Two-tier headline: `kicker` is a small line on top ("Habit tracking", "Measure"), `headline` is the large main message. Kicker ≤ 3 words; putting the primary keyword into the kicker also helps ASO.
+- Emphasis: writing `*word*` in a headline draws that word in the accent color ("Keep your *streak*"). One emphasis per headline is enough.
 
-## Arketipler
+## Archetypes
 
-| Arketip | Ne zaman | Ekran | Not |
+| Archetype | When | Screens | Note |
 | --- | --- | --- | --- |
-| hero | İlk görsel; ana vaat + ana ekran büyük | 1 | Kanca için en güvenli seçim |
-| feature | Tek özellik; rozetler cihazın kenarında yüzer | 1 | |
-| callout | Bir arayüz parçasını büyütüp ekrandan dışarı taşırmak (kart, grafik, ısı haritası) | 1 | `callouts[].rect` yakalamanın kesirleri (0–1); iPad düzeni farklıysa `rects.ipad` ver, yoksa iPad’de kesit çizilmez |
-| fullbleed | Arayüzün kendisi görsel olduğunda (hesap makinesi, grafik, harita) | 1 | Çerçevesiz, kenardan kenara; UI’nin üstü hep görünür |
-| tilted | Dinamik, enerjik his (oyun, müzik, spor) | 1 | Büyük cihaz −12° döner ve kenardan taşar; rozetler yüzer |
-| split | İki ekranı karşılaştır / akış | 2 | |
-| collage | Çok yönlülük | 3 | |
-| before-after | Dönüşüm; sol soluk, sağ canlı, ok | 2 | |
-| stat | Büyük sayı + başlık | 1 | `stat.value` kanıtlı ve genel olmalı |
-| social-proof | Gerçek puan/ödül büyük | 1 | Yalnız Lookup’taki gerçek puan |
-| panoramic | Cihaz sağ kenardan taşar; panoramic arka planla | 1 | |
-| statement | Marka/ifade slaytı: ikon + büyük başlık + rozetler | 0 | UI değil; setin sonunda ya da (gerçek kanıt varsa) başında |
-| testimonial | Gerçek App Store yorumları | 0 | `quotes[locale]` yorumun **kendi dilinde, birebir** metni; validate competitors.json → self.reviews ile karşılaştırır. Çeviri ya da uydurma yorum hatadır |
+| hero | First screenshot; main promise + main screen, large | 1 | Safest choice for the hook |
+| feature | A single feature; badges float at the device edge | 1 | |
+| callout | Magnify a piece of the UI and let it break out of the screen (card, chart, heat map) | 1 | `callouts[].rect` as fractions (0–1) of the capture; if the iPad layout differs, provide `rects.ipad`, otherwise no excerpt is drawn on iPad |
+| fullbleed | When the UI itself is the visual (calculator, chart, map) | 1 | Frameless, edge to edge; the top of the UI always stays visible |
+| tilted | Dynamic, energetic feel (games, music, sports) | 1 | A large device rotates −12° and bleeds off the edge; badges float |
+| split | Compare two screens / a flow | 2 | |
+| collage | Versatility | 3 | |
+| before-after | Transformation; left faded, right vivid, arrow | 2 | |
+| stat | Big number + headline | 1 | `stat.value` must be evidence-backed and general |
+| social-proof | Real rating/award, large | 1 | Only the real rating from Lookup |
+| panoramic | The device bleeds off the right edge; use with a panoramic background | 1 | |
+| statement | Brand/statement slide: icon + large headline + badges | 0 | Not UI; at the end of the set or (with real evidence) at the start |
+| testimonial | Real App Store reviews | 0 | `quotes[locale]` is the review's **verbatim** text **in its own language**; validate compares it with competitors.json → self.reviews. Translated or invented reviews are errors |
 
-`captionPosition: "bottom"` başlığı alta alır; cihaz üstten taşar (fullbleed’de UI’nin üstü görünür kalır). Alt başlık, arayüzün üst kısmı en anlamlı olduğunda iyi çalışır.
+`captionPosition: "bottom"` moves the caption to the bottom; the device bleeds off the top (in fullbleed the top of the UI stays visible). Bottom captions work well when the top part of the UI is the most meaningful.
 
-## Rozetler
+## Badges
 
-| Tür | Kural | Örnek |
+| Kind | Rule | Example |
 | --- | --- | --- |
-| feature | `featureId` zorunlu | “iCloud senkron” (cloud), “Çevrimdışı” (wifi-off), “Reklamsız” (ban) |
-| new | `featureId` zorunlu; yalnız bu sürümde gelen özellik | “Yeni” (sparkles) |
-| proof | `proof.kind: rating` Lookup’taki **gerçek** değer ve sayıyla; `award` belgeli URL ile | “4,8 · 12 B puan” |
-| platform | Yalnız gerçekten destekleniyorsa: ipad, apple-watch, iphone-duo, widgets, mac, vision | “iPad’de de” (tablet) |
+| feature | `featureId` required | "iCloud sync" (cloud), "Offline" (wifi-off), "No ads" (ban) |
+| new | `featureId` required; only for features shipped in this version | "New" (sparkles) |
+| proof | `proof.kind: rating` with the **real** value and count from Lookup; `award` with a documented URL | "4.8 · 12K ratings" |
+| platform | Only if actually supported: ipad, apple-watch, iphone-duo, widgets, mac, vision | "Also on iPad" (tablet) |
 
-Rozet stilleri (`style`): `pill` (varsayılan çip), `sticker` (vurgu renginde, hafif dönük, kalın — “1.2’de yeni”), `laurel` (iki defne dalı arasında büyük değer — **yalnız proof rozetinde**, aksi halde ödül izlenimi verdiği için hata).
+Badge styles (`style`): `pill` (default chip), `sticker` (accent color, slightly rotated, bold — "New in 1.2"), `laurel` (a large value between two laurel branches — **proof badges only**; anywhere else it is an error because it implies an award).
 
-Fiyat rozeti yok. Apple markaları (Apple Health, iCloud, Apple Watch) yalnız gerçek entegrasyon varsa. İkonlar Lucide adlarıdır (https://lucide.dev/icons); SF Symbols kullanılmaz. Görsel başına en çok 3 rozet; ilk görselde 1–2.
+No price badges. Apple marks (Apple Health, iCloud, Apple Watch) only with a real integration. Icons are Lucide names (https://lucide.dev/icons); SF Symbols are not used. At most 3 badges per screenshot; 1–2 on the first one.
 
-## Kalite kontrolü (CLI ölçer, sen de bak)
+## Quality checks (the CLI measures; you look too)
 
-- Metin taşması/kesilme yok (fitter küçültür; minimumda hâlâ taşıyorsa hata).
-- 6,9" görselde başlık ≥ 96 px.
-- Güvenli alan: metin ve rozetler kenarlardan %3,5 içeride.
-- İlk 3 görsel %25 boyutta okunur (`.vitrin/cache/thumbs`).
-- Render sonrası en az 2 PNG’yi aç ve gözle kontrol et; iPad ve Duo’yu atlama.
+- No text overflow/clipping (the fitter shrinks text; if it still overflows at the minimum size, it is an error).
+- On the 6.9" screenshot, headline ≥ 96 px.
+- Safe area: text and badges at least 3.5% inside the edges.
+- The first 3 screenshots are legible at 25% size (`.vitrin/cache/thumbs`).
+- After rendering, open at least 2 PNGs and check them visually; do not skip iPad and Duo.
 
-## Kreatifler
+## Creatives
 
-- Başlık 21:9 ve arama 3:2: sol metin sütunu, sağda 1–3 cihaz. Aramada küçük görünür: kısa, büyük başlık.
-- In-App Event: kart 16:9 ve detay 9:16 için ayrı `copy`.
+- Header 21:9 and search 3:2: text column on the left, 1–3 devices on the right. They appear small in search: short, large headline.
+- In-App Event: separate `copy` for the 16:9 card and the 9:16 detail.

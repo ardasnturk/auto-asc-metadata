@@ -1,12 +1,12 @@
-// Vitrin — rakip ekran görüntülerindeki metni macOS Vision ile okur.
-// Kullanım: ocr <dil1,dil2> <görsel>...   Çıktı: her görsel için bir JSON satırı {"file":…, "lines":[…]}
+// Vitrin — reads the text in competitor screenshots with macOS Vision.
+// Usage: ocr <lang1,lang2> <image>...   Output: one JSON line per image {"file":…, "lines":[…]}
 import Foundation
 import Vision
 import AppKit
 
 let args = CommandLine.arguments.dropFirst()
 guard let langArg = args.first else {
-    FileHandle.standardError.write("kullanım: ocr <diller> <görsel>...\n".data(using: .utf8)!)
+    FileHandle.standardError.write("usage: ocr <languages> <image>...\n".data(using: .utf8)!)
     exit(64)
 }
 let languages = langArg.split(separator: ",").map(String.init)

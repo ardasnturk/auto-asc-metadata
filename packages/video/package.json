@@ -48,5 +48,11 @@
   "devDependencies": {
     "@remotion/cli": "4.0.538",
     "@types/react": "^19.3.0"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ardasnturk/auto-asc-metadata.git",
+    "directory": "packages/video"
   }
 }
