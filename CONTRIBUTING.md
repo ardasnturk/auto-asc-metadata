@@ -58,6 +58,10 @@ The split of responsibilities matters: **creative decisions** (copy, keyword cho
 5. User-facing CLI output is English; keep messages short and actionable (say what is wrong and how to fix it).
 6. Update `CHANGELOG.md` under an "Unreleased" heading.
 
+## Website
+
+The landing page at [vitrin.ardasnturk.com](https://vitrin.ardasnturk.com) is plain HTML/CSS in `site/`, deployed to GitHub Pages by `.github/workflows/pages.yml` on every push to `main` that touches `site/`. Preview it with `python3 -m http.server 4173 --directory site`. Its images and videos come from the sample app: after re-rendering `examples/Ritim`, run `node scripts/site-assets.mjs` to rebuild `site/assets`.
+
 ## Commit messages
 
 Use the imperative mood ("Add callout archetype", "Fix keyword byte count for CJK"). Reference issues with `#123` in the body.

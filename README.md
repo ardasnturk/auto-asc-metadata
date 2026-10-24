@@ -2,6 +2,7 @@
 
 [![CI](https://github.com/ardasnturk/auto-asc-metadata/actions/workflows/ci.yml/badge.svg)](https://github.com/ardasnturk/auto-asc-metadata/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Website](https://img.shields.io/badge/website-vitrin.ardasnturk.com-7b6cff.svg)](https://vitrin.ardasnturk.com)
 
 Vitrin reads an iOS project, researches competitors and keywords, and produces everything an App Store Connect listing needs: ASO-friendly metadata, badged screenshots, product page and search creatives, and App Preview videos. It validates all of it against Apple's current rules and uploads it with fastlane and the App Store Connect API. The whole flow runs inside Claude Code through the `/vitrin` skill: Claude makes the creative decisions (copy, keyword selection, art direction, shot list, video plan), while this TypeScript CLI does the deterministic work (data collection, rendering, validation, upload). No additional LLM API key is required.
 

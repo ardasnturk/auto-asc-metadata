@@ -10,3 +10,6 @@ examples/**/.vitrin/raw/
 examples/**/DerivedData/
 examples/**/build/
 coverage/
+
+# Local editor/agent settings
+.claude/

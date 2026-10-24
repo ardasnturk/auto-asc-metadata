@@ -1,0 +1,326 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Vitrin — Your App Store listing, built from your code</title>
+  <meta name="description" content="Open-source CLI and Claude Code skill that reads your iOS project and produces ASO-ready App Store Connect metadata, screenshots, creatives and animated App Previews — validated against Apple's rules and uploaded with fastlane.">
+  <link rel="canonical" href="https://vitrin.ardasnturk.com/">
+  <meta name="theme-color" content="#0B0A1F">
+  <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Vitrin">
+  <meta property="og:title" content="Vitrin — Your App Store listing, built from your code">
+  <meta property="og:description" content="Metadata, screenshots and animated App Previews for iOS apps — generated, validated and uploaded. Open source, driven by a Claude Code skill.">
+  <meta property="og:url" content="https://vitrin.ardasnturk.com/">
+  <meta property="og:image" content="https://vitrin.ardasnturk.com/assets/og.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+
+  <link rel="preload" href="assets/fonts/plus-jakarta-sans-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="assets/fonts/inter-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="styles.css">
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "Vitrin",
+    "applicationCategory": "DeveloperApplication",
+    "operatingSystem": "macOS",
+    "description": "Open-source CLI and Claude Code skill that generates, validates and uploads App Store Connect metadata, screenshots, creatives and App Previews for iOS apps.",
+    "url": "https://vitrin.ardasnturk.com/",
+    "codeRepository": "https://github.com/ardasnturk/auto-asc-metadata",
+    "license": "https://opensource.org/licenses/MIT",
+    "softwareVersion": "0.3.0",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+  }
+  </script>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+
+  <header class="nav">
+    <div class="wrap nav-inner">
+      <a class="brand" href="#top" aria-label="Vitrin home">
+        <img src="assets/logo.svg" alt="" width="32" height="32">
+        <span>Vitrin</span>
+      </a>
+      <nav aria-label="Primary">
+        <ul class="nav-links">
+          <li><a href="#how">How it works</a></li>
+          <li><a href="#features">Features</a></li>
+          <li><a href="#styles">Video styles</a></li>
+          <li><a href="#start">Quick start</a></li>
+          <li><a href="#faq">FAQ</a></li>
+        </ul>
+      </nav>
+      <a class="btn btn-ghost btn-sm" href="https://github.com/ardasnturk/auto-asc-metadata">
+        <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>
+        GitHub
+      </a>
+    </div>
+  </header>
+
+  <main id="main">
+    <!-- Hero -->
+    <section class="hero" id="top">
+      <div class="wrap hero-grid">
+        <div class="hero-copy">
+          <p class="eyebrow">Open source · MIT · Claude Code skill</p>
+          <h1>Your App Store listing, <span class="accent">built from your code.</span></h1>
+          <p class="lead">Vitrin reads your iOS project, studies the competition and produces ASO-ready metadata, screenshots and animated App Previews — validated against Apple's current rules and uploaded with fastlane. You approve; it does the busywork.</p>
+          <div class="cta">
+            <a class="btn btn-primary" href="#start">Get started</a>
+            <a class="btn btn-ghost" href="https://github.com/ardasnturk/auto-asc-metadata">View on GitHub</a>
+          </div>
+          <div class="install" role="group" aria-label="Install command">
+            <code><span class="prompt" aria-hidden="true">$</span> git clone https://github.com/ardasnturk/auto-asc-metadata &amp;&amp; auto-asc-metadata/skill/scripts/install.sh</code>
+            <button class="copy" type="button" data-copy="git clone https://github.com/ardasnturk/auto-asc-metadata && auto-asc-metadata/skill/scripts/install.sh" aria-label="Copy install command">Copy</button>
+          </div>
+        </div>
+        <div class="hero-visual" aria-label="Example output for the sample app Ritim">
+          <img class="fan fan-l" src="assets/shot-02.webp" alt="Generated screenshot: Never break the streak, with a magnified calendar heatmap" width="600" height="1304" loading="eager">
+          <img class="fan fan-r" src="assets/shot-04.webp" alt="Generated screenshot: On your schedule, with a tilted device and a 'New stats in 1.2' sticker" width="600" height="1304" loading="eager">
+          <figure class="phone">
+            <video src="assets/preview.mp4" poster="assets/preview.jpg" autoplay muted loop playsinline preload="metadata" aria-label="Animated App Preview generated by Vitrin in the showcase style"></video>
+          </figure>
+        </div>
+      </div>
+    </section>
+
+    <!-- Numbers -->
+    <section class="facts" aria-label="At a glance">
+      <ul class="wrap facts-list">
+        <li><strong>50</strong><span>App Store locales</span></li>
+        <li><strong>13</strong><span>screenshot layouts</span></li>
+        <li><strong>4</strong><span>App Preview styles</span></li>
+        <li><strong>iPhone · iPad · Duo</strong><span>Oct 2026 sizes</span></li>
+        <li><strong>0</strong><span>extra LLM API keys</span></li>
+      </ul>
+    </section>
+
+    <!-- Gallery -->
+    <section class="gallery" aria-labelledby="gallery-title">
+      <div class="wrap">
+        <h2 id="gallery-title" class="section-title">One run, a complete product page</h2>
+        <p class="section-lead">Every image below was rendered by Vitrin for <a href="https://github.com/ardasnturk/auto-asc-metadata/tree/main/examples/Ritim">Ritim</a>, the sample SwiftUI app in the repo — from real simulator captures, in English and Turkish.</p>
+      </div>
+      <div class="strip" tabindex="0" aria-label="Screenshot set (scrollable)">
+        <img src="assets/shot-01.webp" alt="Hero layout: One tap, every day" width="600" height="1304" loading="lazy">
+        <img src="assets/shot-02.webp" alt="Callout layout: magnified calendar heatmap" width="600" height="1304" loading="lazy">
+        <img src="assets/shot-03.webp" alt="Full-bleed layout: progress charts" width="600" height="1304" loading="lazy">
+        <img src="assets/shot-04.webp" alt="Tilted layout with a sticker badge" width="600" height="1304" loading="lazy">
+        <img src="assets/shot-05.webp" alt="Split layout: two screens side by side" width="600" height="1304" loading="lazy">
+        <img src="assets/shot-06.webp" alt="Statement slide with app icon and feature badges" width="600" height="1304" loading="lazy">
+      </div>
+    </section>
+
+    <!-- How it works -->
+    <section id="how" aria-labelledby="how-title">
+      <div class="wrap">
+        <h2 id="how-title" class="section-title">Claude decides. The CLI does.</h2>
+        <p class="section-lead">Creative choices — copy, keywords, art direction, shot list, video plan — are written by Claude into schema-checked JSON. Everything deterministic is a TypeScript CLI you can read, test and run in CI.</p>
+        <ol class="steps">
+          <li>
+            <span class="step-n">1</span>
+            <h3>Analyze</h3>
+            <p>Parses <code>.pbxproj</code>, Info.plist, entitlements, String Catalogs, asset catalogs, StoreKit and code signals into an app profile where every feature points to a file.</p>
+          </li>
+          <li>
+            <span class="step-n">2</span>
+            <h3>Research</h3>
+            <p>Searches the App Store per storefront, reads competitors' screenshots with on-device OCR, extracts palettes and scores keyword candidates.</p>
+          </li>
+          <li>
+            <span class="step-n">3</span>
+            <h3>Create</h3>
+            <p>Claude writes localized metadata and picks an art direction that stands out from competitors. Vitrin captures the simulator and renders screenshots, creatives and App Previews.</p>
+          </li>
+          <li>
+            <span class="step-n">4</span>
+            <h3>Validate &amp; upload</h3>
+            <p>Byte-accurate limits, forbidden terms, claim ↔ evidence, pixel sizes, video specs. Then a dry-run plan, your explicit approval, fastlane upload and a read-back.</p>
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- Features -->
+    <section id="features" aria-labelledby="features-title">
+      <div class="wrap">
+        <h2 id="features-title" class="section-title">Everything a listing needs</h2>
+        <div class="cards">
+          <article class="card">
+            <h3>Metadata that fits</h3>
+            <p>Name, subtitle, keyword field, description, promo text and What's New per locale. Grapheme and UTF-8 byte counting — <code>alışkanlık</code> is 10 characters but 13 bytes — no duplicates across fields, no competitor brands.</p>
+          </article>
+          <article class="card">
+            <h3>Screenshot engine</h3>
+            <p>13 layouts from hero to callout, full-bleed, tilted and statement. Two-tier headlines with <em>accent</em> words, sticker and laurel badges, embedded fonts, RTL, automatic text fitting and exact pixel sizes without alpha.</p>
+          </article>
+          <article class="card">
+            <h3>Animated App Previews</h3>
+            <p>Remotion compositions with 3D device entrances, camera zooms into real UI, counters, feature chips and kinetic typography — normalized to H.264 High@4.0, 30 fps, 15–30 s.</p>
+          </article>
+          <article class="card">
+            <h3>Truthful by design</h3>
+            <p>Every headline, badge and video beat must link to an evidenced feature (App Review 2.3). Ratings come from the live App Store, testimonials only from your own reviews, verbatim.</p>
+          </article>
+          <article class="card">
+            <h3>Best practices built in</h3>
+            <p>First three screenshots tell the story, at least 60 % real UI, headlines of five words or fewer, two lines max, no calls to action or other platforms — checked on every run.</p>
+          </article>
+          <article class="card">
+            <h3>Safe uploads</h3>
+            <p>Keys stay in <code>.env</code> and are masked in every log. Uploads start with a dry-run plan, require approval, never touch version or release settings, and read back what App Store Connect stored.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- Video styles -->
+    <section id="styles" aria-labelledby="styles-title">
+      <div class="wrap">
+        <h2 id="styles-title" class="section-title">Four ways to move</h2>
+        <p class="section-lead">Pick a style per preview — or render all four with <code>vitrin video --styles all</code> and choose.</p>
+        <div class="styles">
+          <figure>
+            <video src="assets/style-showcase.mp4" poster="assets/style-showcase.jpg" muted loop playsinline preload="none" data-autoplay aria-label="Showcase style sample"></video>
+            <figcaption><strong>Showcase</strong>3D entrances, camera push-ins, light leaks</figcaption>
+          </figure>
+          <figure>
+            <video src="assets/style-kinetic.mp4" poster="assets/style-kinetic.jpg" muted loop playsinline preload="none" data-autoplay aria-label="Kinetic style sample"></video>
+            <figcaption><strong>Kinetic</strong>Word-by-word type cards, punchy cuts</figcaption>
+          </figure>
+          <figure>
+            <video src="assets/style-energetic.mp4" poster="assets/style-energetic.jpg" muted loop playsinline preload="none" data-autoplay aria-label="Energetic style sample"></video>
+            <figcaption><strong>Energetic</strong>Tilted devices, banners, fast wipes</figcaption>
+          </figure>
+          <figure>
+            <video src="assets/style-classic.mp4" poster="assets/style-classic.jpg" muted loop playsinline preload="none" data-autoplay aria-label="Classic style sample"></video>
+            <figcaption><strong>Classic</strong>Calm entrances and fades</figcaption>
+          </figure>
+        </div>
+      </div>
+    </section>
+
+    <!-- Devices -->
+    <section aria-labelledby="devices-title">
+      <div class="wrap">
+        <h2 id="devices-title" class="section-title">Every size Apple asks for</h2>
+        <p class="section-lead">6.3" (required) and 6.9" iPhone, 13" iPad, iPhone Duo outer and inner displays, product page headers (21:9) and search result creatives (3:2) — sizes kept in one data file and checked against App Store Connect.</p>
+        <div class="devices">
+          <img class="d-ipad" src="assets/ipad-01.webp" alt="13-inch iPad screenshot" width="900" height="1200" loading="lazy">
+          <img class="d-duo" src="assets/duo-01.webp" alt="iPhone Duo outer display screenshot" width="520" height="757" loading="lazy">
+          <img class="d-header" src="assets/header.webp" alt="21:9 product page header creative" width="1600" height="686" loading="lazy">
+        </div>
+      </div>
+    </section>
+
+    <!-- Validation -->
+    <section aria-labelledby="validate-title">
+      <div class="wrap split">
+        <div>
+          <h2 id="validate-title" class="section-title">Caught before Apple does</h2>
+          <p class="section-lead">One command checks text, images, videos and claims, and tells Claude exactly what to fix. The skill loops until the report is clean.</p>
+          <ul class="checks">
+            <li>Keyword field over 100 bytes, spaces after commas, plural duplicates</li>
+            <li>Subtitle repeating the name, competitor brands, unproven “#1”</li>
+            <li>Alpha channels, wrong pixel sizes, headlines below 96 px on 6.9"</li>
+            <li>60 fps or silent App Previews, wrong H.264 level</li>
+            <li>Badges or captions without evidence in your code</li>
+          </ul>
+        </div>
+        <pre class="terminal" aria-label="Example vitrin validate output"><code><span class="t-dim">$</span> vitrin validate
+<span class="t-err">ERROR</span> <span class="t-dim">keywords.repeats-name</span> [en-US] “habit” is already in the name/subtitle
+      <span class="t-dim">→ Remove “habit”.</span>
+<span class="t-err">ERROR</span> <span class="t-dim">shot.cta</span> [tr] Screenshot 04: call to action (“hemen indir”)
+<span class="t-warn">WARN </span> <span class="t-dim">shot.headline-long</span> [en-US] Screenshot 03: 6 words; 5 recommended
+<span class="t-warn">WARN </span> <span class="t-dim">url.placeholder</span> [en-US] supportUrl is a placeholder
+
+<span class="t-err">FAILED</span> — 2 errors, 2 warnings, 0 info → .vitrin/validation.json</code></pre>
+      </div>
+    </section>
+
+    <!-- Quick start -->
+    <section id="start" aria-labelledby="start-title">
+      <div class="wrap">
+        <h2 id="start-title" class="section-title">Quick start</h2>
+        <p class="section-lead">Requires macOS, Node.js 22+, pnpm, Xcode, Ruby + Bundler and ffmpeg. Run <code>vitrin doctor</code> to check them.</p>
+        <ol class="quick">
+          <li>
+            <h3>Install the CLI and the skill</h3>
+            <div class="code"><pre><code>git clone https://github.com/ardasnturk/auto-asc-metadata
+auto-asc-metadata/skill/scripts/install.sh</code></pre><button class="copy" type="button" data-copy="git clone https://github.com/ardasnturk/auto-asc-metadata&#10;auto-asc-metadata/skill/scripts/install.sh" aria-label="Copy install commands">Copy</button></div>
+          </li>
+          <li>
+            <h3>Set up your app repo</h3>
+            <div class="code"><pre><code>cd path/to/YourApp
+vitrin init</code></pre><button class="copy" type="button" data-copy="vitrin init" aria-label="Copy vitrin init">Copy</button></div>
+            <p>Creates <code>vitrin.config.yaml</code>, <code>.env.example</code> and the fastlane files. Add your App Store Connect API key to <code>.env</code> — never to the chat.</p>
+          </li>
+          <li>
+            <h3>Run it in Claude Code</h3>
+            <div class="code"><pre><code>/vitrin</code></pre><button class="copy" type="button" data-copy="/vitrin" aria-label="Copy /vitrin">Copy</button></div>
+            <p>Claude walks through analyze → research → write → capture → design → video → validate → review, then shows the upload plan and waits for your “yes”.</p>
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- FAQ -->
+    <section id="faq" aria-labelledby="faq-title">
+      <div class="wrap narrow">
+        <h2 id="faq-title" class="section-title">FAQ</h2>
+        <details>
+          <summary>Do I need an OpenAI or Anthropic API key?</summary>
+          <p>No. The creative work happens inside your Claude Code session through the <code>/vitrin</code> skill. The CLI itself makes no LLM calls.</p>
+        </details>
+        <details>
+          <summary>Will it upload anything without asking?</summary>
+          <p>No. <code>vitrin upload</code> always builds a dry-run plan first and needs explicit approval (<code>--yes</code>). Submitting for review needs <code>vitrin submit --confirm &lt;bundleId&gt;</code>. Prices, releases and the age-rating and privacy questionnaires stay with you.</p>
+        </details>
+        <details>
+          <summary>Can it create the app record in App Store Connect?</summary>
+          <p>Apple doesn't allow that with an API key. Create the app once in App Store Connect; Vitrin stops and tells you if it's missing.</p>
+        </details>
+        <details>
+          <summary>How does it capture real screenshots?</summary>
+          <p>It builds your app for the simulator and opens each screen with launch arguments (for example <code>-VitrinDemo -VitrinScreen stats</code>) in dedicated simulators with a 9:41 status bar and the right system language. The sample app shows how to add a demo-data mode.</p>
+        </details>
+        <details>
+          <summary>What about licenses?</summary>
+          <p>Vitrin is MIT licensed. It bundles OFL fonts and Lucide icons. App Previews are rendered with Remotion, which is free for individuals and companies with up to three employees; larger teams need a <a href="https://www.remotion.dev/license">Remotion company license</a>.</p>
+        </details>
+        <details>
+          <summary>Is this an Apple product?</summary>
+          <p>No. Vitrin is an independent open-source project and is not affiliated with, endorsed by or sponsored by Apple Inc.</p>
+        </details>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="wrap footer-inner">
+      <div class="brand">
+        <img src="assets/logo.svg" alt="" width="24" height="24">
+        <span>Vitrin</span>
+      </div>
+      <ul class="footer-links">
+        <li><a href="https://github.com/ardasnturk/auto-asc-metadata">GitHub</a></li>
+        <li><a href="https://github.com/ardasnturk/auto-asc-metadata/blob/main/CHANGELOG.md">Changelog</a></li>
+        <li><a href="https://github.com/ardasnturk/auto-asc-metadata/blob/main/CONTRIBUTING.md">Contributing</a></li>
+        <li><a href="https://github.com/ardasnturk/auto-asc-metadata/blob/main/SECURITY.md">Security</a></li>
+        <li><a href="https://github.com/ardasnturk/auto-asc-metadata/blob/main/LICENSE">MIT License</a></li>
+      </ul>
+      <p class="fineprint">App Store, App Store Connect, iPhone and iPad are trademarks of Apple Inc. Vitrin is not affiliated with Apple.</p>
+    </div>
+  </footer>
+
+  <script src="script.js" defer></script>
+</body>
+</html>
