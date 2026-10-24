@@ -12,7 +12,8 @@ command -v pnpm >/dev/null || { echo "pnpm gerekli: corepack enable"; exit 1; }
 if [ "${VITRIN_SKIP_BUILD:-0}" != "1" ]; then
   pnpm install
   pnpm build
-  npx --yes playwright install chromium
+  # Playwright lives in the render package, not at the workspace root.
+  pnpm --filter @vitrin/render exec playwright install chromium
 fi
 
 # Global komut: repodaki derlenmiş CLI'ı çalıştıran küçük bir başlatıcı.
