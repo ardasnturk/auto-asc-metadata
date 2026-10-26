@@ -16,6 +16,8 @@ export const CaptureScreen = z.object({
   launchArgs: z.array(z.string()).default([]),
   /** Optional deep link opened with `simctl openurl` after launch. */
   url: z.string().optional(),
+  /** capture.mode html: the source files (views) the HTML recreation of this screen is based on. */
+  source: z.array(z.string()).optional(),
   waitMs: z.number().int().nonnegative().default(2500),
 });
 
@@ -130,7 +132,12 @@ export const VitrinConfig = z.object({
     .default({ commit: false }),
   capture: z
     .object({
-      mode: z.enum(['launch-args', 'xcuitest', 'manual']).default('launch-args'),
+      /**
+       * html: Claude recreates each screen in HTML/CSS from the source code (.vitrin/screens/), rendered at the
+       * device's screen size — no build, no simulator. launch-args: build the app and capture it in simulators /
+       * emulators. xcuitest: fastlane snapshot. manual: you place the raw files yourself.
+       */
+      mode: z.enum(['html', 'launch-args', 'xcuitest', 'manual']).default('launch-args'),
       configuration: z.string().default('Debug'),
       appearance: z.enum(['light', 'dark']).default('light'),
       screens: z.array(CaptureScreen).default([]),

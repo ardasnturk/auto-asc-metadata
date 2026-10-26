@@ -27,14 +27,14 @@ describe('review report', () => {
     const shots = inv.items.filter((i) => i.kind === 'screenshot');
     expect(shots.length).toBe(14); // 2 locales × 2 targets × 3 + 2 Play screenshots
     for (const s of shots) expect(html).toContain(`data-item="${s.id}"`);
-    expect(html).toContain('src="../fastlane/screenshots/tr/03_shot3_iphone-6.9.png" loading="lazy"');
+    expect(html).toContain('src="store/screenshots/tr/03_shot3_iphone-6.9.png" loading="lazy"');
     expect(html).not.toContain(fx.root); // self-contained, relative paths only
     expect(html).toContain('1320×2868');
     expect(html).toContain('iPhone 6.9&quot; (Dynamic Island, large)');
   });
 
   it('includes previews, creatives, event cards, CPP, metadata with counters and the Play listing', () => {
-    expect(html).toMatch(/<video src="..\/fastlane\/app-previews\/en-US\/01_IPHONE_67.mp4" controls/);
+    expect(html).toMatch(/<video src="store\/app-previews\/en-US\/01_IPHONE_67.mp4" controls/);
     expect(html).toContain('2.0 s');
     expect(html).toContain('creative/en-US/header_header.png');
     expect(html).toContain('event-card_event-launch-card.png');
@@ -50,7 +50,7 @@ describe('review report', () => {
   });
 
   it('puts validation issues next to the item they concern and summarizes the destinations', () => {
-    const card = html.slice(html.indexOf('data-item="fastlane/screenshots/en-US/02_shot2_iphone-6.9.png"'));
+    const card = html.slice(html.indexOf('data-item=".vitrin/store/screenshots/en-US/02_shot2_iphone-6.9.png"'));
     expect(card.slice(0, card.indexOf('</figure>'))).toContain('image.contrast');
     const tr = html.slice(html.indexOf('data-item="metadata/app-store/tr"'));
     expect(tr.slice(0, tr.indexOf('data-reject'))).toContain('text.subtitle-duplicate');
@@ -92,10 +92,10 @@ describe('review server', () => {
     const page = await fetch(new URL('/.vitrin/report.html', server.url));
     expect(page.status).toBe(200);
     expect(await page.text()).toContain('Approve everything');
-    const img = await fetch(new URL('/fastlane/screenshots/en-US/01_shot1_iphone-6.3.png', server.url));
+    const img = await fetch(new URL('/.vitrin/store/screenshots/en-US/01_shot1_iphone-6.3.png', server.url));
     expect(img.status).toBe(200);
     expect(img.headers.get('content-type')).toBe('image/png');
-    const vid = await fetch(new URL('/fastlane/app-previews/en-US/01_IPHONE_67.mp4', server.url), { headers: { range: 'bytes=0-3' } });
+    const vid = await fetch(new URL('/.vitrin/store/app-previews/en-US/01_IPHONE_67.mp4', server.url), { headers: { range: 'bytes=0-3' } });
     expect(vid.status).toBe(206);
     expect((await vid.arrayBuffer()).byteLength).toBe(4);
     const state = await (await fetch(new URL('/api/state', server.url))).json();
@@ -104,7 +104,7 @@ describe('review server', () => {
   });
 
   it('rejects path traversal, secrets, files outside the served trees and foreign hosts', async () => {
-    for (const p of ['/../../../../etc/passwd', '/%2e%2e/%2e%2e/%2e%2e/etc/passwd', '/fastlane/screenshots/..%2f..%2f.env', '/.env', '/vitrin.config.yaml', '/.vitrin/app_profile.json', '/fastlane/screenshots/%00x.png', '/fastlane/screenshots/..\\..\\.env']) {
+    for (const p of ['/../../../../etc/passwd', '/%2e%2e/%2e%2e/%2e%2e/etc/passwd', '/.vitrin/store/screenshots/..%2f..%2f.env', '/.env', '/vitrin.config.yaml', '/.vitrin/app_profile.json', '/.vitrin/store/screenshots/%00x.png', '/.vitrin/store/screenshots/..\\..\\.env']) {
       const res = await raw(server.port, p, { host: `127.0.0.1:${server.port}` });
       expect(res.status, p).toBe(404);
       expect(res.body).not.toContain('SECRET');
@@ -113,9 +113,9 @@ describe('review server', () => {
     // A symlink inside a served tree that points outside the project is not followed.
     const outside = join(fx.root, '..', `vitrin-outside-${Date.now()}.png`);
     writeFileSync(outside, 'outside');
-    symlinkSync(outside, join(fx.root, 'fastlane', 'screenshots', 'en-US', 'zz_link_iphone-6.3.png'));
-    expect(await resolveServedFile(fx.root, '/fastlane/screenshots/en-US/zz_link_iphone-6.3.png')).toBeUndefined();
-    expect(await resolveServedFile(fx.root, '/fastlane/screenshots/en-US/01_shot1_iphone-6.3.png')).toBeDefined();
+    symlinkSync(outside, join(fx.root, '.vitrin', 'store', 'screenshots', 'en-US', 'zz_link_iphone-6.3.png'));
+    expect(await resolveServedFile(fx.root, '/.vitrin/store/screenshots/en-US/zz_link_iphone-6.3.png')).toBeUndefined();
+    expect(await resolveServedFile(fx.root, '/.vitrin/store/screenshots/en-US/01_shot1_iphone-6.3.png')).toBeDefined();
   });
 
   it('requires JSON, the same origin and the current hash before approving', async () => {
@@ -135,7 +135,7 @@ describe('review server', () => {
     expect(res.status).toBe(200);
     const approval = ApprovalManifest.parse(JSON.parse(readFileSync(ctx.paths.approval, 'utf8')));
     expect(approval).toMatchObject({ status: 'approved', via: 'review-server' });
-    expect(approval.files.some((f) => f.path === 'fastlane/metadata/android/en-US/title.txt')).toBe(true);
+    expect(approval.files.some((f) => f.path === '.vitrin/store/metadata/android/en-US/title.txt')).toBe(true);
     await expect(server.decision).resolves.toMatchObject({ kind: 'approved', overallHash: approval.overallHash });
   });
 
@@ -146,12 +146,12 @@ describe('review server', () => {
     try {
       const { overallHash } = await (await fetch(new URL('/api/state', s2.url))).json();
       const post = (body: unknown) => fetch(new URL('/api/reject', s2.url), { method: 'POST', body: JSON.stringify(body), headers: { 'content-type': 'application/json' } });
-      expect((await post({ overallHash, rejections: [{ item: 'fastlane/screenshots/tr/01_shot1_iphone-6.3.png', comment: ' ' }] })).status).toBe(400);
+      expect((await post({ overallHash, rejections: [{ item: '.vitrin/store/screenshots/tr/01_shot1_iphone-6.3.png', comment: ' ' }] })).status).toBe(400);
       expect((await post({ overallHash, rejections: [{ item: 'does-not-exist', comment: 'x' }] })).status).toBe(400);
-      const res = await post({ overallHash, rejections: [{ item: 'fastlane/screenshots/tr/01_shot1_iphone-6.3.png', comment: 'Use the dark variant' }, { item: 'cpp/students', comment: 'Drop this page' }] });
+      const res = await post({ overallHash, rejections: [{ item: '.vitrin/store/screenshots/tr/01_shot1_iphone-6.3.png', comment: 'Use the dark variant' }, { item: 'cpp/students', comment: 'Drop this page' }] });
       expect(res.status).toBe(200);
       await expect(s2.decision).resolves.toEqual({ kind: 'rejected', count: 2 });
-      expect(ReviewFeedback.parse(JSON.parse(readFileSync(ctx2.paths.reviewFeedback, 'utf8'))).rejections.map((r) => r.item)).toEqual(['fastlane/screenshots/tr/01_shot1_iphone-6.3.png', 'cpp/students']);
+      expect(ReviewFeedback.parse(JSON.parse(readFileSync(ctx2.paths.reviewFeedback, 'utf8'))).rejections.map((r) => r.item)).toEqual(['.vitrin/store/screenshots/tr/01_shot1_iphone-6.3.png', 'cpp/students']);
       expect(readFileSync(join(ctx2.paths.briefs, 'review.md'), 'utf8')).toContain('Use the dark variant');
       expect(JSON.parse(readFileSync(ctx2.paths.approval, 'utf8')).status).toBe('changes-requested');
     } finally {
@@ -209,7 +209,7 @@ describe('upload approval gate (cli)', () => {
     res = await vitrin(fx.root, 'upload', '--yes');
     expect(res.code).toBe(2);
     expect(res.out).toContain('Upload refused');
-    expect(res.out).toContain('changed: fastlane/screenshots/tr/01_shot1_iphone-6.3.png');
+    expect(res.out).toContain('changed: .vitrin/store/screenshots/tr/01_shot1_iphone-6.3.png');
 
     // Rejections from the chat
     res = await vitrin(fx.root, 'approve', '--reject', 'metadata/app-store/tr', '--comment', 'Shorter subtitle');

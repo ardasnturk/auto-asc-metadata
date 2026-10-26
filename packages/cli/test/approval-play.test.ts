@@ -21,10 +21,10 @@ describe('Google Play export under approval', () => {
     const ctx = await createContext({ cwd: fx.root });
 
     expect(await syncFastlaneMetadata(ctx)).toBe(true);
-    const title = join(fx.root, 'fastlane', 'metadata', 'android', 'en-US', 'title.txt');
+    const title = join(fx.root, '.vitrin', 'store', 'metadata', 'android', 'en-US', 'title.txt');
     expect(readFileSync(title, 'utf8')).toBe('Ritim: Habit Tracker\n');
     const inv = await buildInventory(ctx);
-    expect(inv.files.map((f) => f.path)).toContain('fastlane/metadata/android/en-US/title.txt');
+    expect(inv.files.map((f) => f.path)).toContain('.vitrin/store/metadata/android/en-US/title.txt');
 
     await recordApproval(ctx, inv, 'cli');
     expect((await checkApproval(ctx)).ok).toBe(true);
@@ -33,6 +33,6 @@ describe('Google Play export under approval', () => {
     await syncFastlaneMetadata(ctx);
     const res = await checkApproval(ctx);
     expect(res.ok).toBe(false);
-    expect(res.changed).toContain('fastlane/metadata/android/en-US/title.txt');
+    expect(res.changed).toContain('.vitrin/store/metadata/android/en-US/title.txt');
   });
 });

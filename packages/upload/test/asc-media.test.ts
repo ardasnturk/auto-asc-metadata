@@ -536,7 +536,7 @@ describe('asc uploader', () => {
 
   it('writes asc’s canonical metadata layout from the fastlane export', async () => {
     const root = mkdtempSync(join(tmpdir(), 'vitrin-ascmd-'));
-    const fl = join(root, 'fastlane', 'metadata');
+    const fl = join(root, '.vitrin', 'store', 'metadata');
     tmpFile(join(fl, 'tr'), 'name.txt', 'Ritim\n');
     tmpFile(join(fl, 'tr'), 'subtitle.txt', '');
     tmpFile(join(fl, 'tr'), 'description.txt', 'Açıklama\n');

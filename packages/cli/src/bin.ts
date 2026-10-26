@@ -64,8 +64,9 @@ program
   .option('--create-version <version>', 'if there is no editable version, try to create one with deliver')
   .option('--offline', 'make no network requests')
   .option('--play-live', 'read-only Google Play API test (opens and deletes an edit)')
+  .option('--tools', 'only the local tools (the early check): no keys, no network, writes nothing')
   .action(
-    action(async (o: { createVersion?: string; offline?: boolean; playLive?: boolean }) => {
+    action(async (o: { createVersion?: string; offline?: boolean; playLive?: boolean; tools?: boolean }) => {
       const ctx = await createContext(globals());
       const res = await runDoctor(ctx, o);
       log.result(res);
@@ -81,7 +82,7 @@ program
   .option('--no-images', 'do not download competitor screenshots (no OCR/palette)')
   .action(action(async (o: { images: boolean }) => researchCommand(await createContext(globals()), { skipImages: !o.images })));
 
-program.command('write').description('validates the metadata Claude wrote and exports it to fastlane/metadata').action(action(async () => writeCommand(await createContext(globals()))));
+program.command('write').description('validates the metadata Claude wrote and exports it to .vitrin/store/metadata').action(action(async () => writeCommand(await createContext(globals()))));
 
 program
   .command('platforms')
@@ -98,6 +99,7 @@ program
   .option('--locales <locales>', 'store locales of this run (app.locales), e.g. en-US,tr,de-DE')
   .option('--language <tag>', 'language Vitrin talks to the user in (en, tr, de …; "default" = English)')
   .option('--uploader <name>', 'App Store uploader: asc | deliver | asset-library')
+  .option('--capture <mode>', 'how screens are made: html (from the code, no build) | launch-args (build + simulators) | manual')
   .action(action(async (o: SelectOptions) => selectCommand(await createContext(globals()), o)));
 
 program
@@ -108,7 +110,7 @@ program
 
 program
   .command('capture')
-  .description('raw screenshots and recordings (simulators, Mac window, Android emulator) → .vitrin/raw')
+  .description('raw screens → .vitrin/raw: HTML screens from .vitrin/screens (capture.mode html, no build) or simulators / Mac window / Android emulator')
   .option('--family <families>', 'iphone,ipad,duo,mac,watch,tv,vision,android-phone,android-tablet')
   .option('--locale <locales>', 'comma-separated locales')
   .action(action(async (o: { family?: string; locale?: string }) => captureCommand(await createContext(globals()), { families: o.family?.split(','), locales: o.locale?.split(',') })));

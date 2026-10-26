@@ -67,7 +67,7 @@ export async function validateAll(paths: AppPaths, config: VitrinConfig, scope: 
     }
     for (const extra of await strayLocaleDirs(paths.fastlaneMetadata, config.app.locales)) {
       // `android/` is supply's Google Play folder; deliver runs get per-platform copies without it.
-      if (!['default', 'android'].includes(extra)) issues.error('metadata.stray-locale', `fastlane/metadata/${extra} is a locale not in the config; deliver will upload it too.`);
+      if (!['default', 'android'].includes(extra)) issues.error('metadata.stray-locale', `.vitrin/store/metadata/${extra} is a locale not in the config; deliver will upload it too.`);
     }
     const text = validateText({ config, profile, competitors, appMetadata, locales });
     issues.push(...text.issues.items);
@@ -95,7 +95,7 @@ export async function validateAll(paths: AppPaths, config: VitrinConfig, scope: 
     if (existsSync(paths.screenshots)) {
       issues.push(...(await validateScreenshots({ screenshotsDir: paths.screenshots, locales: config.app.locales, targets: targets.filter((t) => t.kind === 'screenshot'), manifest })).items);
     } else {
-      issues.warn('image.none', 'fastlane/screenshots does not exist yet (run vitrin design).');
+      issues.warn('image.none', '.vitrin/store/screenshots does not exist yet (run vitrin design).');
     }
   }
 

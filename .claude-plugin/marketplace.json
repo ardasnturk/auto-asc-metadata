@@ -12,7 +12,7 @@
       "name": "vitrin",
       "source": "./plugins/vitrin",
       "description": "The /vitrin skill plus a self-installing vitrin CLI: ASO metadata, HTML-rendered screenshots, Remotion App Previews, validation, review and upload for App Store Connect and Google Play.",
-      "version": "0.5.0",
+      "version": "0.6.0",
       "category": "productivity",
       "tags": ["app-store", "app-store-connect", "google-play", "aso", "screenshots", "app-preview", "fastlane", "ios"]
     }

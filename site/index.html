@@ -35,7 +35,7 @@
     "url": "https://vitrin.ardasnturk.com/",
     "codeRepository": "https://github.com/ardasnturk/vitrin",
     "license": "https://opensource.org/licenses/MIT",
-    "softwareVersion": "0.5.0",
+    "softwareVersion": "0.6.0",
     "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
   }
   </script>
@@ -392,8 +392,8 @@
             <p>HTML templates rendered with Playwright: 12 presets, realistic CSS device frames for every family, <code>feature-wall</code> and <code>mosaic</code> closing shots, Play feature graphic and icon, RTL, exact pixel sizes without alpha.</p>
           </article>
           <article class="card">
-            <h3>Real captures</h3>
-            <p>Builds with xcodebuild, <code>flutter build</code>, CocoaPods, <code>expo prebuild</code> or Gradle, and captures in dedicated simulators (9:41, per-locale language), the Mac window, or an Android emulator in demo mode.</p>
+            <h3>Screens from your code</h3>
+            <p>No build needed: Claude reads your views and recreates each screen in HTML with realistic demo data and your app's own texts; Vitrin renders it per language and device with a 9:41 status bar. Prefer real captures? It also builds with xcodebuild, <code>flutter build</code>, CocoaPods, <code>expo prebuild</code> or Gradle, and captures in dedicated simulators (9:41, per-locale language), the Mac window, or an Android emulator in demo mode.</p>
           </article>
           <article class="card">
             <h3>Safe, partial uploads</h3>
@@ -468,8 +468,8 @@ claude</code></pre><button class="copy" type="button" data-copy="cd path/to/Your
           <p>They are never committed: Vitrin keeps a managed block in <code>.gitignore</code>. After a checked upload you decide whether to keep the uploaded set in <code>metadata/</code> or delete it. Research downloads (HTTP cache, competitor screenshots, OCR files) are removed either way.</p>
         </details>
         <details>
-          <summary>How does it capture real screenshots?</summary>
-          <p>It builds your app for each selected platform and opens each screen with launch arguments in dedicated simulators with a 9:41 status bar and the right system language, in the Mac window, or in an Android emulator in System UI demo mode. The docs show how to add a demo-data mode in Swift, Flutter, React Native/Expo and Kotlin.</p>
+          <summary>Does it need to build my app?</summary>
+          <p>No. By default Claude recreates your screens in HTML from the source code, so there is no build, no simulator and no demo mode. If you want real captures instead (<code>vitrin select --capture launch-args</code>), it builds your app for each selected platform and opens each screen with launch arguments in dedicated simulators with a 9:41 status bar and the right system language, in the Mac window, or in an Android emulator in System UI demo mode. The docs show how to add a demo-data mode in Swift, Flutter, React Native/Expo and Kotlin.</p>
         </details>
         <details>
           <summary>Can it create the app record in App Store Connect?</summary>
@@ -492,7 +492,7 @@ claude</code></pre><button class="copy" type="button" data-copy="cd path/to/Your
       <div class="brand">
         <img src="assets/logo.svg" alt="" width="24" height="24">
         <span>Vitrin</span>
-        <a class="version" href="https://github.com/ardasnturk/vitrin/blob/main/CHANGELOG.md">v0.5.0</a>
+        <a class="version" href="https://github.com/ardasnturk/vitrin/blob/main/CHANGELOG.md">v0.6.0</a>
       </div>
       <ul class="footer-links">
         <li><a href="https://github.com/ardasnturk/vitrin">GitHub</a></li>

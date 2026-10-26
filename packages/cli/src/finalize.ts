@@ -63,7 +63,7 @@ export async function generatedPaths(ctx: Ctx): Promise<Array<{ rel: string; gro
   for (const abs of [p.screenshots, p.appPreviews, p.creative, p.raw, join(p.vitrin, 'video-styles'), join(p.vitrin, 'samples'), join(p.vitrin, 'variants'), p.report, p.reviewSnapshot, p.renderManifest, p.uploadPlan]) {
     out.push({ rel: rel(abs), group: abs === p.report || abs === p.reviewSnapshot || abs === p.renderManifest || abs === p.uploadPlan ? 'renders' : 'media' });
   }
-  // Google Play images exported for supply (the text files stay, like fastlane/metadata).
+  // Google Play images exported for supply (the text files stay, like .vitrin/store/metadata).
   if (existsSync(p.androidMetadata)) {
     for (const locale of await readdir(p.androidMetadata)) {
       const images = join(p.androidMetadata, locale, 'images');
@@ -139,7 +139,7 @@ async function keepUploaded(ctx: Ctx): Promise<{ kept: KeptFile[]; bytes: number
     for (const source of item.files) {
       const expected = approvedHash.get(source);
       if (!expected) continue;
-      if (item.kind === 'metadata' && source.startsWith('.vitrin/')) continue; // source JSON stays where it is
+      if (item.kind === 'metadata' && source.startsWith('.vitrin/') && !source.startsWith('.vitrin/store/')) continue; // source JSON stays where it is
       const dest = keepPath(item, source);
       const abs = insideProject(ctx.root, dest);
       await ensureDir(dirname(abs));
@@ -215,7 +215,7 @@ Then run \`vitrin finalize --checked ${keep === undefined ? '--keep` or `vitrin 
     log.info(`Deleted ${group} (${fmtSize(list.reduce((n, r) => n + r.bytes, 0))}):`);
     for (const r of list) log.dim(`  ${r.path}  ${fmtSize(r.bytes)}`);
   }
-  log.info('Kept: .vitrin/app_profile.json, .vitrin/metadata/, keywords/, competitors.json, art-direction.json, shots.json, video-plan.json, cpp-suggestions.json, fastlane/metadata text.');
+  log.info('Kept: .vitrin/app_profile.json, .vitrin/metadata/, keywords/, competitors.json, art-direction.json, shots.json, video-plan.json, cpp-suggestions.json, screens/, .vitrin/store/metadata text.');
   await writeJson(ctx.paths.approval, { ...approval, finalized: { at: new Date().toISOString(), mode: keep ? 'keep' : 'discard' } });
   log.result({ mode: keep ? 'keep' : 'discard', keptBytes, removed });
   return EXIT.OK;

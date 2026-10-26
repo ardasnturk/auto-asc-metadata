@@ -157,7 +157,7 @@ export async function googlePlayChecks(opts: { env: NodeJS.ProcessEnv; root: str
   return out;
 }
 
-export async function runDoctor(ctx: Ctx, opts: { createVersion?: string; offline?: boolean; playLive?: boolean } = {}): Promise<DoctorResult> {
+export async function runDoctor(ctx: Ctx, opts: { createVersion?: string; offline?: boolean; playLive?: boolean; tools?: boolean } = {}): Promise<DoctorResult> {
   const checks: Check[] = [];
   const add = (c: Check) => {
     checks.push(c);
@@ -197,7 +197,8 @@ export async function runDoctor(ctx: Ctx, opts: { createVersion?: string; offlin
   });
   const xcode = await versionOf('xcodebuild', ['-version'], /Xcode (\d+(?:\.\d+)*)/);
   // Xcode is needed for Apple capture only; an Android-only app can run without it.
-  const appleTool = (ok: boolean): CheckStatus => (ok ? 'ok' : apple.length ? 'fail' : 'skip');
+  // HTML screens (capture.mode: html) need no build: Xcode and simulators are then optional.
+  const appleTool = (ok: boolean): CheckStatus => (ok ? 'ok' : apple.length && ctx.config.capture.mode !== 'html' ? 'fail' : 'skip');
   add({ id: 'xcode', title: 'Xcode', status: appleTool(Boolean(xcode)), detail: xcode ?? 'not found', fix: 'Install Xcode and run `sudo xcode-select -s /Applications/Xcode.app`.' });
   const simctl = await exec('xcrun', ['simctl', 'list', 'runtimes']);
   add({ id: 'simctl', title: 'iOS Simulator (simctl)', status: appleTool(simctl.code === 0 && /iOS/.test(simctl.stdout)), fix: 'Download an iOS simulator runtime from Xcode > Settings > Components.' });
@@ -211,6 +212,8 @@ export async function runDoctor(ctx: Ctx, opts: { createVersion?: string; offlin
     chromiumOk = false;
   }
   add({ id: 'playwright', title: 'Playwright Chromium', status: chromiumOk ? 'ok' : 'fail', fix: playwrightInstallCommand() });
+  // `doctor --tools`: the early check before generating anything — no keys, no network, nothing written.
+  if (opts.tools) return { checks, missingKeys: [], exitCode: checks.some((c) => c.status === 'fail') ? EXIT.FAIL : EXIT.OK };
 
   // 2. .env and keys
   log.step('2/7 .env and keys');

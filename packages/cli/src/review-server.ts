@@ -37,7 +37,7 @@ const TYPES: Record<string, string> = {
 };
 
 /** Only these trees (relative to the app root) are ever served, and only files with a known media/text type. */
-const SERVED_ROOTS = ['.vitrin/report.html', '.vitrin/creative/', '.vitrin/cache/thumbs/', '.vitrin/video-styles/', 'fastlane/screenshots/', 'fastlane/app-previews/', 'fastlane/metadata/'];
+const SERVED_ROOTS = ['.vitrin/report.html', '.vitrin/creative/', '.vitrin/cache/thumbs/', '.vitrin/video-styles/', '.vitrin/store/'];
 const MAX_BODY = 1_000_000;
 
 /**

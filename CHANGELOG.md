@@ -2,6 +2,18 @@
 
 All notable changes to this project are documented in this file. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## 0.6.0 — 2026-10-26
+
+### Added — Screens from the code, no build
+- **HTML screens (`capture.mode: html`, the new default):** Claude reads the app's views and recreates each screen worth showing in HTML/CSS with realistic demo data, the app's own UI texts as `{{key}}` placeholders (`.vitrin/screens/<id>.html`, optional `<id>.<family>.html` per device family, `.vitrin/screens/strings/<locale>.json`). `vitrin capture` renders them per language and device family at the exact screen size, with a 9:41 status bar and safe areas, into `.vitrin/raw/` — no Xcode build, no simulator, no demo mode. A missing screen exits 2 with `.vitrin/briefs/screens.md`. The store screenshots are then designed around them in HTML as before.
+- `vitrin select --capture html|launch-args|manual`; `vitrin platforms --json` reports the mode. Simulator capture stays available as `launch-args`.
+- `vitrin doctor --tools`: the early check of local tools only (no keys, no network, writes nothing). Xcode and simulators are not required with HTML screens.
+
+### Changed
+- **Nothing is generated outside `.vitrin/` any more:** the exported store set (metadata text, screenshots, App Previews, the Google Play listing) moved from `fastlane/metadata`, `fastlane/screenshots` and `fastlane/app-previews` to `.vitrin/store/` (same layout deliver and supply read). `fastlane/` now only holds the Fastfile, and only when fastlane is the chosen uploader or for Google Play.
+- `vitrin init` no longer writes `.env.example`; `vitrin doctor` writes it at the upload gate when keys are missing.
+- New configs use `capture.mode: html`; the skill asks once whether to switch a config made by an older Vitrin.
+
 ## 0.5.0 — 2026-10-26
 
 ### Added — Your language, your uploader, a faster first run

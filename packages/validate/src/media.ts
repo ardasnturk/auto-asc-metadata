@@ -54,7 +54,7 @@ export async function validateScreenshots(opts: {
   const issues = new IssueList();
   const counts = new Map<string, Map<string, number>>(); // target → locale → n
   for (const extra of await strayLocaleDirs(opts.screenshotsDir, opts.locales)) {
-    issues.error('image.stray-locale', `fastlane/screenshots/${extra} is a locale not in the config; deliver will upload it too. Remove the folder or add the locale.`);
+    issues.error('image.stray-locale', `.vitrin/store/screenshots/${extra} is a locale not in the config; deliver will upload it too. Remove the folder or add the locale.`);
   }
   for (const locale of opts.locales) {
     const dir = join(opts.screenshotsDir, locale);
@@ -251,7 +251,7 @@ export function checkVideo(p: ProbeResult, target: RenderTarget, where: string):
 export async function validateVideos(opts: { previewsDir: string; creativeDir: string; locales: string[]; targets: RenderTarget[]; expectPreview: boolean }): Promise<IssueList> {
   const issues = new IssueList();
   const previewTargets = opts.targets.filter((t) => t.kind === 'preview');
-  for (const extra of await strayLocaleDirs(opts.previewsDir, opts.locales)) issues.error('video.stray-locale', `fastlane/app-previews/${extra} is a locale not in the config.`);
+  for (const extra of await strayLocaleDirs(opts.previewsDir, opts.locales)) issues.error('video.stray-locale', `.vitrin/store/app-previews/${extra} is a locale not in the config.`);
   for (const locale of opts.locales) {
     const dir = join(opts.previewsDir, locale);
     const files = existsSync(dir) ? (await readdir(dir)).filter((f) => /\.(mp4|mov|m4v)$/i.test(f)).sort() : [];

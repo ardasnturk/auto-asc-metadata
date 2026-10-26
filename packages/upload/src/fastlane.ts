@@ -3,7 +3,7 @@ import type { AppMetadata, LocaleMetadata, VitrinConfig } from '@vitrin/schemas'
 import { copyFile, readdir, readFile, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 
-/** deliver's per-locale file names (fastlane/metadata/<locale>/<name>.txt). */
+/** deliver's per-locale file names (.vitrin/store/metadata/<locale>/<name>.txt). */
 export const LOCALE_FILES: Record<string, (m: LocaleMetadata, c: VitrinConfig) => string | undefined> = {
   'name.txt': (m) => m.name,
   'subtitle.txt': (m) => m.subtitle,
@@ -153,7 +153,7 @@ export function deliverLaneInvocation(lane: string, env: LaneEnv): LaneInvocatio
 
 export interface SupplyLaneEnv {
   packageName: string;
-  /** fastlane/metadata/android (absolute). */
+  /** .vitrin/store/metadata/android (absolute). */
   metadataPath: string;
   /** Track whose existing release supply reads; never changed. */
   track: string;

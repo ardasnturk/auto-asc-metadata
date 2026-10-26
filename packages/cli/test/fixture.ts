@@ -66,12 +66,12 @@ export async function makeFixture(opts: { realVideo?: boolean; android?: boolean
     for (const [ti, [target, w, h]] of ([['iphone-6.3', 1206, 2622], ['iphone-6.9', 1320, 2868]] as const).entries()) {
       for (const [i, head] of c.heads.entries()) {
         const id = String(i + 1).padStart(2, '0');
-        const file = join(root, 'fastlane', 'screenshots', locale, `${id}_shot${i + 1}_${target}.png`);
+        const file = join(root, '.vitrin', 'store', 'screenshots', locale, `${id}_shot${i + 1}_${target}.png`);
         await png(file, w, h, head, COLORS[(i + li + ti) % COLORS.length]!);
         images.push({ file, target, locale, shot: id, width: w, height: h, overflow: [], safeAreaViolations: [] });
       }
     }
-    const pv = join(root, 'fastlane', 'app-previews', locale, '01_IPHONE_67.mp4');
+    const pv = join(root, '.vitrin', 'store', 'app-previews', locale, '01_IPHONE_67.mp4');
     video(pv, 2, Boolean(opts.realVideo));
     videos.push({ file: pv, target: 'preview-iphone', locale, id: '01', durationSec: 2 });
     const header = join(root, '.vitrin', 'creative', locale, 'header_header.png');
@@ -95,7 +95,7 @@ export async function makeFixture(opts: { realVideo?: boolean; android?: boolean
       events: [{ id: 'launch', badge: 'SPECIAL_EVENT', name: { 'en-US': 'Launch week', tr: 'Lansman haftası' }, shortDescription: { 'en-US': 'Double streak points', tr: 'Çift seri puanı' }, longDescription: { 'en-US': 'All week long every check-in counts twice.', tr: 'Tüm hafta her giriş iki kez sayılır.' }, card: spec, detail: spec }],
     },
   });
-  const shotFile = (locale: string, name: string) => join(root, 'fastlane', 'screenshots', locale, name);
+  const shotFile = (locale: string, name: string) => join(root, '.vitrin', 'store', 'screenshots', locale, name);
   json(join(root, '.vitrin', 'validation.json'), {
     generatedAt: '2026-10-26T00:00:00Z',
     ok: false,
@@ -107,7 +107,7 @@ export async function makeFixture(opts: { realVideo?: boolean; android?: boolean
     measurements: {},
   });
   if (opts.android !== false) {
-    const play = join(root, 'fastlane', 'metadata', 'android', 'en-US');
+    const play = join(root, '.vitrin', 'store', 'metadata', 'android', 'en-US');
     text(join(play, 'title.txt'), 'Ritim: Habit Tracker\n');
     text(join(play, 'short_description.txt'), 'Build streaks that stick, one day at a time.\n');
     text(join(play, 'full_description.txt'), 'Ritim helps you build habits that last.\n');
