@@ -10,7 +10,6 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import {
   applePlatformsOf,
   AscClient,
-  AssetLibraryClient,
   buildDeliverFolders,
   buildPlan,
   buildPlayPlan,
@@ -66,14 +65,14 @@ function target(id: string, over: Partial<RenderTarget>): RenderTarget {
 }
 
 const TARGETS: RenderTarget[] = [
-  target('iphone-6.9', { family: 'iphone', width: 1320, height: 2868, assetLibraryDisplayClass: 'IPHONE_69' }),
+  target('iphone-6.9', { family: 'iphone', width: 1320, height: 2868 }),
   target('ipad-13', { family: 'ipad', width: 2064, height: 2752 }),
-  target('watch-ultra', { family: 'watch', platform: 'watchos', width: 422, height: 514, assetLibraryDisplayClass: 'APP_WATCH_ULTRA' }),
+  target('watch-ultra', { family: 'watch', platform: 'watchos', width: 422, height: 514 }),
   target('mac-16x10', { family: 'mac', platform: 'macos', width: 2880, height: 1800 }),
   target('appletv-4k', { family: 'tv', platform: 'tvos', width: 3840, height: 2160 }),
   target('vision', { family: 'vision', platform: 'visionos', width: 3840, height: 2160 }),
   target('preview-iphone', { kind: 'preview', family: 'iphone', width: 886, height: 1920, formats: ['mp4'] }),
-  target('preview-mac', { kind: 'preview', family: 'mac', platform: 'macos', width: 1920, height: 1080, formats: ['mp4'], assetLibraryDisplayClass: 'DESKTOP' }),
+  target('preview-mac', { kind: 'preview', family: 'mac', platform: 'macos', width: 1920, height: 1080, formats: ['mp4'] }),
   target('header', { kind: 'creative', family: 'any', width: 3840, height: 1646 }),
   target('play-phone', { family: 'android-phone', store: 'google-play', platform: 'android', width: 1080, height: 1920 }),
   target('play-tablet-10', { family: 'android-tablet', store: 'google-play', platform: 'android', width: 1600, height: 2560 }),
@@ -565,7 +564,9 @@ describe('multi-platform plan', () => {
     const shots = plan.items.filter((i) => i.area === 'screenshots' && i.store !== 'google-play').map((i) => `${i.platform}/${i.field}`);
     expect(shots.sort()).toEqual(['ios/iphone-6.9', 'ios/watch-ultra', 'osx/mac-16x10', 'xros/vision']);
     const previews = plan.items.filter((i) => i.area === 'previews');
-    expect(previews.map((i) => `${i.platform}/${i.via}`).sort()).toEqual(['ios/deliver', 'osx/asset-library']);
+    expect(previews.map((i) => `${i.platform}/${i.via}`).sort()).toEqual(['ios/deliver', 'osx/asc-api']);
+    // deliver has no Mac preview type; the classic DESKTOP preview set is replaced on its own.
+    expect(previews.find((i) => i.platform === 'osx')!.note).toMatch(/replaces only the DESKTOP preview set of tr; other display types stay untouched \(appPreviewSets API\)/);
     const play = plan.items.filter((i) => i.store === 'google-play');
     expect(play.every((i) => i.via === 'supply')).toBe(true);
     expect(play.find((i) => i.field === 'title')?.change).toBe('create');
@@ -637,8 +638,8 @@ describe('multi-platform plan', () => {
     expect(plan.items.filter((i) => i.area === 'metadata')).toEqual([]);
     const shots = plan.items.filter((i) => i.area === 'screenshots');
     expect(shots).toHaveLength(1);
-    expect(shots[0]).toMatchObject({ platform: 'ios', field: 'watch-ultra', via: 'asset-library' });
-    expect(shots[0]!.note).toMatch(/replaces only the APP_WATCH_ULTRA screenshot set; other display types stay untouched/);
+    expect(shots[0]).toMatchObject({ platform: 'ios', field: 'watch-ultra', via: 'asc-api' });
+    expect(shots[0]!.note).toMatch(/replaces only the APP_WATCH_ULTRA screenshot set of tr; other display types stay untouched \(appScreenshotSets API\)/);
     expect(plan.items.find((i) => i.area === 'creatives')?.note).toMatch(/creatives not selected/);
     const text = formatPlan(plan);
     expect(text).toContain('[untouched · iOS]');
@@ -674,22 +675,17 @@ describe('multi-platform plan', () => {
     expect(readdirSync(join(f.paths.vitrin, 'deliver', 'ios', 'app-previews'))).toEqual([]);
   });
 
-  it('replaces only placements of the selected display class, and refuses when it cannot tell', async () => {
-    const deleted: string[] = [];
-    const placements = (attrs: Array<Record<string, string>>) =>
-      ({
-        getAll: async () => attrs.map((a, i) => ({ type: 'appAssetLibraryPlacements', id: `p${i}`, attributes: a })),
-        request: async (_m: string, path: string) => {
-          deleted.push(path);
-          return undefined;
-        },
-      }) as unknown as AscClient;
-    const owner = { type: 'appStoreVersionLocalizations', id: 'l1' };
-    const lib = new AssetLibraryClient(placements([{ placementType: 'SCREENSHOT', displayClass: 'IPHONE_69' }, { placementType: 'SCREENSHOT', displayClass: 'APP_WATCH_ULTRA' }, { placementType: 'APP_PREVIEW', displayClass: 'APP_WATCH_ULTRA' }]));
-    expect(await lib.clearPlacements(owner, 'SCREENSHOT', 'APP_WATCH_ULTRA', { strict: true })).toBe(1);
-    expect(deleted).toEqual(['/v1/appAssetLibraryPlacements/p1']);
-    const unclear = new AssetLibraryClient(placements([{ placementType: 'SCREENSHOT' }]));
-    await expect(unclear.clearPlacements(owner, 'SCREENSHOT', 'APP_WATCH_ULTRA', { strict: true })).rejects.toThrow(/Refusing/);
+  it('plans the asc uploader: text and every display type through asc, never deliver', async () => {
+    const cfg = VitrinConfig.parse({ app: { locales: ['tr'] }, urls: {}, upload: { uploader: 'asc' } });
+    const plan = await buildPlan({ paths: f.paths, config: cfg, bundleId: 'com.x', metadata: [meta], include: { creatives: false, cpp: false, events: false }, platforms: ['ios', 'watchos'], assets: f.assets, enabledTargets: enabled });
+    expect(plan.uploader).toBe('asc');
+    expect(plan.scope!.apple[0]).toMatchObject({ screenshots: 'per-display-type', previews: 'per-display-type' });
+    const media = plan.items.filter((i) => i.area === 'screenshots' || i.area === 'previews');
+    expect(media.map((i) => `${i.field}:${i.via}`).sort()).toEqual(['iphone-6.9:asc-cli', 'preview-iphone:asc-cli', 'watch-ultra:asc-cli']);
+    expect(media.find((i) => i.field === 'iphone-6.9')!.note).toMatch(/replaces only the APP_IPHONE_67 screenshot set of tr; .*asc screenshots upload --replace/);
+    expect(plan.items.filter((i) => i.area === 'metadata').every((i) => i.via === 'asc-cli')).toBe(true);
+    expect(plan.items.some((i) => /does not upload categories, copyright or review information/.test(i.note ?? ''))).toBe(true);
+    expect(formatPlan(plan)).not.toContain('replaces EVERY');
   });
 
   it('uploads only the selected Google Play kinds and leaves the rest', async () => {

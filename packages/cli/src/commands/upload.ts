@@ -2,7 +2,6 @@ import { existsSync, log, readJson, readJsonIfExists, writeJson } from '@vitrin/
 import { AppMetadata, CppSuggestions, ShotList } from '@vitrin/schemas';
 import {
   AscClient,
-  AssetLibraryClient,
   buildPlan,
   createCustomProductPage,
   createInAppEvent,
@@ -13,12 +12,13 @@ import {
   readBack,
   runDeliverForPlatforms,
   runLane,
+  runAscForPlatforms,
   runPlayUpload,
   uploadPerDisplayType,
-  type UploadPlan,
+  uploadVersionCreatives,
 } from '@vitrin/upload';
 import { validateAll, validatePlayText } from '@vitrin/validate';
-import { readdir, rm } from 'node:fs/promises';
+import { rm } from 'node:fs/promises';
 import { join, relative } from 'node:path';
 import { createInterface } from 'node:readline/promises';
 import pc from 'picocolors';
@@ -30,7 +30,7 @@ import { loadLocaleMetadata, printIssues } from './pipeline.js';
 export interface UploadOptions {
   dryRun?: boolean;
   yes?: boolean;
-  uploader?: 'deliver' | 'asset-library';
+  uploader?: 'deliver' | 'asset-library' | 'asc';
   creatives?: boolean;
   cpp?: boolean;
   events?: boolean;
@@ -46,6 +46,7 @@ async function confirm(question: string): Promise<boolean> {
 }
 
 export async function uploadCommand(ctx: Ctx, opts: UploadOptions): Promise<number> {
+  if (opts.uploader && !['deliver', 'asset-library', 'asc'].includes(opts.uploader)) throw new NeedsInput(`Unknown uploader “${opts.uploader}”: use deliver, asset-library or asc.`);
   if (opts.uploader) ctx.config.upload.uploader = opts.uploader;
   const profile = await loadProfile(ctx);
   const bundleId = bundleIdOf(ctx, profile);
@@ -130,6 +131,14 @@ export async function uploadCommand(ctx: Ctx, opts: UploadOptions): Promise<numb
         log.warn(`Google Play validate_only: ${(err as Error).message}`);
       }
     }
+    // asc uploader: asc's own dry run of the text (and, with a key, of each --replace) changes nothing.
+    if (plan.uploader === 'asc' && plan.appId && !plan.blockers.length) {
+      try {
+        await runAscForPlatforms(ctx.paths, plan, stores.assets, client, { languages: ctx.config.app.locales, env: ctx.env, dryRun: true, skipScreenshots: opts.skipScreenshots });
+      } catch (err) {
+        log.warn(`asc dry run: ${(err as Error).message}`);
+      }
+    }
     log.ok(`Plan: .vitrin/upload-plan.json (--dry-run, nothing was uploaded)`);
     return plan.blockers.length ? EXIT.NEEDS_INPUT : EXIT.OK;
   }
@@ -158,12 +167,14 @@ export async function uploadCommand(ctx: Ctx, opts: UploadOptions): Promise<numb
     log.dim('First release: App Store Connect has no “What’s New” field yet, so release_notes.txt is not uploaded.');
   }
   // One deliver run per selected Apple platform (iOS incl. Apple Watch, macOS, tvOS, visionOS) with complete sets
-  // only; partial sets are replaced per display class through the App Asset Library (see plan.scope).
+  // only; partial sets are replaced one display type at a time (classic sets API, App Asset Library for iPhone Duo).
+  // With uploader asc, the asc CLI does text and every classic display type instead of deliver.
   if (hasApple) {
-    await runDeliverForPlatforms(ctx.paths, plan, stores.assets, { bundleId, languages, skipScreenshots: opts.skipScreenshots });
+    if (plan.uploader === 'asc') await runAscForPlatforms(ctx.paths, plan, stores.assets, client, { languages, env: ctx.env, skipScreenshots: opts.skipScreenshots });
+    else await runDeliverForPlatforms(ctx.paths, plan, stores.assets, { bundleId, languages, skipScreenshots: opts.skipScreenshots });
     if (!opts.skipScreenshots && client) {
-      const n = await uploadPerDisplayType(client, plan, stores.assets, languages);
-      if (n) log.ok(`App Asset Library: ${n} files placed (only the selected display types were replaced).`);
+      const n = await uploadPerDisplayType(client, plan, stores.assets, languages, { classic: plan.uploader === 'asc' ? 'skip' : 'api' });
+      if (n) log.ok(`${n} files uploaded; only the selected display types were replaced.`);
     }
   }
   // Google Play: listing text, release notes and images only (never a binary, track change or rollout).
@@ -171,7 +182,7 @@ export async function uploadCommand(ctx: Ctx, opts: UploadOptions): Promise<numb
 
   // Unselected asset kinds (config.selection.assets) stay untouched in the store.
   const kindOn = (k: 'creatives' | 'events') => plan.scope?.assets.includes(k) ?? true;
-  if (opts.creatives && kindOn('creatives')) await uploadCreatives(ctx, client!, plan);
+  if (opts.creatives && kindOn('creatives')) await uploadVersionCreatives(client!, plan, ctx.paths.creative, ctx.config.app.locales);
   if (opts.cpp && cpp) {
     const existing = new Set((await client!.getAll<{ name?: string }>(`/v1/apps/${plan.appId}/appCustomProductPages?limit=200`)).map((p) => p.attributes.name));
     for (const page of cpp.pages) {
@@ -208,29 +219,6 @@ export async function uploadCommand(ctx: Ctx, opts: UploadOptions): Promise<numb
   await ctx.state.mark('upload', plan.generatedAt, [relative(ctx.root, ctx.paths.uploadPlan)]);
   log.info('Reminder: final approval of the privacy labels and age rating questionnaire is yours; check the App Store tags (US) after the upload.');
   return EXIT.OK;
-}
-
-async function uploadCreatives(ctx: Ctx, client: AscClient, plan: UploadPlan): Promise<void> {
-  const lib = new AssetLibraryClient(client);
-  const libraryId = await lib.libraryId(plan.appId!);
-  const locs = await client.versionLocalizations(plan.version!.id);
-  for (const locale of ctx.config.app.locales) {
-    const loc = locs.find((l) => l.attributes.locale === locale);
-    const dir = join(ctx.paths.creative, locale);
-    if (!loc || !existsSync(dir)) continue;
-    const cleared = new Set<string>();
-    for (const f of (await readdir(dir)).filter((x) => /^(header|search)_.*\.(png|mp4)$/.test(x))) {
-      const kind = f.endsWith('.mp4') ? 'video' : 'image';
-      const assetId = await lib.upload(libraryId, join(dir, f), kind);
-      const placement = f.startsWith('header') ? 'PRODUCT_PAGE_HEADER' : 'SEARCH_RESULT';
-      if (!cleared.has(placement)) {
-        await lib.clearPlacements({ type: 'appStoreVersionLocalizations', id: loc.id }, placement);
-        cleared.add(placement);
-      }
-      await lib.place(assetId, kind, { type: 'appStoreVersionLocalizations', id: loc.id }, placement);
-      log.ok(`${locale} ${f} → ${placement}`);
-    }
-  }
 }
 
 export async function submitCommand(ctx: Ctx, opts: { confirm?: string }): Promise<number> {

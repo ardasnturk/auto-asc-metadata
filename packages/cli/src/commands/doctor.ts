@@ -2,7 +2,11 @@ import { ENV_KEYS, exec, existsSync, loadTargets, log, readJsonIfExists, renderE
 import { AppProfile, type Platform } from '@vitrin/schemas';
 import {
   applePlatformsOf,
+  ASC_INSTALL_HINT,
   ASC_PLATFORM,
+  ascEnv,
+  ascValidateInvocation,
+  ascVersion,
   AscApiError,
   AscClient,
   AscCredentialError,
@@ -156,17 +160,24 @@ export async function runDoctor(ctx: Ctx, opts: { createVersion?: string; offlin
   add({ id: 'node', title: `Node.js ${node}`, status: compareVersions(node, '22.0.0') >= 0 ? 'ok' : 'fail', fix: 'Install Node 22 or later.' });
   const pnpm = await versionOf('pnpm', ['--version'], /(\d+\.\d+\.\d+)/);
   add({ id: 'pnpm', title: 'pnpm', status: pnpm ? 'ok' : 'warn', detail: pnpm ?? 'not found', fix: 'corepack enable && corepack prepare pnpm@latest --activate (only needed to install Vitrin from source).' });
+  // With the asc uploader, Apple uploads need no Ruby; fastlane is then only used for supply (Android) and `vitrin submit`.
+  const useAsc = ctx.config.upload.uploader === 'asc';
+  const rubyNeeded = (ok: boolean): CheckStatus => (ok ? 'ok' : useAsc && !platforms.includes('android') ? 'warn' : 'fail');
+  if (useAsc) {
+    const asc = await ascVersion();
+    add({ id: 'asc', title: 'asc CLI (upload.uploader: asc)', status: asc ? 'ok' : 'fail', detail: asc ?? 'not found', fix: ASC_INSTALL_HINT });
+  }
   const ruby = await versionOf('ruby', ['--version'], /ruby (\d+\.\d+\.\d+)/);
-  add({ id: 'ruby', title: 'Ruby', status: ruby ? 'ok' : 'fail', detail: ruby ?? 'not found', fix: 'brew install ruby' });
+  add({ id: 'ruby', title: 'Ruby', status: rubyNeeded(Boolean(ruby)), detail: ruby ?? 'not found', fix: useAsc ? 'brew install ruby (with the asc uploader only needed for Google Play and `vitrin submit`)' : 'brew install ruby' });
   const bundler = await versionOf('bundle', ['--version'], /(\d+\.\d+\.\d+)/);
-  add({ id: 'bundler', title: 'Bundler', status: bundler ? 'ok' : 'fail', detail: bundler ?? 'not found', fix: 'gem install bundler' });
+  add({ id: 'bundler', title: 'Bundler', status: rubyNeeded(Boolean(bundler)), detail: bundler ?? 'not found', fix: 'gem install bundler' });
   const hasGemfile = existsSync(join(ctx.root, 'Gemfile'));
   let fastlane = hasGemfile ? await versionOf('bundle', ['exec', 'fastlane', '--version'], /fastlane (\d+\.\d+\.\d+)/, ctx.root) : null;
   fastlane ??= await versionOf('fastlane', ['--version'], /fastlane (\d+\.\d+\.\d+)/);
   add({
     id: 'fastlane',
     title: `fastlane ≥ ${MIN_FASTLANE}`,
-    status: fastlane && compareVersions(fastlane, MIN_FASTLANE) >= 0 ? 'ok' : 'fail',
+    status: rubyNeeded(Boolean(fastlane && compareVersions(fastlane, MIN_FASTLANE) >= 0)),
     detail: fastlane ?? 'not found',
     fix: `Add gem "fastlane", ">= ${MIN_FASTLANE}" to the Gemfile and run \`bundle install\`. Older versions do not know the iPhone Duo sizes and abort the upload.`,
   });
@@ -298,11 +309,27 @@ export async function runDoctor(ctx: Ctx, opts: { createVersion?: string; offlin
       const ref = await client.assetLibraryRefData();
       await writeJson(join(ctx.paths.cache, 'refdata.json'), ref);
       const diffs = diffRefData(ref, loadTargets());
-      add({ id: 'refdata', title: 'refData ↔ data/targets.json', status: diffs.length ? 'warn' : 'ok', detail: diffs.length ? `${diffs.length} differences` : 'in sync', fix: diffs.slice(0, 6).join('\n      ') });
+      add({ id: 'refdata', title: 'refData ↔ data/asc-display-types.json', status: diffs.length ? 'warn' : 'ok', detail: diffs.length ? `${diffs.length} differences` : 'in sync', fix: diffs.slice(0, 6).join('\n      ') });
     } catch (err) {
       add({ id: 'refdata', title: 'refData', status: 'warn', detail: (err as Error).message });
     }
   } else add({ id: 'refdata', title: 'refData', status: 'skip' });
+
+  // Optional (upload.ascValidate: true): asc's submission-readiness report for the editable version. A warning only:
+  // it also checks things an upload does not need yet (an attached build, pricing).
+  if (ctx.config.upload.ascValidate && client && appId) {
+    const auth = ascEnv(ctx.env, ctx.root);
+    if (auth.problems.length) add({ id: 'asc-validate', title: 'asc validate', status: 'skip', detail: auth.problems.join('; ') });
+    else if (!(await ascVersion())) add({ id: 'asc-validate', title: 'asc validate', status: 'skip', detail: 'asc not installed', fix: ASC_INSTALL_HINT });
+    else {
+      for (const p of apple) {
+        const inv = ascValidateInvocation({ appId, platform: ASC_PLATFORM[p] as 'IOS' }, auth.env);
+        const res = await exec(inv.command, inv.args, { cwd: ctx.root, env: inv.env, timeoutMs: 180_000 });
+        const last = (res.stdout + res.stderr).trim().split('\n').slice(-1)[0];
+        add({ id: `asc-validate:${p}`, title: `asc validate (${ASC_PLATFORM[p]})`, status: res.code === 0 ? 'ok' : 'warn', detail: res.code === 0 ? 'ready for submission' : `exit ${res.code}${last ? `: ${last}` : ''}`, fix: `asc validate --app ${appId} --platform ${ASC_PLATFORM[p]} shows the full report.` });
+      }
+    }
+  }
 
   // 7. Google Play — only when the app ships on Android.
   log.step('7/7 Google Play');

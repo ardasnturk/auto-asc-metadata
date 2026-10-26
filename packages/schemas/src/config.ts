@@ -147,9 +147,16 @@ export const VitrinConfig = z.object({
     .default({ enabled: true, loops: true }),
   upload: z
     .object({
-      uploader: z.enum(['deliver', 'asset-library']).default('deliver'),
+      /**
+       * deliver (default): fastlane deliver for text and complete sets; partial sets per display type through the
+       * ASC API. asset-library: media through the App Asset Library. asc: the `asc` CLI (rorkai/App-Store-Connect-CLI,
+       * `brew install asc`, no Ruby) for text and per-display-type media.
+       */
+      uploader: z.enum(['deliver', 'asset-library', 'asc']).default('deliver'),
       platform: z.enum(['ios', 'osx', 'appletvos', 'xros']).default('ios'),
       appVersion: z.string().optional(),
+      /** `vitrin doctor` also runs `asc validate --app <id>` (submission readiness) when the asc CLI is installed. */
+      ascValidate: z.boolean().optional(),
     })
     .default({ uploader: 'deliver', platform: 'ios' }),
 });
