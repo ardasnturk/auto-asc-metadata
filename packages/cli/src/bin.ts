@@ -6,6 +6,7 @@ import { approvalStage, approveCommand } from './approval.js';
 import { createContext, EXIT, NeedsInput, type GlobalOptions } from './context.js';
 import { runDoctor } from './commands/doctor.js';
 import { initCommand } from './commands/init.js';
+import { mockupsCommand } from './commands/mockups.js';
 import { analyzeCommand, captureCommand, designCommand, researchCommand, validateCommand, videoCommand, writeCommand } from './commands/pipeline.js';
 import { platformsCommand, selectCommand, uploaderCommand, type SelectOptions } from './commands/select.js';
 import { submitCommand, uploadCommand } from './commands/upload.js';
@@ -114,6 +115,15 @@ program
   .option('--family <families>', 'iphone,ipad,duo,mac,watch,tv,vision,android-phone,android-tablet')
   .option('--locale <locales>', 'comma-separated locales')
   .action(action(async (o: { family?: string; locale?: string }) => captureCommand(await createContext(globals()), { families: o.family?.split(','), locales: o.locale?.split(',') })));
+
+program
+  .command('mockups')
+  .description('ready-made device mockups → metadata/mockups: iPhone, iPad, iPhone Duo open/closed, Watch, Mac, TV, Vision Pro, Android (--screens places the rendered screens in them)')
+  .option('--screens', 'also place every rendered screen (metadata/raw) into the mockups of its device family')
+  .option('--locale <locales>', 'comma-separated locales for --screens')
+  .option('--only <ids>', 'only these mockups (see --list)')
+  .option('--list', 'list the mockups')
+  .action(action(async (o: { screens?: boolean; locale?: string; only?: string; list?: boolean }) => mockupsCommand(await createContext(globals()), { screens: o.screens, locales: o.locale?.split(','), ids: o.only?.split(','), list: o.list })));
 
 program
   .command('design')

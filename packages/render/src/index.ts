@@ -8,3 +8,4 @@ export * from './caption.js';
 export * from './layout.js';
 export * from './quality.js';
 export * from './renderer.js';
+export * from './mockups.js';

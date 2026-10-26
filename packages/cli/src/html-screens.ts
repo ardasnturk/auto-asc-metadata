@@ -1,5 +1,5 @@
 import { ensureDir, existsSync, localeInfo, loadTargets, log } from '@vitrin/core';
-import { launchChromium } from '@vitrin/render';
+import { launchChromium, SCREEN_TARGET } from '@vitrin/render';
 import type { RenderTarget } from '@vitrin/schemas';
 import { readdir, readFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
@@ -15,19 +15,6 @@ import type { Ctx } from './context.js';
  */
 
 export type ScreenFamily = 'iphone' | 'ipad' | 'duo' | 'mac' | 'watch' | 'tv' | 'vision' | 'android-phone' | 'android-tablet';
-
-/** The screenshot format whose logical size is the device screen of each family. */
-const SCREEN_TARGET: Record<ScreenFamily, string> = {
-  iphone: 'iphone-6.9',
-  ipad: 'ipad-13',
-  duo: 'duo-inner',
-  mac: 'mac-16x10',
-  watch: 'watch-ultra',
-  tv: 'appletv-4k',
-  vision: 'vision-pro',
-  'android-phone': 'play-phone',
-  'android-tablet': 'play-tablet-10',
-};
 
 /** Safe areas (CSS px) the status bar and home indicator take; exposed as --safe-top / --safe-bottom. */
 const SAFE_AREA: Record<ScreenFamily, { top: number; bottom: number; statusBar: 'ios' | 'ipados' | 'android' | 'none' }> = {
