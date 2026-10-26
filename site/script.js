@@ -1,4 +1,4 @@
-// Copy buttons, and autoplay of the style samples only while they are on screen.
+// Copy buttons, autoplay of the style samples only while they are on screen, and the style switcher.
 document.querySelectorAll('.copy').forEach((button) => {
   button.addEventListener('click', async () => {
     try {
@@ -37,3 +37,24 @@ if (reduceMotion) {
   );
   document.querySelectorAll('video[data-autoplay]').forEach((video) => observer.observe(video));
 }
+
+// Style switcher: an ARIA tab list (click, arrow keys, Home/End) that shows one style panel at a time.
+const tabs = [...document.querySelectorAll('.switcher [role="tab"]')];
+const selectTab = (tab, focus) => {
+  for (const t of tabs) {
+    const on = t === tab;
+    t.setAttribute('aria-selected', String(on));
+    t.tabIndex = on ? 0 : -1;
+    document.getElementById(t.getAttribute('aria-controls')).hidden = !on;
+  }
+  if (focus) tab.focus();
+};
+tabs.forEach((tab, i) => {
+  tab.addEventListener('click', () => selectTab(tab, false));
+  tab.addEventListener('keydown', (event) => {
+    const next = { ArrowRight: i + 1, ArrowLeft: i - 1, Home: 0, End: tabs.length - 1 }[event.key];
+    if (next === undefined) return;
+    event.preventDefault();
+    selectTab(tabs[(next + tabs.length) % tabs.length], true);
+  });
+});
