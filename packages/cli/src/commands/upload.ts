@@ -18,7 +18,7 @@ import { readdir, rm } from 'node:fs/promises';
 import { join, relative } from 'node:path';
 import { createInterface } from 'node:readline/promises';
 import pc from 'picocolors';
-import { checkApproval, requireApproval } from '../approval.js';
+import { checkApproval, recordUpload, requireApproval } from '../approval.js';
 import { bundleIdOf, EXIT, loadProfile, NeedsInput, type Ctx } from '../context.js';
 import { missingUploadKeys, runDoctor } from './doctor.js';
 import { loadLocaleMetadata, printIssues } from './pipeline.js';
@@ -119,7 +119,7 @@ export async function uploadCommand(ctx: Ctx, opts: UploadOptions): Promise<numb
   }
 
   // Files may have changed while the plan was built or the prompt was open: check once more right before sending.
-  await requireApproval(ctx);
+  const approved = await requireApproval(ctx);
 
   const languages = ctx.config.app.locales;
   if (plan.firstRelease) {
@@ -161,11 +161,13 @@ export async function uploadCommand(ctx: Ctx, opts: UploadOptions): Promise<numb
 
   log.step('Reading back from ASC…');
   const diffs = await readBack({ paths: ctx.paths, config: ctx.config, bundleId, metadata, client: client! });
+  await recordUpload(ctx, approved, diffs);
   if (diffs.length) {
     for (const d of diffs) log.warn(d);
     return EXIT.FAIL;
   }
   log.ok('Text in ASC matches the local files.');
+  log.info('Next: show the user the read-back above; once they confirm the listing, run `vitrin finalize --checked` (keeps the uploaded set in metadata/ or deletes the generated files, per retention.keep).');
   await ctx.state.mark('upload', plan.generatedAt, [relative(ctx.root, ctx.paths.uploadPlan)]);
   log.info('Reminder: final approval of the privacy labels and age rating questionnaire is yours; check the App Store tags (US) after the upload.');
   return EXIT.OK;

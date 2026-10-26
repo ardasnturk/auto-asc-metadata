@@ -54,6 +54,17 @@ export const ApprovalManifest = z.object({
   metadataJson: z.array(HashedFile),
   items: z.array(ReviewItem),
   rejections: z.array(ReviewRejection).default([]),
+  /** Written by a real upload of exactly this content; `vitrin finalize` requires a clean read-back. */
+  upload: z
+    .object({
+      uploadedAt: z.string(),
+      overallHash: z.string(),
+      readBack: z.enum(['ok', 'differences']),
+      differences: z.array(z.string()).default([]),
+    })
+    .optional(),
+  /** Set by `vitrin finalize` once the generated files were kept in `metadata/` or deleted. */
+  finalized: z.object({ at: z.string(), mode: z.enum(['keep', 'discard']) }).optional(),
 });
 export type ApprovalManifest = z.infer<typeof ApprovalManifest>;
 

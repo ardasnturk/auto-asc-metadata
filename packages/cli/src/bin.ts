@@ -8,6 +8,7 @@ import { runDoctor } from './commands/doctor.js';
 import { initCommand } from './commands/init.js';
 import { analyzeCommand, captureCommand, designCommand, researchCommand, validateCommand, videoCommand, writeCommand } from './commands/pipeline.js';
 import { submitCommand, uploadCommand } from './commands/upload.js';
+import { finalizeCommand } from './finalize.js';
 import { reviewCommand } from './review-server.js';
 
 const program = new Command();
@@ -140,6 +141,19 @@ program
   .option('--events', 'create the In-App Event drafts')
   .option('--skip-screenshots', 'skip screenshots and videos')
   .action(action(async (o) => uploadCommand(await createContext(globals()), o)));
+
+program
+  .command('finalize')
+  .description('after a checked upload: keep the uploaded set in metadata/ (--keep) or delete the generated files (--discard)')
+  .option('--keep', 'copy exactly the uploaded files to metadata/, then delete the working copies')
+  .option('--discard', 'delete the generated media; keep the source JSON')
+  .option('--checked', 'the user checked the read-back / store listing after the upload')
+  .action(
+    action(async (o: { keep?: boolean; discard?: boolean; checked?: boolean }) => {
+      if (o.keep && o.discard) throw new NeedsInput('Choose one: --keep or --discard.');
+      return finalizeCommand(await createContext(globals()), { keep: o.keep ? true : o.discard ? false : undefined, checked: o.checked });
+    }),
+  );
 
 program
   .command('submit')

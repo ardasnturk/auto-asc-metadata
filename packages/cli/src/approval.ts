@@ -7,6 +7,7 @@ import {
   ReviewFeedback,
   ReviewSnapshot,
   ShotList,
+  type AssetKind,
   type HashedFile,
   type RenderTarget,
   type ReviewItem,
@@ -253,6 +254,17 @@ export async function buildInventory(ctx: Ctx): Promise<Inventory> {
     items.push({ id: `event/${e.id}`, kind: 'event', store: 'app-store', platform: ascPlatform, label: `In-App Event · ${e.id}`, files: [rel(p.shots), ...cards], data: e });
   }
 
+  // Only what the user selected for this run (config.selection) is reviewed, approved and hashed.
+  const selected = items.filter((i) => isSelected(ctx, i));
+  items.length = 0;
+  items.push(...selected);
+  const referenced = new Set(items.flatMap((i) => i.files));
+  const selFiles = files.filter((f) => referenced.has(f.path));
+  // Source JSON is hashed even before its export exists, unless the selection excludes what it feeds.
+  const sel = ctx.config.selection?.assets;
+  const feeds = (path: string): AssetKind[] => (path === rel(p.shots) ? ['screenshots', 'creatives', 'events'] : ['metadata']);
+  const selJson = metadataJson.filter((f) => referenced.has(f.path) || !sel || feeds(f.path).some((k) => sel.includes(k)));
+
   // Upload order within each locale × target group.
   const groups = new Map<string, InventoryItem[]>();
   for (const i of items) {
@@ -262,7 +274,18 @@ export async function buildInventory(ctx: Ctx): Promise<Inventory> {
   }
   for (const g of groups.values()) g.sort((a, b) => natural(a.id, b.id)).forEach((i, n) => (i.order = n + 1));
 
-  return { items, files, metadataJson, overallHash: overallHash(files, metadataJson) };
+  return { items, files: selFiles, metadataJson: selJson, overallHash: overallHash(selFiles, selJson) };
+}
+
+/** Review item kind → `config.selection.assets` kind. CPP pages are listing text, so they follow metadata. */
+const ASSET_OF: Record<ReviewItemKind, AssetKind> = { screenshot: 'screenshots', preview: 'previews', creative: 'creatives', event: 'events', metadata: 'metadata', cpp: 'metadata', other: 'screenshots' };
+
+/** Whether an item is part of this run's selection (unset selection = everything). */
+export function isSelected(ctx: Pick<Ctx, 'config'>, item: Pick<ReviewItem, 'kind' | 'platform'>): boolean {
+  const sel = ctx.config.selection ?? {};
+  if (sel.assets && !sel.assets.includes(ASSET_OF[item.kind])) return false;
+  if (sel.platforms && item.platform !== 'any' && !(sel.platforms as string[]).includes(item.platform)) return false;
+  return true;
 }
 
 async function textItem(root: string, id: string, store: Store, platform: string, locale: string | undefined, list: string[], base: string, source: string | undefined): Promise<InventoryItem> {
@@ -340,6 +363,12 @@ export async function requireApproval(ctx: Ctx, inv?: Inventory): Promise<Approv
     `Upload refused: ${res.reason} Every image, video and text must be reviewed and approved first — run \`vitrin review\` (or \`vitrin review --serve\`), show it to the user, then record their approval (buttons, or \`vitrin approve\`).`,
     limited,
   );
+}
+
+/** Records that exactly the approved content was uploaded, with the read-back result (needed by `vitrin finalize`). */
+export async function recordUpload(ctx: Ctx, approval: ApprovalManifest, differences: string[]): Promise<void> {
+  const upload = { uploadedAt: new Date().toISOString(), overallHash: approval.overallHash, readBack: differences.length ? ('differences' as const) : ('ok' as const), differences };
+  await writeJson(ctx.paths.approval, { ...approval, upload });
 }
 
 export async function writeSnapshot(ctx: Ctx, inv: Inventory): Promise<void> {

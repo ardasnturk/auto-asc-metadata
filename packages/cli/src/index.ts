@@ -7,3 +7,4 @@ export * from './report.js';
 export * from './briefs.js';
 export * from './approval.js';
 export * from './review-server.js';
+export * from './finalize.js';
