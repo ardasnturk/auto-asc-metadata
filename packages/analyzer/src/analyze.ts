@@ -290,6 +290,7 @@ export async function analyzeProject(opts: AnalyzeOptions): Promise<AppProfile> 
     generatedAt: new Date().toISOString(),
     project: {
       root,
+      kind: 'native',
       xcodeproj: rel(xcodeproj),
       workspace: loc.workspace ? rel(loc.workspace) : undefined,
       scheme: opts.scheme ?? main.name,
@@ -303,6 +304,8 @@ export async function analyzeProject(opts: AnalyzeOptions): Promise<AppProfile> 
       deploymentTarget: main.deploymentTarget,
       supportsIPhone: main.devices.includes('iphone') || main.devices.length === 0,
       supportsIPad,
+      supportsDuo: false,
+      platforms: ['ios'],
       developmentRegion: pbx.developmentRegion,
       knownRegions: pbx.knownRegions,
       locales,
