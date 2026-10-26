@@ -1,78 +1,123 @@
 # Art direction
 
-There is no fixed template. From `app_profile.brand` and the competitor visual analysis (`competitors.analysis.paletteUsage`, `screenshotHeadlineTerms`), propose **2–3 directions** and pick the one that differs most from competitors. Write the rationale to `selectionReason`.
+**Screenshots are advertisements, not documentation.** Every screenshot sells one idea — a feeling, an outcome or a killed pain — and the UI inside the device is the proof. Vitrin renders everything from HTML (Playwright) with a named **style preset**; you pick the preset, write the copy and the shot list, and vary the framing. The method below is adapted from [ParthJadhav/app-store-screenshots](https://github.com/ParthJadhav/app-store-screenshots) (MIT); the preset specs are in [`styles/`](styles/README.md).
 
-## Parts of a direction
+## Workflow
 
-- **Palette:** `background` (1–4 colors; gradient/mesh stops), `surface`, `primary`, `accent`, `text`, `textMuted`, `badgeBackground`, `badgeText`. Text must reach ≥ 3:1 against every background stop (validate measures it). Keep the brand color, but move away from the dominant competitor hue.
-- **Typography:** embedded OFL families only — Inter, Manrope, Space Grotesk, Plus Jakarta Sans, DM Sans, Fraunces, Playfair Display, Noto Sans. Noto fallbacks for CJK, Arabic, Hebrew and Indic scripts are automatic; `dir=rtl` is automatic for RTL languages.
-- **Background:** solid, linear, radial, mesh, grid, dots, panoramic (a continuous strip across consecutive screenshots). `intensity` 0–1.
-- **Device:** `frame` none/minimal/realistic (no Apple product imagery; CSS frame), `shadow`, `tilt` (−12…12).
+1. Write the first two shots of `shots.json` (hero + second shot, real copy, real screens).
+2. Run `vitrin design --samples` (default 4 presets, `--styles a,b,c` to choose them, `--count N`). It renders those two shots in clearly different presets into `.vitrin/design-samples/<preset>/` and one **contact sheet** labelled A/B/C/D (`.vitrin/design-samples/contact-sheet.png`; `--json` prints the paths).
+3. Show the contact sheet to the user and ask which design they want (A/B/C/D). Do not pick for them.
+4. Write `art-direction.json` with the chosen preset (`options[].preset`, `selected`), then the full `shots.json`, then `vitrin design`.
+5. Open the rendered PNGs yourself (at least the first three iPhone shots, one iPad, one Android if present) and read `.vitrin/validation.json` — the quality gate below measures every image.
 
-## Set strategy (start here)
+## art-direction.json
 
-Sources: the AppScreenshotStudio 2026 guide, the MobileAction 2026 guide, Apple's Screenshot specifications; example gallery: screensdesign.com.
+```json
+{ "options": [{ "id": "glass", "name": "Liquid Glass Aurora", "rationale": "…", "differentiation": "…",
+    "preset": "liquid-glass-aurora",
+    "brand": { "primary": "#5B4BE8", "secondary": "#FF6B5E", "strength": 0.35 } }],
+  "selected": "glass", "selectionReason": "…" }
+```
 
-- **The first 3 screenshots are the story** — most users never look past the third and spend 3–6 seconds on the first impression:
-  1. **Hook** — the outcome/benefit ("One tap a day"), not a feature name.
-  2. **Proof** — the core action, with the real UI.
-  3. **Trust / payoff** — the result, a streak, the real rating, or the second strongest benefit.
-  4–10. For people who dig deeper: one screenshot = one idea.
-- **Consistency:** one art direction, one accent color + neutrals, one headline typeface, similar headline lengths, similar device positions, one background language. Keep the caption position (top/bottom) fixed across the set; validate reports an info message if it is mixed.
-- **Real-UI ratio:** at least 60% of screenshots show real UI (statement/testimonial lower the ratio). At least one of the first 3 screenshots must show UI.
-- **Dark background + one bright accent** stands out in 2026; if competitors use light pastels, a dark background differentiates. It must read well in both the light and dark App Store themes.
-- **5–7 good screenshots** are enough for most apps; 3–5 separate screenshots for iPad (iPhone screenshots are not copied to iPad — Vitrin renders iPad from iPad captures).
-- **Avoid:** opening with a sign-in/login screen, mockups of things the app does not have, feature dumps, "two phones + a paragraph", calls to action ("Download now"), other platform names (Android, Google Play), prices/discounts, unsupported awards/rankings.
+- **`preset`** supplies palette, type pairing (bundled OFL fonts), background recipe, decoration recipe and device treatment. Pick it from [`styles/README.md`](styles/README.md) by category and by what stands apart from the competitors (`competitors.analysis.paletteUsage`).
+- **`brand`** tints the preset with the app's colors (app_profile.brand): the emphasis takes the brand hue, darkened or lightened until it clears WCAG AA on that background; `strength` (0–1) rotates the background hues of "full"-tint presets toward the brand. Without `brand`, the profile's brand colors are used. One-accent presets (Swiss, Neon) only swap their signal color if the brand passes the same contrast pairs.
+- Optional overrides: `palette`, `typography`, `background`, `device` (the pre-preset fields). An explicit `palette` is used as is. Old files without `preset` still work: they render with their own palette and background style on the `vitrin-classic` composition.
 
-## Headline
+## Iron rules (copy)
 
-- **At most 5 words recommended** (7 is the hard limit), **at most 2 lines**, understandable in 2 seconds. A bold, not thin, typeface; high contrast.
-- Write the **outcome**, not the feature: not "Calorie tracking" but something like "Lose weight without counting" — and only outcomes backed by evidence.
-- Two-tier headline: `kicker` is a small line on top ("Habit tracking", "Measure"), `headline` is the large main message. Kicker ≤ 3 words; putting the primary keyword into the kicker also helps ASO.
-- Emphasis: writing `*word*` in a headline draws that word in the accent color ("Keep your *streak*"). One emphasis per headline is enough.
+1. **One idea per headline.** Never join two things with "and".
+2. **Short, common words.** 3–5 words per line, at most 2 lines (3 for the big condensed presets). Five words or fewer recommended, seven is the hard limit.
+3. **Line breaks are intentional:** `\n` in a headline is a visible break. Hand-break for rhythm; avoid a fat line over a one-word widow.
+4. **Mixed emphasis:** wrap exactly one word or short phrase in `*asterisks*`. The preset draws it (gradient, signal block, pill, italic, script, kenten dots, highlighter) — never two.
+5. Three approaches, offer the user three options per slide: **paint a moment** ("Check in before the coffee's done"), **state an outcome** ("Your week, quietly planned"), **kill a pain** ("Never lose a streak again"). Then rewrite the chosen one in the preset's copy tone (`styles/<preset>.md`).
+6. Outcomes must be backed by evidence (`featureIds`). No calls to action, prices, other platform names or unproven awards.
+
+## Narrative arc
+
+| Slot | Purpose |
+|---|---|
+| 1 | **Hero / main benefit** — the only slide most people see. Proof (rating, award) lives here and nowhere else. |
+| 2 | **Differentiator** — why this app and not the others. |
+| 3 | **Ecosystem or core feature** — widgets, watch, iPad (skip if not real). |
+| 4+ | **Core features**, one per slide, most important first. |
+| 2nd-to-last | **Trust** — "made for people who…", real reviews (`testimonial`). |
+| Last | **Closer** — `feature-wall` (big one-line features, `wall: [{ "en-US": "Widgets" }, …]`) or `mosaic` (three real screens). Never another single-feature hero. |
+
+## Layout variation (framing)
+
+`framing` per shot: `auto` (default), `bleed-bottom`, `bleed-top`, `offset`, `tilted`, `two-devices`, `no-device`, `contained`.
+
+- `auto` follows the archetype and the preset's rhythm and **never repeats the previous shot's framing**. Hero is always `bleed-bottom`.
+- The device is **anchored to an edge** (bleeding off the bottom, off the top under a bottom caption, or standing on a shelf) and covers **68–82 % of the canvas height**. Never a centred phone with empty bands above and below.
+- Mix at least two framings across the set; every 2–3 slides break the phone parade (`two-devices`, `mosaic`, `feature-wall`, `statement`).
+- Upright presets (Liquid Glass, Swiss, Midnight, Japandi, Bento, Magazine) never tilt; tilted presets alternate direction. iPhone Duo is always straight on.
+- `inverted: true` switches to the preset's contrast surface (Swiss ink, Clay dusk, Neon volt). Use 1–2 per set; cycling presets (Candy, Paper, Hand-Drawn) change surface on every slide by themselves.
+- Watch, Apple TV, Mac and Vision Pro frames are always **contained** (a cropped TV reads as a mistake); their slides alternate caption-left and caption-top.
 
 ## Archetypes
 
-| Archetype | When | Screens | Note |
-| --- | --- | --- | --- |
-| hero | First screenshot; main promise + main screen, large | 1 | Safest choice for the hook |
-| feature | A single feature; badges float at the device edge | 1 | |
-| callout | Magnify a piece of the UI and let it break out of the screen (card, chart, heat map) | 1 | `callouts[].rect` as fractions (0–1) of the capture; if the iPad layout differs, provide `rects.ipad`, otherwise no excerpt is drawn on iPad |
-| fullbleed | When the UI itself is the visual (calculator, chart, map) | 1 | Frameless, edge to edge; the top of the UI always stays visible |
-| tilted | Dynamic, energetic feel (games, music, sports) | 1 | A large device rotates −12° and bleeds off the edge; badges float |
-| split | Compare two screens / a flow | 2 | |
-| collage | Versatility | 3 | |
-| before-after | Transformation; left faded, right vivid, arrow | 2 | |
-| stat | Big number + headline | 1 | `stat.value` must be evidence-backed and general |
-| social-proof | Real rating/award, large | 1 | Only the real rating from Lookup |
-| panoramic | The device bleeds off the right edge; use with a panoramic background | 1 | |
-| statement | Brand/statement slide: icon + large headline + badges | 0 | Not UI; at the end of the set or (with real evidence) at the start |
-| testimonial | Real App Store reviews | 0 | `quotes[locale]` is the review's **verbatim** text **in its own language**; validate compares it with competitors.json → self.reviews. Translated or invented reviews are errors |
+| Archetype | Use | Screens |
+|---|---|---|
+| hero | Slide 1: main benefit, large device | 1 |
+| feature | One feature; badges float at the device edge | 1 |
+| callout | A magnified piece of the UI breaks out of the screen (`callouts[].rect` fractions of the capture; `rects.ipad` for iPad) | 1 |
+| fullbleed | Frameless UI when the UI is the visual | 1 |
+| tilted | Energy: large tilted device (tilted presets) | 1 |
+| split / before-after | Two devices layered (back up-left, front down-right) | 2 |
+| collage | Three devices | 3 |
+| stat | Big evidence-backed number + headline (`stat`) | 1 |
+| social-proof | The real rating from Lookup, large | 1 |
+| panoramic | Oversized device; pair with `bridge` | 1 |
+| statement | Icon + big claim + badges (no UI) | 0 |
+| testimonial | Verbatim App Store reviews (no UI) | 0 |
+| feature-wall | Closer: wall of one-line features (`wall`) | 0 |
+| mosaic | Closer: three real screens as frameless tiles | 2–3 |
 
-`captionPosition: "bottom"` moves the caption to the bottom; the device bleeds off the top (in fullbleed the top of the UI stays visible). Bottom captions work well when the top part of the UI is the most meaningful.
+At least 60 % of shots show real UI and one of the first three must.
+
+## Cross-canvas moment
+
+`"bridge": true` on a shot sends a decorative element (bloom, band, ribbon, comet, sticker trail) across the seam into the next screenshot. In a 5+ shot set use **one**, at most two in 8–10. Text, ratings and key UI never cross; each PNG must still read on its own.
 
 ## Badges
 
-| Kind | Rule | Example |
-| --- | --- | --- |
-| feature | `featureId` required | "iCloud sync" (cloud), "Offline" (wifi-off), "No ads" (ban) |
-| new | `featureId` required; only for features shipped in this version | "New" (sparkles) |
-| proof | `proof.kind: rating` with the **real** value and count from Lookup; `award` with a documented URL | "4.8 · 12K ratings" |
-| platform | Only if actually supported: ipad, apple-watch, iphone-duo, widgets, mac, vision | "Also on iPad" (tablet) |
+| Kind | Rule |
+|---|---|
+| feature | `featureId` required ("iCloud sync", "Offline") |
+| new | `featureId` required; only for this version |
+| proof | Real rating from Lookup or a documented award — **first screenshot only** (`social-proof`/`testimonial` excepted) |
+| platform | Only if actually supported |
 
-Badge styles (`style`): `pill` (default chip), `sticker` (accent color, slightly rotated, bold — "New in 1.2"), `laurel` (a large value between two laurel branches — **proof badges only**; anywhere else it is an error because it implies an award).
+Badges render in the preset's material (glass, dark glass, mono label, tile, sticker, paper). At most 2 on the hero, 3 elsewhere. Lucide icon names only.
 
-No price badges. Apple marks (Apple Health, iCloud, Apple Watch) only with a real integration. Icons are Lucide names (https://lucide.dev/icons); SF Symbols are not used. At most 3 badges per screenshot; 1–2 on the first one.
+## Density
 
-## Quality checks (the CLI measures; you look too)
+Dense inside the device, sparse outside: one headline, one optional sub-line, one optional badge row. Decorations follow the preset's density (minimal 0–2, editorial 2–5, maximal 8–14) and never touch the type.
 
-- No text overflow/clipping (the fitter shrinks text; if it still overflows at the minimum size, it is an error).
-- On the 6.9" screenshot, headline ≥ 96 px.
-- Safe area: text and badges at least 3.5% inside the edges.
-- The first 3 screenshots are legible at 25% size (`.vitrin/cache/thumbs`).
-- After rendering, open at least 2 PNGs and check them visually; do not skip iPad and Duo.
+## Quality bar (measured on every render)
 
-## Creatives
+`vitrin design` measures each image in the browser and `validate` reports:
 
-- Header 21:9 and search 3:2: text column on the left, 1–3 devices on the right. They appear small in search: short, large headline.
-- In-App Event: separate `copy` for the 16:9 card and the 9:16 detail.
+| Code | Rule | Severity |
+|---|---|---|
+| `image.device-small` | Device < 65 % of canvas height (phones/tablets) — < 68 % warns | error / warning |
+| `image.device-large` | Device > 90 % | warning |
+| `image.empty-band` | Largest empty horizontal band > 22 % | warning |
+| `image.word-width` | A headline word wider than 88 % of the canvas | error |
+| `image.headline-contrast` | Headline vs the **worst pixel under its glyphs** (glyph mask, not the box average) < 4.5:1 — < 3:1 is an error | warning / error |
+| `image.text-contrast` | Kicker/subheadline < 4.5:1 | warning |
+| `image.layers` | More than background → device → headline + one accent | warning |
+| `image.thumbnail` | Downscaled to 220 px (search result): headline < 11 px or glyph contrast < 3:1 | warning (first 3) / info |
+| `image.overflow`, `image.safe-area`, `image.headline-small` | As before | error / warning |
+
+Fix by shortening the headline, choosing another framing, or a preset whose surface suits the screenshots — never by hoping.
+
+## Thumbnail test
+
+Shrink the first three screenshots to ~220 px wide (`.vitrin/cache/thumbs`). In one sentence you must be able to say: what style is this, what does the app do, why tap it. If not, the headline is too long or too thin.
+
+## Store graphics
+
+- **App Store creatives** (header 21:9, search 3:2): caption left, 1–3 devices right; short brand line, not a screenshot headline.
+- **Google Play feature graphic** (1024×500): no device frame — app icon as the hero object, app name + one short line (taken from `creatives.header`, else the hero copy). **Play icon** (512×512): the app icon full-bleed (Google applies the mask).
+- Android screenshots use the Android frames (punch-hole, flat edge); never Apple hardware on Google Play.

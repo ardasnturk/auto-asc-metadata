@@ -4,10 +4,14 @@ Vitrin renders videos with Remotion. You write `.vitrin/video-plan.json`; the CL
 
 ## Rules (Apple)
 
-- 15–30 s, 30 fps, 886×1920 (iPhone, including Duo) / 1200×1600 (iPad); at most 3 per locale and device.
+- 15–30 s, 30 fps, 886×1920 (iPhone, including Duo) / 1200×1600 (iPad) / 1920×1080 landscape (Mac: `device: "mac"`, target `preview-mac`; Apple TV: `device: "tv"`, target `preview-tv` — both off by default, enable them in `targets.enable`); at most 3 per locale and device.
 - **Real app footage must dominate.** Text cards are short (≤ 1.5 s) and few (≤ 2 explicit `text` beats); no hands, people or footage outside the device.
 - It must make sense without sound (it plays muted in search). The poster frame is at 5 seconds: put a legible UI scene there.
 - The first ~1.5 s of a recording is the app launch: `from` ≥ 1.5 (for the hook, `hookFrom`, default 1.5).
+
+## Look and device frames
+
+The preview takes its colors and fonts from the selected art direction (its style preset, tinted with the brand) and draws the device with **the same HTML/CSS frames as the screenshots**: iPhone with Dynamic Island and side buttons, iPad, a macOS window for Mac footage and a TV bezel for Apple TV. Mac and TV previews are landscape: the caption runs in a column on the left, the device fills the right; every scene type works in both orientations. Record Mac/TV footage at 16:10 / 16:9 so it fills the screen.
 
 ## Styles (`previews[].style`)
 
