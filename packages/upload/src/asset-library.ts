@@ -102,8 +102,16 @@ export class AssetLibraryClient {
    * Deletes the owner's placements of one type/display class so a re-upload replaces the set instead of
    * appending to it. Returns how many were removed.
    */
-  async clearPlacements(owner: { type: string; id: string }, placementType: string, displayClass?: string): Promise<number> {
+  async clearPlacements(owner: { type: string; id: string }, placementType: string, displayClass?: string, opts: { strict?: boolean } = {}): Promise<number> {
     const list = await this.asc.getAll<{ placementType?: string; displayClass?: string }>(`/v1/${owner.type}/${owner.id}/placements?limit=200`);
+    if (opts.strict) {
+      // Partial uploads: delete only placements that provably belong to this type and display class. If the
+      // response does not carry the attributes (unverified names), refuse instead of deleting other sets.
+      const unknown = list.filter((p) => !p.attributes.placementType || (displayClass && !p.attributes.displayClass));
+      if (unknown.length) {
+        throw new Error(`Refusing to replace ${placementType}/${displayClass ?? '-'}: ${unknown.length} existing placements do not report placementType/displayClass, so other device sets could be deleted. Upload this set in App Store Connect by hand.`);
+      }
+    }
     const victims = list.filter((p) => (!p.attributes.placementType || p.attributes.placementType === placementType) && (!displayClass || !p.attributes.displayClass || p.attributes.displayClass === displayClass));
     for (const p of victims) await this.asc.request('DELETE', `/v1/appAssetLibraryPlacements/${p.id}`);
     return victims.length;

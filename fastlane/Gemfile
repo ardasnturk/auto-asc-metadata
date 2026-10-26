@@ -1,4 +1,4 @@
-# Vitrin — fastlane bridge.
+# Vitrin — fastlane bridge (deliver for the App Store, supply for Google Play; both ship in the fastlane gem).
 # deliver before 2.241.1 does not know the iPhone Duo sizes (APP_IPHONE_DUO) and aborts the whole upload.
 source "https://rubygems.org"
 
