@@ -35,7 +35,7 @@ Apple's rules as of October 2026, and the points that could not be verified, are
 
 - macOS (Vision OCR; simulators and Mac window capture only for `capture.mode: launch-args`)
 - Node.js ≥ 22 (pnpm only for development)
-- Xcode (with `simctl`) for Apple platforms
+- Xcode (with `simctl`) only for real captures (`capture.mode: launch-args`); HTML screens need no Xcode
 - For App Store uploads, one of: the asc CLI (`brew install asc`, no Ruby) or Ruby + Bundler with fastlane ≥ 2.241.1 (pinned in the generated `Gemfile`); the skill asks which. Google Play always uses fastlane
 - ffmpeg / ffprobe
 - For cross-platform or Android apps: the Flutter SDK, Node/CocoaPods for React Native and Expo, or the Android SDK (`adb`, `emulator`, an AVD) as needed

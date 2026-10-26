@@ -98,7 +98,7 @@
     <section class="facts" aria-label="At a glance">
       <ul class="wrap facts-list">
         <li><strong>App Store + Play</strong><span>iPhone to Vision Pro</span></li>
-        <li><strong>12</strong><span>screenshot style presets</span></li>
+        <li><strong>12</strong><span>style presets + designs made for your app</span></li>
         <li><strong>4</strong><span>App Preview styles</span></li>
         <li><strong>50</strong><span>App Store locales</span></li>
         <li><strong>0</strong><span>extra LLM API keys</span></li>
@@ -124,12 +124,12 @@
           <li>
             <span class="step-n">3</span>
             <h3>Create</h3>
-            <p>Builds and captures your app per platform — simulators, the Mac window or an Android emulator — then renders screenshots, creatives and App Previews in the design you picked.</p>
+            <p>Recreates your app's screens 1:1 from the code — no build — places them in device mockups, then renders screenshots, creatives and App Previews in the design you picked.</p>
           </li>
           <li>
             <span class="step-n">4</span>
             <h3>Review &amp; upload</h3>
-            <p>Validates against the stores' rules, shows everything in a review gallery, and uploads exactly what you approved with fastlane and the store APIs. Then it reads back what the store saved.</p>
+            <p>Validates against the stores' rules, shows everything in a review gallery, and uploads exactly what you approved with the asc CLI or fastlane and the store APIs. Then it reads back what the store saved.</p>
           </li>
         </ol>
       </div>
@@ -161,15 +161,15 @@
           <article class="choice">
             <p class="choice-k">Design</p>
             <h3>Choose from samples</h3>
-            <p>Before the full set, Vitrin renders your first shots in several clearly different styles on one labelled contact sheet. Pick A, B, C or D — or ask for changes.</p>
+            <p>Before the full set, Vitrin renders your first shots in four clearly different designs — at least one made for your app. A store preview lets you switch between App Store and Google Play, the designs and light/dark from drop-down menus. Pick A, B, C or D — or ask for changes.</p>
             <ul class="tags tags-abcd" aria-label="Contact sheet options">
               <li>A</li><li class="on">B</li><li>C</li><li>D</li>
             </ul>
           </article>
           <article class="choice">
-            <p class="choice-k">Afterwards</p>
-            <h3>Keep or delete</h3>
-            <p>After a checked upload, keep the uploaded set in <code>metadata/</code> or delete it — asked once and remembered. Research downloads are always removed.</p>
+            <p class="choice-k">Upload &amp; after</p>
+            <h3>Your tool, your call</h3>
+            <p>Once you approved a design, choose the asc CLI or fastlane — a missing tool is installed only after you agree. After the upload, Vitrin asks whether to delete the research data. Nothing happens without your “yes”.</p>
           </article>
         </div>
       </div>
@@ -222,7 +222,7 @@
     <section id="design" class="gallery" aria-labelledby="design-title">
       <div class="wrap">
         <h2 id="design-title" class="section-title">12 styles, tinted with your brand</h2>
-        <p class="section-lead">Headline-first layouts with mixed emphasis, varied framing — bleed, tilted, two devices, no device — and real UI from real captures. Three of the twelve presets, rendered for <a href="https://github.com/ardasnturk/vitrin/tree/main/examples/Ritim">Ritim</a>, the sample SwiftUI app in the repo:</p>
+        <p class="section-lead">Headline-first layouts with mixed emphasis, varied framing — bleed, tilted, two devices, no device — and your real UI recreated from the code. Three of the twelve presets, rendered for <a href="https://github.com/ardasnturk/vitrin/tree/main/examples/Ritim">Ritim</a>, the sample SwiftUI app in the repo:</p>
         <div class="switcher" role="tablist" aria-label="Style preset">
           <button type="button" role="tab" id="tab-glass" aria-controls="panel-glass" aria-selected="true">Liquid Glass Aurora</button>
           <button type="button" role="tab" id="tab-midnight" aria-controls="panel-midnight" aria-selected="false" tabindex="-1">Midnight Glow Pro</button>
@@ -389,11 +389,11 @@
           </article>
           <article class="card">
             <h3>Screenshot engine</h3>
-            <p>HTML templates rendered with Playwright: 12 presets, realistic CSS device frames for every family, <code>feature-wall</code> and <code>mosaic</code> closing shots, Play feature graphic and icon, RTL, exact pixel sizes without alpha.</p>
+            <p>HTML rendered with Playwright: 12 presets plus art directions and layouts Claude designs for your app, ready-made device mockups for every family (iPhone Duo open and closed included), <code>feature-wall</code> and <code>mosaic</code> closing shots, Play feature graphic and icon, RTL, exact pixel sizes without alpha.</p>
           </article>
           <article class="card">
             <h3>Screens from your code</h3>
-            <p>No build needed: Claude reads your views and recreates each screen in HTML with realistic demo data and your app's own texts; Vitrin renders it per language and device with a 9:41 status bar. Prefer real captures? It also builds with xcodebuild, <code>flutter build</code>, CocoaPods, <code>expo prebuild</code> or Gradle, and captures in dedicated simulators (9:41, per-locale language), the Mac window, or an Android emulator in demo mode.</p>
+            <p>No build needed: Claude reads your views — SwiftUI, UIKit, Compose, Flutter or React Native — and recreates each screen 1:1 in HTML with measured spacing, your colors and fonts, realistic demo data and your app's own texts, starting from a native iOS/Material UI kit; Vitrin renders it per language and device with a 9:41 status bar. Prefer real captures? It also builds with xcodebuild, <code>flutter build</code>, CocoaPods, <code>expo prebuild</code> or Gradle, and captures in dedicated simulators (9:41, per-locale language), the Mac window, or an Android emulator in demo mode.</p>
           </article>
           <article class="card">
             <h3>Safe, partial uploads</h3>
@@ -401,7 +401,7 @@
           </article>
           <article class="card">
             <h3>Tidy repository</h3>
-            <p>A managed <code>.gitignore</code> block, kept up to date by every command, so generated files are never committed. Keys stay in <code>.env</code> and are masked in every log.</p>
+            <p>Everything Vitrin generates lives in one <code>metadata/</code> folder. A managed <code>.gitignore</code> block keeps generated files out of git. Keys stay in <code>.env</code> and are masked in every log.</p>
           </article>
           <article class="card">
             <h3>Idempotent and resumable</h3>
@@ -415,7 +415,7 @@
     <section id="start" aria-labelledby="start-title">
       <div class="wrap">
         <h2 id="start-title" class="section-title">Install in one line</h2>
-        <p class="section-lead">Vitrin is a Claude Code plugin. Requires macOS, Node.js 22+ and <a href="https://claude.com/claude-code">Claude Code</a>; Xcode, Ruby + Bundler and ffmpeg for Apple platforms, the Flutter SDK or Android SDK when your app needs them. <code>vitrin doctor</code> checks them and tells you what is missing.</p>
+        <p class="section-lead">Vitrin is a Claude Code plugin. Requires macOS, Node.js 22+ and <a href="https://claude.com/claude-code">Claude Code</a>; ffmpeg, plus the asc CLI or Ruby + Bundler with fastlane for App Store uploads, the Flutter SDK or Android SDK when your app needs them. <code>vitrin doctor</code> checks them and tells you what is missing.</p>
         <ol class="quick">
           <li>
             <h3>Install the plugin</h3>
@@ -428,12 +428,12 @@
             <h3>Open your app in Claude Code</h3>
             <div class="code"><pre><code>cd path/to/YourApp
 claude</code></pre><button class="copy" type="button" data-copy="cd path/to/YourApp &amp;&amp; claude" aria-label="Copy commands">Copy</button></div>
-            <p>No clone of Vitrin needed. It first asks which language to talk in (English by default). On a new repo it creates <code>vitrin.config.yaml</code>, <code>.env.example</code> and the <code>.gitignore</code> block; fastlane files only if you choose fastlane. Keys are asked for at the upload and go in <code>.env</code> — never in the chat.</p>
+            <p>No clone of Vitrin needed. It first asks which language to talk in (English by default). On a new repo it asks before creating <code>vitrin.config.yaml</code>, the <code>.gitignore</code> block and the <code>metadata/</code> folder, where everything it generates lives; fastlane files only if you choose fastlane. Keys are asked for at the upload and go in <code>.env</code> — never in the chat.</p>
           </li>
           <li>
             <h3>Type /vitrin</h3>
             <div class="code"><pre><code>/vitrin</code></pre><button class="copy" type="button" data-copy="/vitrin" aria-label="Copy /vitrin">Copy</button></div>
-            <p>The first run installs the CLI for the plugin's version — one time, about 450 MB including Chromium, no sudo. Then Claude asks for platforms, content and design, works through every stage and waits for your “yes”.</p>
+            <p>The first run installs the CLI for the plugin's version — one time, about 450 MB including Chromium, no sudo. Then Claude asks for platforms, content and design, then how to upload, works through every stage and waits for your “yes”.</p>
           </li>
         </ol>
       </div>
@@ -445,7 +445,7 @@ claude</code></pre><button class="copy" type="button" data-copy="cd path/to/Your
         <h2 id="faq-title" class="section-title">FAQ</h2>
         <details>
           <summary>Does it work with Flutter, React Native or Android apps?</summary>
-          <p>Yes. Swift/SwiftUI apps are the primary case; Flutter, React Native, Expo and native Android projects are detected automatically, built with their own tools and captured in simulators or an Android emulator. Vitrin produces App Store content for iPhone, iPad, iPhone Duo, Mac, Apple Watch, Apple TV and Vision Pro, and Google Play listings with phone and tablet screenshots, the feature graphic and the icon. It runs on macOS.</p>
+          <p>Yes. Swift/SwiftUI apps are the primary case; Flutter, React Native, Expo and native Android projects are detected automatically; their screens are recreated from the code (Swift, Kotlin/Compose, Dart or JavaScript) without a build, or built with their own tools and captured in simulators or an Android emulator if you prefer. Vitrin produces App Store content for iPhone, iPad, iPhone Duo, Mac, Apple Watch, Apple TV and Vision Pro, and Google Play listings with phone and tablet screenshots, the feature graphic and the icon. It runs on macOS.</p>
         </details>
         <details>
           <summary>How do I install it? Do I have to clone the repo?</summary>
@@ -465,7 +465,7 @@ claude</code></pre><button class="copy" type="button" data-copy="cd path/to/Your
         </details>
         <details>
           <summary>What happens to the generated files?</summary>
-          <p>They are never committed: Vitrin keeps a managed block in <code>.gitignore</code>. After a checked upload you decide whether to keep the uploaded set in <code>metadata/</code> or delete it. Research downloads (HTTP cache, competitor screenshots, OCR files) are removed either way.</p>
+          <p>Everything stays in your project's <code>metadata/</code> folder (an older <code>.vitrin/</code> folder is moved there automatically) and a managed <code>.gitignore</code> block keeps generated files out of git. After a checked upload, Vitrin asks whether to delete the research data (competitors, keywords, downloads in <code>metadata/research/</code>); nothing else is deleted.</p>
         </details>
         <details>
           <summary>Does it need to build my app?</summary>
