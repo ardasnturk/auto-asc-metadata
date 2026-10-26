@@ -21,9 +21,38 @@ export interface Look {
   bodyFont: string;
   headlineWeight: number;
   dir: 'ltr' | 'rtl';
-  deviceFamily: 'iphone' | 'ipad';
+  deviceFamily: PreviewFamily;
   /** Raw capture aspect (height / width). */
   aspect: number;
+  /**
+   * Device frame from @vitrin/render (the same HTML/CSS frames as the screenshots), drawn at a reference width:
+   * `under` is the body and bezel, the media goes into `screen`, `over` holds glare, island and camera.
+   */
+  frame?: FrameShellProps;
+  /** Style preset of the art direction (for reference; the colors above are already resolved). */
+  preset?: string;
+}
+
+export type PreviewFamily = 'iphone' | 'ipad' | 'mac' | 'tv';
+
+export interface FrameShellProps {
+  under: string;
+  over: string;
+  width: number;
+  height: number;
+  screen: { x: number; y: number; w: number; h: number; r: number };
+}
+
+/** Landscape previews (Mac, Apple TV) are 1920×1080; phones and tablets are portrait. */
+export function isLandscape(family: PreviewFamily): boolean {
+  return family === 'mac' || family === 'tv';
+}
+
+/** Composition size in CSS px (rendered at scale 2): iPhone 443×960, iPad 600×800, Mac/TV 960×540. */
+export function compositionSize(family: PreviewFamily): { width: number; height: number } {
+  if (family === 'ipad') return { width: 600, height: 800 };
+  if (isLandscape(family)) return { width: 960, height: 540 };
+  return { width: 443, height: 960 };
 }
 
 export type PreviewStyle = 'classic' | 'showcase' | 'kinetic' | 'energetic';

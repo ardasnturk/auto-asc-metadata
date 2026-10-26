@@ -1,6 +1,7 @@
 import { PreviewPlan } from '@vitrin/schemas';
 import { describe, expect, it } from 'vitest';
-import { buildPreviewProps, fitDurations, previewDurationFrames, previewDurationSec, resolveTransitions, type Look, type MediaRef } from '../src/index.js';
+import { resolveDirection } from '@vitrin/render';
+import { buildPreviewProps, compositionSize, fitDurations, isLandscape, lookFrom, previewDurationFrames, previewDurationSec, previewTargetId, resolveTransitions, type Look, type MediaRef } from '../src/index.js';
 
 const look = { background: ['#000000'], accent: '#FF8A6B', text: '#FFFFFF', textMuted: '#DDDDDD', surface: '#111111', badgeBackground: '#FFFFFF', badgeText: '#111111', headlineFont: 'Inter', bodyFont: 'Inter', headlineWeight: 800, dir: 'ltr', deviceFamily: 'iphone', aspect: 2 } satisfies Look;
 const media: MediaRef = { path: 'tr/iphone/home.png', kind: 'image', from: 0, aspect: 2 };
@@ -60,5 +61,29 @@ describe('scene list', () => {
   it('honours an explicit transition and disabled light leaks', () => {
     expect(resolveTransitions({ style: 'showcase', transition: 'auto', lightLeaks: false }, 4)).toEqual(['push', 'fade', 'iris', 'fade']);
     expect(resolveTransitions({ style: 'classic', transition: 'wipe', lightLeaks: true }, 3)).toEqual(['wipe', 'leak', 'wipe']);
+  });
+});
+
+describe('device frames and landscape previews', () => {
+  const ad = resolveDirection({ id: 'x', name: 'x', rationale: '', differentiation: '', preset: 'midnight-glow-pro' });
+
+  it('uses the same HTML frames as the screenshots', () => {
+    const look = lookFrom(ad, 'en-US', 'iphone', 2622 / 1206);
+    expect(look.frame?.under).toContain('data-family="iphone"');
+    expect(look.frame?.under).not.toContain('<img');
+    expect(look.frame?.over).toContain('border-radius:999px');
+    expect(look.preset).toBe('midnight-glow-pro');
+    expect(lookFrom(ad, 'en-US', 'mac', 0.625).frame?.under).toContain('#FF5F57');
+    expect(lookFrom(ad, 'en-US', 'tv', 0.5625).frame?.under).toContain('data-family="tv"');
+  });
+
+  it('renders Mac and Apple TV previews landscape at 1920×1080', () => {
+    expect(compositionSize('iphone')).toEqual({ width: 443, height: 960 });
+    expect(compositionSize('ipad')).toEqual({ width: 600, height: 800 });
+    expect(compositionSize('mac')).toEqual({ width: 960, height: 540 });
+    expect(compositionSize('tv')).toEqual({ width: 960, height: 540 });
+    expect(isLandscape('tv')).toBe(true);
+    expect(previewTargetId('mac')).toBe('preview-mac');
+    expect(PreviewPlan.parse({ ...plan().valueOf(), device: 'tv' }).device).toBe('tv');
   });
 });

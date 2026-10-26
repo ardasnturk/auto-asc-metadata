@@ -1,7 +1,8 @@
 import React from 'react';
-import { AbsoluteFill, Img, interpolate, OffthreadVideo, staticFile, useCurrentFrame, useVideoConfig } from 'remotion';
+import { AbsoluteFill } from 'remotion';
 import type { Look, MediaRef } from '../types.js';
 import { fontStack } from './fonts.js';
+import { Device as KitDevice } from './kit.js';
 
 export const Backdrop: React.FC<{ look: Look; drift?: number }> = ({ look, drift = 0 }) => {
   const [c0, c1 = c0, c2 = c1] = look.background;
@@ -16,32 +17,12 @@ export const Backdrop: React.FC<{ look: Look; drift?: number }> = ({ look, drift
   );
 };
 
-/** Frame for real app footage. `media.kind === 'image'` gets a slow zoom so stills never look frozen. */
-export const Device: React.FC<{ look: Look; media: MediaRef; width: number; style?: React.CSSProperties; zoom?: boolean }> = ({ look, media, width, style, zoom = true }) => {
-  const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
-  const ipad = look.deviceFamily === 'ipad';
-  const bezel = Math.round(width * (ipad ? 0.022 : 0.032));
-  const sw = width - bezel * 2;
-  const sh = Math.round(sw * look.aspect);
-  const r = Math.round(sw * (ipad ? 0.035 : 0.137));
-  const scale = media.kind === 'image' && zoom ? interpolate(frame, [0, fps * 6], [1, 1.06], { extrapolateRight: 'clamp' }) : 1;
-  const src = staticFile(media.path);
-  return (
-    <div style={{ position: 'absolute', width, height: sh + bezel * 2, borderRadius: r + bezel, background: '#0E0F12', boxShadow: `0 ${width * 0.06}px ${width * 0.14}px rgba(0,0,0,.35)`, ...style }}>
-      <div style={{ position: 'absolute', left: bezel, top: bezel, width: sw, height: sh, borderRadius: r, overflow: 'hidden', background: '#000' }}>
-        {media.kind === 'video' ? (
-          <OffthreadVideo src={src} startFrom={Math.round(media.from * fps)} muted style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top' }} />
-        ) : (
-          <Img src={src} style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top', transform: `scale(${scale})`, transformOrigin: '50% 30%' }} />
-        )}
-      </div>
-      {!ipad && (
-        <div style={{ position: 'absolute', left: '50%', top: bezel + sw * 0.027, transform: 'translateX(-50%)', width: sw * 0.31, height: sw * 0.092, borderRadius: 999, background: '#000' }} />
-      )}
-    </div>
-  );
-};
+/** Frame for real app footage in the loops: the shared device frame, absolutely positioned by `style`. */
+export const Device: React.FC<{ look: Look; media: MediaRef; width: number; style?: React.CSSProperties; zoom?: boolean }> = ({ look, media, width, style }) => (
+  <div style={{ position: 'absolute', ...style }}>
+    <KitDevice look={look} media={media} width={width} />
+  </div>
+);
 
 export const Title: React.FC<{ look: Look; text: string; size: number; color?: string; weight?: number; style?: React.CSSProperties; body?: boolean }> = ({ look, text, size, color, weight, style, body }) => (
   <div

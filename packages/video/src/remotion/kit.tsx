@@ -62,27 +62,63 @@ export const MediaView: React.FC<{ media: MediaRef }> = ({ media }) => {
   );
 };
 
-/** Device shell (CSS, no Apple product imagery) around the media. `width` in px. */
-export const Device: React.FC<{ look: Look; media: MediaRef; width: number; children?: React.ReactNode }> = ({ look, media, width, children }) => {
+/** Screen rectangle of the device frame at outer width `width` (falls back to the legacy proportions). */
+export function screenRect(look: Look, width: number, aspect: number): { x: number; y: number; w: number; h: number; r: number; height: number } {
+  const f = look.frame;
+  if (f) {
+    const k = width / f.width;
+    // Fixed-shape displays (Mac, TV) keep their own screen; phones follow the media aspect.
+    const fixed = look.deviceFamily === 'mac' || look.deviceFamily === 'tv';
+    const sh = fixed ? f.screen.h * k : f.screen.w * k * aspect;
+    return { x: f.screen.x * k, y: f.screen.y * k, w: f.screen.w * k, h: sh, r: f.screen.r * k, height: (f.height - f.screen.h) * k + sh };
+  }
   const ipad = look.deviceFamily === 'ipad';
   const bezel = Math.round(width * (ipad ? 0.022 : 0.032));
   const sw = width - bezel * 2;
-  const sh = Math.round(sw * media.aspect);
-  const r = Math.round(sw * (ipad ? 0.035 : 0.137));
+  const sh = Math.round(sw * aspect);
+  return { x: bezel, y: bezel, w: sw, h: sh, r: Math.round(sw * (ipad ? 0.035 : 0.137)), height: sh + bezel * 2 };
+}
+
+/**
+ * Device around the media: the same HTML/CSS frame as the screenshots (from @vitrin/render, scaled from its
+ * reference width), with the recording dropped into the screen between the bezel and the glare/island layer.
+ */
+export const Device: React.FC<{ look: Look; media: MediaRef; width: number; children?: React.ReactNode }> = ({ look, media, width, children }) => {
+  const f = look.frame;
+  const s = screenRect(look, width, media.aspect);
+  const shadow = `drop-shadow(0 ${width * 0.06}px ${width * 0.09}px rgba(0,0,0,.4)) drop-shadow(0 ${width * 0.01}px ${width * 0.02}px rgba(0,0,0,.2))`;
+  if (!f) {
+    return (
+      <div style={{ position: 'relative', width, height: s.height, borderRadius: s.r + s.x, background: '#0E0F12', filter: shadow }}>
+        <div style={{ position: 'absolute', left: s.x, top: s.y, width: s.w, height: s.h, borderRadius: s.r, overflow: 'hidden', background: '#000' }}>
+          <MediaView media={media} />
+          {children}
+        </div>
+      </div>
+    );
+  }
+  const k = width / f.width;
+  const stretch = s.height / k / f.height;
+  const layer = (html: string) => (
+    <div
+      style={{ position: 'absolute', left: 0, top: 0, width: f.width, height: f.height, transform: `scale(${k}, ${k * stretch})`, transformOrigin: '0 0', pointerEvents: 'none' }}
+      dangerouslySetInnerHTML={{ __html: html }}
+    />
+  );
   return (
-    <div style={{ position: 'relative', width, height: sh + bezel * 2, borderRadius: r + bezel, background: '#0E0F12', boxShadow: `0 ${width * 0.06}px ${width * 0.16}px rgba(0,0,0,.4)` }}>
-      <div style={{ position: 'absolute', left: bezel, top: bezel, width: sw, height: sh, borderRadius: r, overflow: 'hidden', background: '#000' }}>
+    <div style={{ position: 'relative', width, height: s.height, filter: shadow }}>
+      {layer(f.under)}
+      <div style={{ position: 'absolute', left: s.x, top: s.y, width: s.w, height: s.h, borderRadius: s.r, overflow: 'hidden', background: '#000' }}>
         <MediaView media={media} />
         {children}
       </div>
-      {!ipad ? <div style={{ position: 'absolute', left: '50%', top: bezel + sw * 0.027, translate: '-50% 0', width: sw * 0.31, height: sw * 0.092, borderRadius: 999, background: '#000' }} /> : null}
+      {layer(f.over)}
     </div>
   );
 };
 
 export function deviceHeight(width: number, look: Look, aspect: number): number {
-  const bezel = Math.round(width * (look.deviceFamily === 'ipad' ? 0.022 : 0.032));
-  return Math.round((width - bezel * 2) * aspect) + bezel * 2;
+  return screenRect(look, width, aspect).height;
 }
 
 /** How a device arrives, per style. Wraps the device; frame 0 = scene start. */

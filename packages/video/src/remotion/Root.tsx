@@ -1,6 +1,6 @@
 import React from 'react';
 import { Composition } from 'remotion';
-import { FPS_PREVIEW, previewDurationFrames, type AppPreviewProps, type LoopProps } from '../types.js';
+import { compositionSize, FPS_PREVIEW, previewDurationFrames, type AppPreviewProps, type LoopProps } from '../types.js';
 import { AppPreview, Loop } from './compositions.js';
 
 const defaultLook = {
@@ -15,7 +15,7 @@ const defaultLook = {
   bodyFont: 'Inter',
   headlineWeight: 800,
   dir: 'ltr' as const,
-  deviceFamily: 'iphone' as const,
+  deviceFamily: 'iphone' as 'iphone' | 'ipad' | 'mac' | 'tv',
   aspect: 2622 / 1206,
 };
 
@@ -37,7 +37,7 @@ const defaultLoop: LoopProps = { look: defaultLook, copy: 'Copy', media: [], dur
 
 /**
  * Compositions are authored at half the delivery size and rendered with `scale: 2`:
- * AppPreview iPhone 443×960 → 886×1920, iPad 600×800 → 1200×1600, Header 1920×823 → 3840×1646, Search 1920×1280 → 3840×2560.
+ * AppPreview iPhone 443×960 → 886×1920, iPad 600×800 → 1200×1600, Mac/TV 960×540 → 1920×1080, Header 1920×823 → 3840×1646, Search 1920×1280 → 3840×2560.
  */
 export const Root: React.FC = () => (
   <>
@@ -51,7 +51,7 @@ export const Root: React.FC = () => (
       defaultProps={defaultPreview}
       calculateMetadata={({ props }) => ({
         durationInFrames: previewDurationFrames(props),
-        ...(props.look.deviceFamily === 'ipad' ? { width: 600, height: 800 } : {}),
+        ...compositionSize(props.look.deviceFamily),
       })}
     />
     <Composition

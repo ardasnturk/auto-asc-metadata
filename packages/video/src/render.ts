@@ -1,11 +1,11 @@
 import { DELIVER_PREVIEW_DEVICE, ensureDir, existsSync, getTarget, localeInfo, log, run, type AppPaths } from '@vitrin/core';
-import type { AppProfile, ArtDirectionOption, LoopPlan, PreviewPlan, RenderManifest, VideoPlan } from '@vitrin/schemas';
-import { lucideIcon } from '@vitrin/render';
+import type { AppProfile, LoopPlan, PreviewPlan, RenderManifest, VideoPlan } from '@vitrin/schemas';
+import { frameShell, lucideIcon, type ResolvedDirection } from '@vitrin/render';
 import { readdir, rm } from 'node:fs/promises';
 import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import sharp from 'sharp';
-import { FPS_PREVIEW, previewDurationSec, STYLE_DEFAULTS, type AppPreviewProps, type Look, type LoopProps, type MediaRef, type Scene, type TransitionKind } from './types.js';
+import { FPS_PREVIEW, previewDurationSec, STYLE_DEFAULTS, type AppPreviewProps, type Look, type LoopProps, type MediaRef, type PreviewFamily, type Scene, type TransitionKind } from './types.js';
 
 const ENTRY = join(dirname(fileURLToPath(import.meta.url)), '..', 'src', 'remotion', 'index.ts');
 
@@ -14,12 +14,13 @@ export interface VideoRenderOptions {
   profile: AppProfile;
   locales: string[];
   primaryLocale: string;
-  ad: ArtDirectionOption;
+  /** Resolved art direction (render's selectedOption). */
+  ad: ResolvedDirection;
   plan: VideoPlan;
   previews: boolean;
   loops: boolean;
   onlyLocales?: string[];
-  /** preview-iphone / preview-ipad ids that are enabled for this app. */
+  /** preview-iphone / preview-ipad / preview-mac / preview-tv ids that are enabled for this app. */
   enabledPreviewTargets: string[];
   /**
    * Comparison mode: render the first preview once per style into .vitrin/video-styles/<locale>/
@@ -34,9 +35,9 @@ export interface VideoRenderResult {
 }
 
 /** Find a source in the raw library: recording (.mp4) first, then screenshot (.png); same locale first. */
-export async function resolveMedia(paths: AppPaths, locale: string, primary: string, family: 'iphone' | 'ipad', id: string, from: number, warnings: string[]): Promise<{ ref: MediaRef; aspect: number }> {
+export async function resolveMedia(paths: AppPaths, locale: string, primary: string, family: PreviewFamily, id: string, from: number, warnings: string[]): Promise<{ ref: MediaRef; aspect: number }> {
   for (const loc of [locale, primary]) {
-    for (const fam of [family, 'iphone'] as const) {
+    for (const fam of [...new Set<string>([family, 'iphone'])]) {
       const video = paths.rawVideo(loc, fam, id);
       const image = paths.rawShot(loc, fam, id);
       if (existsSync(video)) {
@@ -61,7 +62,10 @@ async function videoAspect(file: string): Promise<number> {
   return h! / w!;
 }
 
-export function lookFrom(ad: ArtDirectionOption, locale: string, family: 'iphone' | 'ipad', aspect: number): Look {
+export function lookFrom(ad: ResolvedDirection, locale: string, family: PreviewFamily, aspect: number): Look {
+  const sf = ad.tokens.surfaces[0]!;
+  // Same CSS frames as the screenshots; Mac previews use the window chrome so the footage stays large.
+  const shell = frameShell(family, aspect, { finish: ad.tokens.device.finish === 'black' ? 'graphite' : ad.tokens.device.finish, variant: { mac: 'window', tv: 'bezel' } });
   return {
     background: ad.palette.background,
     accent: ad.palette.accent,
@@ -76,7 +80,16 @@ export function lookFrom(ad: ArtDirectionOption, locale: string, family: 'iphone
     dir: localeInfo(locale)?.dir ?? 'ltr',
     deviceFamily: family,
     aspect,
+    frame: shell,
+    preset: ad.tokens.id,
   };
+}
+
+/** deliver device names for preview files; core's map wins where it has an entry. */
+const PREVIEW_DEVICE_FALLBACK: Record<string, string> = { 'preview-mac': 'DESKTOP', 'preview-tv': 'APPLE_TV' };
+
+export function previewTargetId(family: PreviewFamily): string {
+  return `preview-${family}`;
 }
 
 /** Stretch or shrink beat durations so the preview lands in 15–30 s (target ≈ 22 s when out of range). */
@@ -272,11 +285,11 @@ export async function renderVideos(opts: VideoRenderOptions): Promise<VideoRende
       for (const f of await readdir(dir)) if (/^\d{2}_[A-Z0-9_]+\.(mp4|mov)$/.test(f)) await rm(join(dir, f));
       for (const p of plan.previews) {
         const family = p.device;
-        if (!opts.enabledPreviewTargets.includes(family === 'ipad' ? 'preview-ipad' : 'preview-iphone')) {
+        if (!opts.enabledPreviewTargets.includes(previewTargetId(family))) {
           warnings.push(`Preview ${p.id} (${family}) skipped: target not enabled (targets.enable: [preview-${family}]).`);
           continue;
         }
-        const target = getTarget(family === 'ipad' ? 'preview-ipad' : 'preview-iphone');
+        const target = getTarget(previewTargetId(family));
         const hook = await resolveMedia(paths, locale, opts.primaryLocale, family, p.hookSource, p.hookFrom, warnings);
         const beats: ResolvedBeat[] = [];
         for (const b of p.beats) {
@@ -288,7 +301,7 @@ export async function renderVideos(opts: VideoRenderOptions): Promise<VideoRende
         const props = buildPreviewProps({ plan: p, locale, look: lookFrom(ad, locale, family, hook.aspect), hookMedia: hook.ref, beats, icon });
         const total = previewDurationSec(props);
         if (total < 15 || total > 30) throw new Error(`App Preview ${p.id} is ${total.toFixed(1)} s long; it must be 15–30 s (reduce the number of beats).`);
-        const out = join(dir, `${p.id}_${DELIVER_PREVIEW_DEVICE[target.id]}.mp4`);
+        const out = join(dir, `${p.id}_${DELIVER_PREVIEW_DEVICE[target.id] ?? PREVIEW_DEVICE_FALLBACK[target.id] ?? 'IPHONE_67'}.mp4`);
         log.step(`App Preview ${p.id} (${locale}, ${family}, ${p.style}) — ${props.scenes.length} scenes, ${total.toFixed(1)} s @ ${FPS_PREVIEW} fps`);
         await render('AppPreview', props, out, true);
         videos.push({ file: out, target: target.id, locale, id: p.id, durationSec: total });
