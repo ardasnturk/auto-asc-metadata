@@ -64,3 +64,44 @@ export type CustomProductPage = z.infer<typeof CustomProductPage>;
 
 export const CppSuggestions = z.object({ pages: z.array(CustomProductPage).max(70) });
 export type CppSuggestions = z.infer<typeof CppSuggestions>;
+
+/** Google Play language code as used by `supply` folder names (BCP-47-like: `tr-TR`, `en-US`, `es-419`, `iw-IL`). */
+export const PlayLocale = z.string().regex(/^[a-z]{2,3}(-([A-Z]{2}|\d{3}))?$/, 'Invalid Google Play language code');
+export type PlayLocale = z.infer<typeof PlayLocale>;
+
+/**
+ * `.vitrin/metadata/play/<asc-locale>.json` — Google Play store listing for one language, written by Claude.
+ * Play has no keyword field: the title, short description and full description are all indexed.
+ */
+export const PlayListing = z.object({
+  /** ASC locale this listing belongs to (the file name); the Play language comes from data/play-locales.json. */
+  locale: AscLocale,
+  /** Overrides the mapped Play language (e.g. `es-419` instead of `es-ES`). */
+  playLocale: PlayLocale.optional(),
+  /** ≤ 30 characters; no emoji, ALL CAPS, ranking, price or promotional claims. */
+  title: z.string(),
+  /** ≤ 80 characters. */
+  shortDescription: z.string(),
+  /** ≤ 4000 characters. */
+  fullDescription: z.string(),
+  /** "What's new" for `PlayAppMetadata.versionCode`, ≤ 500 characters. Empty = not uploaded. */
+  changelog: z.string().default(''),
+  /** Promo video: a public YouTube URL (supply `video.txt`). */
+  video: z.string().optional(),
+  claims: z.array(Claim).default([]),
+  /** Optional free-form notes from Claude (not uploaded). */
+  notes: z.string().optional(),
+});
+export type PlayListing = z.infer<typeof PlayListing>;
+
+/** `.vitrin/metadata/play/app.json` — app-level Google Play settings for the metadata upload. */
+export const PlayAppMetadata = z.object({
+  /** Version code whose release notes receive `changelog`. supply needs a release with this code on `track`. */
+  versionCode: z.number().int().positive().optional(),
+  /**
+   * Track whose existing release supply reads (and whose release notes it updates). Vitrin never creates,
+   * promotes or rolls out a release: binaries, rollout and status stay untouched.
+   */
+  track: z.string().default('production'),
+});
+export type PlayAppMetadata = z.infer<typeof PlayAppMetadata>;
