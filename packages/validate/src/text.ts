@@ -1,5 +1,20 @@
-import { baseLanguage, byteLength, graphemeLength, loadForbiddenTerms, splitKeywords, storefrontForLocale, tokenize } from '@vitrin/core';
-import { TEXT_LIMITS, type AppMetadata, type AppProfile, type Competitors, type LocaleMetadata, type TextField, type ValidationReport, type VitrinConfig } from '@vitrin/schemas';
+import { baseLanguage, byteLength, DATA_DIR, graphemeLength, loadForbiddenTerms, splitKeywords, storefrontForLocale, tokenize } from '@vitrin/core';
+import {
+  PLAY_TEXT_LIMITS,
+  TEXT_LIMITS,
+  type AppMetadata,
+  type AppProfile,
+  type Competitors,
+  type LocaleMetadata,
+  type PlayAppMetadata,
+  type PlayListing,
+  type PlayTextField,
+  type TextField,
+  type ValidationReport,
+  type VitrinConfig,
+} from '@vitrin/schemas';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { containsTerm, IssueList } from './issues.js';
 
 export interface TextValidationInput {
@@ -273,4 +288,222 @@ export function pluralForms(term: string, locale: string): string[] {
   if (base === 'de') return [`${term}e`, `${term}n`, `${term}en`];
   if (['fr', 'es', 'pt', 'it'].includes(base)) return [`${term}s`, `${term}es`];
   return [];
+}
+
+// ---------------------------------------------------------------------------------------------
+// Google Play store listing (issue code prefix `play.`)
+// ---------------------------------------------------------------------------------------------
+
+/** data/play-locales.json: ASC locale → Play language (null = not offered on Play) and every Play language code. */
+export interface PlayLocaleTable {
+  map: Record<string, string | null>;
+  play: string[];
+}
+
+let playLocalesCache: PlayLocaleTable | undefined;
+export function loadPlayLocaleTable(): PlayLocaleTable {
+  playLocalesCache ??= JSON.parse(readFileSync(join(DATA_DIR, 'play-locales.json'), 'utf8')) as PlayLocaleTable;
+  return playLocalesCache;
+}
+
+export interface PlayTextValidationInput {
+  config: VitrinConfig;
+  profile?: AppProfile;
+  competitors?: Competitors;
+  /** Keyed by ASC locale (the file name under .vitrin/metadata/play/). */
+  listings: Map<string, PlayListing>;
+  app?: PlayAppMetadata;
+  /** Defaults to data/play-locales.json. */
+  locales?: PlayLocaleTable;
+}
+
+/**
+ * Ranking, performance, price and promotional wording the Play metadata policy keeps out of the title
+ * (and that Vitrin also keeps out of the short description). Merged with the price and superlative lists
+ * of data/forbidden-terms.json for the listing language.
+ */
+export const PLAY_PROMO_TERMS: Record<string, string[]> = {
+  en: ['top', 'best', 'new', 'hot', 'popular', 'free', 'sale', 'discount', 'bonus', 'cashback', 'app of the year', 'best of play', 'editor’s choice', "editor's choice", 'million downloads', 'downloads', 'trending', 'no ads', 'download now', 'install now', 'play now', 'try now'],
+  tr: ['en iyi', 'yeni', 'popüler', 'ücretsiz', 'bedava', 'indirim', 'kampanya', 'şimdi indir', 'hemen indir'],
+  de: ['neu', 'beliebt', 'kostenlos', 'gratis', 'jetzt herunterladen'],
+  fr: ['nouveau', 'populaire', 'gratuit', 'télécharger maintenant'],
+  es: ['nuevo', 'popular', 'gratis', 'descarga ahora'],
+};
+
+/** Mentions of the other store in a Play listing (users on Android cannot act on them). */
+const APPLE_ONLY_TERMS = ['App Store', 'iPhone', 'iPad', 'iOS', 'Apple Watch', 'macOS', 'visionOS', 'TestFlight'];
+
+const EMOJI_RE = /\p{Extended_Pictographic}|\p{Regional_Indicator}|[\u{1F3FB}-\u{1F3FF}]/u;
+/** Text emoticons such as :) ;-) :D <3 ^_^ */
+const EMOTICON_RE = /(^|\s)([:;=8][-'^]?[)(DPpOo3\]\[|/\\]|<3|\^_?\^|xD|XD)(?=\s|$|[.,!?])/u;
+/** The same punctuation or symbol three times, or `!!`/`??` style repeats. */
+const REPEATED_SPECIAL_RE = /([^\p{L}\p{N}\s])\1+|[!?]{2,}/u;
+const URL_IN_TEXT_RE = /\bhttps?:\/\/\S+|\bwww\.[a-z0-9-]+\.[a-z]{2,}\S*/i;
+/** Formatting Play renders in the full description; anything else shows up as raw markup. */
+const PLAY_ALLOWED_TAGS = new Set(['b', 'i', 'u', 'br', 'em', 'strong']);
+const YOUTUBE_RE = /^https:\/\/(www\.|m\.)?(youtube\.com\/(watch\?v=|embed\/|shorts\/)|youtu\.be\/)[A-Za-z0-9_-]{6,}([?&][^\s]*)?$/;
+
+/** The Play language a listing is uploaded to, or null when Play has no listing language for the ASC locale. */
+export function playLocaleOf(listing: Pick<PlayListing, 'locale' | 'playLocale'>, table: PlayLocaleTable = loadPlayLocaleTable()): string | null {
+  if (listing.playLocale) return listing.playLocale;
+  const mapped = table.map[listing.locale];
+  return mapped === undefined ? null : mapped;
+}
+
+/** True when every cased letter is upper case and there are at least four of them (`HABIT TRACKER`). */
+export function isAllCaps(text: string): boolean {
+  const letters = [...text].filter((c) => c.toLowerCase() !== c.toUpperCase());
+  return letters.length >= 4 && letters.every((c) => c === c.toUpperCase());
+}
+
+/** Words of four or more letters written in capitals, except those that appear the same way in the brand name. */
+export function allCapsWords(text: string, brand = ''): string[] {
+  const brandWords = new Set(brand.split(/[^\p{L}\p{N}]+/u).filter(Boolean));
+  return (text.match(/[\p{L}]{4,}/gu) ?? []).filter((w) => isAllCaps(w) && !brandWords.has(w));
+}
+
+/** Play policy forbids emoji, emoticons and repeated special characters in the title. */
+export function emojiOrEmoticon(text: string): string | undefined {
+  return EMOJI_RE.exec(text)?.[0] ?? EMOTICON_RE.exec(text)?.[2];
+}
+
+export function validatePlayText(input: PlayTextValidationInput): { issues: IssueList; measurements: Measurements } {
+  const { config, profile, competitors, listings, app } = input;
+  const table = input.locales ?? loadPlayLocaleTable();
+  const issues = new IssueList();
+  const measurements: Measurements = {};
+  const forbidden = loadForbiddenTerms();
+  const brand = profile?.app.displayName ?? '';
+  const seeds = Array.isArray(config.research.seeds) ? config.research.seeds : Object.values(config.research.seeds).flat();
+  const brands = competitorBrands(competitors, [brand, config.copyrightHolder ?? ''], seeds);
+  const featureIds = new Set(profile?.features.map((f) => f.id) ?? []);
+  const playCodes = new Set(table.play);
+
+  for (const locale of config.app.locales) {
+    if (listings.has(locale)) continue;
+    const mapped = table.map[locale];
+    if (mapped === null || mapped === undefined) continue;
+    const sev = locale === config.app.primaryLocale ? 'error' : 'warn';
+    issues[sev]('play.missing-locale', `No Google Play listing for ${locale} (.vitrin/metadata/play/${locale}.json, Play language ${mapped}).`, { locale });
+  }
+
+  const seenPlay = new Map<string, string>();
+  let anyChangelog = false;
+  for (const [locale, l] of listings) {
+    const at = (field: string) => ({ locale, field, file: `.vitrin/metadata/play/${locale}.json` });
+    const lm: Measurements[string] = {};
+    measurements[`play:${locale}`] = lm;
+
+    // ---- language mapping ----
+    const pl = playLocaleOf(l, table);
+    if (!pl) {
+      issues.error('play.locale.unmapped', `${locale} has no Google Play language; set playLocale or remove the listing.`, { ...at('playLocale'), fix: `Pick one of the Play languages, e.g. ${table.play.slice(0, 4).join(', ')}.` });
+    } else {
+      if (!playCodes.has(pl)) issues.error('play.locale.unknown', `“${pl}” is not a Google Play listing language.`, at('playLocale'));
+      const other = seenPlay.get(pl);
+      if (other) issues.error('play.locale.duplicate', `${other} and ${locale} both map to the Play language ${pl}; supply would overwrite one with the other.`, at('playLocale'));
+      seenPlay.set(pl, locale);
+    }
+
+    // ---- limits ----
+    const values: Record<PlayTextField, string> = { title: l.title, shortDescription: l.shortDescription, fullDescription: l.fullDescription, changelog: l.changelog };
+    for (const [field, limit] of Object.entries(PLAY_TEXT_LIMITS) as Array<[PlayTextField, (typeof PLAY_TEXT_LIMITS)[PlayTextField]]>) {
+      const v = values[field];
+      const chars = graphemeLength(v);
+      lm[field] = { chars, bytes: byteLength(v), limit: limit.max, unit: 'chars' };
+      if (limit.required && !v.trim()) issues.error('play.text.required', `${field} cannot be empty.`, at(field));
+      else if (chars > limit.max) issues.error('play.text.too-long', `${field} is ${chars}/${limit.max} characters.`, { ...at(field), fix: `Shorten by ${chars - limit.max} characters.` });
+      if (v !== v.trim()) issues.warn('play.text.whitespace', `${field} has leading/trailing whitespace.`, at(field));
+    }
+    if (l.changelog.trim()) anyChangelog = true;
+
+    // ---- title: Play metadata policy ----
+    const emoji = emojiOrEmoticon(l.title);
+    if (emoji) issues.error('play.title.emoji', `The title contains “${emoji}”; Play does not allow emoji or emoticons in the title.`, at('title'));
+    const rep = REPEATED_SPECIAL_RE.exec(l.title);
+    if (rep) issues.error('play.title.special-chars', `The title repeats special characters (“${rep[0]}”).`, at('title'));
+    if (isAllCaps(l.title) && l.title.trim() !== brand.trim()) {
+      issues.error('play.title.all-caps', 'The title is written in ALL CAPS; Play allows that only when it is the brand name.', { ...at('title'), fix: 'Use sentence or title case.' });
+    } else {
+      for (const w of allCapsWords(l.title, brand)) issues.warn('play.title.all-caps', `“${w}” is in capitals; avoid ALL CAPS unless it is part of the brand.`, at('title'));
+    }
+    if (URL_IN_TEXT_RE.test(l.title)) issues.error('play.title.url', 'The title contains a URL.', at('title'));
+    const titleWords = tokenize(l.title, locale).filter((w) => !STOP_FOR_DUPES.has(w));
+    const dupes = titleWords.filter((w, i) => titleWords.indexOf(w) !== i);
+    if (dupes.length) issues.error('play.title.repeated-word', `The title repeats “${[...new Set(dupes)].join(', ')}”; repetition reads as keyword stuffing.`, at('title'));
+
+    // ---- ranking / price / promo claims ----
+    const base = baseLanguage(pl ?? locale);
+    const promo = [...new Set([...termsFor(forbidden.price, base), ...termsFor(forbidden.superlatives, base), ...(PLAY_PROMO_TERMS[base] ?? []), ...(base === 'en' ? [] : PLAY_PROMO_TERMS.en!.filter((t) => t.includes(' ')))])];
+    for (const t of promo) {
+      if (containsTerm(l.title, t, locale)) issues.error('play.title.promo', `The title contains “${t}”; Play forbids ranking, performance, price and promotional claims in the title.`, at('title'));
+      if (containsTerm(l.shortDescription, t, locale)) issues.warn('play.short.promo', `The short description contains “${t}”; keep ranking, price and promotional claims out of it.`, at('shortDescription'));
+    }
+    for (const t of termsFor(forbidden.superlatives, base)) {
+      if (containsTerm(l.fullDescription, t, locale)) issues.warn('play.description.superlative', `The full description contains “${t}”; unverifiable ranking claims violate the Play metadata policy.`, at('fullDescription'));
+    }
+
+    // ---- short description ----
+    const shortEmoji = emojiOrEmoticon(l.shortDescription);
+    if (shortEmoji) issues.warn('play.short.emoji', `The short description contains “${shortEmoji}”; emoji are discouraged in listing text.`, at('shortDescription'));
+    if (isAllCaps(l.shortDescription)) issues.error('play.short.all-caps', 'The short description is written in ALL CAPS.', at('shortDescription'));
+    if (URL_IN_TEXT_RE.test(l.shortDescription)) issues.warn('play.short.url', 'The short description contains a URL.', at('shortDescription'));
+
+    // ---- full description: indexing and stuffing ----
+    const counts = new Map<string, number>();
+    const words = tokenize(l.fullDescription, locale).filter((w) => w.length > 3 && !STOP_FOR_DUPES.has(w));
+    for (const w of words) counts.set(w, (counts.get(w) ?? 0) + 1);
+    for (const [w, c] of counts) {
+      // Play's policy calls out excessive keyword repetition; > 5 uses that are also > 3 % of the words is a strong signal.
+      if (c > 5 && c / Math.max(words.length, 1) > 0.03) issues.warn('play.description.stuffing', `“${w}” appears ${c} times in the full description; it may be treated as keyword stuffing.`, at('fullDescription'));
+    }
+    for (const line of l.fullDescription.split('\n')) {
+      const parts = line.split(/[,;|·•]/).map((p) => p.trim()).filter(Boolean);
+      if (parts.length >= 6 && parts.every((p) => tokenize(p, locale).length <= 2)) {
+        issues.warn('play.description.keyword-list', `A line is a bare keyword list (“${line.trim().slice(0, 40)}…”); Play treats keyword lists as spam.`, at('fullDescription'));
+        break;
+      }
+    }
+    const firstLine = l.fullDescription.split('\n').find((x) => x.trim()) ?? '';
+    if (graphemeLength(firstLine) < 40) issues.info('play.description.hook', 'Only the first lines of the full description show before “About this app” is opened; lead with what the app does.', at('fullDescription'));
+    for (const m of l.fullDescription.matchAll(/<\/?([a-z][a-z0-9]*)(\s[^>]*)?>/gi)) {
+      if (!PLAY_ALLOWED_TAGS.has(m[1]!.toLowerCase())) {
+        issues.warn('play.description.html', `The full description contains <${m[1]}>; only basic formatting (b, i, u, br) is rendered.`, at('fullDescription'));
+        break;
+      }
+    }
+    for (const t of APPLE_ONLY_TERMS) {
+      for (const [field, text] of [['title', l.title], ['shortDescription', l.shortDescription], ['fullDescription', l.fullDescription], ['changelog', l.changelog]] as const) {
+        if (containsTerm(text, t, locale)) issues.warn('play.text.other-store', `${field} mentions “${t}”; the Play listing is for Android users.`, at(field));
+      }
+    }
+    for (const b of brands) {
+      for (const [field, text] of [['title', l.title], ['shortDescription', l.shortDescription], ['fullDescription', l.fullDescription]] as const) {
+        if (containsTerm(text, b, locale)) issues.error('play.text.competitor-brand', `${field} contains a competitor brand name (“${b}”).`, at(field));
+      }
+    }
+
+    // ---- promo video ----
+    if (l.video?.trim()) {
+      if (!YOUTUBE_RE.test(l.video.trim())) {
+        issues.error('play.url.video', `video must be a public YouTube video URL (https://www.youtube.com/watch?v=…): ${l.video}`, { ...at('video'), fix: 'Use a single public, non-age-restricted YouTube video; playlists and channel URLs are rejected.' });
+      } else if (/[?&]list=/.test(l.video)) {
+        issues.warn('play.url.video-playlist', 'The video URL points into a playlist; use the plain video URL.', at('video'));
+      }
+    }
+
+    // ---- claims ----
+    for (const claim of l.claims) {
+      for (const id of claim.featureIds) {
+        if (!featureIds.has(id)) issues.error('play.claim.unknown-feature', `Claim “${claim.text}” references an unknown feature: ${id}.`, at('claims'));
+      }
+      const all = [l.title, l.shortDescription, l.fullDescription, l.changelog].join('\n').toLocaleLowerCase(locale);
+      if (!all.includes(claim.text.toLocaleLowerCase(locale))) issues.warn('play.claim.not-in-copy', `Claim text does not appear verbatim in the listing: “${claim.text}”.`, at('claims'));
+    }
+  }
+
+  if (anyChangelog && !app?.versionCode) {
+    issues.warn('play.changelog.no-version-code', 'A changelog is set but .vitrin/metadata/play/app.json has no versionCode; the release notes are not uploaded.', { file: '.vitrin/metadata/play/app.json', field: 'versionCode' });
+  }
+  return { issues, measurements };
 }

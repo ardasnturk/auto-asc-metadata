@@ -1,12 +1,11 @@
 import { analyzeProject, locateProject } from '@vitrin/analyzer';
-import { appPaths, ensureDir, existsSync, log, renderEnvExample, ENV_KEYS, storefrontForLocale, writeText } from '@vitrin/core';
+import { appPaths, ensureDir, ensureVitrinGitignore, existsSync, loadConfig, log, renderEnvExample, ENV_KEYS, storefrontForLocale, writeText } from '@vitrin/core';
 import { installFastlaneTemplates } from '@vitrin/upload';
 import { readFile } from 'node:fs/promises';
 import { relative, resolve } from 'node:path';
 import { stringify } from 'yaml';
 
 // Secrets, caches and machine-local pipeline state stay out of git; the JSON Claude writes is meant to be committed.
-const GITIGNORE_LINES = ['.env', '*.p8', 'secrets/', '.vitrin/cache/', '.vitrin/raw/', '.vitrin/briefs/', '.vitrin/state.json', '.vitrin/upload-plan.json', 'fastlane/report.xml', 'fastlane/README.md'];
 
 export async function initCommand(opts: { cwd?: string; force?: boolean }): Promise<number> {
   const root = resolve(opts.cwd ?? process.cwd());
@@ -83,18 +82,15 @@ export async function initCommand(opts: { cwd?: string; force?: boolean }): Prom
   await writeText(paths.envExample, renderEnvExample(extra));
   log.ok('Updated .env.example');
 
-  // .gitignore
-  const gi = `${root}/.gitignore`;
-  const current = existsSync(gi) ? await readFile(gi, 'utf8') : '';
-  const missing = GITIGNORE_LINES.filter((l) => !current.split('\n').some((x) => x.trim() === l));
-  if (missing.length) {
-    await writeText(gi, `${current}${current && !current.endsWith('\n') ? '\n' : ''}\n# Vitrin\n${missing.join('\n')}\n`);
-    log.ok(`.gitignore: added ${missing.join(', ')}`);
-  }
+  // .gitignore: one managed block for secrets and everything Vitrin generates (kept up to date by every command).
+  const gi = await ensureVitrinGitignore(root, loadConfig(paths.config));
+  if (gi.changed) log.ok('.gitignore: wrote the Vitrin block (secrets and generated files are not committed).');
+  if (gi.trackedIgnored.length) log.warn(`Already tracked but now ignored: ${gi.trackedIgnored.map((g) => g.path).join(', ')} — to stop tracking: git rm -r --cached ${gi.trackedIgnored.map((g) => g.path).join(' ')}`);
 
   await ensureDir(paths.vitrin);
   const installed = await installFastlaneTemplates(paths, opts.force);
   for (const f of installed) log.ok(`Wrote ${relative(root, f)}`);
+  log.dim('The Fastfile has one deliver lane per App Store platform (platform:ios|osx|appletvos|xros) and a supply lane for Google Play; for Android apps set GOOGLE_PLAY_JSON_KEY_PATH in .env.');
   log.info('\nNext step: `vitrin doctor` (generation still works if keys are missing).');
   return 0;
 }

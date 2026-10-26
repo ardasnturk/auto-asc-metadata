@@ -4,6 +4,8 @@ import {
   AppProfile,
   Competitors,
   LocaleMetadata,
+  PlayAppMetadata,
+  PlayListing,
   RenderManifest,
   ShotList,
   VideoPlan,
@@ -14,7 +16,8 @@ import {
 import { validateClaims } from './claims.js';
 import { IssueList } from './issues.js';
 import { strayLocaleDirs, validateScreenshots, validateVideos } from './media.js';
-import { validateText } from './text.js';
+import { validatePlayText, validateText } from './text.js';
+import { join } from 'node:path';
 
 export * from './issues.js';
 export * from './text.js';
@@ -62,11 +65,25 @@ export async function validateAll(paths: AppPaths, config: VitrinConfig, scope: 
       }
     }
     for (const extra of await strayLocaleDirs(paths.fastlaneMetadata, config.app.locales)) {
-      if (!['default'].includes(extra)) issues.error('metadata.stray-locale', `fastlane/metadata/${extra} is a locale not in the config; deliver will upload it too.`);
+      // `android/` is supply's Google Play folder; deliver runs get per-platform copies without it.
+      if (!['default', 'android'].includes(extra)) issues.error('metadata.stray-locale', `fastlane/metadata/${extra} is a locale not in the config; deliver will upload it too.`);
     }
     const text = validateText({ config, profile, competitors, appMetadata, locales });
     issues.push(...text.issues.items);
     measurements = text.measurements;
+    if (profile?.app.platforms.includes('android')) {
+      const listings = new Map<string, PlayListing>();
+      for (const locale of config.app.locales) {
+        const l = await load(join(paths.metadataDir, 'play', `${locale}.json`), PlayListing);
+        if (l) listings.set(locale, l);
+      }
+      const playApp = await load(join(paths.metadataDir, 'play', 'app.json'), PlayAppMetadata);
+      if (listings.size) {
+        const play = validatePlayText({ config, profile, competitors, listings, app: playApp });
+        issues.push(...play.issues.items);
+        Object.assign(measurements, play.measurements);
+      }
+    }
   }
 
   if (scope.claims !== false && profile) {

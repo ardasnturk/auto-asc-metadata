@@ -1,5 +1,21 @@
-import { ENV_KEYS, exec, existsSync, loadTargets, log, renderEnvExample, writeJson, writeText, type EnvKey } from '@vitrin/core';
-import { AscApiError, AscClient, AscCredentialError, credentialsFromEnv, diffRefData, isEditableVersion, isPem, runLane } from '@vitrin/upload';
+import { ENV_KEYS, exec, existsSync, loadTargets, log, readJsonIfExists, renderEnvExample, writeJson, writeText, type EnvKey } from '@vitrin/core';
+import { AppProfile, type Platform } from '@vitrin/schemas';
+import {
+  applePlatformsOf,
+  ASC_PLATFORM,
+  AscApiError,
+  AscClient,
+  AscCredentialError,
+  credentialsFromEnv,
+  diffRefData,
+  isEditableVersion,
+  isPem,
+  PlayApiError,
+  PlayClient,
+  platformsFromConfig,
+  playKeyFromEnv,
+  runLane,
+} from '@vitrin/upload';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { chromium } from 'playwright';
@@ -39,17 +55,79 @@ async function versionOf(cmd: string, args: string[], re: RegExp, cwd?: string):
   return re.exec(r.stdout + r.stderr)?.[1] ?? null;
 }
 
-/** Which of the upload-required keys are missing (ASC_KEY_PATH and ASC_KEY_CONTENT_BASE64 are alternatives). */
-export function missingUploadKeys(env: NodeJS.ProcessEnv): Array<Pick<EnvKey, 'name' | 'where'>> {
+/**
+ * Which of the upload-required keys are missing for the platforms the app ships on: the ASC key for any Apple
+ * platform, the Google Play service account key for Android. ASC_KEY_PATH / ASC_KEY_CONTENT_BASE64 and
+ * GOOGLE_PLAY_JSON_KEY_PATH / GOOGLE_PLAY_JSON_KEY_BASE64 are alternatives.
+ */
+export function missingUploadKeys(env: NodeJS.ProcessEnv, platforms: Platform[] = ['ios']): Array<Pick<EnvKey, 'name' | 'where'>> {
   const missing: Array<Pick<EnvKey, 'name' | 'where'>> = [];
-  for (const k of ENV_KEYS.filter((x) => x.required === 'upload')) {
-    if (k.name === 'ASC_KEY_PATH' && env.ASC_KEY_CONTENT_BASE64?.trim()) continue;
-    if (!env[k.name]?.trim()) missing.push({ name: k.name, where: k.where });
+  const apple = platforms.some((p) => p !== 'android');
+  const android = platforms.includes('android');
+  for (const k of ENV_KEYS) {
+    if (k.required === 'upload' && apple) {
+      if (k.name === 'ASC_KEY_PATH' && env.ASC_KEY_CONTENT_BASE64?.trim()) continue;
+      if (!env[k.name]?.trim()) missing.push({ name: k.name, where: k.where });
+    } else if (k.required === 'upload-android' && android) {
+      if (k.name === 'GOOGLE_PLAY_JSON_KEY_PATH' && env.GOOGLE_PLAY_JSON_KEY_BASE64?.trim()) continue;
+      if (!env[k.name]?.trim()) missing.push({ name: k.name, where: k.where });
+    }
   }
   return missing;
 }
 
-export async function runDoctor(ctx: Ctx, opts: { createVersion?: string; offline?: boolean } = {}): Promise<DoctorResult> {
+/** Platforms from the app profile (multi-store), falling back to the single `upload.platform` config value. */
+export async function platformsOf(ctx: Ctx): Promise<Platform[]> {
+  const profile = await readJsonIfExists(ctx.paths.profile, AppProfile).catch(() => undefined);
+  return profile?.app.platforms?.length ? profile.app.platforms : platformsFromConfig(ctx.config.upload.platform);
+}
+
+/**
+ * Offline checks of the Google Play key: present, file exists, parses as a service account JSON. With `live`,
+ * also opens (and deletes) an edit for the package to prove the account was invited in Play Console.
+ */
+export async function googlePlayChecks(opts: { env: NodeJS.ProcessEnv; root: string; packageName?: string; live?: boolean; fetchImpl?: typeof fetch }): Promise<Check[]> {
+  const out: Check[] = [];
+  const key = playKeyFromEnv(opts.env, opts.root);
+  if (!key) {
+    out.push({ id: 'play-key', title: 'Google Play key', status: 'fail', detail: 'missing', fix: 'Set GOOGLE_PLAY_JSON_KEY_PATH (or GOOGLE_PLAY_JSON_KEY_BASE64) in .env; see .env.example.' });
+    return out;
+  }
+  if (key.problems.length || !key.account) {
+    out.push({ id: 'play-key', title: 'Google Play key', status: 'fail', detail: `${key.from}: ${key.problems.join('; ')}`, fix: 'Download a JSON key of a service account (Google Cloud Console > IAM & Admin > Service Accounts > Keys).' });
+    return out;
+  }
+  out.push({ id: 'play-key', title: 'Google Play key', status: 'ok', detail: `service account ${key.account.client_email}` });
+  out.push(
+    opts.packageName
+      ? { id: 'play-package', title: 'Android application id', status: 'ok', detail: opts.packageName }
+      : { id: 'play-package', title: 'Android application id', status: 'fail', detail: 'unknown', fix: 'Run `vitrin analyze` on a project with an Android app, or set GOOGLE_PLAY_PACKAGE_NAME.' },
+  );
+  if (!opts.live) {
+    out.push({ id: 'play-api', title: 'Google Play API', status: 'skip', detail: 'offline check only (use --play-live for a read-only API test)' });
+    return out;
+  }
+  if (!opts.packageName) return out;
+  try {
+    const state = await new PlayClient(key.account, opts.fetchImpl).readState(opts.packageName, 'production');
+    out.push({ id: 'play-api', title: 'Google Play API', status: 'ok', detail: `${state.listings.length} listings, production track: ${state.releases ? `${state.releases.length} releases` : 'none'}` });
+    if (!state.releases?.length) out.push({ id: 'play-track', title: 'Play track release', status: 'warn', detail: 'no release on production', fix: 'supply needs an existing release on the track it updates; set track in .vitrin/metadata/play/app.json or upload a build once.' });
+  } catch (err) {
+    const status = err instanceof PlayApiError ? err.status : 0;
+    const fix =
+      status === 401 || status === 400
+        ? 'The key was revoked or the JSON belongs to another project; create a new JSON key.'
+        : status === 403
+          ? 'Invite the service account e-mail in Play Console > Users and permissions and grant this app “Edit store listing”.'
+          : status === 404
+            ? 'Google Play has no app with this package name; create the app once in Play Console.'
+            : undefined;
+    out.push({ id: 'play-api', title: 'Google Play API', status: 'fail', detail: (err as Error).message, fix });
+  }
+  return out;
+}
+
+export async function runDoctor(ctx: Ctx, opts: { createVersion?: string; offline?: boolean; playLive?: boolean } = {}): Promise<DoctorResult> {
   const checks: Check[] = [];
   const add = (c: Check) => {
     checks.push(c);
@@ -58,8 +136,11 @@ export async function runDoctor(ctx: Ctx, opts: { createVersion?: string; offlin
     if (c.fix && c.status !== 'ok') log.info(pc.dim(`    → ${c.fix}`));
   };
 
+  const platforms = await platformsOf(ctx);
+  const apple = applePlatformsOf(platforms);
+
   // 1. Tools
-  log.step('1/6 Tools');
+  log.step('1/7 Tools');
   const node = process.versions.node;
   add({ id: 'node', title: `Node.js ${node}`, status: compareVersions(node, '22.0.0') >= 0 ? 'ok' : 'fail', fix: 'Install Node 22 or later.' });
   const pnpm = await versionOf('pnpm', ['--version'], /(\d+\.\d+\.\d+)/);
@@ -79,9 +160,11 @@ export async function runDoctor(ctx: Ctx, opts: { createVersion?: string; offlin
     fix: `Add gem "fastlane", ">= ${MIN_FASTLANE}" to the Gemfile and run \`bundle install\`. Older versions do not know the iPhone Duo sizes and abort the upload.`,
   });
   const xcode = await versionOf('xcodebuild', ['-version'], /Xcode (\d+(?:\.\d+)*)/);
-  add({ id: 'xcode', title: 'Xcode', status: xcode ? 'ok' : 'fail', detail: xcode ?? 'not found', fix: 'Install Xcode and run `sudo xcode-select -s /Applications/Xcode.app`.' });
+  // Xcode is needed for Apple capture only; an Android-only app can run without it.
+  const appleTool = (ok: boolean): CheckStatus => (ok ? 'ok' : apple.length ? 'fail' : 'skip');
+  add({ id: 'xcode', title: 'Xcode', status: appleTool(Boolean(xcode)), detail: xcode ?? 'not found', fix: 'Install Xcode and run `sudo xcode-select -s /Applications/Xcode.app`.' });
   const simctl = await exec('xcrun', ['simctl', 'list', 'runtimes']);
-  add({ id: 'simctl', title: 'iOS Simulator (simctl)', status: simctl.code === 0 && /iOS/.test(simctl.stdout) ? 'ok' : 'fail', fix: 'Download an iOS simulator runtime from Xcode > Settings > Components.' });
+  add({ id: 'simctl', title: 'iOS Simulator (simctl)', status: appleTool(simctl.code === 0 && /iOS/.test(simctl.stdout)), fix: 'Download an iOS simulator runtime from Xcode > Settings > Components.' });
   const ffmpeg = await versionOf('ffmpeg', ['-version'], /ffmpeg version (\S+)/);
   const ffprobe = await versionOf('ffprobe', ['-version'], /ffprobe version (\S+)/);
   add({ id: 'ffmpeg', title: 'ffmpeg / ffprobe', status: ffmpeg && ffprobe ? 'ok' : 'fail', detail: ffmpeg ?? 'not found', fix: 'brew install ffmpeg' });
@@ -94,10 +177,11 @@ export async function runDoctor(ctx: Ctx, opts: { createVersion?: string; offlin
   add({ id: 'playwright', title: 'Playwright Chromium', status: chromiumOk ? 'ok' : 'fail', fix: 'npx playwright install chromium' });
 
   // 2. .env and keys
-  log.step('2/6 .env and keys');
+  log.step('2/7 .env and keys');
   const hasEnv = existsSync(ctx.paths.env);
   add({ id: 'env', title: '.env file', status: hasEnv ? 'ok' : 'warn', detail: hasEnv ? ctx.paths.env : 'missing', fix: `cp .env.example .env and fill in the values (${ctx.paths.env}).` });
-  const missingKeys = missingUploadKeys(ctx.env);
+  const missingKeys = missingUploadKeys(ctx.env, platforms);
+  const missingAsc = missingKeys.filter((k) => k.name.startsWith('ASC_'));
   for (const k of missingKeys) add({ id: `key:${k.name}`, title: k.name, status: 'fail', detail: 'missing', fix: k.where });
   let keyFileOk = Boolean(ctx.env.ASC_KEY_CONTENT_BASE64?.trim());
   if (ctx.env.ASC_KEY_PATH?.trim() && !ctx.env.ASC_KEY_CONTENT_BASE64?.trim()) {
@@ -113,11 +197,12 @@ export async function runDoctor(ctx: Ctx, opts: { createVersion?: string; offlin
   }
 
   // 3–4. Live API
-  log.step('3/6 App Store Connect API');
+  log.step('3/7 App Store Connect API');
   let client: AscClient | undefined;
   let appId: string | undefined;
-  if (opts.offline) add({ id: 'api', title: 'Live API test', status: 'skip', detail: '--offline' });
-  else if (missingKeys.length || !keyFileOk) add({ id: 'api', title: 'Live API test', status: 'skip', detail: 'keys missing' });
+  if (!apple.length) add({ id: 'api', title: 'Live API test', status: 'skip', detail: 'no Apple platform in app.platforms' });
+  else if (opts.offline) add({ id: 'api', title: 'Live API test', status: 'skip', detail: '--offline' });
+  else if (missingAsc.length || !keyFileOk) add({ id: 'api', title: 'Live API test', status: 'skip', detail: 'keys missing' });
   else {
     try {
       client = new AscClient(credentialsFromEnv(process.env));
@@ -138,34 +223,41 @@ export async function runDoctor(ctx: Ctx, opts: { createVersion?: string; offlin
     }
   }
 
-  log.step('4/6 Editable version');
+  log.step('4/7 Editable version');
   if (client && appId) {
-    const platform = { osx: 'MAC_OS', appletvos: 'TV_OS', xros: 'VISION_OS', ios: 'IOS' }[ctx.config.upload.platform];
-    let versions = await client.appStoreVersions(appId, platform);
-    let editable = versions.find(isEditableVersion);
-    if (!editable && opts.createVersion) {
-      log.info(`  Trying to create version ${opts.createVersion} with deliver…`);
-      try {
-        await runLane(ctx.paths, 'vitrin_create_version', { bundleId: bundleIdOf(ctx), languages: [], appVersion: opts.createVersion, platform: ctx.config.upload.platform, skipMetadata: true, skipScreenshots: true });
-        versions = await client.appStoreVersions(appId, platform);
-        editable = versions.find(isEditableVersion);
-      } catch (err) {
-        log.warn((err as Error).message);
+    // One App Store version per Apple platform; --create-version only acts on the first (iOS when present).
+    for (const p of apple) {
+      const platform = ASC_PLATFORM[p];
+      const suffix = apple.length > 1 ? ` (${platform})` : '';
+      let versions = await client.appStoreVersions(appId, platform);
+      let editable = versions.find(isEditableVersion);
+      if (!editable && opts.createVersion && p === apple[0]) {
+        log.info(`  Trying to create version ${opts.createVersion} with deliver…`);
+        try {
+          await runLane(ctx.paths, 'vitrin_create_version', { bundleId: bundleIdOf(ctx), languages: [], appVersion: opts.createVersion, platform: p, skipMetadata: true, skipScreenshots: true });
+          versions = await client.appStoreVersions(appId, platform);
+          editable = versions.find(isEditableVersion);
+        } catch (err) {
+          log.warn((err as Error).message);
+        }
       }
+      if (editable) add({ id: `version:${p}`, title: `Editable version${suffix}`, status: 'ok', detail: `${editable.attributes.versionString} (${editable.attributes.appVersionState ?? editable.attributes.appStoreState})` });
+      else
+        add({
+          id: `version:${p}`,
+          title: `Editable version${suffix}`,
+          status: 'fail',
+          detail: versions.length ? 'all versions are locked' : 'no App Store version exists',
+          fix:
+            p === 'ios'
+              ? 'For a new version run `vitrin doctor --create-version 1.2.0`. For an app that is only on TestFlight the API may reject the first version; create it once by hand in ASC.'
+              : `Add the platform to the app record in App Store Connect and create its first version there (${platform}).`,
+        });
     }
-    if (editable) add({ id: 'version', title: 'Editable version', status: 'ok', detail: `${editable.attributes.versionString} (${editable.attributes.appVersionState ?? editable.attributes.appStoreState})` });
-    else
-      add({
-        id: 'version',
-        title: 'Editable version',
-        status: 'fail',
-        detail: versions.length ? 'all versions are locked' : 'no App Store version exists',
-        fix: 'For a new version run `vitrin doctor --create-version 1.2.0`. For an app that is only on TestFlight the API may reject the first version; create it once by hand in ASC.',
-      });
   } else add({ id: 'version', title: 'Editable version', status: 'skip' });
 
   // 5. URLs
-  log.step('5/6 URLs');
+  log.step('5/7 URLs');
   for (const [key, url] of Object.entries(ctx.config.urls)) {
     if (!url) continue;
     if (opts.offline) {
@@ -189,7 +281,7 @@ export async function runDoctor(ctx: Ctx, opts: { createVersion?: string; offlin
   }
 
   // 6. refData vs targets.json
-  log.step('6/6 App Asset Library refData');
+  log.step('6/7 App Asset Library refData');
   if (client) {
     try {
       const ref = await client.assetLibraryRefData();
@@ -200,6 +292,16 @@ export async function runDoctor(ctx: Ctx, opts: { createVersion?: string; offlin
       add({ id: 'refdata', title: 'refData', status: 'warn', detail: (err as Error).message });
     }
   } else add({ id: 'refdata', title: 'refData', status: 'skip' });
+
+  // 7. Google Play — only when the app ships on Android.
+  log.step('7/7 Google Play');
+  if (platforms.includes('android')) {
+    const profile = await readJsonIfExists(ctx.paths.profile, AppProfile).catch(() => undefined);
+    const packageName = ctx.env.GOOGLE_PLAY_PACKAGE_NAME?.trim() || profile?.project.androidApplicationId;
+    // A missing key is already reported as a missing upload key above.
+    if (missingKeys.some((k) => k.name.startsWith('GOOGLE_PLAY_'))) add({ id: 'play-key', title: 'Google Play key', status: 'skip', detail: 'key missing' });
+    else for (const c of await googlePlayChecks({ env: ctx.env, root: ctx.root, packageName, live: Boolean(opts.playLive) && !opts.offline })) add(c);
+  } else add({ id: 'play', title: 'Google Play', status: 'skip', detail: 'android not in app.platforms' });
 
   let exitCode: number = EXIT.OK;
   if (checks.some((c) => c.status === 'fail')) exitCode = EXIT.FAIL;

@@ -34,3 +34,13 @@
 ## Video copy
 
 - Hook ≤ 5 words; one idea per beat; closing: app name + a short promise. It must make sense when watched without sound.
+
+## Google Play listing
+
+Same accuracy rules (`claims` with feature ids), written per locale, never a literal copy of the App Store text: Play has no subtitle and no keyword field, so the copy itself has to carry the search terms.
+
+- **Title (≤ 30):** usually the App Store name works (`Ritim: Habit Tracker`). No emoji, ALL CAPS, “#1/best/top/new/free/sale”, no “Download now”.
+- **Short description (≤ 80):** one sentence, benefit first, includes the secondary keyword phrase: “Check in your habits with one tap and keep your streaks going.” Avoid emoji and promo wording.
+- **Full description (≤ 4000):** first line = what the app does + primary keyword (it is what shows first); then short paragraphs or `•` bullets per feature, who it is for, privacy approach (only with evidence), subscription terms without prices. Use the important phrases two or three times in natural sentences; never a keyword list. Do not mention the App Store, iPhone or Apple Watch.
+- **Release notes (≤ 500, `changelog`):** the same user-facing changes as What's New, shorter. One per language that has notes on Play.
+- **Promo video:** a public YouTube URL in `video`; the App Preview file itself is not uploaded to Google Play.
