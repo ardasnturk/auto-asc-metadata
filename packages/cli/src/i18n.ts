@@ -82,8 +82,16 @@ export const UI_EN = {
   sentRejections: 'Sent {n} rejection(s) to Claude. You can close this tab.',
   notSent: 'Not sent: {error}',
   samplesTitle: 'Choose a design',
-  samplesIntro: 'Each column shows how your App Store listing looks with that design: the search result first, then the product page. Pick A, B, C or D.',
+  samplesIntro: 'Pick a store and a design from the menus to see your listing as it would look. “All designs” compares them side by side.',
   samplesOption: 'If you choose {letter}',
+  previewStore: 'Store',
+  previewTheme: 'Design',
+  previewAppearance: 'Appearance',
+  previewAllThemes: 'All designs (compare)',
+  previewLight: 'Light',
+  previewDark: 'Dark',
+  install: 'Install',
+  previewChoose: 'Tell Claude “{letter}” to use this design.',
 };
 export type UiKey = keyof typeof UI_EN;
 export type UiText = Record<UiKey, string>;
@@ -161,8 +169,16 @@ const UI_TR: UiText = {
   sentRejections: '{n} ret Claude’a gönderildi. Bu sekmeyi kapatabilirsiniz.',
   notSent: 'Gönderilmedi: {error}',
   samplesTitle: 'Bir tasarım seçin',
-  samplesIntro: 'Her sütun, o tasarımı seçerseniz App Store sayfanızın nasıl görüneceğini gösterir: önce arama sonucu, sonra ürün sayfası. A, B, C veya D’yi seçin.',
+  samplesIntro: 'Menülerden bir mağaza ve bir tasarım seçin; sayfanızın orada nasıl görüneceğini görün. “Tüm tasarımlar” hepsini yan yana karşılaştırır.',
   samplesOption: '{letter} seçeneğini seçerseniz',
+  previewStore: 'Mağaza',
+  previewTheme: 'Tasarım',
+  previewAppearance: 'Görünüm',
+  previewAllThemes: 'Tüm tasarımlar (karşılaştır)',
+  previewLight: 'Açık',
+  previewDark: 'Koyu',
+  install: 'Yükle',
+  previewChoose: 'Bu tasarımı kullanmak için Claude’a “{letter}” deyin.',
 };
 
 const BUILT_IN: Record<string, UiText> = { en: UI_EN, tr: UI_TR };

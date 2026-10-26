@@ -125,7 +125,8 @@ export const ArtDirectionOption = z
 export type ArtDirectionOption = z.infer<typeof ArtDirectionOption>;
 
 export const ArtDirection = z.object({
-  options: z.array(ArtDirectionOption).min(1).max(3),
+  /** Preset-based and bespoke (own palette/typography) directions; the design samples can show any of them. */
+  options: z.array(ArtDirectionOption).min(1).max(6),
   selected: z.string(),
   selectionReason: z.string(),
 });
@@ -221,6 +222,12 @@ export const Shot = z.object({
    * store. Text never crosses. One per 5+ shot set, at most two.
    */
   bridge: z.boolean().default(false),
+  /**
+   * Bespoke layout: an HTML file in metadata/designs/ that Claude wrote for this shot (it replaces the archetype
+   * layout; `archetype` still says what the shot is for). `<name>.<family>.html` next to it wins for that device
+   * family. Placeholders and the `<vitrin-device>` tag: references/custom-designs.md.
+   */
+  template: z.string().regex(/^[\w.-]+\.html$/).optional(),
   /** feature-wall: one short line per real feature (each backed by `featureIds`), localized. */
   wall: z.array(Localized).max(8).default([]),
 });

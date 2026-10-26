@@ -8,6 +8,7 @@ import sharp from 'sharp';
 import { contrastRatio } from './color.js';
 import { esc } from './components.js';
 import { CONTAINED_FAMILIES, type DeviceFamily } from './frames.js';
+import { buildCustomPage } from './custom.js';
 import { buildPage, frameFamily, MEASURE_SCRIPT, planFramings, type PageInput, type ScreenImage } from './layout.js';
 import { measureGlyphContrast, type WordBox } from './quality.js';
 import { PRESETS, resolveDirection, surfaceFor, type BrandTint, type ResolvedDirection } from './styles.js';
@@ -183,6 +184,20 @@ function cssColorToHex(c: string): string {
   return '#' + [m[1], m[2], m[3]].map((v) => Number(v).toString(16).padStart(2, '0')).join('');
 }
 
+/** `<name>.<family>.html` first, then the template itself (metadata/designs/). */
+export function templateFile(designsDir: string, template: string, family: DeviceFamily): string {
+  const base = template.replace(/\.html$/, '');
+  for (const f of [`${base}.${family}.html`, template]) if (existsSync(join(designsDir, f))) return join(designsDir, f);
+  throw new Error(`shots.json: template ${template} not found in metadata/designs/.`);
+}
+
+/** The page of one shot: its bespoke template when it has one, else the archetype layout. */
+async function shotPage(paths: AppPaths, shot: Shot, input: PageInput, family: DeviceFamily): Promise<string> {
+  if (!shot.template) return buildPage(input);
+  const html = await readFile(templateFile(paths.designs, shot.template, family), 'utf8');
+  return buildCustomPage(html, { ...input, screenIds: shot.screens }, family);
+}
+
 /** App name and brand from app_profile.json when the caller did not pass them. */
 async function profileDefaults(paths: AppPaths): Promise<{ appName?: string; brand?: BrandTint }> {
   if (!existsSync(paths.profile)) return {};
@@ -275,7 +290,7 @@ export async function renderDesign(opts: RenderOptions): Promise<RenderResult> {
           };
           const name = `${shot.id}_${shot.slug}_${target.id}.png`;
           const out = join(outDir, name);
-          const m = await renderOne(page, buildPage(input), join(htmlDir, locale, target.id, `${shot.id}.html`), out, target, { preset: ad.tokens.id, framing: input.framing ?? 'auto', family: frameFamily(target, screens[0]), hasDevice: screens.length > 0 });
+          const m = await renderOne(page, await shotPage(paths, shot, input, family), join(htmlDir, locale, target.id, `${shot.id}.html`), out, target, { preset: ad.tokens.id, framing: shot.template ? 'custom' : (input.framing ?? 'auto'), family: frameFamily(target, screens[0]), hasDevice: screens.length > 0 });
           const headlinePx = m.headlineCssPx * target.logical.scale;
           images.push({
             file: out,
@@ -406,10 +421,13 @@ export interface SampleOptions {
   primaryLocale: string;
   /** The main iPhone target (iphone-6.9 when enabled). */
   target: RenderTarget;
+  /** More formats the store preview can switch to (Google Play phone, iPad); the same shots and designs. */
+  extraTargets?: RenderTarget[];
   shots: ShotList;
   /** Base direction to tint/override from (optional; presets only when absent). */
   artDirection?: ArtDirection;
-  styles?: StylePreset[];
+  /** Preset ids, or ids of bespoke options in art-direction.json (own palette and typography). */
+  styles?: string[];
   count?: number;
   category?: string;
   appIcon?: string;
@@ -430,21 +448,38 @@ export interface StorePreviewLabels {
   searchResult: string;
   productPage: string;
   get: string;
+  store: string;
+  theme: string;
+  appearance: string;
+  allThemes: string;
+  light: string;
+  dark: string;
+  install: string;
+  choose: string;
 }
 
 const STORE_PREVIEW_EN: StorePreviewLabels = {
   title: 'Choose a design',
-  intro: 'Each column shows how your App Store listing looks with that design: the search result first, then the product page. Pick A, B, C or D.',
+  intro: 'Pick a store and a design from the menus to see your listing as it would look. “All designs” compares them side by side.',
   option: 'If you choose {letter}',
   searchResult: 'Search result',
   productPage: 'Product page',
   get: 'Get',
+  store: 'Store',
+  theme: 'Design',
+  appearance: 'Appearance',
+  allThemes: 'All designs (compare)',
+  light: 'Light',
+  dark: 'Dark',
+  install: 'Install',
+  choose: 'Tell Claude “{letter}” to use this design.',
 };
 
 export interface SampleResult {
-  samples: Array<{ letter: string; style: StylePreset; name: string; files: string[] }>;
+  /** `files`: the main target; `byTarget`: every rendered format (main included). */
+  samples: Array<{ letter: string; style: string; name: string; bespoke: boolean; files: string[]; byTarget: Record<string, string[]> }>;
   contactSheet: string;
-  /** App Store–like page: each option as a search result and product page (HTML, and a PNG of it). */
+  /** Store-like page with store, design and appearance menus (HTML), and a PNG of the comparison view. */
   storePreview: { html: string; png: string };
   warnings: string[];
 }
@@ -461,103 +496,159 @@ export function sampleOption(style: StylePreset, base?: ArtDirectionOption, bran
   };
 }
 
+/** A sample entry: a preset id, or a bespoke option of art-direction.json by its id. */
+function sampleChoice(id: string, ad: ArtDirection | undefined, base: ArtDirectionOption | undefined, brand?: BrandTint): { option: ArtDirectionOption; name: string; bespoke: boolean } {
+  if (id in PRESETS) return { option: sampleOption(id as StylePreset, base, brand), name: PRESETS[id as StylePreset].name, bespoke: false };
+  const own = ad?.options.find((o) => o.id === id);
+  if (!own) throw new Error(`Unknown design “${id}”: not a style preset and not an option id in art-direction.json.`);
+  return { option: own, name: own.name, bespoke: !own.preset || Boolean(own.palette || own.typography) };
+}
+
 /**
- * Comparison render (not a pipeline stage, nothing is uploaded): the hero and the second shot of the primary
- * locale for the main iPhone target, in N clearly different presets, plus one HTML-rendered contact sheet
- * labelled A, B, C… with the style names.
+ * Comparison render (not a pipeline stage, nothing is uploaded): the first three shots of one locale in N clearly
+ * different designs — presets and/or Claude's bespoke options — for the main target and any extra formats, plus
+ * a contact sheet labelled A, B, C… and the store preview page.
  */
 export async function renderDesignSamples(opts: SampleOptions): Promise<SampleResult> {
   const defaults = await profileDefaults(opts.paths);
   const brand = opts.brand ?? defaults.brand;
   const appName = opts.appName ?? defaults.appName ?? '';
   const count = Math.max(1, Math.min(8, opts.count ?? 4));
-  const styles = (opts.styles?.length ? opts.styles : suggestStyles(count, opts.category)).slice(0, opts.styles?.length ? opts.styles.length : count);
+  const styles: string[] = (opts.styles?.length ? opts.styles : suggestStyles(count, opts.category)).slice(0, opts.styles?.length ? opts.styles.length : count);
   const outRoot = opts.outDir ?? join(opts.paths.vitrin, 'design-samples');
   const ordered = [...opts.shots.shots].sort((a, b) => a.id.localeCompare(b.id));
   // The search result shows the first three screenshots, so the samples do too when the set has them.
   const picked = ordered.slice(0, 3);
   if (!picked.length) throw new Error('shots.json has no shots to sample.');
   const base = opts.artDirection?.options.find((o) => o.id === opts.artDirection?.selected);
+  const choices = styles.map((id) => ({ id, ...sampleChoice(id, opts.artDirection, base, brand) }));
   const raw = new RawLibrary(opts.paths, opts.primaryLocale);
   const icon = opts.appIcon && existsSync(opts.appIcon) ? pathToFileURL(opts.appIcon).href : undefined;
-  const target = opts.target;
-  const family = familyOfTarget(target);
+  const targets = [opts.target, ...(opts.extraTargets ?? []).filter((t) => t.id !== opts.target.id)];
   const locale = opts.primaryLocale;
   const result: SampleResult = { samples: [], contactSheet: join(outRoot, 'contact-sheet.png'), storePreview: { html: join(outRoot, 'store-preview.html'), png: join(outRoot, 'store-preview.png') }, warnings: [] };
   await rm(outRoot, { recursive: true, force: true });
+  for (const [n, c] of choices.entries()) result.samples.push({ letter: String.fromCharCode(65 + n), style: c.id, name: c.name, bespoke: c.bespoke, files: [], byTarget: {} });
   let browser: Browser | undefined;
   try {
     browser = await launchChromium();
-    const context = await browser.newContext({ viewport: { width: target.logical.width, height: target.logical.height }, deviceScaleFactor: target.logical.scale });
-    const page = await context.newPage();
-    for (const [n, style] of styles.entries()) {
-      const ad = resolveDirection(sampleOption(style, base, brand), brand);
-      const framings = planFramings(ordered, ad.tokens, family);
-      const files: string[] = [];
-      for (const shot of picked) {
-        const copy = shot.copy[locale] ?? Object.values(shot.copy)[0];
-        if (!copy) continue;
-        const idx = ordered.indexOf(shot);
-        const screens = await Promise.all(shot.screens.map((id) => raw.get(locale, family, id)));
-        const prev = idx > 0 ? ordered[idx - 1] : undefined;
-        const spanIn = prev?.archetype === 'panoramic' && prev.bridge && prev.screens[0] && picked.includes(prev) ? await raw.get(locale, family, prev.screens[0]) : undefined;
-        const input: PageInput = { target, locale, ad, archetype: shot.archetype, headline: copy.headline, subheadline: copy.subheadline, kicker: copy.kicker, badges: shot.badges, stat: shot.stat?.value, callouts: shot.callouts, quotes: shot.quotes[locale] ?? [], icon, screens, index: idx, total: ordered.length, framing: framings[idx], inverted: shot.inverted, appName, bridgeOut: shot.bridge && picked.includes(ordered[idx + 1]!), bridgeIn: Boolean(prev?.bridge && picked.includes(prev)), spanIn };
-        const out = join(outRoot, style, `${shot.id}_${shot.slug}.png`);
-        await renderOne(page, buildPage(input), join(outRoot, style, `${shot.id}.html`), out, target, { preset: style, framing: framings[idx] ?? 'auto', family, hasDevice: screens.length > 0 });
-        files.push(out);
+    for (const target of targets) {
+      const family = familyOfTarget(target);
+      const main = target.id === opts.target.id;
+      const context = await browser.newContext({ viewport: { width: target.logical.width, height: target.logical.height }, deviceScaleFactor: target.logical.scale });
+      const page = await context.newPage();
+      for (const [n, c] of choices.entries()) {
+        const ad = resolveDirection(c.option, brand);
+        const framings = planFramings(ordered, ad.tokens, family);
+        const files: string[] = [];
+        for (const shot of picked) {
+          const copy = shot.copy[locale] ?? Object.values(shot.copy)[0];
+          if (!copy) continue;
+          const idx = ordered.indexOf(shot);
+          const screens = await Promise.all(shot.screens.map((id) => raw.get(locale, family, id)));
+          const prev = idx > 0 ? ordered[idx - 1] : undefined;
+          const spanIn = prev?.archetype === 'panoramic' && prev.bridge && prev.screens[0] && picked.includes(prev) ? await raw.get(locale, family, prev.screens[0]) : undefined;
+          const input: PageInput = { target, locale, ad, archetype: shot.archetype, headline: copy.headline, subheadline: copy.subheadline, kicker: copy.kicker, badges: shot.badges, stat: shot.stat?.value, callouts: shot.callouts, quotes: shot.quotes[locale] ?? [], icon, screens, index: idx, total: ordered.length, framing: framings[idx], inverted: shot.inverted, appName, bridgeOut: shot.bridge && picked.includes(ordered[idx + 1]!), bridgeIn: Boolean(prev?.bridge && picked.includes(prev)), spanIn };
+          const dir = main ? join(outRoot, c.id) : join(outRoot, c.id, target.id);
+          const out = join(dir, `${shot.id}_${shot.slug}.png`);
+          await renderOne(page, await shotPage(opts.paths, shot, input, family), join(dir, `${shot.id}.html`), out, target, { preset: c.id, framing: shot.template ? 'custom' : (framings[idx] ?? 'auto'), family, hasDevice: screens.length > 0 });
+          files.push(out);
+        }
+        const s = result.samples[n]!;
+        s.byTarget[target.id] = files;
+        if (main) s.files = files;
       }
-      result.samples.push({ letter: String.fromCharCode(65 + n), style, name: PRESETS[style].name, files });
+      await context.close();
     }
-    await context.close();
     await renderContactSheet(browser, result, outRoot);
-    await renderStorePreview(browser, result, { appName, subtitle: opts.subtitle, icon, labels: { ...STORE_PREVIEW_EN, ...opts.labels }, landscape: target.width > target.height });
+    await renderStorePreview(browser, result, { appName, subtitle: opts.subtitle, icon, labels: { ...STORE_PREVIEW_EN, ...opts.labels }, targets });
   } finally {
     await browser?.close();
   }
-  await writeJson(join(outRoot, 'samples.json'), { generatedAt: new Date().toISOString(), target: target.id, locale, samples: result.samples.map((s) => ({ letter: s.letter, style: s.style, name: s.name, files: s.files })), contactSheet: result.contactSheet, storePreview: result.storePreview });
+  await writeJson(join(outRoot, 'samples.json'), { generatedAt: new Date().toISOString(), target: opts.target.id, targets: targets.map((t) => t.id), locale, samples: result.samples, contactSheet: result.contactSheet, storePreview: result.storePreview });
   result.warnings.push(...raw.warnings);
   return result;
 }
 
+/** Store views the preview page offers, from the rendered formats. */
+function previewStores(targets: RenderTarget[]): Array<{ id: string; label: string; kind: 'app-store' | 'google-play'; target: string; landscape: boolean }> {
+  const out: Array<{ id: string; label: string; kind: 'app-store' | 'google-play'; target: string; landscape: boolean }> = [];
+  for (const t of targets) {
+    const play = t.store === 'google-play';
+    const device: Record<string, string> = { iphone: 'iPhone', ipad: 'iPad', duo: 'iPhone Duo', mac: 'Mac', watch: 'Apple Watch', tv: 'Apple TV', vision: 'Vision Pro', 'android-phone': 'Phone', 'android-tablet': 'Tablet' };
+    out.push({ id: t.id, label: `${play ? 'Google Play' : 'App Store'} — ${device[t.family] ?? t.label}`, kind: play ? 'google-play' : 'app-store', target: t.id, landscape: t.width > t.height });
+  }
+  return out;
+}
+
 /**
- * The choice page: one App Store–like column per option — the search result (icon, name, subtitle, Get, the
- * first three screenshots) and the product page's screenshot row — so the user sees what each choice means
- * in the store. Relative image paths, so the HTML opens in any browser; also rendered to a PNG.
+ * The choice page: menus for the store (App Store iPhone/iPad, Google Play), the design (A, B, C… or all side
+ * by side) and the store's light/dark appearance. Each view mimics that store: the App Store search result and
+ * product page, or the Google Play listing. Relative image paths, so the HTML opens in any browser; the PNG is
+ * the comparison view of the first store.
  */
-async function renderStorePreview(browser: Browser, r: SampleResult, o: { appName: string; subtitle?: string; icon?: string; labels: StorePreviewLabels; landscape: boolean }): Promise<void> {
+async function renderStorePreview(browser: Browser, r: SampleResult, o: { appName: string; subtitle?: string; icon?: string; labels: StorePreviewLabels; targets: RenderTarget[] }): Promise<void> {
   const L = o.labels;
-  const name = esc(o.appName || 'App');
   const rel = (f: string) => relative(dirname(r.storePreview.html), f).split(sep).map(encodeURIComponent).join('/');
-  const icon = o.icon ? `<img class="icon" src="${o.icon}" alt="">` : `<div class="icon ph">${name.slice(0, 1)}</div>`;
-  const cols = r.samples.map((s) => {
-    const shots = s.files.map((f) => `<img src="${rel(f)}" alt="">`).join('');
-    return `<section class="opt"><h2><span class="letter">${s.letter}</span><span>${esc(L.option.replace('{letter}', s.letter))}<small>${esc(s.name)}</small></span></h2>
-  <h3>${esc(L.searchResult)}</h3>
-  <div class="phone"><div class="sr"><div class="row">${icon}<div class="meta"><b>${name}</b>${o.subtitle ? `<span>${esc(o.subtitle)}</span>` : ''}<i>★★★★★</i></div><span class="get">${esc(L.get)}</span></div><div class="shots${o.landscape ? ' land' : ''}">${shots}</div></div></div>
-  <h3>${esc(L.productPage)}</h3>
-  <div class="phone"><div class="pp"><div class="row">${icon.replace('class="icon', 'class="icon big')}<div class="meta"><b class="big">${name}</b>${o.subtitle ? `<span>${esc(o.subtitle)}</span>` : ''}<span class="get">${esc(L.get)}</span></div></div><div class="strip${o.landscape ? ' land' : ''}">${shots}</div></div></div>
-</section>`;
-  });
-  const html = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(L.title)} — ${name}</title><style>
-  *{box-sizing:border-box}body{margin:0;background:#F2F2F7;color:#1D1D1F;font:15px/1.4 -apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;padding:32px 24px 48px}
-  header{max-width:1500px;margin:0 auto 24px}h1{margin:0 0 6px;font-size:30px}header p{margin:0;color:#6E6E73;max-width:760px}
-  .grid{display:grid;grid-template-columns:repeat(${Math.min(4, r.samples.length)},minmax(0,1fr));gap:22px;max-width:1500px;margin:0 auto;width:max-content}
-  .opt{background:#fff;border-radius:22px;padding:18px;box-shadow:0 1px 3px rgba(0,0,0,.06);width:340px}
-  h2{display:flex;gap:12px;align-items:center;margin:0 0 14px;font-size:18px}h2 small{display:block;font-weight:500;color:#6E6E73;font-size:13px}
-  .letter{display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:12px;background:#0A84FF;color:#fff;font-size:22px;font-weight:800;flex:none}
-  h3{margin:14px 0 8px;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:#8E8E93}
-  .phone{border:1px solid #E5E5EA;border-radius:18px;padding:12px;background:#fff}
+  const stores = previewStores(o.targets);
+  const data = {
+    app: { name: o.appName || 'App', subtitle: o.subtitle ?? '', icon: o.icon ?? '' },
+    labels: L,
+    stores,
+    samples: r.samples.map((s) => ({ letter: s.letter, name: s.name, bespoke: s.bespoke, shots: Object.fromEntries(Object.entries(s.byTarget).map(([t, files]) => [t, files.map(rel)])) })),
+  };
+  const json = JSON.stringify(data).replace(/</g, '\\u003c');
+  const opt = (v: string, label: string) => `<option value="${esc(v)}">${esc(label)}</option>`;
+  const html = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(L.title)} — ${esc(data.app.name)}</title><style>
+  :root{--page:#F2F2F7;--card:#fff;--ink:#1D1D1F;--muted:#6E6E73;--line:#E5E5EA;--chip:#EEF0F4;--blue:#0A84FF;--play:#01875F}
+  [data-appearance=dark]{--page:#000;--card:#1C1C1E;--ink:#F5F5F7;--muted:#98989D;--line:#38383A;--chip:#2C2C2E;--blue:#0A84FF;--play:#5BD9A6}
+  *{box-sizing:border-box}body{margin:0;background:var(--page);color:var(--ink);font:15px/1.4 -apple-system,BlinkMacSystemFont,'Helvetica Neue',Roboto,Arial,sans-serif;padding:28px 20px 48px}
+  header{max-width:1500px;margin:0 auto 18px}h1{margin:0 0 6px;font-size:28px}header p{margin:0;color:var(--muted);max-width:780px}
+  .menus{display:flex;flex-wrap:wrap;gap:12px 20px;margin-top:16px}.menus label{display:flex;flex-direction:column;gap:4px;font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
+  select{font:inherit;font-size:15px;text-transform:none;letter-spacing:0;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 12px;min-width:220px}
+  .grid{display:flex;flex-wrap:wrap;gap:22px;max-width:1500px;margin:0 auto}
+  .opt{background:var(--card);border-radius:22px;padding:18px;box-shadow:0 1px 3px rgba(0,0,0,.08);width:340px}.single .opt{width:min(760px,100%)}
+  h2{display:flex;gap:12px;align-items:center;margin:0 0 14px;font-size:18px}h2 small{display:block;font-weight:500;color:var(--muted);font-size:13px}
+  .letter{display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:12px;background:var(--blue);color:#fff;font-size:22px;font-weight:800;flex:none}
+  .tag{font-size:11px;font-weight:700;color:var(--blue);border:1px solid var(--blue);border-radius:6px;padding:1px 6px;margin-left:6px;vertical-align:middle}
+  h3{margin:14px 0 8px;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+  .phone{border:1px solid var(--line);border-radius:18px;padding:12px;background:var(--card)}
   .row{display:flex;gap:10px;align-items:center}.meta{flex:1;min-width:0;display:flex;flex-direction:column}.meta b{font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.meta b.big{font-size:19px}
-  .meta span{color:#6E6E73;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.meta i{font-style:normal;color:#8E8E93;font-size:11px;letter-spacing:1px}
+  .meta span{color:var(--muted);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.meta i{font-style:normal;color:var(--muted);font-size:11px;letter-spacing:1px}
   .icon{width:52px;height:52px;border-radius:12px;flex:none;object-fit:cover;border:1px solid rgba(0,0,0,.06)}.icon.big{width:78px;height:78px;border-radius:18px}
   .icon.ph{display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#0A84FF,#5E5CE6);color:#fff;font-weight:800;font-size:22px}
-  .get{background:#EEF0F4;color:#0A84FF;font-weight:700;border-radius:999px;padding:5px 16px;font-size:14px;align-self:center;flex:none}.pp .get{align-self:flex-start;margin-top:8px}
-  .shots{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:10px}.shots img{width:100%;border-radius:8px;display:block;border:1px solid rgba(0,0,0,.05)}
-  .shots.land{grid-template-columns:1fr}
-  .strip{display:flex;gap:8px;overflow:hidden;margin-top:12px}.strip img{height:300px;border-radius:12px;flex:none;border:1px solid rgba(0,0,0,.05)}.strip.land img{height:150px}
-  </style></head><body><header><h1>${esc(L.title)}</h1><p>${esc(L.intro)}</p></header><div class="grid">${cols.join('\n')}</div></body></html>`;
+  .get{background:var(--chip);color:var(--blue);font-weight:700;border-radius:999px;padding:5px 16px;font-size:14px;align-self:center;flex:none}.pp .get{align-self:flex-start;margin-top:8px}
+  .shots{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:10px}.shots img{width:100%;border-radius:8px;display:block;border:1px solid rgba(0,0,0,.05)}.shots.land{grid-template-columns:1fr}
+  .strip{display:flex;gap:8px;overflow:hidden;margin-top:12px}.strip img{height:300px;border-radius:12px;flex:none;border:1px solid rgba(0,0,0,.05)}.strip.land img{height:150px}.single .strip img{height:520px}.single .strip.land img{height:260px}
+  .gp .icon{border-radius:22%}.gp .dev{color:var(--play);font-size:13px;font-weight:600}  .install{display:block;text-align:center;background:var(--play);color:#fff;font-weight:600;border-radius:10px;padding:9px;margin-top:14px}[data-appearance=dark] .install{color:#00381F}
+  .gp .strip img{border-radius:10px;height:260px}.single .gp .strip img{height:460px}
+  .hint{margin:12px 0 0;color:var(--muted);font-size:13px}
+  </style></head><body data-appearance="light"><header><h1>${esc(L.title)}</h1><p>${esc(L.intro)}</p>
+  <div class="menus"><label>${esc(L.store)}<select id="store">${stores.map((s) => opt(s.id, s.label)).join('')}</select></label>
+  <label>${esc(L.theme)}<select id="theme">${opt('all', L.allThemes)}${r.samples.map((s) => opt(s.letter, `${s.letter} — ${s.name}`)).join('')}</select></label>
+  <label>${esc(L.appearance)}<select id="appearance">${opt('light', L.light)}${opt('dark', L.dark)}</select></label></div></header>
+  <main id="view" class="grid"></main>
+<script>
+const D=${json};
+const L=D.labels;
+const esc=(s)=>String(s).replace(/[&<>"]/g,(c)=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const icon=(big)=>D.app.icon?'<img class="icon'+(big?' big':'')+'" src="'+D.app.icon+'" alt="">':'<div class="icon ph'+(big?' big':'')+'">'+esc(D.app.name.slice(0,1))+'</div>';
+const imgs=(list)=>list.map((f)=>'<img src="'+f+'" alt="">').join('');
+function appStore(s,store){const shots=s.shots[store.target]||[];const land=store.landscape?' land':'';
+  return '<h3>'+esc(L.searchResult)+'</h3><div class="phone"><div class="sr"><div class="row">'+icon(false)+'<div class="meta"><b>'+esc(D.app.name)+'</b>'+(D.app.subtitle?'<span>'+esc(D.app.subtitle)+'</span>':'')+'<i>★★★★★</i></div><span class="get">'+esc(L.get)+'</span></div><div class="shots'+land+'">'+imgs(shots)+'</div></div></div>'
+   +'<h3>'+esc(L.productPage)+'</h3><div class="phone"><div class="pp"><div class="row">'+icon(true)+'<div class="meta"><b class="big">'+esc(D.app.name)+'</b>'+(D.app.subtitle?'<span>'+esc(D.app.subtitle)+'</span>':'')+'<span class="get">'+esc(L.get)+'</span></div></div><div class="strip'+land+'">'+imgs(shots)+'</div></div></div>';}
+function play(s,store){const shots=s.shots[store.target]||[];
+  return '<h3>Google Play</h3><div class="phone gp"><div class="row">'+icon(true)+'<div class="meta"><b class="big">'+esc(D.app.name)+'</b><span class="dev">'+esc(D.app.name)+'</span>'+(D.app.subtitle?'<span>'+esc(D.app.subtitle)+'</span>':'')+'</div></div><span class="install">'+esc(L.install)+'</span><div class="strip'+(store.landscape?' land':'')+'">'+imgs(shots)+'</div></div>';}
+function render(){const store=D.stores.find((s)=>s.id===document.getElementById('store').value)||D.stores[0];const theme=document.getElementById('theme').value;
+  document.body.dataset.appearance=document.getElementById('appearance').value;
+  const list=theme==='all'?D.samples:D.samples.filter((s)=>s.letter===theme);const view=document.getElementById('view');view.className='grid'+(theme==='all'?'':' single');
+  view.innerHTML=list.map((s)=>'<section class="opt"><h2><span class="letter">'+s.letter+'</span><span>'+esc(L.option.replace('{letter}',s.letter))+(s.bespoke?'<span class="tag">✦</span>':'')+'<small>'+esc(s.name)+'</small></span></h2>'+(store.kind==='google-play'?play(s,store):appStore(s,store))+(theme==='all'?'':'<p class="hint">'+esc(L.choose.replace('{letter}',s.letter))+'</p>')+'</section>').join('');}
+for(const id of ['store','theme','appearance'])document.getElementById(id).addEventListener('change',render);
+const q=new URLSearchParams(location.search);for(const id of ['store','theme','appearance'])if(q.get(id))document.getElementById(id).value=q.get(id);
+render();
+</script></body></html>`;
   await writeText(r.storePreview.html, html);
-  const page = await browser.newPage({ viewport: { width: 1200, height: 800 }, deviceScaleFactor: 1 });
+  const page = await browser.newPage({ viewport: { width: 1480, height: 800 }, deviceScaleFactor: 1 });
   await page.goto(pathToFileURL(r.storePreview.html).href, { waitUntil: 'load' });
   await page.evaluate(async () => {
     await Promise.all([...document.images].map((img) => (img.complete ? null : new Promise((res) => (img.onload = img.onerror = res)))));

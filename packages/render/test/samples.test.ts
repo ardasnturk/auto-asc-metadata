@@ -1,6 +1,6 @@
 import { appPaths } from '@vitrin/core';
-import { ShotList, type RenderTarget } from '@vitrin/schemas';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync } from 'node:fs';
+import { ArtDirection, ShotList, type RenderTarget } from '@vitrin/schemas';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import sharp from 'sharp';
@@ -72,6 +72,31 @@ describe('design samples', () => {
     const manifest = JSON.parse(readFileSync(join(root, 'metadata', 'design-samples', 'samples.json'), 'utf8'));
     expect(manifest.samples[1].style).toBe('swiss-grid-bold');
   }, 120_000);
+
+  it('mixes presets with a bespoke option and a bespoke template, for more than one store', async (ctx) => {
+    if (!browserOk) ctx.skip();
+    const root = await project();
+    const paths = appPaths(root);
+    mkdirSync(paths.designs, { recursive: true });
+    // A layout Claude designed for this app: its own caption block and two devices.
+    writeFileSync(join(paths.designs, 'hero.html'), `<div class="caption" style="position:absolute;left:16px;right:16px;top:24px"><h1 class="headline fit" data-min="14" style="margin:0;font-size:30px">{{headline}}</h1></div>
+<vitrin-device screen="home" x="14" y="150" width="120" tilt="-6"></vitrin-device><vitrin-device screen="1" x="96" y="190" width="120" tilt="5"></vitrin-device>`);
+    const custom = ShotList.parse({ shots: [{ ...shots.shots[0], screens: ['home', 'stats'], template: 'hero.html' }, shots.shots[1]] });
+    const ad = ArtDirection.parse({ options: [{ id: 'ritim-sunrise', name: 'Ritim Sunrise', rationale: 'x', differentiation: 'y', palette: { background: ['#FFE7D1', '#FFC9A8'], surface: '#FFFFFF', primary: '#E8613C', accent: '#E8613C', text: '#2A1406', textMuted: '#5C3A28', badgeBackground: '#2A1406', badgeText: '#FFFFFF' } }], selected: 'ritim-sunrise', selectionReason: 'x' });
+    const play: RenderTarget = { ...target, id: 'play-test', family: 'android-phone', store: 'google-play', platform: 'android', width: 360, height: 640, logical: { width: 180, height: 320, scale: 2 } };
+    const res = await renderDesignSamples({ paths, primaryLocale: 'en-US', target, extraTargets: [play], shots: custom, artDirection: ad, styles: ['ritim-sunrise', 'swiss-grid-bold'], appName: 'Ritim', subtitle: 'Habit tracker' });
+    expect(res.samples.map((s) => [s.letter, s.style, s.bespoke])).toEqual([
+      ['A', 'ritim-sunrise', true],
+      ['B', 'swiss-grid-bold', false],
+    ]);
+    expect(Object.keys(res.samples[0]!.byTarget)).toEqual(['iphone-test', 'play-test']);
+    expect((await sharp(res.samples[0]!.byTarget['play-test']![0]!).metadata()).width).toBe(360);
+    expect(readFileSync(join(root, 'metadata', 'design-samples', 'ritim-sunrise', '01.html'), 'utf8')).toContain('data-layout="custom"');
+    const preview = readFileSync(res.storePreview.html, 'utf8');
+    for (const id of ['id="store"', 'id="theme"', 'id="appearance"', 'Google Play — Phone', 'App Store — iPhone', 'A — Ritim Sunrise']) expect(preview, id).toContain(id);
+    expect(existsSync(res.storePreview.png)).toBe(true);
+    await expect(renderDesignSamples({ paths, primaryLocale: 'en-US', target, shots, styles: ['nope'] })).rejects.toThrow(/Unknown design/);
+  }, 180_000);
 
   it('measures the quality bar on the real render', async (ctx) => {
     if (!browserOk) ctx.skip();

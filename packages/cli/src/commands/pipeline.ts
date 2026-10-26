@@ -527,12 +527,16 @@ async function designSamples(ctx: Ctx, profile: AppProfile, opts: DesignOptions)
   }
   const shots = await readJson(ctx.paths.shots, ShotList);
   const ad = existsSync(ctx.paths.artDirection) ? await readJson(ctx.paths.artDirection, ArtDirection) : undefined;
-  const known = StylePreset.options as readonly string[];
+  // Presets, or the ids of bespoke options Claude wrote into art-direction.json for this app.
+  const known = [...(StylePreset.options as readonly string[]), ...(ad?.options.map((o) => o.id) ?? [])];
   const unknown = (opts.styles ?? []).filter((s) => !known.includes(s));
-  if (unknown.length) throw new NeedsInput(`Unknown style preset: ${unknown.join(', ')} (${known.join(', ')}).`);
+  if (unknown.length) throw new NeedsInput(`Unknown design: ${unknown.join(', ')} — use a style preset (${StylePreset.options.join(', ')}) or an option id from art-direction.json.`);
   // One locale (English when the app has it) and the main iPhone format: the user picks a design before Vitrin
   // spends time on every language and size.
   const target = sampleTarget(ctx.config, profile);
+  // The store preview can switch to the other stores and devices the user ships on (same shots, same designs).
+  const enabled = enabledTargets(ctx.config, profile, { quiet: true }).filter((t) => t.kind === 'screenshot');
+  const extraTargets = ['play-phone', 'ipad-13'].map((id) => enabled.find((t) => t.id === id)).filter((t): t is NonNullable<typeof t> => Boolean(t) && t!.id !== target.id);
   const locale = opts.locale ?? sampleLocale(ctx.config);
   const missingCopy = shots.shots.slice(0, 2).filter((s) => !s.copy[locale]);
   if (missingCopy.length) log.warn(`shots ${missingCopy.map((s) => s.id).join(', ')} have no ${locale} copy; the samples use another locale's text.`);
@@ -541,19 +545,20 @@ async function designSamples(ctx: Ctx, profile: AppProfile, opts: DesignOptions)
   const meta = existsSync(ctx.paths.metadataFile(locale)) ? await readJson(ctx.paths.metadataFile(locale), LocaleMetadata).catch(() => undefined) : undefined;
   const res = await renderDesignSamples({
     subtitle: meta?.subtitle,
-    labels: { title: ui.samplesTitle, intro: ui.samplesIntro, option: ui.samplesOption, searchResult: ui.searchResult, productPage: ui.productPage, get: ui.get },
+    labels: { title: ui.samplesTitle, intro: ui.samplesIntro, option: ui.samplesOption, searchResult: ui.searchResult, productPage: ui.productPage, get: ui.get, store: ui.previewStore, theme: ui.previewTheme, appearance: ui.previewAppearance, allThemes: ui.previewAllThemes, light: ui.previewLight, dark: ui.previewDark, install: ui.install, choose: ui.previewChoose },
+    extraTargets,
     paths: ctx.paths,
     primaryLocale: locale,
     target,
     shots,
     artDirection: ad,
-    styles: opts.styles as StylePreset[] | undefined,
+    styles: opts.styles,
     count: opts.count,
     category: profile.categorySuggestion?.primary,
     appIcon,
     appName: profile.app.displayName,
   });
-  const out = { storePreview: res.storePreview, contactSheet: res.contactSheet, target: target.id, locale, samples: res.samples.map((s) => ({ letter: s.letter, preset: s.style, name: s.name, files: s.files })), warnings: res.warnings };
+  const out = { storePreview: res.storePreview, contactSheet: res.contactSheet, target: target.id, locale, samples: res.samples.map((s) => ({ letter: s.letter, preset: s.style, name: s.name, bespoke: s.bespoke, files: s.files, byTarget: s.byTarget })), stores: [target.id, ...extraTargets.map((t) => t.id)], warnings: res.warnings };
   if (ctx.json) {
     process.stdout.write(JSON.stringify(out, null, 2) + '\n');
     return EXIT.OK;
@@ -561,8 +566,8 @@ async function designSamples(ctx: Ctx, profile: AppProfile, opts: DesignOptions)
   for (const w of res.warnings) log.warn(w);
   for (const s of res.samples) log.ok(`${s.letter}  ${s.name} (${s.style}) — ${s.files.map((f) => relative(ctx.root, f)).join(', ')}`);
   log.ok(`Contact sheet: ${relative(ctx.root, res.contactSheet)}`);
-  log.ok(`Store preview (A/B/C/D as they would look in the App Store): ${relative(ctx.root, res.storePreview.html)} · ${relative(ctx.root, res.storePreview.png)}`);
-  log.info(`Samples: ${locale}, ${target.id}. Show the store preview (store-preview.html / .png) and ask which design (A/B/C/D) to use; set its preset in art-direction.json (options[].preset + selected). Then ask which store languages and formats to produce (vitrin select --locales … --targets …) before \`vitrin design\`.`);
+  log.ok(`Store preview with store, design and appearance menus (${[target, ...extraTargets].map((t) => t.id).join(', ')}): ${relative(ctx.root, res.storePreview.html)} · ${relative(ctx.root, res.storePreview.png)}`);
+  log.info(`Samples: ${locale}, ${target.id}. Open the store preview for the user (store-preview.html; show store-preview.png in the chat) and ask which design (A/B/C/D) to use; write it into art-direction.json (options[] + selected). Only after they approved a design: ask how to upload (vitrin uploader), then which store languages and formats to produce (vitrin select --locales … --targets …) before \`vitrin design\`.`);
   return EXIT.OK;
 }
 
