@@ -23,7 +23,7 @@ import {
 } from '../src/android.js';
 import { appIdentity, artifactDir, buildApp, compileSteps, effectiveConfiguration, gradleVariant, prepareSteps, xcodeDestination, type BuildInput, type Runner } from '../src/build.js';
 import { captureKinds, familiesToCapture, requiredTools } from '../src/commands/pipeline.js';
-import { applySelection, parseChoice, platformsReport } from '../src/commands/select.js';
+import { applySelection, parseChoice, platformsReport, sampleLocale, uploaderReport } from '../src/commands/select.js';
 import type { Ctx } from '../src/context.js';
 import { ensureSimulator, macLaunchArgs, pickMainWindow, pickRuntime, runtimeMatches, screencaptureArgs, screenRecordArgs, statusBarArgs, type SimList } from '../src/simulator.js';
 import { configWith, profileWith } from './helpers.js';
@@ -394,5 +394,38 @@ describe('vitrin platforms / select', () => {
     expect(parseYaml(text).selection).toEqual({ platforms: ['ios', 'android'], assets: ['screenshots'] });
     expect(ctx.config.selection.platforms).toEqual(['ios', 'android']);
     await expect(selectCommand(ctx, {})).rejects.toThrow(/Nothing to select/);
+  });
+
+  it('stores formats, store locales, the conversation language and the uploader', () => {
+    const before = '# keep\napp:\n  primaryLocale: tr\n  locales: [tr, en-US, de-DE]\nurls: {}\nupload:\n  platform: ios\n';
+    const after = parseYaml(applySelection(before, { targets: ['iphone-6.9'], locales: ['en-US', 'tr'], language: 'tr', uploader: 'asc' }));
+    expect(after.selection).toEqual({ targets: ['iphone-6.9'] });
+    expect(after.app).toEqual({ primaryLocale: 'tr', locales: ['en-US', 'tr'] });
+    expect(after.ui).toEqual({ language: 'tr' });
+    expect(after.upload).toEqual({ platform: 'ios', uploader: 'asc' });
+    const reset = parseYaml(applySelection(applySelection(before, { language: 'tr' }), { language: null, targets: null }));
+    expect(reset.ui).toBeUndefined();
+    expect(reset.selection).toBeUndefined();
+  });
+
+  it('samples one locale (English first) and the main iPhone format', () => {
+    expect(sampleLocale(configWith({ app: { primaryLocale: 'tr', locales: ['tr', 'de-DE', 'en-GB'] } }))).toBe('en-GB');
+    expect(sampleLocale(configWith({ app: { primaryLocale: 'tr', locales: ['tr', 'en-US', 'en-GB'] } }))).toBe('en-US');
+    expect(sampleLocale(configWith({ app: { primaryLocale: 'de-DE', locales: ['tr', 'de-DE'] } }))).toBe('de-DE');
+    const r = platformsReport(configWith({ app: { primaryLocale: 'tr', locales: ['tr', 'en-US'] }, selection: { targets: ['iphone-6.9'] } }), profile);
+    expect(r.samples).toEqual({ locale: 'en-US', target: 'iphone-6.9', family: 'iphone' });
+    expect(r.formats.find((f) => f.target === 'iphone-6.9')).toMatchObject({ selected: true, size: '1320×2868' });
+    expect(r.formats.find((f) => f.target === 'iphone-6.3')).toMatchObject({ selected: false, required: true });
+    expect(r).toMatchObject({ language: null, uploader: null });
+  });
+
+  it('reports the uploader options from what is installed', () => {
+    const none = { asc: null, fastlane: null, ruby: null, bundler: null };
+    expect(uploaderReport(configWith(), { ...none, asc: '1.4.0' }, ['ios'])).toMatchObject({ chosen: null, recommended: 'asc', fastlaneNeededForPlay: false });
+    const fl = uploaderReport(configWith({ upload: { uploader: 'deliver' } }), { ...none, fastlane: '2.241.1', ruby: '3.3.0' }, ['ios', 'android']);
+    expect(fl).toMatchObject({ chosen: 'deliver', recommended: 'deliver', fastlaneNeededForPlay: true });
+    expect(fl.options.map((o) => [o.uploader, o.installed])).toEqual([['asc', false], ['deliver', true]]);
+    // An outdated fastlane does not count as installed.
+    expect(uploaderReport(configWith(), { ...none, fastlane: '2.200.0' }, ['ios']).options[1]!.installed).toBe(false);
   });
 });

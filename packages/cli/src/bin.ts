@@ -7,7 +7,7 @@ import { createContext, EXIT, NeedsInput, type GlobalOptions } from './context.j
 import { runDoctor } from './commands/doctor.js';
 import { initCommand } from './commands/init.js';
 import { analyzeCommand, captureCommand, designCommand, researchCommand, validateCommand, videoCommand, writeCommand } from './commands/pipeline.js';
-import { platformsCommand, selectCommand } from './commands/select.js';
+import { platformsCommand, selectCommand, uploaderCommand, type SelectOptions } from './commands/select.js';
 import { submitCommand, uploadCommand } from './commands/upload.js';
 import { finalizeCommand } from './finalize.js';
 import { reviewCommand } from './review-server.js';
@@ -53,8 +53,10 @@ function action<A extends unknown[]>(fn: (...args: A) => Promise<number>) {
 
 program
   .command('init')
-  .description('creates vitrin.config.yaml, .env.example, .gitignore and the fastlane templates')
-  .action(action(async () => initCommand({ cwd: globals().cwd, force: globals().force })));
+  .description('creates vitrin.config.yaml, .env.example and the .gitignore block (fastlane files only once fastlane is chosen)')
+  .option('--uploader <name>', 'App Store uploader the user chose: asc | deliver | asset-library')
+  .option('--language <tag>', 'language Vitrin talks to the user in (en, tr, de …)')
+  .action(action(async (o: { uploader?: string; language?: string }) => initCommand({ cwd: globals().cwd, force: globals().force, uploader: o.uploader, language: o.language })));
 
 program
   .command('doctor')
@@ -89,10 +91,20 @@ program
 
 program
   .command('select')
-  .description('stores the platforms and asset kinds to produce in vitrin.config.yaml (selection)')
+  .description('stores the user\'s choices in vitrin.config.yaml: platforms, content, formats, store locales, language, uploader')
   .option('--platforms <platforms>', 'ios,macos,watchos,tvos,visionos,android or "all"')
   .option('--assets <assets>', 'metadata,screenshots,previews,creatives,events or "all"')
-  .action(action(async (o: { platforms?: string; assets?: string }) => selectCommand(await createContext(globals()), { platforms: o.platforms, assets: o.assets })));
+  .option('--targets <formats>', 'formats (target ids: iphone-6.9,ipad-13,…) or "all"; see vitrin platforms')
+  .option('--locales <locales>', 'store locales of this run (app.locales), e.g. en-US,tr,de-DE')
+  .option('--language <tag>', 'language Vitrin talks to the user in (en, tr, de …; "default" = English)')
+  .option('--uploader <name>', 'App Store uploader: asc | deliver | asset-library')
+  .action(action(async (o: SelectOptions) => selectCommand(await createContext(globals()), o)));
+
+program
+  .command('uploader')
+  .description('shows whether the asc CLI and fastlane are installed, for the App Store uploader choice')
+  .option('--json', 'machine-readable output')
+  .action(action(async (o: { json?: boolean }) => uploaderCommand(await createContext(globals()), { json: o.json || globals().json })));
 
 program
   .command('capture')
@@ -108,9 +120,10 @@ program
   .option('--samples', 'render the first two shots in several style presets plus a contact sheet (comparison only, nothing uploaded)')
   .option('--count <n>', 'number of sample designs', '4')
   .option('--styles <presets>', 'comma-separated preset ids to sample')
+  .option('--locale <locale>', 'locale of the samples (default: English when the app has it, else the primary locale)')
   .action(
-    action(async (o: { only?: string; samples?: boolean; count?: string; styles?: string }) =>
-      designCommand(await createContext(globals()), { only: o.only?.split(','), samples: o.samples, count: o.count ? Number(o.count) : undefined, styles: o.styles?.split(',') }),
+    action(async (o: { only?: string; samples?: boolean; count?: string; styles?: string; locale?: string }) =>
+      designCommand(await createContext(globals()), { only: o.only?.split(','), samples: o.samples, count: o.count ? Number(o.count) : undefined, styles: o.styles?.split(','), locale: o.locale }),
     ),
   );
 
@@ -138,7 +151,8 @@ program
   .description('review gallery of everything that would be uploaded → .vitrin/report.html (--serve: approve/reject in the browser)')
   .option('--serve', 'serve the gallery on 127.0.0.1 with approve / reject buttons; waits for the decision')
   .option('--port <port>', 'port for --serve (0 = any free port)', '4870')
-  .action(action(async (o: { serve?: boolean; port: string }) => reviewCommand(await createContext(globals()), { serve: o.serve, port: Number(o.port) })));
+  .option('--print-labels', 'print the gallery words in English as JSON, to translate into .vitrin/i18n/<language>.json')
+  .action(action(async (o: { serve?: boolean; port: string; printLabels?: boolean }) => reviewCommand(await createContext(globals()), { serve: o.serve, port: Number(o.port), printLabels: o.printLabels })));
 
 program
   .command('approve')

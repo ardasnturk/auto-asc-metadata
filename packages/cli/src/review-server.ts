@@ -7,6 +7,7 @@ import { extname, isAbsolute, relative, resolve, sep } from 'node:path';
 import { buildInventory, checkApproval, recordApproval, recordRejections, summarize, syncFastlaneMetadata, type Inventory } from './approval.js';
 import { EXIT, type Ctx } from './context.js';
 import { buildReport } from './report.js';
+import { i18nFile, loadUiText, UI_EN } from './i18n.js';
 
 /**
  * `vitrin review --serve`: serves the review gallery on 127.0.0.1 with approve / reject buttons.
@@ -231,10 +232,18 @@ export async function startReviewServer(ctx: Ctx, opts: { port?: number; host?: 
 export interface ReviewOptions {
   serve?: boolean;
   port?: number;
+  /** Print the gallery's English words as JSON (the template for .vitrin/i18n/<language>.json). */
+  printLabels?: boolean;
 }
 
 /** `vitrin review [--serve]` — writes the gallery; with --serve also waits for the user's decision. */
 export async function reviewCommand(ctx: Ctx, opts: ReviewOptions): Promise<number> {
+  if (opts.printLabels) {
+    process.stdout.write(JSON.stringify(UI_EN, null, 2) + '\n');
+    return EXIT.OK;
+  }
+  const ui = await loadUiText(ctx);
+  if (ui.missing) log.warn(`The gallery has no ${ui.language} words yet and is shown in English: translate \`vitrin review --print-labels\` into ${relative(ctx.root, i18nFile(ctx, ui.language))} (same keys), then run review again.`);
   if (!opts.serve) {
     await syncFastlaneMetadata(ctx);
     const inv = await buildInventory(ctx);

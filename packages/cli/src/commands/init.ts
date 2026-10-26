@@ -1,5 +1,6 @@
 import { analyzeProject, locateProject } from '@vitrin/analyzer';
 import { appPaths, ensureDir, ensureVitrinGitignore, existsSync, loadConfig, log, renderEnvExample, ENV_KEYS, storefrontForLocale, writeText } from '@vitrin/core';
+import { UploaderEnum, uploaderOf } from '@vitrin/schemas';
 import { installFastlaneTemplates } from '@vitrin/upload';
 import { readFile } from 'node:fs/promises';
 import { relative, resolve } from 'node:path';
@@ -7,13 +8,15 @@ import { stringify } from 'yaml';
 
 // Secrets, caches and machine-local pipeline state stay out of git; the JSON Claude writes is meant to be committed.
 
-export async function initCommand(opts: { cwd?: string; force?: boolean }): Promise<number> {
+export async function initCommand(opts: { cwd?: string; force?: boolean; uploader?: string; language?: string }): Promise<number> {
+  if (opts.uploader && !(UploaderEnum.options as readonly string[]).includes(opts.uploader)) throw new Error(`Unknown uploader: ${opts.uploader}. Valid: ${UploaderEnum.options.join(', ')}.`);
   const root = resolve(opts.cwd ?? process.cwd());
   const paths = appPaths(root);
   log.step(`Vitrin setup: ${root}`);
 
+  let detectedAndroid: boolean | undefined;
   if (!existsSync(paths.config) || opts.force) {
-    let detected: { project?: string; scheme?: string; bundleId?: string; locales: string[]; primary: string; holder?: string } = { locales: ['en-US'], primary: 'en-US' };
+    let detected: { project?: string; scheme?: string; bundleId?: string; locales: string[]; primary: string; holder?: string; android?: boolean } = { locales: ['en-US'], primary: 'en-US' };
     try {
       const loc = await locateProject(root);
       const profile = await analyzeProject({ root });
@@ -25,6 +28,7 @@ export async function initCommand(opts: { cwd?: string; force?: boolean }): Prom
         bundleId: profile.app.bundleId,
         locales: asc.length ? [...new Set(asc)] : ['en-US'],
         primary: dev,
+        android: profile.app.platforms.includes('android'),
       };
       log.ok(`Xcode project: ${detected.project} (scheme ${detected.scheme}, ${detected.locales.join(', ')})`);
     } catch (err) {
@@ -32,6 +36,8 @@ export async function initCommand(opts: { cwd?: string; force?: boolean }): Prom
     }
     const storefronts = [...new Set([...detected.locales.map((l) => storefrontForLocale(l)), "us"])];
     const config = {
+      // The language Vitrin talks to the user in (the skill asks); store copy follows app.locales.
+      ...(opts.language ? { ui: { language: opts.language } } : {}),
       app: {
         bundleId: detected.bundleId,
         project: detected.project,
@@ -56,7 +62,8 @@ export async function initCommand(opts: { cwd?: string; force?: boolean }): Prom
         simulators: {},
       },
       video: { enabled: true, loops: true },
-      upload: { uploader: 'deliver', platform: 'ios' },
+      // upload.uploader (asc | deliver) is the user's choice: `vitrin uploader`, then `vitrin select --uploader`.
+      upload: { ...(opts.uploader ? { uploader: opts.uploader } : {}), platform: 'ios' },
     };
     const header = [
       '# Vitrin configuration — non-secret values only. Keys live in .env.',
@@ -64,6 +71,7 @@ export async function initCommand(opts: { cwd?: string; force?: boolean }): Prom
       '# research.seeds and capture.screens are filled in by Claude while the /vitrin skill runs.',
       '',
     ].join('\n');
+    detectedAndroid = detected.android;
     await writeText(paths.config, header + stringify(config, { lineWidth: 120 }));
     log.ok('Created vitrin.config.yaml');
   } else {
@@ -88,11 +96,15 @@ export async function initCommand(opts: { cwd?: string; force?: boolean }): Prom
   if (gi.trackedIgnored.length) log.warn(`Already tracked but now ignored: ${gi.trackedIgnored.map((g) => g.path).join(', ')} — to stop tracking: git rm -r --cached ${gi.trackedIgnored.map((g) => g.path).join(' ')}`);
 
   await ensureDir(paths.vitrin);
-  const installed = await installFastlaneTemplates(paths, opts.force);
-  for (const f of installed) log.ok(`Wrote ${relative(root, f)}`);
-  log.dim('The Fastfile has one deliver lane per App Store platform (platform:ios|osx|appletvos|xros) and a supply lane for Google Play; for Android apps set GOOGLE_PLAY_JSON_KEY_PATH in .env.');
-  log.dim('No Ruby? Set `upload.uploader: asc` in vitrin.config.yaml and `brew install asc` (App-Store-Connect-CLI) for Apple uploads without fastlane; Google Play still uses supply.');
-  log.info('\nNext step: `vitrin doctor` (generation still works if keys are missing).');
+  // fastlane files only when fastlane will be used: deliver/asset-library chosen, or supply for an Android app.
+  const config = loadConfig(paths.config);
+  if ((config.upload.uploader && uploaderOf(config) !== 'asc') || detectedAndroid) {
+    const installed = await installFastlaneTemplates(paths, opts.force);
+    for (const f of installed) log.ok(`Wrote ${relative(root, f)}`);
+    log.dim('The Fastfile has one deliver lane per App Store platform (platform:ios|osx|appletvos|xros) and a supply lane for Google Play; for Android apps set GOOGLE_PLAY_JSON_KEY_PATH in .env.');
+  }
+  if (!config.upload.uploader) log.info('App Store uploads: the asc CLI or fastlane — `vitrin uploader` shows what is installed; choose with `vitrin select --uploader asc|deliver`.');
+  log.info('\nNext step: `vitrin doctor` (generation still works without keys; they are needed only for the upload).');
   return 0;
 }
 

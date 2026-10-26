@@ -12,6 +12,7 @@ import {
   type InAppEventSpec,
   type Issue,
   type LocaleMetadata,
+  uploaderOf,
 } from '@vitrin/schemas';
 import { readdir, stat } from 'node:fs/promises';
 import { join, relative, resolve } from 'node:path';
@@ -19,6 +20,10 @@ import type { z } from 'zod';
 import { buildInventory, checkApproval, summarize, syncFastlaneMetadata, writeSnapshot, type Inventory, type InventoryItem } from './approval.js';
 import type { Ctx } from './context.js';
 import { loadLocaleMetadata } from './commands/pipeline.js';
+import { fill, loadUiText, UI_EN, type UiText } from './i18n.js';
+
+/** Gallery words for this render (ui.language); set at the start of buildReport. */
+let T: UiText = UI_EN;
 
 type EventSpec = z.infer<typeof InAppEventSpec>;
 
@@ -84,16 +89,17 @@ function fmtBytes(n?: number): string {
 function issueList(issues: Issue[]): string {
   if (!issues.length) return '';
   return `<ul class="issues-inline">${issues
-    .map((i) => `<li class="${i.severity}"><b>${i.severity === 'error' ? 'ERROR' : i.severity === 'warning' ? 'WARNING' : 'info'}</b> <code>${esc(i.code)}</code> ${esc(i.message)}${i.fix ? `<div class="muted small">→ ${esc(i.fix)}</div>` : ''}</li>`)
+    .map((i) => `<li class="${i.severity}"><b>${i.severity === 'error' ? T.error : i.severity === 'warning' ? T.warning : T.info}</b> <code>${esc(i.code)}</code> ${esc(i.message)}${i.fix ? `<div class="muted small">→ ${esc(i.fix)}</div>` : ''}</li>`)
     .join('')}</ul>`;
 }
 
 function rejectControl(item: InventoryItem): string {
-  return `<div class="decide"><button type="button" class="rej" data-reject="${esc(item.id)}">Reject…</button><textarea class="comment" placeholder="What should change?" hidden></textarea><code class="item-id" title="Item id">${esc(item.id)}</code></div>`;
+  return `<div class="decide"><button type="button" class="rej" data-reject="${esc(item.id)}">${esc(T.reject)}</button><textarea class="comment" placeholder="${esc(T.rejectPlaceholder)}" hidden></textarea><code class="item-id" title="Item id">${esc(item.id)}</code></div>`;
 }
 
 /** `.vitrin/report.html` — the complete review gallery: everything that would be uploaded, grouped by store → platform → locale → target. */
-export async function buildReport(ctx: Ctx, opts: { inventory?: Inventory } = {}): Promise<string> {
+export async function buildReport(ctx: Ctx, opts: { inventory?: Inventory; text?: UiText } = {}): Promise<string> {
+  T = opts.text ?? (await loadUiText(ctx)).text;
   const p = ctx.paths;
   // Refresh fastlane/metadata so the text shown is byte-for-byte what deliver will read.
   if (!opts.inventory) await syncFastlaneMetadata(ctx);
@@ -154,7 +160,7 @@ export async function buildReport(ctx: Ctx, opts: { inventory?: Inventory } = {}
     const sizeOk = !it.targetInfo || !w || (w === it.targetInfo.width && h === it.targetInfo.height) || it.targetInfo.acceptedSizes.some(([a, b]) => a === w && b === h) || inRange(it.targetInfo.sizeRange, w, h ?? 0);
     return `<figure class="card${issues.some((i) => i.severity === 'error') ? ' has-error' : ''}" data-item="${esc(it.id)}">
   <a class="zoom" href="${full}" data-full="${full}" data-caption="${esc(it.label)}"><img src="${thumb}" loading="lazy" decoding="async" alt="${esc(it.label)}"${w && h ? ` width="${w}" height="${h}"` : ''}></a>
-  <figcaption><b>#${it.order ?? '–'}</b> <span class="fname">${esc(it.abs!.split('/').pop()!)}</span><div class="muted small">${w && h ? `<span class="${sizeOk ? '' : 'over'}">${w}×${h}</span>` : '?×?'} · ${fmtBytes(it.bytes)}${sizeOk ? '' : ` · <span class="over">expected ${it.targetInfo!.width}×${it.targetInfo!.height}</span>`}</div></figcaption>
+  <figcaption><b>#${it.order ?? '–'}</b> <span class="fname">${esc(it.abs!.split('/').pop()!)}</span><div class="muted small">${w && h ? `<span class="${sizeOk ? '' : 'over'}">${w}×${h}</span>` : '?×?'} · ${fmtBytes(it.bytes)}${sizeOk ? '' : ` · <span class="over">${esc(fill(T.expectedSize, { size: `${it.targetInfo!.width}×${it.targetInfo!.height}` }))}</span>`}</div></figcaption>
   ${issueList(issues)}${rejectControl(it)}
 </figure>`;
   };
@@ -185,13 +191,13 @@ export async function buildReport(ctx: Ctx, opts: { inventory?: Inventory } = {}
         const value =
           f.key === 'keywords'
             ? `<div class="chips">${splitKeywords(f.value).map((k) => `<span>${esc(k)}</span>`).join('')}</div><div class="raw muted small">${esc(f.value)}</div>`
-            : `<div class="val">${esc(f.value) || '<em class="muted">(empty — clears the remote value)</em>'}</div>`;
+            : `<div class="val">${esc(f.value) || `<em class="muted">${esc(T.emptyClears)}</em>`}</div>`;
         return `<tr><th>${esc(spec?.label ?? f.key)}<div class="muted small mono">${esc(f.file)}</div></th><td dir="${dir}">${value}${issueList(own)}</td><td class="num">${counter(f.value, spec)}</td></tr>`;
       })
       .join('');
     const fieldIssues = new Set(Object.values({ ...ASC_FIELDS, ...PLAY_FIELDS }).map((s) => s.issueField));
     const rest = issues.filter((i) => !i.field || !fieldIssues.has(i.field));
-    return `<div class="meta card-wide" data-item="${esc(it.id)}"><div class="scroll"><table class="fields">${rows || '<tr><td class="muted">No text files.</td></tr>'}</table></div>${issueList(rest)}${rejectControl(it)}</div>`;
+    return `<div class="meta card-wide" data-item="${esc(it.id)}"><div class="scroll"><table class="fields">${rows || `<tr><td class="muted">${esc(T.noTextFiles)}</td></tr>`}</table></div>${issueList(rest)}${rejectControl(it)}</div>`;
   };
 
   const searchAndProductPage = (locale: string, items: InventoryItem[], meta?: InventoryItem): string => {
@@ -209,23 +215,23 @@ export async function buildReport(ctx: Ctx, opts: { inventory?: Inventory } = {}
     const descLines = desc.split('\n').filter(Boolean);
     return `<div class="grid2">
     <div>
-      <h4>Search result</h4>
+      <h4>${esc(T.searchResult)}</h4>
       <div class="search-row">
         <div class="sr-head">${icon ? `<img class="icon" src="${icon}" alt="">` : '<div class="icon ph"></div>'}
           <div><b>${esc(name)}</b><div class="muted">${esc(subtitle)}</div>
           <div class="muted small">${rating?.averageUserRating ? `★ ${rating.averageUserRating.toFixed(1)} · ${rating.userRatingCount}` : '★ —'}</div></div>
-          <span class="get">GET</span></div>
+          <span class="get">${esc(T.get)}</span></div>
         <div class="sr-shots">${(previews.length ? [] : iphone.slice(0, 3)).map((s) => `<img src="${s}" loading="lazy" alt="">`).join('')}${previews.slice(0, 1).map((v) => `<video src="${v}" muted loop playsinline preload="metadata"></video>`).join('')}${previews.length ? iphone.slice(0, 2).map((s) => `<img src="${s}" loading="lazy" alt="">`).join('') : ''}</div>
       </div>
     </div>
     <div>
-      <h4>Product page</h4>
+      <h4>${esc(T.productPage)}</h4>
       <div class="pp">
         <div class="pp-head">${icon ? `<img class="icon big" src="${icon}" alt="">` : ''}<div><h5>${esc(name)}</h5><div class="muted">${esc(subtitle)}</div></div></div>
         <div class="pp-shots">${previews.map((v) => `<video src="${v}" controls muted playsinline preload="none"></video>`).join('')}${iphone.map((s) => `<img src="${s}" loading="lazy" alt="">`).join('')}</div>
         ${promo ? `<p class="promo">${esc(promo)}</p>` : ''}
-        <p class="desc">${descLines.slice(0, 3).map(esc).join('<br>')}<span class="more"> … more</span></p>
-        ${whatsNew ? `<h6>What’s New</h6><p class="small">${esc(whatsNew).replace(/\n/g, '<br>')}</p>` : ''}
+        <p class="desc">${descLines.slice(0, 3).map(esc).join('<br>')}<span class="more"> ${esc(T.more)}</span></p>
+        ${whatsNew ? `<h6>${esc(T.whatsNew)}</h6><p class="small">${esc(whatsNew).replace(/\n/g, '<br>')}</p>` : ''}
       </div>
     </div>
   </div>`;
@@ -278,17 +284,17 @@ export async function buildReport(ctx: Ctx, opts: { inventory?: Inventory } = {}
     (a, b) => (a.store === b.store ? 0 : a.store === 'app-store' ? -1 : 1) || platformOrder(a.platform) - platformOrder(b.platform) || localeOrder(a.locale) - localeOrder(b.locale) || natural(a.locale ?? '', b.locale ?? ''),
   );
 
-  const KIND_TITLE: Record<string, string> = { screenshot: 'Screenshots', preview: 'App Previews', creative: 'Creatives (header / search)', event: 'In-App Event images' };
+  const KIND_TITLE: Record<string, string> = { screenshot: T.kindScreenshot, preview: T.kindPreview, creative: T.kindCreative, event: T.kindEvent };
   const sections: string[] = [];
   const toc: string[] = [];
   for (const g of ordered) {
     const anchor = `s-${g.store}-${g.platform}-${g.locale ?? 'all'}`.replace(/[^a-zA-Z0-9-]/g, '_');
-    const localeName = g.locale ? `${localeInfo(g.locale)?.name ?? g.locale} <small>${esc(g.locale)}</small>` : 'All locales';
+    const localeName = g.locale ? `${localeInfo(g.locale)?.name ?? g.locale} <small>${esc(g.locale)}</small>` : esc(T.allLocales);
     toc.push(`<a href="#${anchor}">${esc(STORE_LABEL[g.store] ?? g.store)} · ${esc(PLATFORM_LABEL[g.platform] ?? g.platform)} · ${esc(g.locale ?? 'all')}</a>`);
     const parts: string[] = [];
     const meta = g.items.filter((i) => i.kind === 'metadata');
     if (g.store === 'app-store' && g.locale && g.platform === 'ios' && (meta.length || g.items.some((i) => i.kind === 'screenshot'))) parts.push(searchAndProductPage(g.locale, g.items, meta[0]));
-    for (const m of meta) parts.push(`<h3>Metadata</h3>${metadataCard(m)}`);
+    for (const m of meta) parts.push(`<h3>${esc(T.metadata)}</h3>${metadataCard(m)}`);
     for (const kind of ['screenshot', 'preview', 'creative', 'event'] as const) {
       const media = g.items.filter((i) => i.kind === kind && i.abs);
       if (!media.length) continue;
@@ -298,22 +304,23 @@ export async function buildReport(ctx: Ctx, opts: { inventory?: Inventory } = {}
       for (const [tid, list] of byTarget) {
         list.sort((a, b) => (a.order ?? 0) - (b.order ?? 0) || natural(a.id, b.id));
         const t = list[0]!.targetInfo;
-        const head = `${esc(t?.label ?? tid)}${t ? ` · ${t.width}×${t.height}` : ''} · ${list.length} file${list.length === 1 ? '' : 's'}`;
+        const head = `${esc(t?.label ?? tid)}${t ? ` · ${t.width}×${t.height}` : ''} · ${list.length === 1 ? esc(T.file) : esc(fill(T.files, { n: list.length }))}`;
         blocks.push(`<div class="target"><div class="target-label">${head} <code class="muted">${esc(tid)}</code></div><div class="gallery">${(await Promise.all(list.map(mediaCard))).join('')}</div></div>`);
       }
-      parts.push(`<h3>${KIND_TITLE[kind]} <small class="muted">in upload order</small></h3>${blocks.join('')}`);
+      parts.push(`<h3>${esc(KIND_TITLE[kind]!)} <small class="muted">${esc(T.inUploadOrder)}</small></h3>${blocks.join('')}`);
     }
     for (const it of g.items.filter((i) => i.kind === 'event' && !i.abs)) parts.push(eventCard(it));
     const cpps = g.items.filter((i) => i.kind === 'cpp');
-    if (cpps.length) parts.push(`<h3>Custom Product Page suggestions</h3>${cpps.map(cppCard).join('')}`);
+    if (cpps.length) parts.push(`<h3>${esc(T.cppSuggestions)}</h3>${cpps.map(cppCard).join('')}`);
     sections.push(`<section class="locale" id="${anchor}" dir="ltr"><h2><span class="crumb">${esc(STORE_LABEL[g.store] ?? g.store)} › ${esc(PLATFORM_LABEL[g.platform] ?? g.platform)} ›</span> ${localeName}</h2>${parts.join('\n')}</section>`);
   }
 
   // ---------------------------------------------------------------- summary: exactly what goes where
+  const chosen = uploaderOf(ctx.config);
   const uploader =
-    ctx.config.upload.uploader === 'asset-library'
+    chosen === 'asset-library'
       ? 'deliver (text) + App Asset Library (media)'
-      : ctx.config.upload.uploader === 'asc'
+      : chosen === 'asc'
         ? 'asc CLI (text and media) + App Asset Library (iPhone Duo)'
         : 'fastlane deliver';
   const dest = (store: string, kind: string) =>
@@ -340,12 +347,12 @@ export async function buildReport(ctx: Ctx, opts: { inventory?: Inventory } = {}
     }
   }
   const approvalPill = approval.ok
-    ? `<span class="pill ok">Approved ${esc(approval.approval!.approvedAt)}</span>`
+    ? `<span class="pill ok">${esc(fill(T.approved, { date: approval.approval!.approvedAt }))}</span>`
     : approval.approval?.status === 'changes-requested'
-      ? `<span class="pill bad">Changes requested (${approval.approval.rejections.length})</span>`
+      ? `<span class="pill bad">${esc(fill(T.changesRequested, { n: approval.approval.rejections.length }))}</span>`
       : approval.approval
-        ? `<span class="pill bad">Approval outdated: ${approval.changed.length + approval.added.length + approval.removed.length} files changed</span>`
-        : '<span class="pill warn">Not approved yet</span>';
+        ? `<span class="pill bad">${esc(fill(T.approvalOutdated, { n: approval.changed.length + approval.added.length + approval.removed.length }))}</span>`
+        : `<span class="pill warn">${esc(T.notApproved)}</span>`;
 
   // ---------------------------------------------------------------- extras (not uploaded)
   const rivals = (competitors?.apps ?? []).slice(0, 8);
@@ -355,15 +362,15 @@ export async function buildReport(ctx: Ctx, opts: { inventory?: Inventory } = {}
   const firstLocale = ctx.config.app.primaryLocale;
   const own = inv.items.filter((i) => i.kind === 'screenshot' && i.locale === firstLocale && i.target === 'iphone-6.3').slice(0, 3);
   const generalIssues = general
-    .map((i) => `<tr class="${i.severity}"><td>${i.severity === 'error' ? 'ERROR' : i.severity === 'warning' ? 'WARNING' : 'info'}</td><td><code>${esc(i.code)}</code></td><td>${esc(i.locale ?? '')}</td><td>${esc(i.message)}${i.fix ? `<div class="muted small">→ ${esc(i.fix)}</div>` : ''}</td></tr>`)
+    .map((i) => `<tr class="${i.severity}"><td>${i.severity === 'error' ? T.error : i.severity === 'warning' ? T.warning : T.info}</td><td><code>${esc(i.code)}</code></td><td>${esc(i.locale ?? '')}</td><td>${esc(i.message)}${i.fix ? `<div class="muted small">→ ${esc(i.fix)}</div>` : ''}</td></tr>`)
     .join('');
   const summary = summarize(inv);
-  const boot = JSON.stringify({ hash: inv.overallHash, items: inv.items.length }).replace(/</g, '\\u003c');
+  const boot = JSON.stringify({ hash: inv.overallHash, items: inv.items.length, t: T }).replace(/</g, '\\u003c');
 
   const html = `<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<html lang="${esc(ctx.config.ui?.language ?? 'en')}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <link rel="icon" href="data:,">
-<title>Vitrin review — ${esc(profile?.app.displayName ?? '')}</title>
+<title>Vitrin ${esc(T.review)} — ${esc(profile?.app.displayName ?? '')}</title>
 <style>
 :root{--bg:#F5F5F7;--card:#FFF;--text:#1D1D1F;--muted:#6E6E73;--line:#E5E5EA;--ok:#248A3D;--warn:#B25000;--bad:#D70015;--accent:#0A6CFF;--okbar:#34C759;--warnbar:#FF9F0A;--badbar:#FF3B30}
 @media (prefers-color-scheme:dark){:root{--bg:#000;--card:#1C1C1E;--text:#F5F5F7;--muted:#98989D;--line:#38383A;--ok:#30D158;--warn:#FFB340;--bad:#FF6961;--accent:#4C9BFF}}
@@ -403,40 +410,41 @@ table.issues td{padding:6px;border-bottom:1px solid var(--line);vertical-align:t
 .lightbox{position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:10;display:flex;flex-direction:column;align-items:center;justify-content:center}.lightbox[hidden]{display:none}.lightbox .stage{overflow:auto;max-width:100vw;max-height:calc(100vh - 60px);display:flex}.lightbox img{max-width:96vw;max-height:calc(100vh - 70px);cursor:zoom-in;margin:auto}.lightbox.actual img{max-width:none;max-height:none;cursor:zoom-out}.lightbox .cap{color:#eee;font-size:13px;padding:8px;text-align:center}.lightbox button{position:absolute;top:12px;right:12px;background:#333;color:#fff;border-color:#555}
 @media(max-width:600px){.rival{grid-template-columns:1fr}.pp-shots img,.pp-shots video{height:220px}.fields th{width:auto;display:block;border-bottom:0}.fields td{display:block}.gallery{grid-template-columns:repeat(2,minmax(0,1fr))}}
 </style></head><body><main>
-<h1>${esc(profile?.app.displayName ?? 'Vitrin')} — review</h1>
-<div class="muted">${esc(profile?.app.bundleId ?? '')} · ${esc(app?.primaryCategory ?? '')}${app?.secondaryCategory ? ` / ${esc(app.secondaryCategory)}` : ''} · ${esc(app?.copyright ?? '')} · generated ${esc(new Date().toLocaleString('en-US'))}</div>
+<h1>${esc(profile?.app.displayName ?? 'Vitrin')} — ${esc(T.review)}</h1>
+<div class="muted">${esc(profile?.app.bundleId ?? '')} · ${esc(app?.primaryCategory ?? '')}${app?.secondaryCategory ? ` / ${esc(app.secondaryCategory)}` : ''} · ${esc(app?.copyright ?? '')} · ${esc(T.generated)} ${esc(new Date().toLocaleString(ctx.config.ui?.language ?? 'en-US'))}</div>
 <div class="summary">
   ${approvalPill}
-  <span class="pill ${validation?.ok ? 'ok' : 'bad'}">${validation ? (validation.ok ? 'Validation passed' : 'Validation failed') : 'validate has not run'}</span>
-  <span class="pill">${validation?.counts.error ?? '–'} errors</span><span class="pill">${validation?.counts.warning ?? '–'} warnings</span>
-  <span class="pill">${inv.items.filter((i) => i.kind === 'screenshot').length} screenshots</span><span class="pill">${inv.items.filter((i) => i.kind === 'preview').length} App Previews</span>
-  <span class="pill">${inv.items.filter((i) => i.kind === 'creative' || (i.kind === 'event' && i.abs)).length} creatives</span>
-  <span class="pill">Art direction: ${esc(manifest?.artDirection ?? '–')}</span>
+  <span class="pill ${validation?.ok ? 'ok' : 'bad'}">${esc(validation ? (validation.ok ? T.validationPassed : T.validationFailed) : T.validateNotRun)}</span>
+  <span class="pill">${esc(fill(T.errors, { n: validation?.counts.error ?? '–' }))}</span><span class="pill">${esc(fill(T.warnings, { n: validation?.counts.warning ?? '–' }))}</span>
+  <span class="pill">${esc(fill(T.screenshots, { n: inv.items.filter((i) => i.kind === 'screenshot').length }))}</span><span class="pill">${esc(fill(T.previews, { n: inv.items.filter((i) => i.kind === 'preview').length }))}</span>
+  <span class="pill">${esc(fill(T.creatives, { n: inv.items.filter((i) => i.kind === 'creative' || (i.kind === 'event' && i.abs)).length }))}</span>
+  <span class="pill">${esc(fill(T.artDirection, { name: manifest?.artDirection ?? '–' }))}</span>
 </div>
-<section><h2>What will be uploaded</h2>
-<p class="muted small">Every file below is part of the approval. Upload starts only after the user approves this exact content (overall hash below); any change afterwards requires a new review.</p>
-<div class="scroll"><table class="sum"><tr><th>Store</th><th>Platform</th><th>Locale</th><th>Type</th><th>Items</th><th>Size</th><th>Destination</th></tr>${sumRows.join('') || '<tr><td colspan="7" class="muted">Nothing to upload yet.</td></tr>'}</table></div>
-<p class="small">${summary.lines.slice(-2, -1).map(esc).join('')}<br>Overall hash: <span class="hash" id="overall-hash">${esc(inv.overallHash)}</span></p>
+<section><h2>${esc(T.whatWillBeUploaded)}</h2>
+<p class="muted small">${esc(T.uploadIntro)}</p>
+<div class="scroll"><table class="sum"><tr>${[T.colStore, T.colPlatform, T.colLocale, T.colType, T.colItems, T.colSize, T.colDestination].map((h) => `<th>${esc(h)}</th>`).join('')}</tr>${sumRows.join('') || `<tr><td colspan="7" class="muted">${esc(T.nothingToUpload)}</td></tr>`}</table></div>
+<p class="small">${summary.lines.slice(-2, -1).map(esc).join('')}<br>${esc(T.overallHash)} <span class="hash" id="overall-hash">${esc(inv.overallHash)}</span></p>
 <nav class="toc">${toc.join('')}</nav>
 </section>
-${sections.join('\n') || '<section><p class="muted">No assets found: run <code>vitrin write</code>, <code>vitrin design</code> and <code>vitrin video</code>.</p></section>'}
+${sections.join('\n') || `<section><p class="muted">${fill(esc(T.noAssets), { commands: '<code>vitrin write</code>, <code>vitrin design</code>, <code>vitrin video</code>' })}</p></section>`}
 ${await styleVariantsBlock(p.vitrin, ctx.config.app.locales, rel)}
-<section><h2>Competitor comparison <small>not uploaded</small></h2>
-<div class="rival"><div><b>${esc(profile?.app.displayName ?? '')}</b><div class="muted small">Our first 3 screenshots (${esc(firstLocale)})</div></div><div class="rival-shots">${own.map((f) => `<img src="${rel(f.abs!)}" loading="lazy" alt="">`).join('')}</div></div>
-${rivalRows || '<p class="muted">research has not run</p>'}
+<section><h2>${esc(T.competitorComparison)} <small>${esc(T.notUploaded)}</small></h2>
+<div class="rival"><div><b>${esc(profile?.app.displayName ?? '')}</b><div class="muted small">${esc(fill(T.ourFirstScreenshots, { locale: firstLocale }))}</div></div><div class="rival-shots">${own.map((f) => `<img src="${rel(f.abs!)}" loading="lazy" alt="">`).join('')}</div></div>
+${rivalRows || `<p class="muted">${esc(T.researchNotRun)}</p>`}
 </section>
-<section><h2>Other validation issues</h2><table class="issues">${generalIssues || '<tr><td>None — every issue is shown next to its item.</td></tr>'}</table></section>
+<section><h2>${esc(T.otherIssues)}</h2><table class="issues">${generalIssues || `<tr><td>${esc(T.noOtherIssues)}</td></tr>`}</table></section>
 </main>
 <div class="actions"><div class="in">
-  <div class="grow" id="act-text">To approve, tell Claude “approve” after looking through everything (it runs <code>vitrin approve --expect-hash ${esc(inv.overallHash.slice(0, 12))}</code>), or open this page with <code>vitrin review --serve</code> to approve or reject items with buttons.</div>
-  <button type="button" class="danger" id="send-rej" hidden>Send rejections</button>
-  <button type="button" class="primary" id="approve" hidden>Approve everything</button>
+  <div class="grow" id="act-text">${fill(esc(T.approveHint), { command: `<code>vitrin approve --expect-hash ${esc(inv.overallHash.slice(0, 12))}</code>`, serve: '<code>vitrin review --serve</code>' })}</div>
+  <button type="button" class="danger" id="send-rej" hidden>${esc(T.sendRejections)}</button>
+  <button type="button" class="primary" id="approve" hidden>${esc(T.approveAll)}</button>
 </div></div>
-<div class="lightbox" id="lb" hidden><button type="button" id="lb-close">Close (Esc)</button><div class="stage"><img id="lb-img" alt=""></div><div class="cap" id="lb-cap"></div></div>
+<div class="lightbox" id="lb" hidden><button type="button" id="lb-close">${esc(T.close)}</button><div class="stage"><img id="lb-img" alt=""></div><div class="cap" id="lb-cap"></div></div>
 <script>
 const VITRIN = ${boot};
 (() => {
   const $ = (s, r = document) => r.querySelector(s);
+  const t = (k, v = {}) => VITRIN.t[k].replace(/\{(\w+)\}/g, (m, n) => (n in v ? String(v[n]) : m));
   // Zoom: click a thumbnail for the full-size file, click again for 100 %, arrows to step, Esc to close.
   const lb = $('#lb'), img = $('#lb-img'), cap = $('#lb-cap');
   const links = [...document.querySelectorAll('a.zoom')];
@@ -457,8 +465,8 @@ const VITRIN = ${boot};
   const refresh = () => {
     approve.disabled = rejected.size > 0;
     send.hidden = rejected.size === 0;
-    send.textContent = 'Send ' + rejected.size + ' rejection' + (rejected.size === 1 ? '' : 's');
-    text.textContent = rejected.size ? rejected.size + ' item(s) marked for changes. Add a comment to each, then send them to Claude.' : 'Look through every item. Approve everything to allow the upload of exactly this content, or reject items with a comment.';
+    send.textContent = t('sendNRejections', { n: rejected.size });
+    text.textContent = rejected.size ? t('markedForChanges', { n: rejected.size }) : t('lookThrough');
   };
   const post = async (url, body) => {
     const r = await fetch(url, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
@@ -472,20 +480,20 @@ const VITRIN = ${boot};
     refresh();
     document.querySelectorAll('[data-reject]').forEach((b) => b.addEventListener('click', () => {
       const box = b.closest('[data-item]'), ta = $('.comment', box), id = b.dataset.reject;
-      if (rejected.has(id)) { rejected.delete(id); box.classList.remove('rejected'); ta.hidden = true; b.textContent = 'Reject…'; }
-      else { rejected.set(id, ta); box.classList.add('rejected'); ta.hidden = false; ta.focus(); b.textContent = 'Undo reject'; }
+      if (rejected.has(id)) { rejected.delete(id); box.classList.remove('rejected'); ta.hidden = true; b.textContent = t('reject'); }
+      else { rejected.set(id, ta); box.classList.add('rejected'); ta.hidden = false; ta.focus(); b.textContent = t('undoReject'); }
       refresh();
     }));
     approve.addEventListener('click', async () => {
-      if (!confirm('Approve all ' + VITRIN.items + ' items for upload?')) return;
-      try { const j = await post('/api/approve', { overallHash: VITRIN.hash }); text.textContent = 'Approved (' + j.overallHash.slice(0, 12) + '…). You can close this tab; Claude continues with the upload.'; approve.disabled = true; }
-      catch (e) { alert('Not approved: ' + e.message); }
+      if (!confirm(t('confirmApprove', { n: VITRIN.items }))) return;
+      try { const j = await post('/api/approve', { overallHash: VITRIN.hash }); text.textContent = t('approvedClose', { hash: j.overallHash.slice(0, 12) }); approve.disabled = true; }
+      catch (e) { alert(t('notApprovedError', { error: e.message })); }
     });
     send.addEventListener('click', async () => {
       const rejections = [...rejected].map(([item, ta]) => ({ item, comment: ta.value.trim() }));
-      if (rejections.some((r) => !r.comment)) { alert('Add a comment to every rejected item.'); return; }
-      try { await post('/api/reject', { overallHash: VITRIN.hash, rejections }); text.textContent = 'Sent ' + rejections.length + ' rejection(s) to Claude. You can close this tab.'; send.disabled = true; approve.disabled = true; }
-      catch (e) { alert('Not sent: ' + e.message); }
+      if (rejections.some((r) => !r.comment)) { alert(t('commentEach')); return; }
+      try { await post('/api/reject', { overallHash: VITRIN.hash, rejections }); text.textContent = t('sentRejections', { n: rejections.length }); send.disabled = true; approve.disabled = true; }
+      catch (e) { alert(t('notSent', { error: e.message })); }
     });
   }).catch(() => {});
 })();
@@ -509,5 +517,5 @@ async function styleVariantsBlock(vitrinDir: string, locales: string[], rel: (f:
       .join('')}</div>`);
   }
   if (!rows.length) return '';
-  return `<section><h2>Video styles <small>vitrin video --styles · not uploaded</small></h2>${rows.join('')}</section>`;
+  return `<section><h2>${esc(T.videoStyles)} <small>vitrin video --styles · ${esc(T.notUploaded)}</small></h2>${rows.join('')}</section>`;
 }

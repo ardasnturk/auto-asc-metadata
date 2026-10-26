@@ -6,7 +6,7 @@
 
 Vitrin reads a mobile app project, researches competitors and keywords, and produces everything a store listing needs: ASO-friendly metadata, screenshots, product page and search creatives, and App Preview videos. It covers the App Store (iPhone, iPad, iPhone Duo, Mac, Apple Watch, Apple TV, Vision Pro) and Google Play. Swift/SwiftUI apps are the primary case; Flutter, React Native, Expo and native Android projects are detected and handled too. Every image is rendered from HTML and every video is rendered in code with Remotion. Vitrin validates all of it against the stores' current rules, shows you everything in a review gallery, and uploads only what you approved, with fastlane and the store APIs.
 
-The whole flow runs inside Claude Code through the `/vitrin` skill. Claude makes the creative decisions (copy, keyword selection, art direction, shot list, video plan) and asks you the choices that are yours: which platforms, which content, which design, and whether to keep the generated files. The TypeScript CLI does the deterministic work (detection, data collection, rendering, validation, upload). No additional LLM API key is required.
+The whole flow runs inside Claude Code through the `/vitrin` skill. Claude makes the creative decisions (copy, keyword selection, art direction, shot list, video plan) and asks you the choices that are yours: the language Vitrin talks to you in, which platforms, which content, how to upload (asc CLI or fastlane), which design, which store languages and formats, and whether to keep the generated files. The TypeScript CLI does the deterministic work (detection, data collection, rendering, validation, upload). No additional LLM API key is required.
 
 > Vitrin is an independent open-source project. It is not affiliated with, endorsed by, or sponsored by Apple Inc. App Store, App Store Connect, iPhone, iPad and other Apple marks are trademarks of Apple Inc.
 
@@ -23,8 +23,10 @@ Apple's rules as of October 2026, and the points that could not be verified, are
 - **Quality gate** — every rendered image is measured in the browser: device height ratio, largest empty band, widest headline word, worst-pixel headline contrast, visual layer count and a thumbnail legibility test.
 - **App Previews and creatives** — Remotion compositions in four styles (`classic`, `showcase`, `kinetic`, `energetic`) with six scene types, the same device frames as the screenshots, portrait iPhone/iPad and landscape Mac/Apple TV previews, normalized with ffmpeg to H.264 High@4.0, 30 fps CFR, stereo AAC; header and search loops; In-App Event cards.
 - **Review and approval** — `vitrin review --serve` opens a local gallery of everything that would be uploaded (every image, video and text, per store, platform, locale and target, with validation issues inline). You approve everything or reject single items with a comment; the approval records a hash of every file, and any later change requires approving again.
-- **Upload** — one fastlane `deliver` run per Apple platform for complete sets, `supply` for Google Play; single display types are replaced through the App Store Connect API (one screenshot or preview set per locale, the App Asset Library for iPhone Duo and creatives), plus Custom Product Pages and In-App Events. Optionally, `upload.uploader: asc` uses the [asc CLI](https://github.com/rorkai/App-Store-Connect-CLI) (`brew install asc`) instead of fastlane for App Store uploads, with no Ruby needed. Partial runs ("only watchOS screenshots", "only the App Preview") never delete or overwrite anything you did not select. Always a dry-run plan first, explicit approval, and a read-back after upload. Display types and Asset Library names follow Apple's App Store Connect API 4.5.1 OpenAPI spec.
+- **Upload** — one fastlane `deliver` run per Apple platform for complete sets, `supply` for Google Play; single display types are replaced through the App Store Connect API (one screenshot or preview set per locale, the App Asset Library for iPhone Duo and creatives), plus Custom Product Pages and In-App Events. You choose the App Store uploader: fastlane `deliver` or the [asc CLI](https://github.com/rorkai/App-Store-Connect-CLI) (`brew install asc`, no Ruby needed); `vitrin uploader` shows which is installed. Partial runs ("only watchOS screenshots", "only the App Preview") never delete or overwrite anything you did not select. Always a dry-run plan first, explicit approval, and a read-back after upload. Display types and Asset Library names follow Apple's App Store Connect API 4.5.1 OpenAPI spec.
 - **Tidy repository** — Vitrin keeps a managed block in `.gitignore` so generated files are never committed. After a checked upload, `vitrin finalize` keeps the uploaded set in `metadata/` or deletes it, as you choose, and always removes research downloads.
+- **Your language** — Vitrin talks English by default; the skill asks first and then writes every question, summary and the review gallery in the language you pick (English and Turkish built in, any other language translated by Claude).
+- **Fast first run** — four design samples in one language and one format come first; only after you pick a design and the store languages and formats is the rest captured and rendered.
 - **Idempotent, resumable stages** — `.vitrin/state.json` tracks input hashes so unchanged stages are skipped.
 
 ## Requirements
@@ -32,7 +34,7 @@ Apple's rules as of October 2026, and the points that could not be verified, are
 - macOS (simulators, Vision OCR, Mac window capture)
 - Node.js ≥ 22 (pnpm only for development)
 - Xcode (with `simctl`) for Apple platforms
-- Ruby + Bundler (fastlane ≥ 2.241.1 is pinned in the generated `Gemfile`) — or, for App Store uploads without Ruby, the asc CLI (`brew install asc`) with `upload.uploader: asc`; Google Play still needs fastlane
+- For App Store uploads, one of: the asc CLI (`brew install asc`, no Ruby) or Ruby + Bundler with fastlane ≥ 2.241.1 (pinned in the generated `Gemfile`); the skill asks which. Google Play always uses fastlane
 - ffmpeg / ffprobe
 - For cross-platform or Android apps: the Flutter SDK, Node/CocoaPods for React Native and Expo, or the Android SDK (`adb`, `emulator`, an AVD) as needed
 - [Claude Code](https://claude.com/claude-code) for the `/vitrin` skill
@@ -64,25 +66,26 @@ Open Claude Code in your app's repository and run:
 /vitrin
 ```
 
-On a new repository the skill runs `vitrin init` (config, `.env.example`, `.gitignore` block, fastlane templates). It asks which platforms and which content to produce, shows you sample designs to choose from, walks through every stage, writes the creative inputs itself, shows you everything in the review gallery, stops when it needs your keys or your approval, and never uploads or submits without an explicit "yes". If `/vitrin` is taken by another command, use `/vitrin:vitrin`.
+The skill first asks which language to talk in (English by default). On a new repository it runs `vitrin init` (config, `.env.example`, `.gitignore` block). It asks which platforms and which content to produce, and whether App Store uploads should use the asc CLI or fastlane (it checks what is installed). It then renders four sample designs in one language (English when the app has it) for you to choose from, and only after that asks which store languages and formats to produce. It walks through every stage, writes the creative inputs itself, shows you everything in the review gallery, asks for your keys only at the upload, and never uploads or submits without an explicit "yes". If `/vitrin` is taken by another command, use `/vitrin:vitrin`.
 
 ## Commands
 
 | Command | Output |
 | --- | --- |
-| `vitrin init` | `vitrin.config.yaml`, `.env.example`, the managed `.gitignore` block, `Gemfile` (fastlane ≥ 2.241.1), `fastlane/Fastfile` |
+| `vitrin init [--language tr] [--uploader asc\|deliver]` | `vitrin.config.yaml`, `.env.example`, the managed `.gitignore` block; `Gemfile` (fastlane ≥ 2.241.1) and `fastlane/Fastfile` only once fastlane is chosen or for Google Play |
 | `vitrin doctor [--play-live]` | Tools, `.env`, `.p8`, live JWT test, app record, editable version, URLs, Asset Library refData; the Google Play key for Android apps |
 | `vitrin analyze` | `.vitrin/app_profile.json` — project kind, platforms, targets, locales, entitlements, permissions, IAP, App Intents, colors, evidence-backed features |
 | `vitrin platforms [--json]` | Detected platforms with evidence and the targets each would produce |
-| `vitrin select --platforms … --assets …` | Stores this run's platforms and content kinds (`metadata`, `screenshots`, `previews`, `creatives`, `events`) in `vitrin.config.yaml` |
+| `vitrin select --platforms … --assets … --targets … --locales … --language … --uploader …` | Stores the user's choices in `vitrin.config.yaml`: platforms, content kinds (`metadata`, `screenshots`, `previews`, `creatives`, `events`), formats (target ids), store locales, the conversation language and the App Store uploader |
+| `vitrin uploader [--json]` | Whether the asc CLI and fastlane are installed, for the uploader question |
 | `vitrin research` | `.vitrin/competitors.json`, `.vitrin/keywords/<locale>.json` — iTunes Search/Lookup, RSS, reviews, OCR, palettes, competition/popularity |
 | `vitrin write` | Validates Claude's metadata (App Store and Google Play) → `fastlane/metadata/` |
 | `vitrin capture` | Raw screenshots and recordings (simulators, Mac window, Android emulator) → `.vitrin/raw/<locale>/<family>/` |
-| `vitrin design --samples` | The first shots in several style presets plus a labelled contact sheet → `.vitrin/design-samples/` (comparison only) |
+| `vitrin design --samples [--locale …]` | The first two shots in four style presets, in one language and the main iPhone format, plus a labelled contact sheet → `.vitrin/design-samples/` (comparison only) |
 | `vitrin design` | HTML → Playwright → `fastlane/screenshots/<locale>/NN_<slug>_<target>.png`, `.vitrin/creative/`, quality gate |
 | `vitrin video [--styles all]` | Remotion → `fastlane/app-previews/<locale>/…mp4`, header/search loops |
 | `vitrin validate` | `.vitrin/validation.json` (exit code 1 on errors) |
-| `vitrin review [--serve]` | `.vitrin/report.html`, the gallery of everything that would be uploaded; `--serve` adds approve and reject buttons on `127.0.0.1` |
+| `vitrin review [--serve] [--print-labels]` | `.vitrin/report.html`, the gallery of everything that would be uploaded, in `ui.language`; `--serve` adds approve and reject buttons on `127.0.0.1`; `--print-labels` prints the words to translate into `.vitrin/i18n/<language>.json` |
 | `vitrin approve [--expect-hash …] [--reject … --comment …]` | Records the user's approval (or rejections) in `.vitrin/approval.json` |
 | `vitrin upload [--dry-run]` | Plan with replaced and untouched sets; after approval: deliver per Apple platform / single display types (ASC API, Asset Library) / asc / supply / CPP / In-App Events, then read-back |
 | `vitrin finalize --checked [--keep \| --discard]` | After a checked upload: keeps the uploaded set in `metadata/` or deletes it; always removes research downloads |

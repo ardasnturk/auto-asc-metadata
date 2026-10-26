@@ -2,6 +2,22 @@
 
 All notable changes to this project are documented in this file. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## 0.5.0 — 2026-10-26
+
+### Added — Your language, your uploader, a faster first run
+- **Conversation language:** the `/vitrin` skill first asks which language to talk in (English by default). Questions, progress notes, summaries and the missing-keys message follow it, and so does the review gallery: English and Turkish are built in, any other language is translated by Claude into `.vitrin/i18n/<language>.json` (`vitrin review --print-labels` prints the template). Stored as `ui.language` (`vitrin init --language`, `vitrin select --language`). The store copy stays a separate choice.
+- **Uploader choice:** `vitrin uploader [--json]` shows whether the asc CLI and fastlane (≥ 2.241.1) are installed, and the skill asks which one uploads the App Store metadata and media instead of assuming fastlane. Stored with `vitrin select --uploader asc|deliver`. A real upload without a choice stops and asks (exit 2).
+- **Design samples first, in one language:** four designs (A–D) of the first two shots are rendered in one language (English when the app has it, else the primary locale) and one format (the main iPhone size), captured on their own (`vitrin capture --locale … --family …`, `vitrin design --samples [--locale …]`). Only after the user picks a design does the skill ask which store languages and which formats to produce.
+- **Languages and formats:** `vitrin select --locales en-US,tr` sets the store languages of the run and `vitrin select --targets iphone-6.9,ipad-13` limits the formats. `vitrin platforms --json` now lists `formats` (with sizes and the required ones), `locales`, the sample locale/format, the language and the uploader. Unselected formats are neither rendered nor reviewed, and their sets in App Store Connect stay untouched (a format-limited run never uses deliver's overwrite).
+
+### Changed
+- `vitrin init` no longer writes a Gemfile and Fastfile up front; they are written once fastlane is chosen (or for Google Play supply). It no longer pushes `.env` keys at the start: keys are asked for at the upload gate. `doctor` reports a missing uploader choice as a warning and treats Ruby/fastlane as required only when fastlane will be used.
+- `upload.uploader` has no default any more (unset behaves like `deliver` for dry runs).
+- The skill flow is reordered: language → platforms → content → uploader → design samples → languages and formats → research, write, capture and render for the chosen set only.
+
+### Fixed
+- `vitrin select` with `all` for a selection key that was never set no longer fails.
+
 ## 0.4.0 — 2026-10-26
 
 ### Added — Every platform, your choices, approval before upload

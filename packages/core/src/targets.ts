@@ -33,7 +33,8 @@ const warned = new Set<string>();
  * Targets to produce for this app, from data/targets.json:
  *
  * 1. `targets.disable` always wins;
- * 2. `selection` (the user's choice for this run) limits platforms and asset kinds — it beats `targets.enable`;
+ * 2. `selection` (the user's choice for this run) limits platforms, asset kinds and formats (`selection.targets`) —
+ *    it beats `targets.enable`; `allFormats` ignores `selection.targets` (upload uses it to tell a partial set);
  * 3. `targets.enable` forces a target on (even on a platform the analyzer missed);
  * 4. otherwise the target must be `defaultEnabled` (or be a preview/event the user explicitly selected) and its
  *    platform must be selected or detected;
@@ -41,7 +42,7 @@ const warned = new Set<string>();
  *    Google Play tablets `supportsAndroidTablet`;
  * 6. without `selection.assets`, App Previews follow `video.enabled`.
  */
-export function enabledTargets(config: VitrinConfig, profile?: Pick<AppProfile, 'app'>, opts: { quiet?: boolean } = {}): RenderTarget[] {
+export function enabledTargets(config: VitrinConfig, profile?: Pick<AppProfile, 'app'>, opts: { quiet?: boolean; allFormats?: boolean } = {}): RenderTarget[] {
   const app = profile?.app as ProfileApp;
   const { platforms, undetected } = selectedPlatforms(config, profile);
   for (const p of opts.quiet ? [] : undetected) {
@@ -50,8 +51,10 @@ export function enabledTargets(config: VitrinConfig, profile?: Pick<AppProfile, 
     log.warn(`Selected platform “${p}” was not detected in the project: its assets are included, but capture needs a build for it (capture.prebuilt.${p}) or manual raw captures.`);
   }
   const assets = config.selection?.assets;
+  const formats = opts.allFormats ? undefined : config.selection?.targets;
   return loadTargets().filter((t) => {
     if (config.targets.disable.includes(t.id)) return false;
+    if (formats?.length && !formats.includes(t.id)) return false;
     if (config.selection?.platforms?.length && !platforms.includes(t.platform)) return false;
     if (assets && !assets.includes(ASSET_OF_KIND[t.kind])) return false;
     if (config.targets.enable.includes(t.id)) return true;

@@ -622,6 +622,12 @@ describe('multi-platform plan', () => {
     expect(prev).toMatchObject({ metadata: false, screenshots: 'skip', previews: 'replace-all', previewTargets: ['preview-iphone'] });
   });
 
+  it('replaces only the chosen formats (selection.targets) and never overwrites the rest', () => {
+    const ios = scopeWith({ platforms: ['ios', 'watchos'], targets: ['watch-ultra'] }).apple.find((s) => s.platform === 'ios')!;
+    expect(ios).toMatchObject({ screenshots: 'per-display-type', screenshotTargets: ['watch-ultra'] });
+    expect(ios.untouched.join('\n')).toMatch(/only watch-ultra replaced; iphone-6.9/);
+  });
+
   it('plans a watch-only run without touching text, iPhone or other platforms', async () => {
     const asked: string[] = [];
     const inner = ascFetch();

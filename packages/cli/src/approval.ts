@@ -298,9 +298,10 @@ export async function buildInventory(ctx: Ctx): Promise<Inventory> {
 const ASSET_OF: Record<ReviewItemKind, AssetKind> = { screenshot: 'screenshots', preview: 'previews', creative: 'creatives', event: 'events', metadata: 'metadata', cpp: 'metadata', other: 'screenshots' };
 
 /** Whether an item is part of this run's selection (unset selection = everything). */
-export function isSelected(ctx: Pick<Ctx, 'config'>, item: Pick<ReviewItem, 'kind' | 'platform'>): boolean {
+export function isSelected(ctx: Pick<Ctx, 'config'>, item: Pick<ReviewItem, 'kind' | 'platform'> & { target?: string }): boolean {
   const sel = ctx.config.selection ?? {};
   if (sel.assets && !sel.assets.includes(ASSET_OF[item.kind])) return false;
+  if (sel.targets?.length && item.target && !sel.targets.includes(item.target)) return false;
   if (sel.platforms && item.platform !== 'any' && !(sel.platforms as string[]).includes(item.platform)) return false;
   return true;
 }
