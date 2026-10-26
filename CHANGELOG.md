@@ -2,6 +2,25 @@
 
 All notable changes to this project are documented in this file. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## 0.4.0 — 2026-10-26
+
+### Added — Every platform, your choices, approval before upload
+- **Project kinds:** Flutter, React Native, Expo and native Android projects next to native Xcode (Swift stays the primary case). Names, ids, versions and locales are read from `pubspec.yaml`, `app.json`/`app.config.*`, Gradle files and Android resources.
+- **Platforms:** iPhone, iPad, iPhone Duo (Xcode 27.1+ heuristic), macOS incl. Mac Catalyst, watchOS, tvOS, visionOS and Android are detected with evidence. New targets: `mac-16x10`, `watch-ultra`, `watch-series`, `appletv-4k`, `vision-pro`, `preview-mac`, `preview-tv`, `play-phone`, `play-tablet-7`, `play-tablet-10`, `play-feature-graphic`, `play-icon`.
+- **Choices:** `vitrin platforms --json` and `vitrin select --platforms … --assets …`; the skill asks which platforms and which content (metadata, screenshots, previews, creatives, events) to produce, and every stage, the review and the upload follow that selection.
+- **Build and capture per platform:** xcodebuild, `flutter build`, CocoaPods + xcodebuild, `expo prebuild`, Gradle; watchOS/tvOS/visionOS simulators, Mac window capture, Android emulator with System UI demo mode. Demo mode docs for Swift, Flutter, React Native/Expo and Kotlin.
+- **Screenshot design:** 12 style presets (adapted from ParthJadhav/app-store-screenshots, MIT) tinted with the brand colors, headline-first layouts, varied framing, realistic HTML/CSS device frames for every family, Google Play feature graphic and icon templates, `feature-wall` and `mosaic` closing shots, and a measured quality gate (device ratio, empty bands, word width, worst-pixel contrast, layers, thumbnail test).
+- **Design samples:** `vitrin design --samples` renders the first shots in several styles plus a labelled contact sheet; the skill asks which design to use before the full set.
+- **Remotion:** the same frames in App Previews, landscape Mac and Apple TV previews (1920×1080).
+- **Review gallery and approval:** `vitrin review --serve` (approve or reject items with comments on `127.0.0.1`), `vitrin approve`, `.vitrin/approval.json` with a hash of every uploaded file; a real upload refuses unapproved or changed content, `--yes` included.
+- **Google Play:** listing schema, Play locale mapping, Play text and image rules, export to the `supply` layout, `vitrin_play_upload` lane (listing and images only), Play key checks in doctor.
+- **Multi-platform App Store upload:** one deliver run per Apple platform; partial selections are replaced per display type and never delete unselected sets; the dry-run plan lists what is replaced and what stays untouched.
+- **Tidy repository:** a managed `.gitignore` block kept up to date by every command; `vitrin finalize` keeps the uploaded set in `metadata/` or deletes it, as the user chooses, and always removes research downloads.
+
+### Changed
+- The skill moved to `skills/vitrin/` (`npx skills add ardasnturk/vitrin` can find it) and the repository links use the Vitrin name (`ardasnturk/vitrin`).
+- The `/vitrin` flow asks for platforms, content, design and retention, and shows everything for approval before upload.
+
 ## 0.3.0 — 2026-10-24
 
 ### Added — Animated App Previews

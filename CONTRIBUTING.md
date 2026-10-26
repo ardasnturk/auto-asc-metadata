@@ -37,13 +37,13 @@ Playwright's Chromium is needed for `design` (`pnpm --filter @vitrin/render exec
 | `packages/cli` | Commands, pipeline stages, Claude briefs, simulator capture, HTML review report |
 | `packages/schemas` | zod schemas for every JSON file exchanged with Claude |
 | `packages/core` | Masking logger, exec, state store, config/.env loading, data files |
-| `packages/analyzer` | Xcode project parsing (pbxproj, plists, entitlements, catalogs, StoreKit, code signals) |
+| `packages/analyzer` | Project kind (native, Flutter, React Native, Expo, Android) and platform detection; Xcode/Gradle parsing, catalogs, StoreKit, code signals |
 | `packages/research` | iTunes Search/Lookup, RSS, reviews, Vision OCR, palettes, keyword scoring |
 | `packages/validate` | Text, image, video and claim ↔ evidence rules |
 | `packages/render` | HTML screenshot templates rendered with Playwright + sharp |
 | `packages/video` | Remotion compositions and the plan → scene builder |
-| `packages/upload` | fastlane bridge, App Store Connect API client, upload plan |
-| `skill/` | The `/vitrin` Claude Code skill and its references |
+| `packages/upload` | fastlane deliver/supply bridge, ASC and Google Play clients, partial-upload plan and read-back |
+| `skills/vitrin/` | The `/vitrin` Claude Code skill, its references and style presets |
 | `data/` | Render targets, locales, storefront languages, forbidden terms |
 | `examples/Ritim` | SwiftUI sample app used for end-to-end runs |
 
