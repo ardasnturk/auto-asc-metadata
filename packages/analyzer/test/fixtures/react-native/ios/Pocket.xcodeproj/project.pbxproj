@@ -1,0 +1,15 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	objectVersion = 77;
+	objects = {
+		T0 /* Pocket */ = { isa = PBXNativeTarget; buildConfigurationList = TL0; name = "Pocket"; productName = "Pocket"; productType = "com.apple.product-type.application"; };
+		TL0 = { isa = XCConfigurationList; buildConfigurations = ( TC0D, TC0R ); };
+		TC0D = { isa = XCBuildConfiguration; name = Debug; buildSettings = { PRODUCT_BUNDLE_IDENTIFIER = "com.pocketbudget"; SDKROOT = "iphoneos"; TARGETED_DEVICE_FAMILY = "1"; INFOPLIST_FILE = "Pocket/Info.plist"; MARKETING_VERSION = "1.4.0"; CURRENT_PROJECT_VERSION = "7"; IPHONEOS_DEPLOYMENT_TARGET = "15.1"; }; };
+		TC0R = { isa = XCBuildConfiguration; name = Release; buildSettings = { PRODUCT_BUNDLE_IDENTIFIER = "com.pocketbudget"; SDKROOT = "iphoneos"; TARGETED_DEVICE_FAMILY = "1"; INFOPLIST_FILE = "Pocket/Info.plist"; MARKETING_VERSION = "1.4.0"; CURRENT_PROJECT_VERSION = "7"; IPHONEOS_DEPLOYMENT_TARGET = "15.1"; }; };
+		PL = { isa = XCConfigurationList; buildConfigurations = ( PC ); };
+		PC = { isa = XCBuildConfiguration; name = Release; buildSettings = {  }; };
+		P0 /* Project object */ = { isa = PBXProject; attributes = { LastUpgradeCheck = 1600; }; buildConfigurationList = PL; developmentRegion = en; knownRegions = ( en, Base, ); targets = ( T0, ); };
+	};
+	rootObject = P0 /* Project object */;
+}

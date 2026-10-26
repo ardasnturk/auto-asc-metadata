@@ -1,0 +1,15 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	objectVersion = 77;
+	objects = {
+		T0 /* Atlas */ = { isa = PBXNativeTarget; buildConfigurationList = TL0; name = "Atlas"; productName = "Atlas"; productType = "com.apple.product-type.application"; };
+		TL0 = { isa = XCConfigurationList; buildConfigurations = ( TC0D, TC0R ); };
+		TC0D = { isa = XCBuildConfiguration; name = Debug; buildSettings = { PRODUCT_BUNDLE_IDENTIFIER = "com.example.atlas"; SDKROOT = "auto"; SUPPORTED_PLATFORMS = "iphoneos iphonesimulator xros xrsimulator"; TARGETED_DEVICE_FAMILY = "1,2,7"; SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = "YES"; }; };
+		TC0R = { isa = XCBuildConfiguration; name = Release; buildSettings = { PRODUCT_BUNDLE_IDENTIFIER = "com.example.atlas"; SDKROOT = "auto"; SUPPORTED_PLATFORMS = "iphoneos iphonesimulator xros xrsimulator"; TARGETED_DEVICE_FAMILY = "1,2,7"; SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = "YES"; }; };
+		PL = { isa = XCConfigurationList; buildConfigurations = ( PC ); };
+		PC = { isa = XCBuildConfiguration; name = Release; buildSettings = {  }; };
+		P0 /* Project object */ = { isa = PBXProject; attributes = { LastUpgradeCheck = 1600; }; buildConfigurationList = PL; developmentRegion = en; knownRegions = ( en, Base, ); targets = ( T0, ); };
+	};
+	rootObject = P0 /* Project object */;
+}

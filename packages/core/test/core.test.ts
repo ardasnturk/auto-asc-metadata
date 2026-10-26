@@ -63,10 +63,10 @@ describe('targets', () => {
     expect(phone).not.toContain('ipad-13');
     const pad = enabledTargets(config, { app: { supportsIPad: true } as never }).map((t) => t.id);
     expect(pad).toContain('ipad-13');
-    const custom = VitrinConfig.parse({ app: {}, urls: {}, targets: { disable: ['duo-inner'], enable: ['mac'] } });
+    const custom = VitrinConfig.parse({ app: {}, urls: {}, targets: { disable: ['duo-inner'], enable: ['mac-16x10'] } });
     const ids = enabledTargets(custom, { app: { supportsIPad: false } as never }).map((t) => t.id);
     expect(ids).not.toContain('duo-inner');
-    expect(ids).toContain('mac');
+    expect(ids).toContain('mac-16x10');
   });
 });
 

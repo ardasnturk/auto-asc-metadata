@@ -1,11 +1,13 @@
 import { exec, existsSync, listFiles, xcodeToAsc } from '@vitrin/core';
-import type { AppProfile, Evidence, Feature, ProjectTarget } from '@vitrin/schemas';
+import type { AppProfile, Evidence, Feature, Platform, ProjectTarget } from '@vitrin/schemas';
 import { readdir, readFile } from 'node:fs/promises';
 import { basename, dirname, join, relative } from 'node:path';
 import { scanAssetCatalogs } from './assets.js';
-import { expandSetting, readPbxproj, settingsOf, type PbxTarget } from './pbxproj.js';
+import { detectFramework, readAndroidProject } from './framework.js';
+import { expandSetting, readPbxproj, settingsOf, type PbxProject, type PbxTarget } from './pbxproj.js';
+import { detectDuo, deviceFamilies, sortPlatforms, targetPlatforms } from './platforms.js';
 import { readPlistFile } from './plist-file.js';
-import { scanSource } from './signals.js';
+import { CROSS_PLATFORM_RULES, scanSource } from './signals.js';
 
 export interface ProjectLocation {
   xcodeproj?: string;
@@ -55,16 +57,11 @@ const PRODUCT_KIND: Record<string, ProjectTarget['kind']> = {
   'com.apple.product-type.bundle.ui-testing': 'ui-tests',
 };
 
-function deviceFamilies(settings: Record<string, string>): ProjectTarget['devices'] {
-  const fam = settings.TARGETED_DEVICE_FAMILY ?? '';
-  const map: Record<string, ProjectTarget['devices'][number]> = { '1': 'iphone', '2': 'ipad', '3': 'tv', '4': 'watch', '6': 'mac', '7': 'vision' };
-  const out = fam
-    .split(/[,\s]+/)
-    .map((x) => map[x.trim()])
-    .filter((x): x is ProjectTarget['devices'][number] => Boolean(x));
-  if (settings.SUPPORTS_MACCATALYST === 'YES' && !out.includes('mac')) out.push('mac');
-  return out;
-}
+/** Platform → device name, so `targets[].devices` also covers SDKROOT-only targets (macOS, tvOS, watchOS, visionOS). */
+const PLATFORM_DEVICE: Partial<Record<Platform, ProjectTarget['devices'][number]>> = { macos: 'mac', tvos: 'tv', watchos: 'watch', visionos: 'vision' };
+
+/** Product types whose platforms count as "the app ships here" (not extensions, tests or the watch container stub). */
+const SHIPPING = new Set(['com.apple.product-type.application', 'com.apple.product-type.application.watchapp2']);
 
 export interface AnalyzeOptions {
   root: string;
@@ -73,10 +70,23 @@ export interface AnalyzeOptions {
   bundleIdOverride?: string;
 }
 
+/** Literal build setting / plist value, or undefined when it is empty or still references a variable. */
+function literal(v: unknown): string | undefined {
+  return typeof v === 'string' && v.trim() && !v.includes('$') ? v.trim() : undefined;
+}
+
+const SKIP_DIRS = ['node_modules', '.git', 'DerivedData', 'build', '.build', 'Pods', '.vitrin', 'fastlane', '.dart_tool', '.gradle', '.expo'];
+
 export async function analyzeProject(opts: AnalyzeOptions): Promise<AppProfile> {
   const { root } = opts;
-  const rel = (p: string) => relative(root, p);
-  const loc = await locateProject(root, opts.projectHint);
+  const rel = (p: string) => relative(root, p) || '.';
+  const fw = await detectFramework(root);
+
+  // ---------- Xcode host project ----------
+  // Native: anywhere under root (depth ≤ 3). Frameworks: inside their iOS folder only, so Pods/ or
+  // node_modules projects are never mistaken for the app.
+  const iosBase = fw.kind === 'native' ? root : fw.iosDir ? join(root, fw.iosDir) : undefined;
+  const loc: ProjectLocation = opts.projectHint ? await locateProject(root, opts.projectHint) : iosBase && existsSync(iosBase) ? await locateProject(iosBase) : {};
   let xcodeproj = loc.xcodeproj;
   if (!xcodeproj && loc.workspace) {
     // Use the first project referenced by the workspace next to it.
@@ -84,43 +94,13 @@ export async function analyzeProject(opts: AnalyzeOptions): Promise<AppProfile> 
     const p = siblings.find((s) => s.endsWith('.xcodeproj'));
     if (p) xcodeproj = join(dirname(loc.workspace), p);
   }
-  if (!xcodeproj || !existsSync(join(xcodeproj, 'project.pbxproj'))) {
-    throw new Error(`No Xcode project found (${root}). Set its path with app.project in vitrin.config.yaml.`);
-  }
-  const projDir = dirname(xcodeproj);
-  const pbx = readPbxproj(await readFile(join(xcodeproj, 'project.pbxproj'), 'utf8'));
-  const srcRoot = projDir;
-
-  const extra = { SRCROOT: srcRoot, PROJECT_DIR: srcRoot, PROJECT_NAME: basename(xcodeproj, '.xcodeproj') };
-  const targets: ProjectTarget[] = [];
-  const pbxByName = new Map<string, PbxTarget>();
-  for (const t of pbx.targets) {
-    pbxByName.set(t.name, t);
-    const s = settingsOf(t);
-    const kind = PRODUCT_KIND[t.productType] ?? 'other';
-    const isWidget = kind === 'extension' && /widget/i.test(t.name + (s.PRODUCT_BUNDLE_IDENTIFIER ?? ''));
-    targets.push({
-      name: t.name,
-      kind: isWidget ? 'widget' : kind,
-      productType: t.productType,
-      bundleId: s.PRODUCT_BUNDLE_IDENTIFIER ? expandSetting(s.PRODUCT_BUNDLE_IDENTIFIER, s, { ...extra, PRODUCT_NAME: t.productName ?? t.name, TARGET_NAME: t.name }) : undefined,
-      deploymentTarget: s.IPHONEOS_DEPLOYMENT_TARGET,
-      devices: deviceFamilies(s),
-      infoPlist: s.INFOPLIST_FILE ? expandSetting(s.INFOPLIST_FILE, s, extra) : undefined,
-      entitlements: s.CODE_SIGN_ENTITLEMENTS ? expandSetting(s.CODE_SIGN_ENTITLEMENTS, s, extra) : undefined,
-    });
+  if (xcodeproj && !existsSync(join(xcodeproj, 'project.pbxproj'))) xcodeproj = undefined;
+  const expoWithoutIos = fw.kind === 'expo' && fw.platforms.some((p) => p.platform === 'ios');
+  if (!xcodeproj && !fw.androidDir && !expoWithoutIos) {
+    throw new Error(`No Xcode project or Android app found (${root}). Set its path with app.project in vitrin.config.yaml.`);
   }
 
-  const appTargets = targets.filter((t) => t.kind === 'app');
-  const main =
-    appTargets.find((t) => t.name === opts.scheme) ??
-    appTargets.find((t) => t.bundleId && opts.bundleIdOverride && t.bundleId === opts.bundleIdOverride) ??
-    appTargets[0];
-  if (!main) throw new Error('No app target (com.apple.product-type.application) found in the project.');
-  const mainPbx = pbxByName.get(main.name)!;
-  const ms = settingsOf(mainPbx);
-
-  // ---------- Info.plist & permissions ----------
+  // ---------- Collectors ----------
   const todo: string[] = [];
   const features: Feature[] = [];
   const signals: Record<string, Evidence[]> = {};
@@ -135,53 +115,153 @@ export async function analyzeProject(opts: AnalyzeOptions): Promise<AppProfile> 
     }
     features.push({ confidence: 'high', source: 'analyzer', ...f });
   };
+  const platformEvidence = new Map<Platform, Evidence>();
+  const addPlatform = (p: Platform, ev: Evidence) => {
+    if (!platformEvidence.has(p)) platformEvidence.set(p, ev);
+  };
 
+  const targets: ProjectTarget[] = [];
+  let main: ProjectTarget | undefined;
+  let ms: Record<string, string> = {};
   let info: Record<string, unknown> = {};
-  const infoPath = main.infoPlist ? resolveIn(srcRoot, main.infoPlist) : undefined;
-  if (infoPath && existsSync(infoPath)) info = await readPlistFile(infoPath);
-  // GENERATE_INFOPLIST_FILE: keys live in build settings as INFOPLIST_KEY_*
-  for (const [k, v] of Object.entries(ms)) {
-    if (k.startsWith('INFOPLIST_KEY_')) info[k.slice('INFOPLIST_KEY_'.length)] ??= v;
-  }
-  const infoEvidencePath = infoPath ? rel(infoPath) : rel(join(xcodeproj, 'project.pbxproj'));
-  const displayName = String(
-    info.CFBundleDisplayName ?? expandSetting(String(info.CFBundleName ?? ms.PRODUCT_NAME ?? main.name), ms, { ...extra, PRODUCT_NAME: mainPbx.productName ?? main.name, TARGET_NAME: main.name }),
-  );
-  const permissions = Object.entries(info)
-    .filter(([k]) => /^NS[A-Za-z]+UsageDescription$/.test(k))
-    .map(([key, description]) => ({ key, description: String(description) }));
-  if (info.UIBackgroundModes) addSignal('background.modes', { path: infoEvidencePath, note: String(info.UIBackgroundModes) });
-
-  // ---------- Entitlements ----------
+  let pbx: PbxProject | undefined;
+  let xcodeDisplayName: string | undefined;
+  let srcRoot: string | undefined;
+  let pbxPath = '';
   const entitlements: string[] = [];
-  for (const t of targets) {
-    if (!t.entitlements) continue;
-    const p = resolveIn(srcRoot, t.entitlements);
-    if (!existsSync(p)) continue;
-    const ent = await readPlistFile(p);
-    for (const [k, v] of Object.entries(ent)) {
-      if (!entitlements.includes(k)) entitlements.push(k);
-      const ev = { path: rel(p), note: k };
-      if (k === 'com.apple.developer.healthkit') addFeature({ id: 'apple-health', title: 'Apple Health integration', kind: 'integration', description: 'Reads and writes health data with HealthKit permission.', evidence: [ev] });
-      if (k === 'com.apple.developer.icloud-services' && Array.isArray(v) && v.length) addFeature({ id: 'icloud-sync', title: 'iCloud sync', kind: 'capability', description: 'Data syncs across devices via iCloud.', evidence: [ev] });
-      if (k === 'com.apple.developer.applesignin') addFeature({ id: 'sign-in-with-apple', title: 'Sign in with Apple', kind: 'capability', description: 'Supports Sign in with Apple.', evidence: [ev] });
-      if (k === 'aps-environment') addSignal('push.remote', ev);
-      if (k === 'com.apple.developer.family-controls') addSignal('age.family-controls', ev);
+  let permissions: AppProfile['permissions'] = [];
+
+  if (xcodeproj) {
+    const projDir = dirname(xcodeproj);
+    pbxPath = rel(join(xcodeproj, 'project.pbxproj'));
+    pbx = readPbxproj(await readFile(join(xcodeproj, 'project.pbxproj'), 'utf8'));
+    srcRoot = projDir;
+
+    const extra = { SRCROOT: srcRoot, PROJECT_DIR: srcRoot, PROJECT_NAME: basename(xcodeproj, '.xcodeproj') };
+    const pbxByName = new Map<string, PbxTarget>();
+    for (const t of pbx.targets) {
+      pbxByName.set(t.name, t);
+      const s = settingsOf(t);
+      let kind = PRODUCT_KIND[t.productType] ?? 'other';
+      const isWidget = kind === 'extension' && /widget/i.test(t.name + (s.PRODUCT_BUNDLE_IDENTIFIER ?? ''));
+      const { platforms, macCatalyst } = targetPlatforms(s, t.productType);
+      // A single-target watchOS app (Xcode 14+) is an `application` built with SDKROOT=watchos.
+      if (kind === 'app' && platforms.length === 1 && platforms[0] === 'watchos') kind = 'watch';
+      const devices = deviceFamilies(s);
+      for (const p of platforms) {
+        const d = PLATFORM_DEVICE[p];
+        if (d && !devices.includes(d)) devices.push(d);
+      }
+      const target: ProjectTarget = {
+        name: t.name,
+        kind: isWidget ? 'widget' : kind,
+        productType: t.productType,
+        bundleId: s.PRODUCT_BUNDLE_IDENTIFIER ? expandSetting(s.PRODUCT_BUNDLE_IDENTIFIER, s, { ...extra, PRODUCT_NAME: t.productName ?? t.name, TARGET_NAME: t.name }) : undefined,
+        deploymentTarget: s.IPHONEOS_DEPLOYMENT_TARGET ?? s.MACOSX_DEPLOYMENT_TARGET ?? s.WATCHOS_DEPLOYMENT_TARGET ?? s.TVOS_DEPLOYMENT_TARGET ?? s.XROS_DEPLOYMENT_TARGET,
+        devices,
+        platforms,
+        macCatalyst,
+        infoPlist: s.INFOPLIST_FILE ? expandSetting(s.INFOPLIST_FILE, s, extra) : undefined,
+        entitlements: s.CODE_SIGN_ENTITLEMENTS ? expandSetting(s.CODE_SIGN_ENTITLEMENTS, s, extra) : undefined,
+      };
+      targets.push(target);
+      if (SHIPPING.has(t.productType)) {
+        for (const p of platforms) {
+          const why = p === 'macos' && macCatalyst ? 'SUPPORTS_MACCATALYST=YES' : `SDKROOT=${s.SDKROOT ?? '(default)'}${s.SUPPORTED_PLATFORMS ? `, SUPPORTED_PLATFORMS=${s.SUPPORTED_PLATFORMS}` : ''}${s.TARGETED_DEVICE_FAMILY ? `, TARGETED_DEVICE_FAMILY=${s.TARGETED_DEVICE_FAMILY}` : ''}`;
+          addPlatform(p, { path: pbxPath, note: `${t.name}: ${why}` });
+        }
+      }
+    }
+
+    const appTargets = targets.filter((t) => t.kind === 'app');
+    const candidates = appTargets.length ? appTargets : targets.filter((t) => t.kind === 'watch' && t.platforms.includes('watchos'));
+    main =
+      candidates.find((t) => t.name === opts.scheme) ??
+      candidates.find((t) => t.bundleId && opts.bundleIdOverride && t.bundleId === opts.bundleIdOverride) ??
+      candidates.find((t) => t.platforms.includes('ios')) ??
+      candidates[0];
+    if (!main) throw new Error('No app target (com.apple.product-type.application) found in the project.');
+    const mainPbx = pbxByName.get(main.name)!;
+    ms = settingsOf(mainPbx);
+
+    // ---------- Info.plist & permissions ----------
+    const infoPath = main.infoPlist ? resolveIn(srcRoot, main.infoPlist) : undefined;
+    if (infoPath && existsSync(infoPath)) info = await readPlistFile(infoPath);
+    // GENERATE_INFOPLIST_FILE: keys live in build settings as INFOPLIST_KEY_*
+    for (const [k, v] of Object.entries(ms)) {
+      if (k.startsWith('INFOPLIST_KEY_')) info[k.slice('INFOPLIST_KEY_'.length)] ??= v;
+    }
+    const infoEvidencePath = infoPath ? rel(infoPath) : pbxPath;
+    const expanded = String(
+      info.CFBundleDisplayName ?? expandSetting(String(info.CFBundleName ?? ms.PRODUCT_NAME ?? main.name), ms, { ...extra, PRODUCT_NAME: mainPbx.productName ?? main.name, TARGET_NAME: main.name }),
+    );
+    // Flutter and React Native Info.plists may still reference build variables here.
+    xcodeDisplayName = expanded.trim() && !expanded.includes('$') ? expanded.trim() : undefined;
+    permissions = Object.entries(info)
+      .filter(([k]) => /^NS[A-Za-z]+UsageDescription$/.test(k))
+      .map(([key, description]) => ({ key, description: String(description) }));
+    if (info.UIBackgroundModes) addSignal('background.modes', { path: infoEvidencePath, note: String(info.UIBackgroundModes) });
+
+    // ---------- Entitlements ----------
+    for (const t of targets) {
+      if (!t.entitlements) continue;
+      const p = resolveIn(srcRoot, t.entitlements);
+      if (!existsSync(p)) continue;
+      const ent = await readPlistFile(p);
+      for (const [k, v] of Object.entries(ent)) {
+        if (!entitlements.includes(k)) entitlements.push(k);
+        const ev = { path: rel(p), note: k };
+        if (k === 'com.apple.developer.healthkit') addFeature({ id: 'apple-health', title: 'Apple Health integration', kind: 'integration', description: 'Reads and writes health data with HealthKit permission.', evidence: [ev] });
+        if (k === 'com.apple.developer.icloud-services' && Array.isArray(v) && v.length) addFeature({ id: 'icloud-sync', title: 'iCloud sync', kind: 'capability', description: 'Data syncs across devices via iCloud.', evidence: [ev] });
+        if (k === 'com.apple.developer.applesignin') addFeature({ id: 'sign-in-with-apple', title: 'Sign in with Apple', kind: 'capability', description: 'Supports Sign in with Apple.', evidence: [ev] });
+        if (k === 'aps-environment') addSignal('push.remote', ev);
+        if (k === 'com.apple.developer.family-controls') addSignal('age.family-controls', ev);
+      }
+    }
+
+    // ---------- Platform features from targets ----------
+    if (main.devices.includes('ipad')) addFeature({ id: 'ipad', title: 'iPad support', kind: 'platform', description: 'Interface adapted for iPad.', evidence: [{ path: pbxPath, note: `TARGETED_DEVICE_FAMILY=${ms.TARGETED_DEVICE_FAMILY}` }] });
+    for (const t of targets) {
+      const ev = { path: pbxPath, note: `${t.name} (${t.productType})` };
+      if (t.kind === 'widget') addFeature({ id: 'widgets', title: 'Home Screen widgets', kind: 'platform', description: 'Home Screen and Lock Screen widgets.', evidence: [ev] });
+      if (t.kind === 'watch') addFeature({ id: 'apple-watch', title: 'Apple Watch app', kind: 'platform', description: 'A dedicated Apple Watch app.', evidence: [ev] });
+      if (t.kind === 'app-clip') addFeature({ id: 'app-clip', title: 'App Clip', kind: 'platform', description: 'Try it quickly without downloading the full app.', evidence: [ev] });
     }
   }
 
-  // ---------- Platform features from targets ----------
-  const supportsIPad = main.devices.includes('ipad');
-  if (supportsIPad) addFeature({ id: 'ipad', title: 'iPad support', kind: 'platform', description: 'Interface adapted for iPad.', evidence: [{ path: rel(join(xcodeproj, 'project.pbxproj')), note: `TARGETED_DEVICE_FAMILY=${ms.TARGETED_DEVICE_FAMILY}` }] });
-  for (const t of targets) {
-    const ev = { path: rel(join(xcodeproj, 'project.pbxproj')), note: `${t.name} (${t.productType})` };
-    if (t.kind === 'widget') addFeature({ id: 'widgets', title: 'Home Screen widgets', kind: 'platform', description: 'Home Screen and Lock Screen widgets.', evidence: [ev] });
-    if (t.kind === 'watch') addFeature({ id: 'apple-watch', title: 'Apple Watch app', kind: 'platform', description: 'A dedicated Apple Watch app.', evidence: [ev] });
-    if (t.kind === 'app-clip') addFeature({ id: 'app-clip', title: 'App Clip', kind: 'platform', description: 'Try it quickly without downloading the full app.', evidence: [ev] });
+  // ---------- Framework-declared platforms (Flutter macos/, Expo platforms, Android) ----------
+  const android = fw.androidDir && existsSync(join(root, fw.androidDir)) ? await readAndroidProject(root, fw.androidDir) : undefined;
+  if (android) addPlatform('android', { path: android.manifest, note: `Gradle module :${android.module}` });
+  for (const p of fw.platforms) {
+    // With an Xcode project, iOS is decided by its targets (an iPad-only or Mac-only host must not gain iPhone).
+    if (p.platform === 'ios' && xcodeproj) continue;
+    addPlatform(p.platform, p.evidence);
+  }
+  const platforms = sortPlatforms(platformEvidence.keys());
+
+  const featureFor: Partial<Record<Platform, { id: string; title: string; description: string }>> = {
+    macos: { id: 'mac-app', title: 'Mac app', description: main?.macCatalyst ? 'Runs on the Mac (Mac Catalyst).' : 'A native Mac app.' },
+    tvos: { id: 'apple-tv', title: 'Apple TV app', description: 'An app for Apple TV.' },
+    visionos: { id: 'vision-pro', title: 'Apple Vision Pro app', description: 'A native visionOS app.' },
+    android: { id: 'android-app', title: 'Android app', description: 'Also available on Android (Google Play).' },
+  };
+  for (const p of platforms) {
+    const f = featureFor[p];
+    if (f) addFeature({ ...f, kind: 'platform', evidence: [platformEvidence.get(p)!] });
   }
 
+  // ---------- Device support ----------
+  const shipsIos = platforms.includes('ios');
+  const supportsIPhone = main ? main.platforms.includes('ios') && (main.devices.includes('iphone') || !main.devices.includes('ipad')) : shipsIos;
+  const supportsIPad = main ? main.devices.includes('ipad') : shipsIos && Boolean(fw.supportsTablet?.value);
+  if (!main && supportsIPad) addFeature({ id: 'ipad', title: 'iPad support', kind: 'platform', description: 'Interface adapted for iPad.', evidence: [{ path: fw.supportsTablet!.path, note: 'ios.supportsTablet' }] });
+  const duo = pbx && main ? detectDuo({ supportsIPhone, attributes: pbx.attributes, deploymentTarget: main.deploymentTarget, pbxprojPath: pbxPath }) : { supported: false, reason: 'No Xcode project yet.' };
+  if (duo.supported) addFeature({ id: 'iphone-duo', title: 'iPhone Duo', kind: 'platform', description: 'Built with the iOS 27.1 SDK, which lays the app out for both iPhone Duo displays.', evidence: [duo.evidence!], confidence: 'medium' });
+  else if (supportsIPhone) todo.push(`iPhone Duo targets are off: ${duo.reason} If the app is built with Xcode 27.1+, add duo-outer and duo-inner to targets.enable in vitrin.config.yaml.`);
+  const supportsAndroidTablet = Boolean(android?.tablet);
+
   // ---------- Source scan ----------
-  const allFiles = await listFiles(srcRoot);
+  const allFiles = srcRoot ? await listFiles(srcRoot) : [];
   const swiftFiles = allFiles.filter((f) => f.endsWith('.swift'));
   const appIntents: AppProfile['appIntents'] = [];
   const categoryVotes = new Map<string, number>();
@@ -194,6 +274,15 @@ export async function analyzeProject(opts: AnalyzeOptions): Promise<AppProfile> 
     }
     for (const m of text.matchAll(/(?:struct|class)\s+(\w+)\s*:\s*[^{]*\bAppIntent\b/g)) appIntents.push({ name: m[1]!, file: rel(f) });
     if (/AppShortcutsProvider/.test(text)) addSignal('intents.app-shortcuts', { path: rel(f) });
+  }
+  // Dart / JS / Kotlin sources of cross-platform and Android apps.
+  for (const f of await crossPlatformSources(root, fw.kind, android ? join(root, android.dir, android.module) : undefined)) {
+    const text = await readFile(f, 'utf8');
+    for (const hit of scanSource(rel(f), text, CROSS_PLATFORM_RULES)) {
+      if (hit.rule.feature) addFeature({ ...hit.rule.feature, evidence: [hit.evidence] });
+      if (hit.rule.signal) addSignal(hit.rule.signal, hit.evidence);
+      if (hit.rule.category) categoryVotes.set(hit.rule.category, (categoryVotes.get(hit.rule.category) ?? 0) + 1);
+    }
   }
   if (appIntents.length) {
     addFeature({
@@ -232,13 +321,15 @@ export async function analyzeProject(opts: AnalyzeOptions): Promise<AppProfile> 
   }
 
   // ---------- Localizations ----------
-  const regions = new Set(pbx.knownRegions.filter((r) => r !== 'Base'));
+  const regions = new Set((pbx?.knownRegions ?? []).filter((r) => r !== 'Base'));
+  const localeEvidence: string[] = [];
   const xcstrings = allFiles.filter((f) => f.endsWith('.xcstrings'));
   for (const f of xcstrings) {
     try {
       const json = JSON.parse(await readFile(f, 'utf8')) as { sourceLanguage?: string; strings?: Record<string, { localizations?: Record<string, unknown> }> };
       if (json.sourceLanguage) regions.add(json.sourceLanguage);
       for (const s of Object.values(json.strings ?? {})) for (const l of Object.keys(s.localizations ?? {})) regions.add(l);
+      localeEvidence.push(rel(f));
     } catch {
       todo.push(`Could not read ${rel(f)} (String Catalog).`);
     }
@@ -247,15 +338,22 @@ export async function analyzeProject(opts: AnalyzeOptions): Promise<AppProfile> 
     const m = /\/([A-Za-z-]+)\.lproj\//.exec(f);
     if (m && m[1] !== 'Base') regions.add(m[1]!);
   }
+  // Flutter documents CFBundleLocalizations as the way to declare iOS languages.
+  if (Array.isArray(info.CFBundleLocalizations)) for (const l of info.CFBundleLocalizations) if (typeof l === 'string') regions.add(l);
+  for (const l of [...fw.locales, ...(android?.locales ?? [])]) {
+    regions.add(l.code);
+    localeEvidence.push(l.path);
+  }
+  if (!regions.size && android) todo.push('Android resources have no language qualifiers (values-xx); set app.locales in vitrin.config.yaml.');
   const locales = [...regions].sort().map((r) => ({ xcode: r, asc: xcodeToAsc(r) }));
-  for (const l of locales) if (!l.asc) todo.push(`Xcode region "${l.xcode}" has no ASC locale; metadata cannot be written in this language.`);
+  for (const l of locales) if (!l.asc) todo.push(`Region "${l.xcode}" has no ASC locale; metadata cannot be written in this language.`);
   if (locales.length > 1) {
     addFeature({
       id: 'localization',
       title: `${locales.length} languages`,
       kind: 'core',
       description: locales.map((l) => l.xcode).join(', '),
-      evidence: [{ path: xcstrings[0] ? rel(xcstrings[0]) : rel(join(xcodeproj, 'project.pbxproj')), note: 'knownRegions / String Catalog' }],
+      evidence: [{ path: localeEvidence[0] ?? (pbxPath || 'package.json'), note: 'knownRegions / String Catalog / framework translations' }],
     });
   }
 
@@ -264,6 +362,7 @@ export async function analyzeProject(opts: AnalyzeOptions): Promise<AppProfile> 
     .map((f) => /^(.*?\.xcassets)\//.exec(f)?.[1])
     .filter((x): x is string => Boolean(x));
   const catalogScan = await scanAssetCatalogs([...new Set(catalogs)]);
+  const androidIcon = android ? ['xxxhdpi', 'xxhdpi', 'xhdpi'].map((d) => join(root, android.dir, android.module, 'src', 'main', 'res', `mipmap-${d}`, 'ic_launcher.png')).find((p) => existsSync(p)) : undefined;
 
   // ---------- Docs & git ----------
   const readme = await readExcerpt(root, ['README.md', 'Readme.md', 'readme.md']);
@@ -284,30 +383,50 @@ export async function analyzeProject(opts: AnalyzeOptions): Promise<AppProfile> 
   if (!signals['vitrin.demo-mode']) {
     todo.push('The app has no -VitrinDemo seed-data mode. For capture, show the user which file to add it to (skills/vitrin/references/troubleshooting.md).');
   }
+  if (fw.needsPrebuild) {
+    todo.push('Expo app without native folders: capture runs `npx expo prebuild` first (capture.reactNative.prebuild), which creates ios/ and android/.');
+  }
+  if (platforms.includes('android') && !(android?.applicationId ?? fw.androidApplicationId)) {
+    todo.push('Android applicationId not found (build.gradle applicationId / app.json expo.android.package).');
+  }
+
+  // ---------- Identity: Xcode first, then framework files ----------
+  const frameworkName = fw.displayName?.value;
+  const displayName =
+    (fw.kind === 'expo' ? (frameworkName ?? xcodeDisplayName) : (xcodeDisplayName ?? android?.label?.value ?? frameworkName)) ?? android?.label?.value ?? basename(root);
+  const version = literal(ms.MARKETING_VERSION) ?? literal(info.CFBundleShortVersionString) ?? fw.version?.value ?? android?.versionName?.value;
+  const build = literal(ms.CURRENT_PROJECT_VERSION) ?? literal(info.CFBundleVersion) ?? fw.build?.value ?? android?.versionCode?.value;
 
   return {
     schemaVersion: 1,
     generatedAt: new Date().toISOString(),
     project: {
       root,
-      kind: 'native',
-      xcodeproj: rel(xcodeproj),
+      kind: fw.kind,
+      iosDir: srcRoot ? rel(srcRoot) : fw.iosDir,
+      androidDir: android?.dir ?? fw.androidDir,
+      androidApplicationId: android?.applicationId?.value ?? fw.androidApplicationId?.value,
+      macosDir: fw.macosDir,
+      needsPrebuild: fw.needsPrebuild,
+      xcodeproj: xcodeproj ? rel(xcodeproj) : undefined,
       workspace: loc.workspace ? rel(loc.workspace) : undefined,
-      scheme: opts.scheme ?? main.name,
+      scheme: opts.scheme ?? main?.name,
       targets,
     },
     app: {
       displayName,
-      bundleId: opts.bundleIdOverride ?? main.bundleId,
-      version: ms.MARKETING_VERSION ?? (info.CFBundleShortVersionString as string | undefined),
-      build: ms.CURRENT_PROJECT_VERSION ?? (info.CFBundleVersion as string | undefined),
-      deploymentTarget: main.deploymentTarget,
-      supportsIPhone: main.devices.includes('iphone') || main.devices.length === 0,
+      bundleId: opts.bundleIdOverride ?? main?.bundleId ?? fw.bundleId?.value,
+      version,
+      build,
+      deploymentTarget: main?.deploymentTarget,
+      supportsIPhone,
       supportsIPad,
-      supportsDuo: false,
-      platforms: ['ios'],
-      developmentRegion: pbx.developmentRegion,
-      knownRegions: pbx.knownRegions,
+      supportsDuo: duo.supported,
+      platforms,
+      platformEvidence: Object.fromEntries(platforms.map((p) => [p, [platformEvidence.get(p)!]])),
+      supportsAndroidTablet,
+      developmentRegion: pbx?.developmentRegion,
+      knownRegions: pbx?.knownRegions ?? [],
       locales,
     },
     features,
@@ -318,7 +437,7 @@ export async function analyzeProject(opts: AnalyzeOptions): Promise<AppProfile> 
     brand: {
       accentColor: catalogScan.accentColor,
       colors: catalogScan.colors.map(({ name, hex }) => ({ name, hex })),
-      appIcon: catalogScan.appIcon ? rel(catalogScan.appIcon) : undefined,
+      appIcon: catalogScan.appIcon ? rel(catalogScan.appIcon) : androidIcon ? rel(androidIcon) : undefined,
     },
     revenueModel,
     categorySuggestion,
@@ -326,6 +445,20 @@ export async function analyzeProject(opts: AnalyzeOptions): Promise<AppProfile> 
     signals,
     todo,
   };
+}
+
+/** Dart (lib/), JS/TS (outside native folders) and Kotlin/Java (Android module) sources to scan. */
+async function crossPlatformSources(root: string, kind: AppProfile['project']['kind'], androidModule?: string): Promise<string[]> {
+  const out: string[] = [];
+  if (kind === 'flutter' && existsSync(join(root, 'lib'))) out.push(...(await listFiles(join(root, 'lib'))).filter((f) => f.endsWith('.dart')));
+  if (kind === 'react-native' || kind === 'expo') {
+    const skip = new Set([...SKIP_DIRS, 'ios', 'android', 'macos', 'windows', 'dist', 'web-build', 'coverage', '__tests__']);
+    out.push(...(await listFiles(root, { skip, maxDepth: 8 })).filter((f) => /\.(m?[jt]sx?)$/.test(f) && !/\.(test|spec|config)\.[jt]sx?$/.test(f)));
+  }
+  if (androidModule && existsSync(join(androidModule, 'src'))) {
+    out.push(...(await listFiles(join(androidModule, 'src'), { skip: new Set([...SKIP_DIRS, 'test', 'androidTest']) })).filter((f) => /\.(kt|java)$/.test(f)));
+  }
+  return out;
 }
 
 interface StoreKitProduct {

@@ -22,6 +22,7 @@ import { readdir, rm } from 'node:fs/promises';
 import { join, relative } from 'node:path';
 import { createInterface } from 'node:readline/promises';
 import pc from 'picocolors';
+import { checkApproval, recordUpload, requireApproval } from '../approval.js';
 import { bundleIdOf, EXIT, loadProfile, NeedsInput, type Ctx } from '../context.js';
 import { missingUploadKeys, runDoctor } from './doctor.js';
 import { loadLocaleMetadata, printIssues } from './pipeline.js';
@@ -51,6 +52,14 @@ export async function uploadCommand(ctx: Ctx, opts: UploadOptions): Promise<numb
   const metadata = await loadLocaleMetadata(ctx);
   if (!existsSync(ctx.paths.appMetadata) || metadata.length !== ctx.config.app.locales.length) throw new NeedsInput('Metadata is missing; run `vitrin write` first.');
   const app = await readJson(ctx.paths.appMetadata, AppMetadata);
+  await exportFastlaneMetadata(ctx.paths, ctx.config, app, metadata);
+  // Approval gate: a real upload sends only the exact files the user reviewed and approved (.vitrin/approval.json).
+  // Checked after the export so the text files compared are the ones deliver would read. --yes never skips this.
+  if (!opts.dryRun) await requireApproval(ctx);
+  else {
+    const approval = await checkApproval(ctx);
+    if (!approval.ok) log.warn(`Not approved for upload yet: ${approval.reason} (a real upload needs \`vitrin review\` + the user's approval).`);
+  }
 
   const validation = await validateAll(ctx.paths, ctx.config);
   if (!validation.ok) {
@@ -93,7 +102,6 @@ export async function uploadCommand(ctx: Ctx, opts: UploadOptions): Promise<numb
     log.warn(`Upload keys missing (${missing.map((m) => m.name).join(', ')}); showing the plan without the remote state.`);
   }
 
-  await exportFastlaneMetadata(ctx.paths, ctx.config, app, metadata);
   const shots = await readJsonIfExists(ctx.paths.shots, ShotList).catch(() => undefined);
   const cpp = await readJsonIfExists(ctx.paths.cpp, CppSuggestions).catch(() => undefined);
   const plan = await buildPlan({
@@ -141,6 +149,9 @@ export async function uploadCommand(ctx: Ctx, opts: UploadOptions): Promise<numb
     throw new NeedsInput('Upload needs explicit approval: if the user approves, run `vitrin upload --yes`.');
   }
 
+  // Files may have changed while the plan was built or the prompt was open: check once more right before sending.
+  const approved = await requireApproval(ctx);
+
   const languages = ctx.config.app.locales;
   if (plan.firstRelease) {
     for (const l of languages) await rm(join(ctx.paths.fastlaneMetadata, l, 'release_notes.txt'), { force: true });
@@ -187,11 +198,13 @@ export async function uploadCommand(ctx: Ctx, opts: UploadOptions): Promise<numb
   log.step('Reading back from the stores…');
   const play = stores.play?.client && stores.play.packageName ? { client: stores.play.client, packageName: stores.play.packageName, inputs: stores.play.inputs } : undefined;
   const diffs = await readBack({ paths: ctx.paths, config: ctx.config, bundleId, metadata, client, platforms: stores.platforms, play });
+  await recordUpload(ctx, approved, diffs);
   if (diffs.length) {
     for (const d of diffs) log.warn(d);
     return EXIT.FAIL;
   }
   log.ok('Text in the stores matches the local files.');
+  log.info('Next: show the user the read-back above; once they confirm the listing, run `vitrin finalize --checked` (keeps the uploaded set in metadata/ or deletes the generated files, per retention.keep).');
   await ctx.state.mark('upload', plan.generatedAt, [relative(ctx.root, ctx.paths.uploadPlan)]);
   log.info('Reminder: final approval of the privacy labels and age rating questionnaire is yours; check the App Store tags (US) after the upload.');
   return EXIT.OK;

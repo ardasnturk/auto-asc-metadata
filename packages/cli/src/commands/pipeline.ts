@@ -1,8 +1,8 @@
 import { analyzeProject } from '@vitrin/analyzer';
-import { enabledTargets, exec, existsSync, hashPaths, hashValue, log, readJson, readJsonIfExists, run, storefrontForLocale, writeJson } from '@vitrin/core';
+import { enabledTargets, exec, existsSync, getTarget, hashPaths, hashValue, log, readJson, readJsonIfExists, run, storefrontForLocale, which, writeJson } from '@vitrin/core';
 import { selectedOption, renderDesign } from '@vitrin/render';
 import { runResearch } from '@vitrin/research';
-import { AppMetadata, AppProfile, ArtDirection, CppSuggestions, LocaleMetadata, ShotList, VideoPlan, type Issue, type ValidationReport } from '@vitrin/schemas';
+import { AppMetadata, AppProfile, ArtDirection, CppSuggestions, LocaleMetadata, ShotList, VideoPlan, type Issue, type Platform, type TargetFamily, type ValidationReport } from '@vitrin/schemas';
 import { validateAll } from '@vitrin/validate';
 import { renderVideos } from '@vitrin/video';
 import { exportFastlaneMetadata } from '@vitrin/upload';
@@ -11,7 +11,9 @@ import { dirname, join, relative } from 'node:path';
 import pc from 'picocolors';
 import { designBrief, metadataBrief, profileBrief, videoBrief } from '../briefs.js';
 import { EXIT, loadProfile, NeedsInput, stage, type Ctx } from '../context.js';
-import { bootAndPrepare, buildForSimulator, ensureSimulator, isBlankCapture, languageArgs, launch, record, screenshot, setSystemLocale, shutdown, sleep } from '../simulator.js';
+import { AndroidDevice, androidLocaleTag, androidTools, ensureAvd, launchArgsToExtras, serialFor, startEmulator } from '../android.js';
+import { appIdentity, buildApp } from '../build.js';
+import { bootAndPrepare, ensureSimulator, isBlankCapture, languageArgs, launch, MacApp, macLaunchArgs, record, screenshot, setSystemLocale, shutdown, sleep, type SimPlatform } from '../simulator.js';
 import { rm } from 'node:fs/promises';
 
 export function printIssues(issues: Issue[], max = 40): void {
@@ -29,13 +31,16 @@ export async function analyzeCommand(ctx: Ctx): Promise<number> {
   // Project sources only: Vitrin's own files (config, .env, Gemfile, .gitignore) must not invalidate analysis and capture.
   const inputs = await hashPaths([ctx.config.app.project ? dirname(join(ctx.root, ctx.config.app.project)) : ctx.root], ctx.root, /(^|\/)(vitrin\.config\.yaml|\.env.*|Gemfile(\.lock)?|\.gitignore|README\.md|CHANGELOG\.md)$/);
   await stage(ctx, 'analyze', { inputs, app: ctx.config.app }, async () => {
-    log.step('Analyzing the Xcode project…');
+    log.step('Analyzing the project…');
     const fresh = await analyzeProject({ root: ctx.root, projectHint: ctx.config.app.project, scheme: ctx.config.app.scheme, bundleIdOverride: ctx.config.app.bundleId || ctx.env.APP_BUNDLE_ID });
     const previous = await readJsonIfExists(ctx.paths.profile, AppProfile).catch(() => undefined);
     const merged = mergeProfile(fresh, previous);
     // Stored relative so app_profile.json can be committed without leaking local paths; resolved on load.
     await writeJson(ctx.paths.profile, { ...merged, project: { ...merged.project, root: '.' } });
-    log.ok(`${merged.app.displayName}: ${merged.features.length} features, ${merged.app.locales.length} locales, iPad ${merged.app.supportsIPad ? 'yes' : 'no'}`);
+    const yn = (b: boolean) => (b ? 'yes' : 'no');
+    log.ok(
+      `${merged.app.displayName} (${merged.project.kind}): ${merged.app.platforms.join(', ')} · iPad ${yn(merged.app.supportsIPad)} · iPhone Duo ${yn(merged.app.supportsDuo)}${merged.app.platforms.includes('android') ? ` · Android tablet ${yn(merged.app.supportsAndroidTablet)}` : ''} · ${merged.features.length} features, ${merged.app.locales.length} locales`,
+    );
     return [ctx.paths.profile];
   });
   const profile = await loadProfile(ctx);
@@ -120,32 +125,108 @@ export async function writeCommand(ctx: Ctx): Promise<number> {
 }
 
 // ---------------------------------------------------------------- capture
-export function familiesToCapture(ctx: Ctx, profile: AppProfile): Array<{ family: 'iphone' | 'ipad' | 'duo'; simulator: string }> {
-  const targets = enabledTargets(ctx.config, profile);
-  const out: Array<{ family: 'iphone' | 'ipad' | 'duo'; simulator: string }> = [];
-  const pick = (family: 'iphone' | 'ipad' | 'duo', fallback: string) => ctx.config.capture.simulators[family] ?? targets.find((t) => t.family === family && t.simulator)?.simulator ?? fallback;
-  out.push({ family: 'iphone', simulator: pick('iphone', 'iPhone 17 Pro') });
-  if (targets.some((t) => t.family === 'ipad' && t.kind === 'screenshot')) out.push({ family: 'ipad', simulator: pick('ipad', 'iPad Pro 13-inch (M5)') });
+/** Raw-capture family → platform it is built and run on. Raw files live at .vitrin/raw/<locale>/<family>/<id>.png. */
+export const FAMILY_PLATFORM: Record<CaptureFamilyName, Platform> = {
+  iphone: 'ios',
+  ipad: 'ios',
+  duo: 'ios',
+  mac: 'macos',
+  watch: 'watchos',
+  tv: 'tvos',
+  vision: 'visionos',
+  'android-phone': 'android',
+  'android-tablet': 'android',
+};
+export type CaptureFamilyName = Exclude<TargetFamily, 'any'>;
+
+/** Used when neither the config nor data/targets.json names a device. */
+const FALLBACK_DEVICE: Record<CaptureFamilyName, string> = {
+  iphone: 'iPhone 17 Pro',
+  ipad: 'iPad Pro 13-inch (M5)',
+  duo: 'iPhone Duo',
+  mac: 'Mac',
+  watch: 'Apple Watch Ultra 3 (49mm)',
+  tv: 'Apple TV 4K (3rd generation)',
+  vision: 'Apple Vision Pro',
+  'android-phone': 'pixel_9',
+  'android-tablet': 'pixel_tablet',
+};
+
+export interface CaptureFamily {
+  family: CaptureFamilyName;
+  platform: Platform;
+  /** simctl device type (Apple), AVD name or avdmanager device profile (Android), "Mac" for macOS. */
+  device: string;
+  /** True when `device` is a configured AVD name rather than a device profile. */
+  avd?: boolean;
+}
+
+/** Families with no App Preview class: their recordings are never used. */
+const NO_RECORDING = new Set<CaptureFamilyName>(['duo', 'watch']);
+
+/**
+ * What capture produces, from `selection.assets`: screenshots → raw screens, previews → raw recordings.
+ * Creatives and events are rendered from the raw screens, so they need the screens too. Unset = both.
+ */
+export function captureKinds(config: Ctx['config']): { screens: boolean; recordings: boolean } {
+  const assets = config.selection?.assets;
+  if (!assets) return { screens: true, recordings: true };
+  return { screens: assets.some((a) => a === 'screenshots' || a === 'creatives' || a === 'events'), recordings: assets.includes('previews') };
+}
+
+export function familiesToCapture(ctx: Ctx, profile: AppProfile): CaptureFamily[] {
+  const cap = ctx.config.capture;
+  const kinds = captureKinds(ctx.config);
+  const targets = enabledTargets(ctx.config, profile).filter((t) => t.kind === 'screenshot' || t.kind === 'preview');
+  // Previews-only runs record only the families that have an App Preview class.
+  const has = (family: CaptureFamilyName) =>
+    targets.some((t) => t.family === family && ((kinds.screens && t.kind === 'screenshot') || (kinds.recordings && t.kind === 'preview')));
+  const pick = (family: CaptureFamilyName): CaptureFamily => {
+    const platform = FAMILY_PLATFORM[family];
+    const avd = platform === 'android' ? cap.android.avds[family] : undefined;
+    const device = avd ?? cap.simulators[family] ?? targets.find((t) => t.family === family && t.simulator)?.simulator ?? FALLBACK_DEVICE[family];
+    return { family, platform, device, ...(avd ? { avd: true } : {}) };
+  };
+  const out: CaptureFamily[] = [];
+  // Duo targets fall back to the iPhone capture, so iPhone is captured whenever either is enabled.
+  if (has('iphone') || has('duo')) out.push(pick('iphone'));
+  if (has('ipad')) out.push(pick('ipad'));
   // iPhone Duo's fold position cannot be automated and a folded device captures black, so Duo is opt-in
   // (`--family duo` or capture.simulators.duo); otherwise Duo targets are rendered from the iPhone capture.
-  if (targets.some((t) => t.family === 'duo') && ctx.config.capture.simulators.duo) out.push({ family: 'duo', simulator: pick('duo', 'iPhone Duo') });
+  if (has('duo') && cap.simulators.duo) out.push(pick('duo'));
+  for (const f of ['mac', 'watch', 'tv', 'vision', 'android-phone', 'android-tablet'] as const) if (has(f)) out.push(pick(f));
   return out;
+}
+
+/** Tools each platform needs on this machine; checked before any build starts. */
+export function requiredTools(platforms: Platform[]): string[] {
+  const tools = new Set<string>();
+  for (const p of platforms) {
+    if (p === 'android') tools.add('adb').add('emulator');
+    else tools.add('xcrun');
+    if (p === 'macos') tools.add('screencapture');
+  }
+  return [...tools];
 }
 
 export async function captureCommand(ctx: Ctx, opts: { families?: string[]; locales?: string[] } = {}): Promise<number> {
   const profile = await loadProfile(ctx);
   const cap = ctx.config.capture;
-  if (!cap.screens.length) {
+  const kinds = captureKinds(ctx.config);
+  if (kinds.screens && !cap.screens.length) {
     const brief = await profileBrief(ctx, profile);
     throw new NeedsInput('Claude input needed: capture.screens is empty.', [`Brief: ${relative(ctx.root, brief)}`]);
   }
+  if (!kinds.screens && kinds.recordings && !cap.recordings.length) {
+    throw new NeedsInput('Only previews are selected, but capture.recordings is empty.');
+  }
   const locales = opts.locales ?? ctx.config.app.locales;
   const all = familiesToCapture(ctx, profile);
-  if (opts.families?.includes('duo') && !all.some((f) => f.family === 'duo')) all.push({ family: 'duo', simulator: ctx.config.capture.simulators.duo ?? 'iPhone Duo' });
+  if (opts.families?.includes('duo') && !all.some((f) => f.family === 'duo')) all.push({ family: 'duo', platform: 'ios', device: cap.simulators.duo ?? FALLBACK_DEVICE.duo });
   const families = all.filter((f) => !opts.families || opts.families.includes(f.family));
   if (cap.mode === 'manual') {
     const missing: string[] = [];
-    for (const l of locales) for (const f of families) for (const s of cap.screens) if (!existsSync(ctx.paths.rawShot(l, f.family, s.id))) missing.push(relative(ctx.root, ctx.paths.rawShot(l, f.family, s.id)));
+    for (const l of locales) for (const f of families) for (const s of kinds.screens ? cap.screens : []) if (!existsSync(ctx.paths.rawShot(l, f.family, s.id))) missing.push(relative(ctx.root, ctx.paths.rawShot(l, f.family, s.id)));
     if (missing.length) throw new NeedsInput('Manual capture mode: raw captures are missing.', missing.slice(0, 20));
     log.ok('Manual raw captures complete.');
     return EXIT.OK;
@@ -156,63 +237,200 @@ export async function captureCommand(ctx: Ctx, opts: { families?: string[]; loca
   if (!profile.signals['vitrin.demo-mode']) {
     log.warn('No trace of -VitrinDemo in the app: captures may show real user data. See skills/vitrin/references/troubleshooting.md “Demo mode”.');
   }
-  const bundleId = profile.app.bundleId!;
-  const inputs = { cap, locales, families, build: ctx.state.get('analyze')?.inputHash };
+  const platforms = [...new Set(families.map((f) => f.platform))];
+  const missingTools: string[] = [];
+  for (const t of requiredTools(platforms)) {
+    const local = t === 'adb' || t === 'emulator' ? androidTools()[t] : t;
+    if (!(local.includes('/') ? existsSync(local) : await which(local))) missingTools.push(t);
+  }
+  if (missingTools.length) {
+    throw new Error(`Capture for ${platforms.join(', ')} needs ${missingTools.join(', ')} (${missingTools.some((t) => t === 'adb' || t === 'emulator') ? 'Android SDK: set ANDROID_HOME; ' : ''}${missingTools.includes('xcrun') ? 'Xcode on macOS; ' : ''}or use capture.mode: manual).`);
+  }
+  if (!families.length) {
+    log.warn('Nothing to capture for the selected platforms and assets.');
+    return EXIT.OK;
+  }
+  const inputs = { cap, kinds, locales, families, build: ctx.state.get('analyze')?.inputHash };
   await stage(ctx, 'capture', inputs, async () => {
-    const derived = join(ctx.paths.cache, 'DerivedData');
-    const appPath = await buildForSimulator({
-      root: ctx.root,
-      project: profile.project.workspace ? undefined : profile.project.xcodeproj,
-      workspace: profile.project.workspace,
-      scheme: ctx.config.app.scheme ?? profile.project.scheme ?? profile.app.displayName,
-      configuration: cap.configuration,
-      derivedData: derived,
-    });
-    log.ok(`Built: ${relative(ctx.root, appPath)}`);
     const outputs: string[] = [];
-    for (const f of families) {
-      const sim = await ensureSimulator(f.simulator);
-      log.step(`${f.family}: ${sim.name} (${sim.runtime})`);
-      await bootAndPrepare(sim.udid, cap.appearance);
-      try {
-        await run('xcrun', ['simctl', 'install', sim.udid, appPath]);
-        if (f.family === 'duo') log.warn('iPhone Duo: the fold position cannot be automated; pick the desired screen (outer/inner) in the simulator by hand.');
-        for (const locale of locales) {
-          const lang = languageArgs(locale, storefrontForLocale(locale));
-          await setSystemLocale(sim.udid, locale, storefrontForLocale(locale), cap.appearance);
-          for (const s of cap.screens) {
-            await launch(sim.udid, bundleId, ['-VitrinDemo', ...s.launchArgs, ...lang]);
-            if (s.url) await exec('xcrun', ['simctl', 'openurl', sim.udid, s.url]);
-            await sleep(s.waitMs);
-            const out = ctx.paths.rawShot(locale, f.family, s.id);
-            await screenshot(sim.udid, out);
-            if (await isBlankCapture(out)) {
-              await rm(out);
-              log.warn(`  ${locale}/${f.family}/${s.id}: screen is blank/black${f.family === 'duo' ? ' (the Duo may be folded; unfold the simulator)' : ''} — deleted, rendering falls back to the iPhone capture.`);
-              continue;
-            }
-            outputs.push(out);
-            log.dim(`  ${locale}/${f.family}/${s.id}.png`);
-          }
-          if (f.family !== 'duo') {
-            for (const r of cap.recordings) {
-              const out = ctx.paths.rawVideo(locale, f.family, r.id);
-              const rec = record(sim.udid, out, r.durationSec);
-              await sleep(600);
-              await launch(sim.udid, bundleId, ['-VitrinDemo', ...r.launchArgs, ...lang]);
-              await rec;
-              outputs.push(out);
-              log.dim(`  ${locale}/${f.family}/${r.id}.mp4 (${r.durationSec} s)`);
-            }
-          }
-        }
-      } finally {
-        await shutdown(sim.udid);
+    for (const platform of platforms) {
+      const artifact = await buildFor(ctx, profile, platform);
+      log.ok(`Built (${platform}): ${relative(ctx.root, artifact)}`);
+      const identity = appIdentity(profile, platform, { bundleId: ctx.config.app.bundleId || ctx.env.APP_BUNDLE_ID, scheme: ctx.config.app.scheme, androidApplicationId: cap.android.applicationId });
+      if (!identity.appId && platform !== 'macos') throw new NeedsInput(`No app id for ${platform}: set ${platform === 'android' ? 'capture.android.applicationId' : 'app.bundleId'} in vitrin.config.yaml.`);
+      for (const f of families.filter((x) => x.platform === platform)) {
+        if (platform === 'android') outputs.push(...(await captureAndroid(ctx, f, artifact, identity.appId!, locales)));
+        else if (platform === 'macos') outputs.push(...(await captureMac(ctx, profile, f, artifact, locales)));
+        else outputs.push(...(await captureSimulator(ctx, f, platform as SimPlatform, artifact, identity.appId!, locales)));
       }
     }
     return outputs;
   });
   return EXIT.OK;
+}
+
+/** Builds (or takes `capture.prebuilt`) the app for one platform. */
+async function buildFor(ctx: Ctx, profile: AppProfile, platform: Platform): Promise<string> {
+  const prebuilt = ctx.config.capture.prebuilt[platform];
+  if (prebuilt) {
+    const p = join(ctx.root, prebuilt);
+    if (!existsSync(p)) throw new Error(`capture.prebuilt.${platform} not found: ${prebuilt}`);
+    return p;
+  }
+  const cap = ctx.config.capture;
+  const identity = appIdentity(profile, platform, { scheme: ctx.config.app.scheme });
+  const p = profile.project;
+  const native = p.kind === 'native';
+  return buildApp({
+    root: ctx.root,
+    kind: p.kind,
+    platform,
+    iosDir: p.iosDir,
+    macosDir: p.macosDir,
+    androidDir: p.androidDir,
+    xcodeproj: p.xcodeproj,
+    workspace: p.workspace,
+    // Framework workspaces are named after the app; a native project's scheme follows the platform target.
+    scheme: native ? (platform === 'ios' ? (ctx.config.app.scheme ?? p.scheme ?? profile.app.displayName) : identity.scheme) : (ctx.config.app.scheme ?? p.scheme),
+    configuration: cap.configuration,
+    derivedData: join(ctx.paths.cache, 'DerivedData'),
+    macCatalyst: identity.macCatalyst,
+    metro: cap.reactNative.metro,
+    podInstall: cap.reactNative.podInstall,
+    prebuild: cap.reactNative.prebuild,
+    gradleTask: cap.android.gradleTask,
+  });
+}
+
+/** iPhone, iPad, Duo, Apple Watch, Apple TV and Vision Pro: dedicated simulators, simctl screenshots and recordings. */
+async function captureSimulator(ctx: Ctx, f: CaptureFamily, platform: SimPlatform, appPath: string, bundleId: string, locales: string[]): Promise<string[]> {
+  const cap = ctx.config.capture;
+  const kinds = captureKinds(ctx.config);
+  const outputs: string[] = [];
+  const sim = await ensureSimulator(f.device, platform);
+  log.step(`${f.family}: ${sim.name} (${sim.runtime})`);
+  await bootAndPrepare(sim.udid, cap.appearance, platform);
+  try {
+    await run('xcrun', ['simctl', 'install', sim.udid, appPath]);
+    if (f.family === 'duo') log.warn('iPhone Duo: the fold position cannot be automated; pick the desired screen (outer/inner) in the simulator by hand.');
+    for (const locale of locales) {
+      const lang = languageArgs(locale, storefrontForLocale(locale));
+      await setSystemLocale(sim.udid, locale, storefrontForLocale(locale), cap.appearance, platform);
+      for (const s of kinds.screens ? cap.screens : []) {
+        await launch(sim.udid, bundleId, ['-VitrinDemo', ...s.launchArgs, ...lang]);
+        if (s.url) await exec('xcrun', ['simctl', 'openurl', sim.udid, s.url]);
+        await sleep(s.waitMs);
+        const out = ctx.paths.rawShot(locale, f.family, s.id);
+        await screenshot(sim.udid, out);
+        if (await isBlankCapture(out)) {
+          await rm(out);
+          log.warn(`  ${locale}/${f.family}/${s.id}: screen is blank/black${f.family === 'duo' ? ' (the Duo may be folded; unfold the simulator)' : ''} — deleted${f.family === 'duo' ? ', rendering falls back to the iPhone capture' : ''}.`);
+          continue;
+        }
+        outputs.push(out);
+        log.dim(`  ${locale}/${f.family}/${s.id}.png`);
+      }
+      if (kinds.recordings && !NO_RECORDING.has(f.family)) {
+        for (const r of cap.recordings) {
+          const out = ctx.paths.rawVideo(locale, f.family, r.id);
+          const rec = record(sim.udid, out, r.durationSec);
+          await sleep(600);
+          await launch(sim.udid, bundleId, ['-VitrinDemo', ...r.launchArgs, ...lang]);
+          await rec;
+          outputs.push(out);
+          log.dim(`  ${locale}/${f.family}/${r.id}.mp4 (${r.durationSec} s)`);
+        }
+      }
+    }
+  } finally {
+    await shutdown(sim.udid);
+  }
+  return outputs;
+}
+
+/** Mac app (native or Mac Catalyst): launched with the demo arguments, its window captured at the 16:10 target size. */
+async function captureMac(ctx: Ctx, profile: AppProfile, f: CaptureFamily, appPath: string, locales: string[]): Promise<string[]> {
+  const cap = ctx.config.capture;
+  const kinds = captureKinds(ctx.config);
+  const target = enabledTargets(ctx.config, profile).find((t) => t.family === 'mac' && t.kind === 'screenshot') ?? getTarget('mac-16x10');
+  const app = new MacApp(appPath, join(ctx.paths.cache, 'mac'), { width: target.logical.width, height: target.logical.height });
+  const outputs: string[] = [];
+  log.step(`mac: ${relative(ctx.root, appPath)} (window → ${target.width}×${target.height})`);
+  try {
+    for (const locale of locales) {
+      const storefront = storefrontForLocale(locale);
+      for (const s of kinds.screens ? cap.screens : []) {
+        const win = await app.launch(macLaunchArgs(['-VitrinDemo', ...s.launchArgs], locale, storefront, cap.appearance), s.waitMs);
+        if (s.url) await exec('open', [s.url]);
+        const out = ctx.paths.rawShot(locale, f.family, s.id);
+        await app.capture(win, out, target);
+        if (await isBlankCapture(out)) {
+          await rm(out);
+          log.warn(`  ${locale}/mac/${s.id}: window is blank — deleted.`);
+          continue;
+        }
+        outputs.push(out);
+        log.dim(`  ${locale}/mac/${s.id}.png`);
+      }
+      for (const r of kinds.recordings ? cap.recordings : []) {
+        const win = await app.launch(macLaunchArgs(['-VitrinDemo', ...r.launchArgs], locale, storefront, cap.appearance), 1500);
+        const out = ctx.paths.rawVideo(locale, f.family, r.id);
+        await app.record(win, out, r.durationSec);
+        outputs.push(out);
+        log.dim(`  ${locale}/mac/${r.id}.mp4 (${r.durationSec} s)`);
+      }
+    }
+  } finally {
+    await app.quit();
+  }
+  return outputs;
+}
+
+/** Android phone/tablet: dedicated AVD, System UI demo mode, per-app language, intent extras, screencap/screenrecord. */
+async function captureAndroid(ctx: Ctx, f: CaptureFamily, apk: string, appId: string, locales: string[]): Promise<string[]> {
+  const cap = ctx.config.capture;
+  const kinds = captureKinds(ctx.config);
+  const tools = androidTools();
+  const avd = await ensureAvd(tools, f.avd ? { configured: f.device, deviceProfile: FALLBACK_DEVICE[f.family] } : { deviceProfile: f.device });
+  // Fixed ports per family keep serials predictable and away from the user's emulators (5554+).
+  const port = f.family === 'android-tablet' ? 5682 : 5680;
+  log.step(`${f.family}: ${avd} (${serialFor(port)})`);
+  startEmulator(tools, avd, port, cap.android.headless);
+  const device = new AndroidDevice(tools, serialFor(port));
+  const outputs: string[] = [];
+  try {
+    await device.waitForBoot(cap.android.bootTimeoutSec);
+    await device.install(apk);
+    await device.prepare(cap.appearance, f.family === 'android-tablet');
+    const component = await device.resolveActivity(appId, cap.android.activity);
+    for (const locale of locales) {
+      await device.setAppLocale(appId, androidLocaleTag(locale, storefrontForLocale(locale)));
+      for (const s of kinds.screens ? cap.screens : []) {
+        await device.launch(component, launchArgsToExtras(['-VitrinDemo', ...s.launchArgs]), s.url);
+        await sleep(s.waitMs);
+        const out = ctx.paths.rawShot(locale, f.family, s.id);
+        await device.screencap(out);
+        if (await isBlankCapture(out)) {
+          await rm(out);
+          log.warn(`  ${locale}/${f.family}/${s.id}: screen is blank — deleted.`);
+          continue;
+        }
+        outputs.push(out);
+        log.dim(`  ${locale}/${f.family}/${s.id}.png`);
+      }
+      if (kinds.recordings && !NO_RECORDING.has(f.family)) {
+        for (const r of cap.recordings) {
+          const out = ctx.paths.rawVideo(locale, f.family, r.id);
+          await device.record(out, r.durationSec, () => device.launch(component, launchArgsToExtras(['-VitrinDemo', ...r.launchArgs])));
+          outputs.push(out);
+          log.dim(`  ${locale}/${f.family}/${r.id}.mp4 (${r.durationSec} s)`);
+        }
+      }
+    }
+  } finally {
+    await device.shutdown();
+  }
+  return outputs;
 }
 
 // ---------------------------------------------------------------- design

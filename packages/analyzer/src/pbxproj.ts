@@ -110,6 +110,8 @@ export interface PbxTarget {
 export interface PbxProject {
   developmentRegion?: string;
   knownRegions: string[];
+  /** PBXProject attributes such as LastUpgradeCheck ("2710" = Xcode 27.1) and LastSwiftUpdateCheck. */
+  attributes: Record<string, string>;
   targets: PbxTarget[];
 }
 
@@ -172,8 +174,13 @@ export function readPbxproj(text: string): PbxProject {
     });
   }
 
+  const attributes = Object.fromEntries(
+    Object.entries(asDict(project.attributes)).filter((e): e is [string, string] => typeof e[1] === 'string'),
+  );
+
   return {
     developmentRegion: asString(project.developmentRegion),
+    attributes,
     knownRegions: asArray(project.knownRegions).map((r) => asString(r) ?? '').filter(Boolean),
     targets,
   };

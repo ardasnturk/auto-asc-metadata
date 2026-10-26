@@ -44,7 +44,8 @@ research:
   reviewsPerApp: 50
   ocr: true
 targets:
-  enable: []
+  # Ritim predates the Xcode 27.1 Duo heuristic; keep its Duo sets on for end-to-end runs.
+  enable: [duo-outer, duo-inner]
   disable: []
 capture:
   mode: launch-args

@@ -1,0 +1,10 @@
+apply plugin: "com.android.application"
+apply plugin: "com.facebook.react"
+android {
+    namespace "com.pocketbudget"
+    defaultConfig {
+        applicationId "com.pocketbudget"
+        versionCode 7
+        versionName "1.4.0"
+    }
+}

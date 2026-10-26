@@ -34,6 +34,9 @@ export function appPaths(root: string) {
     renderManifest: join(v, 'render-manifest.json'),
     validation: join(v, 'validation.json'),
     report: join(v, 'report.html'),
+    approval: join(v, 'approval.json'),
+    reviewFeedback: join(v, 'review-feedback.json'),
+    reviewSnapshot: join(v, 'review-snapshot.json'),
     briefs: join(v, 'briefs'),
     uploadPlan: join(v, 'upload-plan.json'),
     config: join(root, 'vitrin.config.yaml'),
@@ -43,6 +46,8 @@ export function appPaths(root: string) {
     fastlaneMetadata: join(root, 'fastlane', 'metadata'),
     screenshots: join(root, 'fastlane', 'screenshots'),
     appPreviews: join(root, 'fastlane', 'app-previews'),
+    /** Google Play listing exported for fastlane supply. */
+    androidMetadata: join(root, 'fastlane', 'metadata', 'android'),
   };
 }
 export type AppPaths = ReturnType<typeof appPaths>;
