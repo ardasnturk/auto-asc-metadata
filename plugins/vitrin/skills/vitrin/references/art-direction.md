@@ -67,7 +67,7 @@
 | collage | Three devices | 3 |
 | stat | Big evidence-backed number + headline (`stat`) | 1 |
 | social-proof | The real rating from Lookup, large | 1 |
-| panoramic | Oversized device; pair with `bridge` | 1 |
+| panoramic | Large tilted device that continues into the next screenshot (with `bridge`) | 1 |
 | statement | Icon + big claim + badges (no UI) | 0 |
 | testimonial | Verbatim App Store reviews (no UI) | 0 |
 | feature-wall | Closer: wall of one-line features (`wall`) | 0 |
@@ -77,7 +77,7 @@ At least 60 % of shots show real UI and one of the first three must.
 
 ## Cross-canvas moment
 
-`"bridge": true` on a shot sends a decorative element (bloom, band, ribbon, comet, sticker trail) across the seam into the next screenshot. In a 5+ shot set use **one**, at most two in 8–10. Text, ratings and key UI never cross; each PNG must still read on its own.
+`"bridge": true` on a shot sends a decorative element (bloom, band, ribbon, comet, sticker trail) across the seam into the next screenshot. On a `panoramic` shot the device itself crosses: the next screenshot draws its other half beside its own device, so the pair reads as one continuous image in the store. In a 5+ shot set use **one**, at most two in 8–10. Text, ratings and key UI never cross; each PNG must still read on its own.
 
 ## Badges
 

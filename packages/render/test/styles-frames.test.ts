@@ -13,6 +13,7 @@ import {
   parseHeadline,
   planFramings,
   planPortrait,
+  spanDevice,
   PRESETS,
   resolveDirection,
   sampleOption,
@@ -220,6 +221,31 @@ describe('layout math', () => {
     expect(watch.rule).toBe('contained');
     const jp = planPortrait({ W: 440, H: 956, t: PRESETS['quiet-japandi'], family: 'iphone', framing: 'bleed-bottom', archetype: 'hero', screens: [{ aspect: 2.17 }], index: 0 });
     expect(jp.devices[0]!.y + jp.devices[0]!.h).toBeCloseTo(956 * 0.95, 0);
+  });
+
+  it('keeps offset devices centred in calm presets and crops them only in bold ones', () => {
+    const calm = planPortrait({ W: 440, H: 956, t: PRESETS['liquid-glass-aurora'], family: 'iphone', framing: 'offset', archetype: 'feature', screens: [{ aspect: 2.17 }], index: 1 });
+    const d = calm.devices[0]!;
+    expect(d.x + d.w / 2).toBeCloseTo(220, 0);
+    const bold = planPortrait({ W: 440, H: 956, t: PRESETS['swiss-grid-bold'], family: 'iphone', framing: 'offset', archetype: 'feature', screens: [{ aspect: 2.17 }], index: 1 });
+    const b = bold.devices[0]!;
+    expect(b.x < 0 || b.x + b.w > 440).toBe(true);
+  });
+
+  it('continues a panoramic device into the next screenshot at the same geometry', () => {
+    const t = PRESETS['liquid-glass-aurora'];
+    const out = planPortrait({ W: 440, H: 956, t, family: 'iphone', framing: 'offset', archetype: 'panoramic', screens: [{ aspect: 2.17 }], index: 1, span: { out: true } });
+    const inn = planPortrait({ W: 440, H: 956, t, family: 'iphone', framing: 'offset', archetype: 'feature', screens: [{ aspect: 2.17 }], index: 2, span: { inAspect: 2.17 } });
+    const a = out.devices[0]!;
+    const b = inn.devices.find((x) => x.screen === 1)!;
+    expect(a).toEqual(spanDevice(440, 956, 'iphone', 2.17));
+    expect(a.x + a.w).toBeGreaterThan(440);
+    expect(b.x).toBeCloseTo(a.x - 440, 6);
+    expect([b.y, b.w, b.h, b.rot]).toEqual([a.y, a.w, a.h, a.rot]);
+    // This page's own device stands on the right, in front of the other half.
+    const own = inn.devices.find((x) => x.screen === 0)!;
+    expect(own.z).toBeGreaterThan(b.z);
+    expect(own.x + own.w).toBeLessThanOrEqual(440);
   });
 
   it('measures empty bands including the canvas edges', () => {

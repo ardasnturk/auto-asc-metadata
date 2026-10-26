@@ -215,8 +215,10 @@ export const Shot = z.object({
   /** Contrast slide: the preset's alternate palette. Use 1–2 per set for rhythm; omit to follow the preset rhythm. */
   inverted: z.boolean().optional(),
   /**
-   * Cross-canvas moment: a decorative element (bloom, band, ribbon, sticker) or the oversized device of a
-   * `panoramic` shot crosses into the next screenshot. Text never crosses. One per 5+ shot set, at most two.
+   * Cross-canvas moment: a decorative element (bloom, band, ribbon, sticker) crosses into the next screenshot.
+   * On a `panoramic` shot the device itself crosses: a large tilted phone sits on the right edge and the next
+   * screenshot shows its other half next to its own device, so the two read as one continuous image in the
+   * store. Text never crosses. One per 5+ shot set, at most two.
    */
   bridge: z.boolean().default(false),
   /** feature-wall: one short line per real feature (each backed by `featureIds`), localized. */

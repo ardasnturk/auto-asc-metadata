@@ -81,6 +81,9 @@ export const UI_EN = {
   commentEach: 'Add a comment to every rejected item.',
   sentRejections: 'Sent {n} rejection(s) to Claude. You can close this tab.',
   notSent: 'Not sent: {error}',
+  samplesTitle: 'Choose a design',
+  samplesIntro: 'Each column shows how your App Store listing looks with that design: the search result first, then the product page. Pick A, B, C or D.',
+  samplesOption: 'If you choose {letter}',
 };
 export type UiKey = keyof typeof UI_EN;
 export type UiText = Record<UiKey, string>;
@@ -157,6 +160,9 @@ const UI_TR: UiText = {
   commentEach: 'Reddedilen her öğeye bir yorum ekleyin.',
   sentRejections: '{n} ret Claude’a gönderildi. Bu sekmeyi kapatabilirsiniz.',
   notSent: 'Gönderilmedi: {error}',
+  samplesTitle: 'Bir tasarım seçin',
+  samplesIntro: 'Her sütun, o tasarımı seçerseniz App Store sayfanızın nasıl görüneceğini gösterir: önce arama sonucu, sonra ürün sayfası. A, B, C veya D’yi seçin.',
+  samplesOption: '{letter} seçeneğini seçerseniz',
 };
 
 const BUILT_IN: Record<string, UiText> = { en: UI_EN, tr: UI_TR };

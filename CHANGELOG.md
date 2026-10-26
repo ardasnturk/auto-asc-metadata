@@ -2,6 +2,17 @@
 
 All notable changes to this project are documented in this file. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## 0.7.0 — 2026-10-26
+
+### Added — See your choice in the store
+- **Store preview of the design samples:** `vitrin design --samples` now also writes `.vitrin/design-samples/store-preview.html` (and a PNG of it). For each option A–D it shows an App Store search result and product page, "if you choose A, your listing looks like this", in the user's language. The samples cover the first three shots, which is what the search result shows.
+- **Panoramic pair:** a `panoramic` shot with `bridge: true` now puts a large tilted phone on the right edge, and the next screenshot draws the rest of that phone beside its own device. The two screenshots read as one continuous image in the store. Before, the device was only cropped. This also works in the design samples.
+- **Metadata in the project:** after a successful `vitrin write`, the finished store text is also in `metadata/app-store/<platform>/<locale>/*.txt` (and `metadata/google-play/android/<locale>/`), with a `metadata/manifest.json`. A `metadata/` folder Vitrin did not write is never touched.
+
+### Fixed
+- Devices no longer look pushed against one edge: in calm presets the `offset` framing keeps the device centred. Only bold presets (swiss, neon, candy, paper) and panoramic shots crop it at the side on purpose.
+- The skill reads `ui.language` from the config and asks the language question once per project, never again after a design was chosen or on "continue".
+
 ## 0.6.0 — 2026-10-26
 
 ### Added — Screens from the code, no build
