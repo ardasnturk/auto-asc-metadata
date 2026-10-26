@@ -20,50 +20,108 @@ export const Archetype = z.enum([
   'statement',
   /** Real App Store review quotes of this app. Not real UI. */
   'testimonial',
+  /** Closer: the app's real features as a wall of big one-line type. Not real UI. */
+  'feature-wall',
+  /** Closer: several real screens as a frameless mosaic ("look at everything it does"). */
+  'mosaic',
 ]);
 
 /** Archetypes that show no app UI (best practice: at least 60 % of shots show real UI). */
-export const NON_UI_ARCHETYPES: ReadonlyArray<z.infer<typeof Archetype>> = ['statement', 'testimonial'];
+export const NON_UI_ARCHETYPES: ReadonlyArray<z.infer<typeof Archetype>> = ['statement', 'testimonial', 'feature-wall'];
 export type Archetype = z.infer<typeof Archetype>;
 
 export const BackgroundStyle = z.enum(['solid', 'linear', 'radial', 'mesh', 'grid', 'dots', 'panoramic']);
 
-export const ArtDirectionOption = z.object({
-  id: z.string().regex(/^[a-z0-9-]+$/),
-  name: z.string(),
-  rationale: z.string(),
-  /** Why this direction stands apart from competitor screenshots. */
-  differentiation: z.string(),
-  palette: z.object({
-    background: z.array(HexColor).min(1).max(4),
-    surface: HexColor,
-    primary: HexColor,
-    accent: HexColor,
-    text: HexColor,
-    textMuted: HexColor,
-    badgeBackground: HexColor,
-    badgeText: HexColor,
-  }),
-  typography: z.object({
-    /** Must be one of the bundled OFL families (see packages/render/fonts). */
-    headline: z.string(),
-    body: z.string(),
-    headlineWeight: z.number().int().min(100).max(900).default(800),
-    headlineCase: z.enum(['none', 'upper']).default('none'),
-    letterSpacing: z.number().default(-0.02),
-  }),
-  background: z.object({
-    style: BackgroundStyle,
-    angle: z.number().default(160),
-    /** Strength of the decorative pattern 0–1. */
-    intensity: z.number().min(0).max(1).default(0.5),
-  }),
-  device: z.object({
-    frame: z.enum(['none', 'minimal', 'realistic']).default('minimal'),
-    shadow: z.boolean().default(true),
-    tilt: z.number().min(-12).max(12).default(0),
-  }),
+/**
+ * Named style presets (a curated port of ParthJadhav/app-store-screenshots, MIT): each one is a full token set —
+ * palette, type pairing, background recipe, decoration recipe and device treatment.
+ * See skills/vitrin/references/styles/. `vitrin-classic` is Vitrin's original mesh look and the default.
+ */
+export const StylePreset = z.enum([
+  'vitrin-classic',
+  'liquid-glass-aurora',
+  'swiss-grid-bold',
+  'midnight-glow-pro',
+  'soft-clay-wellness',
+  'quiet-japandi',
+  'bento-keynote-grid',
+  'magazine-cover-editorial',
+  'candy-pop-social',
+  'neon-athletic-night',
+  'paper-sticker-skeuomorphic',
+  'hand-drawn-editorial',
+]);
+export type StylePreset = z.infer<typeof StylePreset>;
+
+/** How the device sits on the canvas. `auto` picks a framing per archetype and varies it across the set. */
+export const Framing = z.enum(['auto', 'bleed-bottom', 'bleed-top', 'offset', 'tilted', 'two-devices', 'no-device', 'contained']);
+export type Framing = z.infer<typeof Framing>;
+
+export const Palette = z.object({
+  background: z.array(HexColor).min(1).max(4),
+  surface: HexColor,
+  primary: HexColor,
+  accent: HexColor,
+  text: HexColor,
+  textMuted: HexColor,
+  badgeBackground: HexColor,
+  badgeText: HexColor,
 });
+export type Palette = z.infer<typeof Palette>;
+
+export const Typography = z.object({
+  /** Must be one of the bundled OFL families (see packages/render/fonts). */
+  headline: z.string(),
+  body: z.string(),
+  headlineWeight: z.number().int().min(100).max(900).default(800),
+  headlineCase: z.enum(['none', 'upper']).default('none'),
+  letterSpacing: z.number().default(-0.02),
+});
+export type Typography = z.infer<typeof Typography>;
+
+export const ArtDirectionOption = z
+  .object({
+    id: z.string().regex(/^[a-z0-9-]+$/),
+    name: z.string(),
+    rationale: z.string(),
+    /** Why this direction stands apart from competitor screenshots. */
+    differentiation: z.string(),
+    /** Style preset that supplies every token not given explicitly below. Without it, `palette` is required. */
+    preset: StylePreset.optional(),
+    /**
+     * The app's brand colors (app_profile.brand). They tint the preset: the emphasis/accent takes the brand hue
+     * (darkened or lightened until it clears WCAG AA on the background) and `strength` shifts the background hues.
+     */
+    brand: z
+      .object({
+        primary: HexColor,
+        secondary: HexColor.optional(),
+        /** 0 = only the accent takes the brand, 1 = background hues rotate fully to the brand hue. */
+        strength: z.number().min(0).max(1).default(0.35),
+      })
+      .optional(),
+    /** Explicit palette; overrides the preset palette (required when no preset is set). */
+    palette: Palette.optional(),
+    typography: Typography.optional(),
+    background: z
+      .object({
+        style: BackgroundStyle,
+        angle: z.number().default(160),
+        /** Strength of the decorative pattern 0–1. */
+        intensity: z.number().min(0).max(1).default(0.5),
+      })
+      .optional(),
+    device: z
+      .object({
+        frame: z.enum(['none', 'minimal', 'realistic']).default('minimal'),
+        shadow: z.boolean().default(true),
+        tilt: z.number().min(-12).max(12).default(0),
+      })
+      .optional(),
+  })
+  .superRefine((o, ctx) => {
+    if (!o.preset && !o.palette) ctx.addIssue({ code: 'custom', path: ['palette'], message: 'Either `preset` or `palette` is required.' });
+  });
 export type ArtDirectionOption = z.infer<typeof ArtDirectionOption>;
 
 export const ArtDirection = z.object({
@@ -152,6 +210,17 @@ export const Shot = z.object({
   stat: z.object({ value: z.string(), featureId: FeatureId }).optional(),
   /** Restrict to some target ids (default: all enabled screenshot targets). */
   targets: z.array(z.string()).optional(),
+  /** Device framing; `auto` varies it across the set (never the same framing twice in a row). */
+  framing: Framing.default('auto'),
+  /** Contrast slide: the preset's alternate palette. Use 1–2 per set for rhythm; omit to follow the preset rhythm. */
+  inverted: z.boolean().optional(),
+  /**
+   * Cross-canvas moment: a decorative element (bloom, band, ribbon, sticker) or the oversized device of a
+   * `panoramic` shot crosses into the next screenshot. Text never crosses. One per 5+ shot set, at most two.
+   */
+  bridge: z.boolean().default(false),
+  /** feature-wall: one short line per real feature (each backed by `featureIds`), localized. */
+  wall: z.array(Localized).max(8).default([]),
 });
 export type Shot = z.infer<typeof Shot>;
 
@@ -233,7 +302,8 @@ export type VideoTransition = z.infer<typeof VideoTransition>;
 
 export const PreviewPlan = z.object({
   id: z.string().regex(/^\d{2}$/),
-  device: z.enum(['iphone', 'ipad']),
+  /** mac and tv previews are landscape 1920×1080 (targets preview-mac / preview-tv). */
+  device: z.enum(['iphone', 'ipad', 'mac', 'tv']),
   style: VideoStyle.default('showcase'),
   transition: VideoTransition.default('auto'),
   /** Light-leak overlays on cuts (showcase default on). */
@@ -262,3 +332,53 @@ export const VideoPlan = z.object({
   loops: z.object({ header: LoopPlan.optional(), search: LoopPlan.optional() }).default({}),
 });
 export type VideoPlan = z.infer<typeof VideoPlan>;
+
+/** Composition rules from the quality bar (calibrated on the 1320×2868 canvas, applied as ratios). */
+export const QUALITY_BAR = {
+  /** Visible phone/tablet height as a share of canvas height on device slides. */
+  deviceHeightMin: 0.68,
+  deviceHeightMax: 0.82,
+  /** Below this the device reads small and the slide empty (auto-reject). */
+  deviceHeightReject: 0.65,
+  /** Largest horizontal band with no content, as a share of canvas height. */
+  maxEmptyBand: 0.22,
+  /** Widest single headline word as a share of canvas width. */
+  maxWordWidth: 0.88,
+  /** WCAG AA against the worst pixel under the headline glyphs. */
+  minHeadlineContrast: 4.5,
+  /** background → device → headline + one accent. */
+  maxLayers: 3,
+  /** App Store search-result thumbnail width the thumbnail test downscales to. */
+  thumbnailWidth: 220,
+  /** Smallest headline font size (px) that still reads in that thumbnail. */
+  thumbnailMinHeadlinePx: 11,
+  /** Smallest glyph/background contrast that survives the downscale. */
+  thumbnailMinContrast: 3,
+} as const;
+
+/** Render-time measurements of one image (render manifest → validate). */
+export const ImageQuality = z.object({
+  preset: z.string(),
+  framing: z.string(),
+  /** phone = phone/tablet rule (68–82 %), contained = watch/TV/Mac/Vision (fully inside), none = no device. */
+  deviceRule: z.enum(['phone', 'contained', 'none']),
+  /** Visible device height / canvas height (union of all devices). */
+  deviceHeightRatio: z.number().optional(),
+  /** Largest empty horizontal band / canvas height. */
+  largestEmptyBand: z.number(),
+  /** Widest headline word / canvas width. */
+  widestWordRatio: z.number(),
+  /** Contrast of the headline color(s) against the worst background pixel under the glyphs. */
+  headlineContrast: z.number(),
+  /** Same for kicker and subheadline. */
+  supportContrast: z.number().optional(),
+  layers: z.number().int(),
+  thumbnail: z.object({
+    width: z.number(),
+    headlinePx: z.number(),
+    /** Glyph vs background luminance contrast after downscaling. */
+    contrast: z.number(),
+    legible: z.boolean(),
+  }),
+});
+export type ImageQuality = z.infer<typeof ImageQuality>;

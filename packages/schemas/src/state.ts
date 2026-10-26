@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { ImageQuality } from './design.js';
 
 export const StageName = z.enum([
   'init',
@@ -77,6 +78,8 @@ export const RenderManifest = z.object({
       minContrast: z.number().optional(),
       safeAreaViolations: z.array(z.string()).default([]),
       thumbnailLegible: z.boolean().optional(),
+      /** Quality-bar measurements (device ratio, empty bands, glyph contrast, thumbnail test). */
+      quality: ImageQuality.optional(),
     }),
   ),
   videos: z
