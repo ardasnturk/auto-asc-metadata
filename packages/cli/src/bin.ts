@@ -1,14 +1,14 @@
 #!/usr/bin/env node
 import { log, mask, SchemaError, setLogMode } from '@vitrin/core';
 import { Command } from 'commander';
-import { relative } from 'node:path';
 import pc from 'picocolors';
+import { approvalStage, approveCommand } from './approval.js';
 import { createContext, EXIT, NeedsInput, type GlobalOptions } from './context.js';
 import { runDoctor } from './commands/doctor.js';
 import { initCommand } from './commands/init.js';
 import { analyzeCommand, captureCommand, designCommand, researchCommand, validateCommand, videoCommand, writeCommand } from './commands/pipeline.js';
 import { submitCommand, uploadCommand } from './commands/upload.js';
-import { buildReport } from './report.js';
+import { reviewCommand } from './review-server.js';
 
 const program = new Command();
 program
@@ -112,14 +112,20 @@ program
 
 program
   .command('review')
-  .description('preview report → .vitrin/report.html')
+  .description('review gallery of everything that would be uploaded → .vitrin/report.html (--serve: approve/reject in the browser)')
+  .option('--serve', 'serve the gallery on 127.0.0.1 with approve / reject buttons; waits for the decision')
+  .option('--port <port>', 'port for --serve (0 = any free port)', '4870')
+  .action(action(async (o: { serve?: boolean; port: string }) => reviewCommand(await createContext(globals()), { serve: o.serve, port: Number(o.port) })));
+
+program
+  .command('approve')
+  .description('records the user\'s approval of exactly the reviewed content → .vitrin/approval.json (only after an explicit "yes")')
+  .option('--expect-hash <hash>', 'overall hash (or its prefix) the user reviewed; refuses if the content differs')
+  .option('--reject <items...>', 'reject these review items (id or file path from the report) instead of approving')
+  .option('--comment <text>', 'the user\'s comment for --reject')
   .action(
-    action(async () => {
-      const ctx = await createContext(globals());
-      const file = await buildReport(ctx);
-      log.ok(`Report: ${relative(process.cwd(), file) || file}`);
-      log.result({ report: file });
-      return EXIT.OK;
+    action(async (o: { expectHash?: string; reject?: string[]; comment?: string }) => {
+      return approveCommand(await createContext(globals()), { expectHash: o.expectHash, reject: o.reject, comment: o.comment });
     }),
   );
 
@@ -127,7 +133,7 @@ program
   .command('upload')
   .description('uploads with fastlane + the ASC API (plan first; --dry-run shows the plan only)')
   .option('--dry-run', 'show the plan only')
-  .option('--yes', 'plan approved (only if the user explicitly approved it)')
+  .option('--yes', 'skip the terminal prompt (only if the user explicitly said yes); never skips the approval gate')
   .option('--uploader <name>', 'deliver | asset-library')
   .option('--creatives', 'also upload the product page header and search creatives')
   .option('--cpp', 'create the Custom Product Page suggestions')
@@ -143,7 +149,7 @@ program
 
 program
   .command('all')
-  .description('analyze → research → write → capture → design → video → validate → review → upload --dry-run')
+  .description('analyze → research → write → capture → design → video → validate → review → (approval) → upload --dry-run')
   .option('--skip-capture', 'use the existing raw captures')
   .option('--no-images', 'research: do not download competitor screenshots')
   .action(
@@ -160,7 +166,8 @@ program
         ['design', () => designCommand(ctx)],
         ['video', () => videoCommand(ctx)],
         ['validate', async () => (await validateCommand(ctx)).code],
-        ['review', async () => (await buildReport(ctx), EXIT.OK)],
+        ['review', () => reviewCommand(ctx, {})],
+        ['approval', () => approvalStage(ctx)],
         ['upload --dry-run', () => uploadCommand(ctx, { dryRun: true })],
       ];
       for (const [name, fn] of steps) {
@@ -172,7 +179,7 @@ program
           return code;
         }
       }
-      log.ok('All stages done. To upload: `vitrin doctor`, then `vitrin upload --yes` once the user approves.');
+      log.ok('All stages done and the content is approved. To upload: `vitrin doctor`, then `vitrin upload --yes` once the user confirms the plan.');
       return EXIT.OK;
     }),
   );
