@@ -102,7 +102,9 @@ Developer: ${ctx.config.copyrightHolder ?? '?'} — this name does not go in the
   "accessibilityDraft": [{ "criterion": "VoiceOver", "supported": "partial", "evidence": "…" }] }
 \`\`\`
 Optional \`.vitrin/cpp-suggestions.json\`: 2–5 Custom Product Page suggestions (segment, rationale, non-overlapping keyword set, shot ids to use).
-
+${profile.app.platforms.includes('android') ? `
+**Google Play listing** (the app ships on Android). For each locale write \`.vitrin/metadata/play/<locale>.json\`: \`{ "locale", "title" (≤ 30, brand + primary keyword, no emoji/ALL CAPS/#1/best/free/new), "shortDescription" (≤ 80, one benefit sentence with the secondary keyword), "fullDescription" (≤ 4000; indexed, so use the main phrases naturally 2–3 times; no keyword lists; no App Store/iPhone mentions), "changelog" (≤ 500, optional), "video" (optional public YouTube URL), "claims" }\`. Set \`playLocale\` only to override data/play-locales.json. Write \`.vitrin/metadata/play/app.json\` with \`{ "track": "production", "versionCode": <int, only with a changelog> }\`. Google Play has no keyword field; see references/aso-rules.md (Google Play).
+` : ''}
 For the age rating questionnaire and accessibility, see app_profile.signals (age.*, accessibility.*); these are drafts, the user gives final approval.
 
 ## Locales

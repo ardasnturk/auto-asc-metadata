@@ -61,8 +61,9 @@ program
   .description('checks tools, keys, ASC access, the app version, URLs and refData')
   .option('--create-version <version>', 'if there is no editable version, try to create one with deliver')
   .option('--offline', 'make no network requests')
+  .option('--play-live', 'read-only Google Play API test (opens and deletes an edit)')
   .action(
-    action(async (o: { createVersion?: string; offline?: boolean }) => {
+    action(async (o: { createVersion?: string; offline?: boolean; playLive?: boolean }) => {
       const ctx = await createContext(globals());
       const res = await runDoctor(ctx, o);
       log.result(res);

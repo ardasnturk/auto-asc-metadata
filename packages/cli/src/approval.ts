@@ -1,6 +1,7 @@
 import { existsSync, loadTargets, log, readJsonIfExists, sha256, writeJson, writeText } from '@vitrin/core';
 import {
   AppMetadata,
+  AppProfile,
   ApprovalManifest,
   CppSuggestions,
   RenderManifest,
@@ -15,7 +16,7 @@ import {
   type ReviewRejection,
   type Store,
 } from '@vitrin/schemas';
-import { exportFastlaneMetadata } from '@vitrin/upload';
+import { exportFastlaneMetadata, exportPlayMetadata, prepareStores } from '@vitrin/upload';
 import { createHash } from 'node:crypto';
 import { createReadStream } from 'node:fs';
 import { readdir, readFile, rm, stat } from 'node:fs/promises';
@@ -131,11 +132,27 @@ export async function syncFastlaneMetadata(ctx: Ctx): Promise<boolean> {
     const metadata = await loadLocaleMetadata(ctx);
     if (!app || metadata.length !== ctx.config.app.locales.length) return false;
     await exportFastlaneMetadata(ctx.paths, ctx.config, app, metadata);
+    await syncPlayMetadata(ctx);
     return true;
   } catch (err) {
     log.warn(`fastlane/metadata was not refreshed: ${(err as Error).message}`);
     return false;
   }
+}
+
+/**
+ * Writes the Google Play supply tree from the same listings and renders `vitrin upload` uses, so the Play text and
+ * images the user approves are hashed before upload. The export is deterministic: re-running it at upload time
+ * produces the same files, and a changed render or listing shows up as a change against the approval.
+ */
+async function syncPlayMetadata(ctx: Ctx): Promise<void> {
+  const profile = await readJsonIfExists(ctx.paths.profile, AppProfile).catch(() => undefined);
+  if (!profile?.app.platforms.includes('android')) return;
+  const stores = await prepareStores({ paths: ctx.paths, config: ctx.config, profile, env: ctx.env, online: false });
+  if (!stores.play?.inputs.listings.length) return;
+  const kinds = ctx.config.selection.assets;
+  const scope = { screenshots: !kinds || kinds.includes('screenshots'), creatives: !kinds || kinds.includes('creatives') };
+  await exportPlayMetadata(ctx.paths, stores.play.inputs, stores.assets, undefined, scope);
 }
 
 function targetFromName(file: string, targets: RenderTarget[]): RenderTarget | undefined {
