@@ -19,3 +19,27 @@ fastlane/app-previews/
 .vitrin/briefs/
 .vitrin/state.json
 .vitrin/upload-plan.json
+
+# >>> vitrin (managed block, edits inside are overwritten)
+# secrets
+.env
+*.p8
+secrets/
+# generated working files (sources stay committable)
+/.vitrin/*
+!/.vitrin/app_profile.json
+!/.vitrin/metadata/
+!/.vitrin/keywords/
+!/.vitrin/art-direction.json
+!/.vitrin/shots.json
+!/.vitrin/video-plan.json
+!/.vitrin/cpp-suggestions.json
+# generated store assets
+/fastlane/screenshots/
+/fastlane/app-previews/
+/fastlane/metadata/android/**/images/
+/fastlane/report.xml
+/fastlane/README.md
+# kept uploads (retention.commit: false)
+/metadata/
+# <<< vitrin
