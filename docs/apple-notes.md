@@ -12,6 +12,38 @@ The values are encoded in `data/targets.json`, `data/asc-locales.json`, `data/st
 - **iPhone Duo outer: 1398×2034 / 2034×1398; inner: 2007×2853 / 2853×2007.** Required from April 2027 for apps built with the iOS 27.1 SDK. Once uploaded, the product page shows an "Optimized for iPhone Duo" badge.
 - **iPad 13": 2064×2752 / 2048×2732 — required for apps that run on iPad.** 12.9" and 11" fall back to 13".
 
+## Other Apple platforms (re-checked October 26, 2026)
+
+Read from the screenshot and app preview specification pages on October 26, 2026 (`curl` of the live pages); encoded as `mac-16x10`, `watch-ultra`, `watch-series`, `appletv-4k`, `vision-pro`, `preview-mac`, `preview-tv` in `data/targets.json`.
+
+- **Mac:** 16:10, one of 1280×800, 1440×900, 2560×1600, 2880×1800 — required for Mac apps. Vitrin renders 2880×1800 (1440×900 @2x).
+- **Apple TV:** 1920×1080 or 3840×2160 — required for Apple TV apps. Vitrin renders 3840×2160.
+- **Apple Vision Pro:** 3840×2160 — required for visionOS apps.
+- **Apple Watch:** one of 422×514 (Ultra 4, Ultra 3), 410×502 (Ultra 2, Ultra), 416×496 (Series 12, 11, 10), 396×484 (Series 9, 8, 7), 368×448 (Series 6, 5, 4, SE 3, SE 2, SE), 312×390 (Series 3, 2, 1) — required for Apple Watch apps; **the same size must be used across all localizations.** Vitrin produces `watch-ultra` (422×514) by default; `watch-series` (416×496) is an opt-in alternative, never both.
+- **App Previews:** Mac 1920×1080, Apple TV 1920×1080, Vision Pro 3840×2160 (all landscape, 16:9). `preview-mac` / `preview-tv` are opt-in like `preview-ipad`.
+- **Not verified:** the simctl device type names (`Apple Watch Ultra 3 (49mm)`, `Apple Watch Series 11 (46mm)`, `Apple TV 4K (3rd generation)`, `Apple Vision Pro`) — no Xcode on the machine that wrote this; `capture.simulators` overrides them. Asset Library display classes for these platforms are not set.
+
+### Platform detection
+
+`vitrin analyze` fills `app.platforms` from the Xcode targets that ship (applications and watch apps; not extensions, tests or the watch container stub):
+SDKROOT / SUPPORTED_PLATFORMS `iphoneos` → iOS, `macosx` or `SUPPORTS_MACCATALYST = YES` → macOS, `watchos` → watchOS, `appletvos` → tvOS, `xros` (or TARGETED_DEVICE_FAMILY 7) → visionOS.
+"Designed for iPad/iPhone" on Mac or Vision Pro (`SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD`, `SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD`) does **not** add a platform: App Store Connect shows the iPad screenshots there.
+
+### iPhone Duo heuristic
+
+Every iPhone app runs on iPhone Duo, but Duo screenshots are only asked for (and from April 2027 required) for apps built with the iOS 27.1 SDK, which also earns the "Optimized for iPhone Duo" badge. Project files cannot prove the SDK of a build, so `app.supportsDuo` is true when the app runs on iPhone **and** either `LastUpgradeCheck` / `LastSwiftUpdateCheck` ≥ 2710 (the project was upgraded in Xcode 27.1+) or `IPHONEOS_DEPLOYMENT_TARGET` ≥ 27.1. Otherwise Duo targets stay off and the analyzer leaves a todo; `targets.enable: [duo-outer, duo-inner]` overrides it. A false negative is possible for teams that build with Xcode 27.1 without accepting the project upgrade — check before April 2027.
+
+## Google Play (October 26, 2026)
+
+Google's Play Console help (support.google.com) was **not reachable** from the machine that wrote this, so only the icon is verified:
+
+- **Verified** (https://developer.android.com/google-play/resources/icon-design-specifications): app icon 512×512, 32-bit PNG (alpha allowed), sRGB, at most 1024 KB, full square — Play applies the mask (30% radius) and shadow. Target `play-icon`.
+- **Unverified, from prior knowledge — check https://support.google.com/googleplay/android-developer/answer/9866151 before relying on them:**
+  - feature graphic exactly 1024×500, JPEG or 24-bit PNG without alpha, required to publish (`play-feature-graphic`);
+  - 2–8 phone screenshots, JPEG or 24-bit PNG without alpha, each side 320–3840 px, the long side at most twice the short side; 1080×1920 (9:16) meets the promotion guideline (`play-phone`);
+  - 7-inch tablet screenshots each side 320–3840 px (`play-tablet-7`, 1200×1920), 10-inch tablet screenshots each side 1080–7680 px (`play-tablet-10`, 1600×2560). Tablet targets are enabled only when the Android app has tablet resources (`layout-sw600dp`, `values-large`, …).
+- AVD device profiles (`pixel_9`, `Nexus 7 2013`, `pixel_tablet`) are avdmanager ids from prior knowledge; `capture.android.avds` overrides them.
+
 ## App Preview — App preview specifications
 
 - iPhone Duo, 6.9", 6.5", 6.1" (Dynamic Island medium), 5.8": **886×1920** (reversed in landscape).
@@ -82,3 +114,4 @@ The values are encoded in `data/targets.json`, `data/asc-locales.json`, `data/st
 - https://developer.apple.com/help/app-store-connect/reference/app-information/app-store-localizations
 - https://developer.apple.com/documentation/appstoreconnectapi/app-store-connect-api-4-5-1-release-notes
 - https://docs.fastlane.tools/actions/deliver/ · https://docs.fastlane.tools/app-store-connect-api/
+- https://developer.android.com/google-play/resources/icon-design-specifications (verified) · https://support.google.com/googleplay/android-developer/answer/9866151 (unreachable, unverified)
