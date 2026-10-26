@@ -1,0 +1,15 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	objectVersion = 77;
+	objects = {
+		T0 /* Fold */ = { isa = PBXNativeTarget; buildConfigurationList = TL0; name = "Fold"; productName = "Fold"; productType = "com.apple.product-type.application"; };
+		TL0 = { isa = XCConfigurationList; buildConfigurations = ( TC0D, TC0R ); };
+		TC0D = { isa = XCBuildConfiguration; name = Debug; buildSettings = { PRODUCT_BUNDLE_IDENTIFIER = "com.example.fold"; SDKROOT = "iphoneos"; TARGETED_DEVICE_FAMILY = "1"; IPHONEOS_DEPLOYMENT_TARGET = "18.0"; }; };
+		TC0R = { isa = XCBuildConfiguration; name = Release; buildSettings = { PRODUCT_BUNDLE_IDENTIFIER = "com.example.fold"; SDKROOT = "iphoneos"; TARGETED_DEVICE_FAMILY = "1"; IPHONEOS_DEPLOYMENT_TARGET = "18.0"; }; };
+		PL = { isa = XCConfigurationList; buildConfigurations = ( PC ); };
+		PC = { isa = XCBuildConfiguration; name = Release; buildSettings = {  }; };
+		P0 /* Project object */ = { isa = PBXProject; attributes = { LastUpgradeCheck = 2710; LastSwiftUpdateCheck = 2710; }; buildConfigurationList = PL; developmentRegion = en; knownRegions = ( en, Base, ); targets = ( T0, ); };
+	};
+	rootObject = P0 /* Project object */;
+}
