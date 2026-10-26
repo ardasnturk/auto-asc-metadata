@@ -81,4 +81,5 @@ export const DELIVER_PREVIEW_DEVICE: Record<string, string> = {
   'preview-iphone': 'IPHONE_67',
   'preview-ipad': 'IPAD_PRO_3GEN_129',
   'preview-mac': 'DESKTOP',
+  'preview-tv': 'APPLE_TV',
 };
