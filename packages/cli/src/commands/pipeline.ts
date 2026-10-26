@@ -1,8 +1,8 @@
 import { analyzeProject } from '@vitrin/analyzer';
 import { enabledTargets, exec, existsSync, getTarget, hashPaths, hashValue, log, readJson, readJsonIfExists, run, storefrontForLocale, which, writeJson } from '@vitrin/core';
-import { selectedOption, renderDesign } from '@vitrin/render';
+import { renderDesign, renderDesignSamples, selectedOption } from '@vitrin/render';
 import { runResearch } from '@vitrin/research';
-import { AppMetadata, AppProfile, ArtDirection, CppSuggestions, LocaleMetadata, ShotList, VideoPlan, type Issue, type Platform, type TargetFamily, type ValidationReport } from '@vitrin/schemas';
+import { AppMetadata, AppProfile, ArtDirection, CppSuggestions, LocaleMetadata, ShotList, StylePreset, VideoPlan, type Issue, type Platform, type TargetFamily, type ValidationReport } from '@vitrin/schemas';
 import { validateAll } from '@vitrin/validate';
 import { renderVideos } from '@vitrin/video';
 import { exportFastlaneMetadata } from '@vitrin/upload';
@@ -434,8 +434,24 @@ async function captureAndroid(ctx: Ctx, f: CaptureFamily, apk: string, appId: st
 }
 
 // ---------------------------------------------------------------- design
-export async function designCommand(ctx: Ctx, opts: { only?: string[] } = {}): Promise<number> {
+export interface DesignOptions {
+  only?: string[];
+  /** Comparison render: the first two shots in N presets plus a contact sheet (nothing is uploaded). */
+  samples?: boolean;
+  /** Number of sample designs (default 4). */
+  count?: number;
+  /** Preset ids to sample instead of the suggested ones. */
+  styles?: string[];
+}
+
+export async function designCommand(ctx: Ctx, opts: DesignOptions = {}): Promise<number> {
   const profile = await loadProfile(ctx);
+  const assets = ctx.config.selection?.assets;
+  if (opts.samples) return designSamples(ctx, profile, opts);
+  if (assets && !assets.includes('screenshots') && !assets.includes('creatives') && !assets.includes('events')) {
+    log.dim('selection.assets has no screenshots, creatives or events — design skipped.');
+    return EXIT.OK;
+  }
   if (!existsSync(ctx.paths.artDirection) || !existsSync(ctx.paths.shots)) {
     const brief = await designBrief(ctx, profile);
     throw new NeedsInput('Claude input needed: art direction and shot list (art-direction.json, shots.json).', [`Brief: ${relative(ctx.root, brief)}`]);
@@ -443,12 +459,17 @@ export async function designCommand(ctx: Ctx, opts: { only?: string[] } = {}): P
   const ad = await readJson(ctx.paths.artDirection, ArtDirection);
   const shots = await readJson(ctx.paths.shots, ShotList);
   selectedOption(ad);
+  // enabledTargets applies selection.platforms and selection.assets; events also need an event in shots.json.
   const targets = enabledTargets(ctx.config, profile).filter((t) => t.kind === 'screenshot' || t.kind === 'creative' || (t.kind === 'event' && shots.creatives.events.length > 0));
+  if (!targets.length) {
+    log.dim('No screenshot or creative targets are enabled for this selection — design skipped.');
+    return EXIT.OK;
+  }
   const rawHash = await hashPaths([ctx.paths.raw], ctx.root);
   await stage(ctx, 'design', { ad, shots, targets: targets.map((t) => t.id), rawHash, locales: ctx.config.app.locales, only: opts.only }, async () => {
     log.step(`Render: ${shots.shots.length} shots × ${targets.filter((t) => t.kind === 'screenshot').length} sizes × ${ctx.config.app.locales.length} locales`);
     const appIcon = profile.brand.appIcon ? join(profile.project.root, profile.brand.appIcon) : undefined;
-    const res = await renderDesign({ paths: ctx.paths, locales: ctx.config.app.locales, primaryLocale: ctx.config.app.primaryLocale, targets, artDirection: ad, shots, onlyShots: opts.only, appIcon });
+    const res = await renderDesign({ paths: ctx.paths, locales: ctx.config.app.locales, primaryLocale: ctx.config.app.primaryLocale, targets, artDirection: ad, shots, onlyShots: opts.only, appIcon, appName: profile.app.displayName });
     for (const w of res.warnings) log.warn(w);
     log.ok(`Rendered ${res.manifest.images.length} images → fastlane/screenshots, .vitrin/creative`);
     return res.manifest.images.map((i) => i.file);
@@ -458,9 +479,53 @@ export async function designCommand(ctx: Ctx, opts: { only?: string[] } = {}): P
   return report.ok ? EXIT.OK : EXIT.FAIL;
 }
 
+/** `vitrin design --samples`: N clearly different designs of the first two shots for the user to pick from. */
+async function designSamples(ctx: Ctx, profile: AppProfile, opts: DesignOptions): Promise<number> {
+  if (!existsSync(ctx.paths.shots)) {
+    const brief = await designBrief(ctx, profile);
+    throw new NeedsInput('Claude input needed: the first two shots in shots.json (hero + second shot) before sampling designs.', [`Brief: ${relative(ctx.root, brief)}`]);
+  }
+  const shots = await readJson(ctx.paths.shots, ShotList);
+  const ad = existsSync(ctx.paths.artDirection) ? await readJson(ctx.paths.artDirection, ArtDirection) : undefined;
+  const known = StylePreset.options as readonly string[];
+  const unknown = (opts.styles ?? []).filter((s) => !known.includes(s));
+  if (unknown.length) throw new NeedsInput(`Unknown style preset: ${unknown.join(', ')} (${known.join(', ')}).`);
+  const shotTargets = enabledTargets(ctx.config, profile, { quiet: true }).filter((t) => t.kind === 'screenshot');
+  // The main iPhone target; apps without iPhone screenshots sample on their first screenshot target.
+  const target = shotTargets.find((t) => t.id === 'iphone-6.9') ?? shotTargets.find((t) => t.family === 'iphone') ?? shotTargets[0] ?? getTarget('iphone-6.9');
+  const appIcon = profile.brand.appIcon ? join(profile.project.root, profile.brand.appIcon) : undefined;
+  const res = await renderDesignSamples({
+    paths: ctx.paths,
+    primaryLocale: ctx.config.app.primaryLocale,
+    target,
+    shots,
+    artDirection: ad,
+    styles: opts.styles as StylePreset[] | undefined,
+    count: opts.count,
+    category: profile.categorySuggestion?.primary,
+    appIcon,
+    appName: profile.app.displayName,
+  });
+  const out = { contactSheet: res.contactSheet, target: target.id, samples: res.samples.map((s) => ({ letter: s.letter, preset: s.style, name: s.name, files: s.files })), warnings: res.warnings };
+  if (ctx.json) {
+    process.stdout.write(JSON.stringify(out, null, 2) + '\n');
+    return EXIT.OK;
+  }
+  for (const w of res.warnings) log.warn(w);
+  for (const s of res.samples) log.ok(`${s.letter}  ${s.name} (${s.style}) — ${s.files.map((f) => relative(ctx.root, f)).join(', ')}`);
+  log.ok(`Contact sheet: ${relative(ctx.root, res.contactSheet)}`);
+  log.info('Show the contact sheet, ask which design (A/B/C/D) to use, then set its preset in art-direction.json (options[].preset + selected) and run `vitrin design`.');
+  return EXIT.OK;
+}
+
 // ---------------------------------------------------------------- video
 export async function videoCommand(ctx: Ctx, opts: { styles?: string[]; locales?: string[] } = {}): Promise<number> {
-  if (!ctx.config.video.enabled) {
+  const assets = ctx.config.selection?.assets;
+  if (assets && !assets.includes('previews') && !assets.includes('creatives')) {
+    log.dim('selection.assets has no previews or creatives — video skipped.');
+    return EXIT.OK;
+  }
+  if (!ctx.config.video.enabled && !assets?.includes('previews')) {
     log.dim('video.enabled: false — skipped.');
     return EXIT.OK;
   }
@@ -485,9 +550,12 @@ export async function videoCommand(ctx: Ctx, opts: { styles?: string[]; locales?
     log.info('Write the chosen style to video-plan.json → previews[].style and run `vitrin video`.');
     return EXIT.OK;
   }
-  await stage(ctx, 'video', { plan, ad, rawHash, locales: ctx.config.app.locales, loops: ctx.config.video.loops }, async () => {
+  await stage(ctx, 'video', { plan, ad, rawHash, locales: ctx.config.app.locales, loops: ctx.config.video.loops, assets }, async () => {
     const enabledPreviewTargets = enabledTargets(ctx.config, profile).filter((t) => t.kind === 'preview').map((t) => t.id);
-    const res = await renderVideos({ paths: ctx.paths, profile, locales: ctx.config.app.locales, primaryLocale: ctx.config.app.primaryLocale, ad, plan, previews: true, loops: ctx.config.video.loops, enabledPreviewTargets });
+    // selection.assets: previews → App Previews, creatives → header/search loops.
+    const previews = !assets || assets.includes('previews');
+    const loops = ctx.config.video.loops && (!assets || assets.includes('creatives'));
+    const res = await renderVideos({ paths: ctx.paths, profile, locales: ctx.config.app.locales, primaryLocale: ctx.config.app.primaryLocale, ad, plan, previews, loops, enabledPreviewTargets });
     for (const w of [...new Set(res.warnings)]) log.warn(w);
     const manifestFile = ctx.paths.renderManifest;
     if (existsSync(manifestFile)) {

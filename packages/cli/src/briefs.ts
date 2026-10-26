@@ -1,6 +1,6 @@
-import { localeInfo, readJsonIfExists, storefrontForLocale, storefrontInfo, writeText } from '@vitrin/core';
-import { Competitors, KeywordPlan, type AppProfile } from '@vitrin/schemas';
-import { FONT_FAMILIES } from '@vitrin/render';
+import { existsSync, localeInfo, readJsonIfExists, storefrontForLocale, storefrontInfo, writeText } from '@vitrin/core';
+import { Competitors, KeywordPlan, StylePreset, type AppProfile } from '@vitrin/schemas';
+import { PRESETS, suggestStyles } from '@vitrin/render';
 import { join } from 'node:path';
 import type { Ctx } from './context.js';
 
@@ -122,51 +122,68 @@ export async function designBrief(ctx: Ctx, profile: AppProfile): Promise<string
   const palettes = (competitors?.analysis.paletteUsage ?? []).slice(0, 8).map((p) => `${p.hex}×${p.count}`).join(', ');
   const headlines = (competitors?.apps ?? []).flatMap((a) => a.screenshotText.flatMap((s) => s.lines.slice(0, 1))).slice(0, 12);
   const screens = ctx.config.capture.screens.map((s) => s.id).join(', ');
+  const category = profile.categorySuggestion?.primary;
+  const suggested = suggestStyles(4, category);
+  const brand = [profile.brand.accentColor, ...profile.brand.colors.map((c) => c.hex)].filter((c, i, all): c is string => Boolean(c) && all.indexOf(c) === i);
+  const hasShots = existsSync(ctx.paths.shots);
+  const presetRows = StylePreset.options.map((id) => `| \`${id}\` | ${PRESETS[id].name} | ${PRESETS[id].surfaces[0]!.dark ? 'dark' : 'light'} | ${PRESETS[id].device.tilt ? `tilted ±${PRESETS[id].device.tilt}°` : 'upright'} |`).join('\n');
   return writeBrief(
     ctx,
     'design',
-    `# Brief: art direction and shot list
+    `# Brief: style samples, art direction and shot list
+
+Method: skills/vitrin/references/art-direction.md (iron rules, narrative arc, framing, quality bar) and skills/vitrin/references/styles/ (one spec per preset — read the one you pick).
 
 ## Input
-- Brand colors: ${profile.brand.accentColor ?? '?'} ${profile.brand.colors.map((c) => `${c.name}=${c.hex}`).join(', ')}
+- App: **${profile.app.displayName}** — category ${category ?? '?'}; audience: ${profile.positioning?.audience ?? '?'}
+- Brand colors (tint the preset): ${brand.join(', ') || '?'}
 - Competitor palettes (most common): ${palettes || '?'}
 - Competitor first-screenshot headlines (OCR, analysis only): ${headlines.map((h) => `“${h}”`).join(', ') || '?'}
 - Captured screens (capture.screens): ${screens || '(none)'}
-- Fonts (only these): ${Object.keys(FONT_FAMILIES).join(', ')}
 - Icons: Lucide names (e.g. cloud, chart-column, bell, lock, sparkles). Do not use SF Symbols.
 
-## 1) \`.vitrin/art-direction.json\`
-Propose 2–3 directions (palette, typography, background language, device frame) and pick the one that **stands out most from the competitors**.
-\`\`\`json
-{ "options": [{ "id": "deep-night", "name": "…", "rationale": "…", "differentiation": "…",
-  "palette": { "background": ["#0F1029","#2B2D7A","#6C3CE0"], "surface": "#1B1C3F", "primary": "#7C7CFF", "accent": "#FFB547",
-               "text": "#FFFFFF", "textMuted": "#C9CBF2", "badgeBackground": "#FFFFFF", "badgeText": "#1B1C3F" },
-  "typography": { "headline": "Plus Jakarta Sans", "body": "Inter", "headlineWeight": 800, "headlineCase": "none", "letterSpacing": -0.02 },
-  "background": { "style": "mesh", "angle": 160, "intensity": 0.6 },
-  "device": { "frame": "minimal", "shadow": true, "tilt": 0 } }],
-  "selected": "deep-night", "selectionReason": "…" }
-\`\`\`
-Background styles: solid, linear, radial, mesh, grid, dots, panoramic (continues across consecutive shots). Text/background contrast ≥ 3:1 (validate measures it).
+## Step 1 — the first two shots, then samples${hasShots ? ' (shots.json exists: check its first two shots)' : ''}
+Write \`.vitrin/shots.json\` with **only the hero and the second shot** (real copy, real screens; see Step 3 for the format). Then run:
 
-## 2) \`.vitrin/shots.json\`
-5–7 shots (3–5 are enough for iPad). Archetypes: hero, feature, callout, fullbleed, tilted, split, collage, before-after, stat, social-proof, panoramic, statement, testimonial (see skills/vitrin/references/art-direction.md).
-- First 3 shots = hook (outcome) → proof (core action, real UI) → trust/payoff. At least 60% real UI; at least one UI in the first 3.
-- Headlines: 5 words or fewer recommended (limit 7), at most 2 lines, and they **reinforce the main keyword** from the name/subtitle. \`kicker\` is a small line above (≤ 3 words); \`*word*\` is drawn in the accent color.
-- No calls to action (“Download now”), other platform names or prices. One caption position for the whole set (\`captionPosition\`: top/bottom).
-- callout: \`"callouts": [{ "screen": 0, "rect": { "x": 0.04, "y": 0.47, "w": 0.92, "h": 0.3 }, "scale": 1.45, "side": "center", "at": 0.6 }]\` — rect is in fractions of the captured iPhone screen; if the iPad layout differs, add \`"rects": { "ipad": {…} }\`. To find the fractions, open .vitrin/raw/<locale>/iphone/<id>.png and measure the region.
-- testimonial: only verbatim text of real reviews from competitors.json → self.reviews, in their own language (\`"quotes": { "tr": [{ "text": "…", "rating": 5 }] }\`).
-- Every shot has a headline, an (optional) subheadline, a screen and 0–3 badges. \`featureIds\` is required.
-- Badge types: feature (featureId required), new (featureId required), proof (only a real rating from Lookup or a documented award), platform (ipad / apple-watch / iphone-duo / widgets — only if actually supported). No price badges. Style: pill | sticker | laurel (laurel for proof only).
+\`\`\`
+vitrin design --samples --json            # suggested for this app: ${suggested.join(', ')}
+vitrin design --samples --styles a,b,c,d  # or pick the presets yourself (2–8, --count N)
+\`\`\`
+
+It renders those two shots in each preset (\`.vitrin/design-samples/<preset>/\`) plus one contact sheet labelled A, B, C, D (\`.vitrin/design-samples/contact-sheet.png\`). Pick presets that differ clearly (light and dark, sans and serif, upright and tilted) and that stand apart from the competitor palettes above.
+
+## Step 2 — ask the user
+Show the contact sheet and ask: **“Which design should the screenshots use — A, B, C or D?”** Wait for the answer; never choose for them. Then write \`.vitrin/art-direction.json\`:
 \`\`\`json
-{ "shots": [{ "id": "01", "slug": "hero", "archetype": "hero", "screens": ["home"], "featureIds": ["…"],
-    "copy": { "en-US": { "kicker": "…", "headline": "… *accent*", "subheadline": "…" }, "tr": { "kicker": "…", "headline": "… *vurgu*", "subheadline": "…" } },
-    "badges": [{ "type": "feature", "icon": "cloud", "featureId": "icloud-sync", "label": { "en-US": "iCloud sync", "tr": "iCloud senkron" } }] }],
+{ "options": [{ "id": "picked", "name": "…", "rationale": "why it fits the app", "differentiation": "why it stands apart from competitors",
+    "preset": "liquid-glass-aurora", "brand": { "primary": "${brand[0] ?? '#5B4BE8'}"${brand[1] ? `, "secondary": "${brand[1]}"` : ''} } }],
+  "selected": "picked", "selectionReason": "The user chose B." }
+\`\`\`
+
+| Preset | Name | Surface | Device |
+|---|---|---|---|
+${presetRows}
+
+## Step 3 — the full shot list
+5–7 shots for iPhone (3–5 are enough for iPad). Follow the narrative arc: 1 hero (main benefit; proof only here) → 2 differentiator → 3 ecosystem/core → features, one per shot → trust → closer (\`feature-wall\` or \`mosaic\`).
+- **Headlines:** one idea, ≤ 5 words recommended (7 max), 3–5 words per line, ≤ 2 lines, \`\\n\` for an intentional break, exactly one \`*emphasis*\`. Write them in the preset's copy tone (styles/<preset>.md). Reinforce the main keyword from the name/subtitle. \`kicker\` ≤ 3 words.
+- **Framing varies:** leave \`"framing": "auto"\` (never repeats the previous shot) or set bleed-bottom / bleed-top / offset / tilted / two-devices / no-device yourself; mix at least two framings. 1–2 shots \`"inverted": true\` for rhythm (cycling presets change surface on their own). For 5+ shots set \`"bridge": true\` on one shot to carry a decorative element into the next (never text).
+- **Archetypes:** hero, feature, callout, fullbleed, tilted, split, collage, before-after, stat, social-proof, panoramic, statement, testimonial, feature-wall, mosaic. At least 60 % real UI, one UI shot in the first 3.
+- No calls to action (“Download now”), other platform names, prices or unproven awards. Badges: feature/new need \`featureId\`; proof only a real Lookup rating or documented award, on the hero; platform only if supported. Max 2 badges on the hero.
+- callout: \`"callouts": [{ "screen": 0, "rect": { "x": 0.04, "y": 0.47, "w": 0.92, "h": 0.3 }, "scale": 1.45, "side": "center", "at": 0.6 }]\` — rect in fractions of the iPhone capture; add \`"rects": { "ipad": {…} }\` if the iPad layout differs.
+- testimonial: only verbatim reviews from competitors.json → self.reviews, in their own language. stat: \`"stat": { "value": "12 weeks", "featureId": "…" }\`, backed by evidence. feature-wall: \`"wall": [{ "en-US": "Widgets" }, …]\`, every line a real feature listed in \`featureIds\`.
+\`\`\`json
+{ "shots": [{ "id": "01", "slug": "hero", "archetype": "hero", "screens": ["home"], "featureIds": ["…"], "framing": "auto",
+    "copy": { "en-US": { "kicker": "…", "headline": "Keep your *streak*", "subheadline": "…" } },
+    "badges": [{ "type": "feature", "icon": "cloud", "featureId": "icloud-sync", "label": { "en-US": "iCloud sync" } }] },
+  { "id": "06", "slug": "more", "archetype": "feature-wall", "screens": [], "featureIds": ["…"], "copy": { "en-US": { "headline": "And so much *more*" } }, "wall": [{ "en-US": "Widgets" }] }],
   "creatives": { "header": { "copy": {…}, "screens": ["home","stats"], "featureIds": ["…"] },
                  "search": { "copy": {…}, "screens": ["home"], "featureIds": ["…"] }, "events": [] } }
 \`\`\`
-For the \`stat\` archetype: \`"stat": { "value": "42 days", "featureId": "…" }\` — the value must be backed by evidence (demo data is not a marketing claim; prefer a general statement).
+\`creatives.header\` also supplies the Google Play feature graphic line (short brand line, not a screenshot headline).
 
-When done: \`vitrin design\`.
+## Step 4 — render and check
+Run \`vitrin design\`. Open the first three iPhone PNGs, one iPad and one Android/Duo/Mac/Watch PNG if those targets are enabled, and read the quality issues in \`.vitrin/validation.json\` (\`image.device-small\`, \`image.empty-band\`, \`image.headline-contrast\`, \`image.thumbnail\` …). Fix copy or framing until the set passes the thumbnail test.
 `,
   );
 }
@@ -178,7 +195,8 @@ export async function videoBrief(ctx: Ctx): Promise<string> {
     'video',
     `# Brief: video plan
 
-Write \`.vitrin/video-plan.json\` (details: skills/vitrin/references/video.md). App Preview: 886×1920, 30 fps, 15–30 s (target 20–25).
+Write \`.vitrin/video-plan.json\` (details: skills/vitrin/references/video.md). App Preview: 886×1920 (iPhone), 1200×1600 (iPad), 1920×1080 landscape for \`"device": "mac"\` / \`"tv"\` (targets preview-mac / preview-tv); 30 fps, 15–30 s (target 20–25).
+The preview uses the art direction's preset colors and fonts and the same device frames as the screenshots, so keep the hook line consistent with the hero screenshot.
 Real app footage should dominate; keep text cards short. The first ~1.5 s of each recording is the app launch: \`from\` ≥ 1.5.
 Sources: recordings (${recs.join(', ') || 'capture.recordings is empty'}) or screen ids (${ctx.config.capture.screens.map((s) => s.id).join(', ')}).
 
