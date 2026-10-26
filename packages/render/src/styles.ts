@@ -1,7 +1,7 @@
 /**
  * Style presets: a curated port of the named styles in ParthJadhav/app-store-screenshots (MIT, © 2026 Parth Jadhav),
  * condensed to the tokens Vitrin's HTML templates need. The prose specs Claude reads live in
- * skills/vitrin/references/styles/.
+ * plugins/vitrin/skills/vitrin/references/styles/.
  */
 import type { ArtDirectionOption, Framing, Palette, StylePreset, Typography } from '@vitrin/schemas';
 import { contrastRatio, ensureContrast, hueOf, inkOn, luminance, mix, shiftHue } from './color.js';

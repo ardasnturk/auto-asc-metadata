@@ -30,7 +30,7 @@ Apple's rules as of October 2026, and the points that could not be verified, are
 ## Requirements
 
 - macOS (simulators, Vision OCR, Mac window capture)
-- Node.js ≥ 22 and pnpm
+- Node.js ≥ 22 (pnpm only for development)
 - Xcode (with `simctl`) for Apple platforms
 - Ruby + Bundler (fastlane ≥ 2.241.1 is pinned in the generated `Gemfile`)
 - ffmpeg / ffprobe
@@ -39,30 +39,32 @@ Apple's rules as of October 2026, and the points that could not be verified, are
 
 ## Installation
 
-```bash
-git clone https://github.com/ardasnturk/vitrin
-vitrin/skills/vitrin/scripts/install.sh
+Vitrin is a Claude Code plugin. Install it once, in Claude Code:
+
+```text
+/plugin marketplace add ardasnturk/vitrin
+/plugin install vitrin@vitrin
 ```
 
-The script installs dependencies, builds the CLI, downloads Playwright Chromium, writes a `vitrin` launcher into npm's global bin directory (`npm prefix -g`/bin; override with `VITRIN_BIN_DIR`), and copies the skill to `~/.claude/skills/vitrin` (override with `CLAUDE_SKILLS_DIR`). The launcher runs the build inside this repository, so if you move the repository, run the script again.
+or from a terminal: `claude plugin install vitrin --marketplace ardasnturk/vitrin` (Claude Code 2.1.292 or newer; older versions: `claude plugin marketplace add ardasnturk/vitrin && claude plugin install vitrin@vitrin`).
 
-The skill alone can also be added with the [skills CLI](https://github.com/vercel-labs/skills) (`npx skills add ardasnturk/vitrin`); the `vitrin` command still comes from the installer above.
+The plugin adds the `/vitrin` skill and a `vitrin` command for Claude. Nothing else is needed up front besides Node.js 22+: the first time the skill runs `vitrin`, it installs the CLI for the plugin's version into `~/.local/share/vitrin/<version>/` (override with `VITRIN_HOME`), including Playwright Chromium. That one-time step downloads roughly 450 MB and takes a few minutes; it needs no sudo and no global npm packages. Update with `claude plugin update vitrin@vitrin` (or `/plugin` → Marketplaces → Update); the new version installs its CLI on its next run.
+
+To use the CLI in your own terminal as well: `npm install -g @ardasnturk/vitrin`.
+
+The skill alone can also be added with the [skills CLI](https://github.com/vercel-labs/skills) (`npx skills add ardasnturk/vitrin`), but then the `vitrin` command is missing; prefer the plugin.
+
+**Contributors** working from a clone can still run `plugins/vitrin/skills/vitrin/scripts/install.sh`: it builds this checkout, writes a `vitrin` launcher into npm's global bin directory (override with `VITRIN_BIN_DIR`) and copies the skill to `~/.claude/skills/vitrin` (override with `CLAUDE_SKILLS_DIR`). With the plugin installed, `VITRIN_DEV=/path/to/vitrin` makes the plugin's `vitrin` run your local build instead.
 
 ## Quick start
 
-In your app's repository:
-
-```bash
-vitrin init
-```
-
-Then open Claude Code in that repository and run:
+Open Claude Code in your app's repository and run:
 
 ```
 /vitrin
 ```
 
-The skill asks which platforms and which content to produce, shows you sample designs to choose from, walks through every stage, writes the creative inputs itself, shows you everything in the review gallery, stops when it needs your keys or your approval, and never uploads or submits without an explicit "yes".
+On a new repository the skill runs `vitrin init` (config, `.env.example`, `.gitignore` block, fastlane templates). It asks which platforms and which content to produce, shows you sample designs to choose from, walks through every stage, writes the creative inputs itself, shows you everything in the review gallery, stops when it needs your keys or your approval, and never uploads or submits without an explicit "yes". If `/vitrin` is taken by another command, use `/vitrin:vitrin`.
 
 ## Commands
 
@@ -151,7 +153,10 @@ packages/video      Remotion: AppPreview (portrait and landscape), HeaderLoop, S
 packages/upload     fastlane deliver / supply, ASC API (JWT), App Asset Library, Google Play API, CPP, In-App Events, partial-upload plan and read-back
 fastlane/           Gemfile and Fastfile templates
 data/               targets.json, asc-locales.json, play-locales.json, storefront-languages.json, forbidden-terms.json
-skills/vitrin/      SKILL.md, references/ (incl. styles/), scripts/install.sh
+plugins/vitrin/     Claude Code plugin: .claude-plugin/plugin.json, bin/vitrin (self-installing launcher),
+                    skills/vitrin/ (SKILL.md, references/ incl. styles/, scripts/install.sh)
+.claude-plugin/     marketplace.json (this repository is the `vitrin` plugin marketplace)
+scripts/            pack.mjs (`pnpm pack:release` → @ardasnturk/vitrin tarball), release-notes.mjs, site-assets.mjs
 docs/               apple-notes.md, design/master-prompt.md (original design spec)
 examples/Ritim      SwiftUI sample app for end-to-end testing (tr + en)
 ```
@@ -164,6 +169,8 @@ pnpm build
 pnpm test
 node packages/cli/dist/bin.js --cwd examples/Ritim validate
 ```
+
+Releases: bump `version` in `package.json` (the single source), `plugins/vitrin/.claude-plugin/plugin.json`, the `vitrin` entry of `.claude-plugin/marketplace.json` and every `packages/*/package.json` to the same value (a test checks this), add the CHANGELOG section, then push a tag `v<version>`. The release workflow tests, runs `pnpm pack:release` and creates the GitHub Release with `ardasnturk-vitrin-<version>.tgz`, which the plugin's launcher installs; it also publishes to npm when the `NPM_TOKEN` secret is set.
 
 ## Example app
 
@@ -181,5 +188,5 @@ Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) and the [Co
 
 - Fonts are licensed under the SIL Open Font License (OFL), bundled via [@fontsource](https://fontsource.org).
 - Icons are from [Lucide](https://lucide.dev) (ISC).
-- The screenshot design method and style presets in `skills/vitrin/references/styles/` are adapted from [ParthJadhav/app-store-screenshots](https://github.com/ParthJadhav/app-store-screenshots) (MIT, © 2026 Parth Jadhav).
+- The screenshot design method and style presets in `plugins/vitrin/skills/vitrin/references/styles/` are adapted from [ParthJadhav/app-store-screenshots](https://github.com/ParthJadhav/app-store-screenshots) (MIT, © 2026 Parth Jadhav).
 - [Remotion](https://www.remotion.dev) is free for individuals and for companies with up to 3 employees; larger teams need a [Remotion company license](https://github.com/remotion-dev/remotion/blob/main/LICENSE.md).

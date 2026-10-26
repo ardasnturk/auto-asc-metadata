@@ -1,9 +1,13 @@
 #!/usr/bin/env bash
-# Vitrin installer: builds the CLI, installs a global `vitrin` command and copies the /vitrin skill into ~/.claude/skills.
+# Vitrin installer for contributors working from a clone: builds the CLI, installs a global `vitrin` command
+# that runs this checkout and copies the /vitrin skill into ~/.claude/skills.
+# (Users do not need this: the Claude Code plugin installs everything, see the README.)
 # Environment: CLAUDE_SKILLS_DIR (default ~/.claude/skills), VITRIN_BIN_DIR (default: npm's global bin), VITRIN_SKIP_BUILD=1.
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
+# This script lives in plugins/vitrin/skills/vitrin/scripts/.
+SKILL_SRC="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ROOT="$(cd "$SKILL_SRC/../../../.." && pwd)"
 SKILL_DIR="${CLAUDE_SKILLS_DIR:-$HOME/.claude/skills}/vitrin"
 BIN_DIR="${VITRIN_BIN_DIR:-$(npm prefix -g)/bin}"
 
@@ -31,8 +35,8 @@ case ":$PATH:" in
 esac
 
 mkdir -p "$SKILL_DIR"
-cp "$ROOT/skills/vitrin/SKILL.md" "$SKILL_DIR/SKILL.md"
-rm -rf "$SKILL_DIR/references" && cp -R "$ROOT/skills/vitrin/references" "$SKILL_DIR/references"
+cp "$SKILL_SRC/SKILL.md" "$SKILL_DIR/SKILL.md"
+rm -rf "$SKILL_DIR/references" && cp -R "$SKILL_SRC/references" "$SKILL_DIR/references"
 # SKILL.md points to the Apple notes; in the installed skill they live under references/.
 cp "$ROOT/docs/apple-notes.md" "$SKILL_DIR/references/apple-notes.md"
 echo "✓ Skill installed: $SKILL_DIR"

@@ -1,7 +1,7 @@
 {
   "name": "vitrin-monorepo",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.4.0",
   "description": "Vitrin — automate App Store Connect metadata, screenshots, creatives and App Previews for iOS apps",
   "type": "module",
   "packageManager": "pnpm@12.15.0",
@@ -13,10 +13,12 @@
     "clean": "tsc -b --clean packages/cli",
     "typecheck": "tsc -b packages/cli packages/video",
     "test": "vitest run",
-    "vitrin": "node packages/cli/dist/bin.js"
+    "vitrin": "node packages/cli/dist/bin.js",
+    "pack:release": "pnpm build && node scripts/pack.mjs"
   },
   "devDependencies": {
     "@types/node": "^26.6.5",
+    "esbuild": "^0.28.1",
     "typescript": "6.0.3",
     "vitest": "^5.0.5"
   },

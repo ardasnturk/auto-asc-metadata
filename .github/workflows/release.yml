@@ -1,0 +1,68 @@
+name: Release
+
+# Pushing a tag v<version> (matching package.json, plugin.json and marketplace.json) builds and tests the
+# repository, packs @ardasnturk/vitrin, creates the GitHub Release with that version's CHANGELOG section and the
+# tarball the Claude Code plugin's launcher downloads, and publishes to npm when the NPM_TOKEN secret is set.
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Build, test, pack and release
+    runs-on: ubuntu-latest
+    env:
+      COREPACK_ENABLE_DOWNLOAD_PROMPT: '0'
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+      - name: Enable pnpm (version from package.json)
+        run: corepack enable
+      - name: Check the tag matches the release version
+        run: |
+          version=$(node -p 'require("./package.json").version')
+          if [ "${GITHUB_REF_NAME}" != "v${version}" ]; then
+            echo "::error::Tag ${GITHUB_REF_NAME} does not match package.json version ${version}"
+            exit 1
+          fi
+          echo "VERSION=${version}" >> "$GITHUB_ENV"
+      - name: Install
+        run: pnpm install --frozen-lockfile
+      - name: Build
+        run: pnpm build
+      - name: Typecheck (incl. Remotion sources)
+        run: pnpm typecheck
+      - name: Test
+        run: pnpm test
+      - name: Pack
+        id: pack
+        run: pnpm pack:release
+      - name: Release notes from CHANGELOG.md
+        run: node scripts/release-notes.mjs "$VERSION" > "$RUNNER_TEMP/release-notes.md"
+      - name: Create the GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" "${{ steps.pack.outputs.tarball }}" \
+            --title "Vitrin ${VERSION}" \
+            --notes-file "$RUNNER_TEMP/release-notes.md" \
+            --verify-tag
+      - name: Publish to npm (only when NPM_TOKEN is set)
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          if [ -z "$NODE_AUTH_TOKEN" ]; then
+            echo "NPM_TOKEN is not set; skipping npm publish."
+            exit 0
+          fi
+          npm publish "${{ steps.pack.outputs.tarball }}" --access public

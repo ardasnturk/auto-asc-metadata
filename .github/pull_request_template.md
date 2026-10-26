@@ -6,7 +6,7 @@
 
 - [ ] `pnpm build && pnpm test`
 - [ ] Ran the affected command against `examples/Ritim` (e.g. `vitrin -C examples/Ritim design`) and looked at the output
-- [ ] Updated docs (README, `skills/vitrin/` references, CHANGELOG) if behaviour changed
+- [ ] Updated docs (README, `plugins/vitrin/skills/vitrin/` references, CHANGELOG) if behaviour changed
 
 ## Apple rules
 

@@ -13,3 +13,6 @@ coverage/
 
 # Local editor/agent settings
 .claude/
+
+# Release tarballs (pnpm pack:release)
+release/

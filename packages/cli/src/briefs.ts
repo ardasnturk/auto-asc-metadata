@@ -35,7 +35,7 @@ File: \`.vitrin/app_profile.json\` (schema: AppProfile). The analyzer filled in 
 2. Fill in \`positioning\`: \`{ "audience": "…", "jobToBeDone": "…", "tone": "…" }\`.
 3. Correct \`categorySuggestion\` if needed (an ASC category constant, e.g. HEALTH_AND_FITNESS) and write down the reasoning.
 4. In \`vitrin.config.yaml\`, write 4–8 seed search terms per locale under \`research.seeds\` (phrases users would actually type in the App Store; not competitor brands).
-5. Fill \`capture.screens\` with the app's 5–8 screens worth showing (launch arguments such as \`-VitrinScreen <id>\`). If the app has no \`-VitrinDemo\` support, show the user the file to add (skills/vitrin/references/troubleshooting.md).
+5. Fill \`capture.screens\` with the app's 5–8 screens worth showing (launch arguments such as \`-VitrinScreen <id>\`). If the app has no \`-VitrinDemo\` support, show the user the file to add (the /vitrin skill’s references/troubleshooting.md).
 
 Open notes (todo):
 ${profile.todo.map((t) => `- ${t}`).join('\n') || '- none'}
@@ -134,7 +134,7 @@ export async function designBrief(ctx: Ctx, profile: AppProfile): Promise<string
     'design',
     `# Brief: style samples, art direction and shot list
 
-Method: skills/vitrin/references/art-direction.md (iron rules, narrative arc, framing, quality bar) and skills/vitrin/references/styles/ (one spec per preset — read the one you pick).
+Method: the /vitrin skill’s references/art-direction.md (iron rules, narrative arc, framing, quality bar) and references/styles/ (one spec per preset — read the one you pick).
 
 ## Input
 - App: **${profile.app.displayName}** — category ${category ?? '?'}; audience: ${profile.positioning?.audience ?? '?'}
@@ -197,7 +197,7 @@ export async function videoBrief(ctx: Ctx): Promise<string> {
     'video',
     `# Brief: video plan
 
-Write \`.vitrin/video-plan.json\` (details: skills/vitrin/references/video.md). App Preview: 886×1920 (iPhone), 1200×1600 (iPad), 1920×1080 landscape for \`"device": "mac"\` / \`"tv"\` (targets preview-mac / preview-tv); 30 fps, 15–30 s (target 20–25).
+Write \`.vitrin/video-plan.json\` (details: the /vitrin skill’s references/video.md). App Preview: 886×1920 (iPhone), 1200×1600 (iPad), 1920×1080 landscape for \`"device": "mac"\` / \`"tv"\` (targets preview-mac / preview-tv); 30 fps, 15–30 s (target 20–25).
 The preview uses the art direction's preset colors and fonts and the same device frames as the screenshots, so keep the hook line consistent with the hero screenshot.
 Real app footage should dominate; keep text cards short. The first ~1.5 s of each recording is the app launch: \`from\` ≥ 1.5.
 Sources: recordings (${recs.join(', ') || 'capture.recordings is empty'}) or screen ids (${ctx.config.capture.screens.map((s) => s.id).join(', ')}).

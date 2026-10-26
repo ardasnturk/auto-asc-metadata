@@ -17,10 +17,21 @@ import {
   runLane,
 } from '@vitrin/upload';
 import { readFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { createRequire } from 'node:module';
+import { dirname, join } from 'node:path';
 import { chromium } from 'playwright';
 import pc from 'picocolors';
 import { bundleIdOf, EXIT, type Ctx } from '../context.js';
+
+/** Installs Chromium for the Playwright version Vitrin itself uses (a bare `npx playwright` may fetch another version). */
+function playwrightInstallCommand(): string {
+  try {
+    const cli = join(dirname(createRequire(import.meta.url).resolve('playwright/package.json')), 'cli.js');
+    return `node "${cli}" install chromium`;
+  } catch {
+    return 'npx playwright install chromium';
+  }
+}
 
 export type CheckStatus = 'ok' | 'warn' | 'fail' | 'skip';
 export interface Check {
@@ -174,7 +185,7 @@ export async function runDoctor(ctx: Ctx, opts: { createVersion?: string; offlin
   } catch {
     chromiumOk = false;
   }
-  add({ id: 'playwright', title: 'Playwright Chromium', status: chromiumOk ? 'ok' : 'fail', fix: 'npx playwright install chromium' });
+  add({ id: 'playwright', title: 'Playwright Chromium', status: chromiumOk ? 'ok' : 'fail', fix: playwrightInstallCommand() });
 
   // 2. .env and keys
   log.step('2/7 .env and keys');

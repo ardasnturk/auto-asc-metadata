@@ -381,7 +381,7 @@ export async function analyzeProject(opts: AnalyzeOptions): Promise<AppProfile> 
   }
   todo.push('positioning (audience, user job, tone) must be filled in by Claude.');
   if (!signals['vitrin.demo-mode']) {
-    todo.push('The app has no -VitrinDemo seed-data mode. For capture, show the user which file to add it to (skills/vitrin/references/troubleshooting.md).');
+    todo.push('The app has no -VitrinDemo seed-data mode. For capture, show the user which file to add it to (the /vitrin skill’s references/troubleshooting.md).');
   }
   if (fw.needsPrebuild) {
     todo.push('Expo app without native folders: capture runs `npx expo prebuild` first (capture.reactNative.prebuild), which creates ios/ and android/.');

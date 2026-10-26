@@ -1,7 +1,7 @@
 {
-  "name": "vitrin",
-  "version": "0.3.0",
-  "private": false,
+  "name": "@vitrin/cli",
+  "version": "0.4.0",
+  "private": true,
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

@@ -3,10 +3,36 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { TargetsFile, type RenderTarget } from '@vitrin/schemas';
 
-/** Root of the Vitrin installation (monorepo root), where data/ and fastlane/ templates live. */
-export const VITRIN_HOME = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
+/**
+ * Finds the root of the Vitrin installation by walking up from `start` to the first directory that holds
+ * `data/targets.json` and a `package.json`: the monorepo root when running from packages/core/dist, the
+ * package root when running from the published bundle (`<pkg>/dist/bin.js`). Returns undefined if none.
+ */
+export function findVitrinHome(start: string): string | undefined {
+  let dir = resolve(start);
+  for (;;) {
+    if (existsSync(join(dir, 'data', 'targets.json')) && existsSync(join(dir, 'package.json'))) return dir;
+    const parent = dirname(dir);
+    if (parent === dir) return undefined;
+    dir = parent;
+  }
+}
+
+const MODULE_DIR = dirname(fileURLToPath(import.meta.url));
+/** Root of the Vitrin installation (monorepo root or installed package root), where data/ and fastlane/ templates live. */
+export const VITRIN_HOME = findVitrinHome(MODULE_DIR) ?? resolve(MODULE_DIR, '..', '..', '..');
 export const DATA_DIR = join(VITRIN_HOME, 'data');
 export const TEMPLATES_DIR = join(VITRIN_HOME, 'fastlane');
+
+/** The Vitrin release version: `version` of the package.json at VITRIN_HOME (the root package.json in the monorepo). */
+export function vitrinVersion(home: string = VITRIN_HOME): string {
+  try {
+    const v = (JSON.parse(readFileSync(join(home, 'package.json'), 'utf8')) as { version?: unknown }).version;
+    return typeof v === 'string' ? v : '0.0.0';
+  } catch {
+    return '0.0.0';
+  }
+}
 
 /** Paths inside the app repository that Vitrin reads and writes. */
 export function appPaths(root: string) {
