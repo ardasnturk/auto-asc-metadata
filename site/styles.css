@@ -91,7 +91,7 @@ h1, h2, h3 { font-family: var(--head); line-height: 1.1; letter-spacing: -0.02em
 .lead { color: var(--muted); font-size: clamp(17px, 1.6vw, 20px); margin: 22px 0 30px; max-width: 34em; }
 .cta { display: flex; gap: 12px; flex-wrap: wrap; }
 .install { display: flex; align-items: center; gap: 10px; margin-top: 26px; padding: 10px 10px 10px 16px; border: 1px solid var(--line); border-radius: 14px; background: rgba(0, 0, 0, 0.3); max-width: 100%; }
-.install code { background: none; padding: 0; white-space: nowrap; overflow-x: auto; flex: 1; min-width: 0; font-size: 14px; color: #dcd8ff; scrollbar-width: none; }
+.install code { background: none; padding: 0; white-space: normal; overflow-wrap: anywhere; flex: 1; min-width: 0; font-size: 14px; color: #dcd8ff; }
 .install .prompt { color: var(--coral); margin-right: 6px; }
 .install-note { margin: 12px 0 0; color: var(--muted); font-size: 15px; }
 .pill-new { display: inline-block; margin-right: 6px; padding: 1px 8px; border-radius: 999px; background: linear-gradient(135deg, var(--indigo), var(--pink)); color: #fff; font-weight: 700; font-size: 12.5px; }
