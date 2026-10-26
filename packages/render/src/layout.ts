@@ -756,7 +756,7 @@ function landscapeLayout(p: PageInput & { index: number; total: number }, ad: Re
     const h = (g0.height / 1000) * w;
     devices.push({ screen: 0, family, x: (W - w) / 2, y: H - H * (family === 'tv' ? 0.1 : 0.05) - h, w, h, rot: 0, z: 2 });
   } else if (contained) {
-    captionBox = { x: pad, y: H * 0.12, w: W * 0.33, h: H * 0.76 };
+    captionBox = { x: pad, y: H * 0.1, w: W * 0.33, h: H * 0.62 };
     const g0 = deviceGeometry(family, 1000, screens[0]!.aspect, variant);
     const area = { left: pad + W * 0.355, right: W - pad * 0.5 };
     let w = area.right - area.left;
@@ -766,7 +766,8 @@ function landscapeLayout(p: PageInput & { index: number; total: number }, ad: Re
       h = maxH;
       w = (h / g0.height) * 1000;
     }
-    devices.push({ screen: 0, family, x: area.right - w, y: (H - h) / 2 - (family === 'tv' ? H * 0.03 : 0), w, h, rot: 0, z: 2 });
+    // A diagonal: caption from the top-left, device down to the bottom-right, so no band stays empty.
+    devices.push({ screen: 0, family, x: area.right - w, y: Math.max((H - h) / 2, H * (family === 'tv' ? 0.86 : 0.93) - h), w, h, rot: 0, z: 2 });
   } else {
     // Creatives: caption column left, 1–3 phones on the right bleeding off the bottom.
     captionBox = { x: pad, y: H * 0.12, w: W * 0.4, h: H * 0.76 };
@@ -801,7 +802,7 @@ function landscapeLayout(p: PageInput & { index: number; total: number }, ad: Re
     box: captionBox,
     bottom: false,
     below: badgesRow(p, t, sf, badgeSize, align),
-    justify: hero ? 'flex-start' : 'center',
+    justify: hero || (contained && screens.length > 0) ? 'flex-start' : 'center',
   });
   return [background(ad, ctx, p), env, canvasDecor(ctx), ...items, stage, grainLayer(t.grain), topStructure(ctx), caption].join('\n');
 }
