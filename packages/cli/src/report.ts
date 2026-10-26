@@ -101,7 +101,7 @@ function rejectControl(item: InventoryItem): string {
 export async function buildReport(ctx: Ctx, opts: { inventory?: Inventory; text?: UiText } = {}): Promise<string> {
   T = opts.text ?? (await loadUiText(ctx)).text;
   const p = ctx.paths;
-  // Refresh fastlane/metadata so the text shown is byte-for-byte what deliver will read.
+  // Refresh .vitrin/store/metadata so the text shown is byte-for-byte what deliver will read.
   if (!opts.inventory) await syncFastlaneMetadata(ctx);
   const inv = opts.inventory ?? (await buildInventory(ctx));
   const profile = await readJsonIfExists(p.profile, AppProfile).catch(() => undefined);

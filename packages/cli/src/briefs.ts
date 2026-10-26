@@ -1,4 +1,4 @@
-import { existsSync, localeInfo, readJsonIfExists, storefrontForLocale, storefrontInfo, writeText } from '@vitrin/core';
+import { enabledTargets, existsSync, localeInfo, readJsonIfExists, storefrontForLocale, storefrontInfo, writeText } from '@vitrin/core';
 import { Competitors, KeywordPlan, StylePreset, type AppProfile } from '@vitrin/schemas';
 import { PRESETS, suggestStyles } from '@vitrin/render';
 import { join } from 'node:path';
@@ -36,7 +36,11 @@ File: \`.vitrin/app_profile.json\` (schema: AppProfile). The analyzer filled in 
 2. Fill in \`positioning\`: \`{ "audience": "…", "jobToBeDone": "…", "tone": "…" }\`.
 3. Correct \`categorySuggestion\` if needed (an ASC category constant, e.g. HEALTH_AND_FITNESS) and write down the reasoning.
 4. In \`vitrin.config.yaml\`, write 4–8 seed search terms per locale under \`research.seeds\` (phrases users would actually type in the App Store; not competitor brands).
-5. Fill \`capture.screens\` with the app's 5–8 screens worth showing (launch arguments such as \`-VitrinScreen <id>\`). If the app has no \`-VitrinDemo\` support, show the user the file to add (the /vitrin skill’s references/troubleshooting.md).
+${
+      ctx.config.capture.mode === 'html'
+        ? `5. Fill \`capture.screens\` with the app's 5–8 screens worth showing: \`{ "id": "home", "source": ["App/Views/HomeView.swift", …] }\` — \`source\` lists the view files each screen is built from. capture.mode is \`html\`: no build and no demo mode; you recreate these screens in HTML in the next step (brief: screens.md).`
+        : `5. Fill \`capture.screens\` with the app's 5–8 screens worth showing (launch arguments such as \`-VitrinScreen <id>\`). If the app has no \`-VitrinDemo\` support, show the user the file to add (the /vitrin skill’s references/troubleshooting.md).`
+    }
 
 Open notes (todo):
 ${profile.todo.map((t) => `- ${t}`).join('\n') || '- none'}
@@ -48,6 +52,44 @@ Current features:
 ${featureTable(profile)}
 
 When done, there is no need to re-run \`vitrin analyze\` (your additions survive re-analysis anyway); continue with \`vitrin research\`.
+`,
+  );
+}
+
+/** capture.mode html: what Claude writes in .vitrin/screens so Vitrin can render the screens without a build. */
+export async function screensBrief(ctx: Ctx, profile: AppProfile): Promise<string> {
+  const screens = ctx.config.capture.screens.map((s) => `| \`${s.id}\` | ${(s.source ?? []).map((f) => `\`${f}\``).join(', ') || '(find the view)'} |`).join('\n');
+  const colors = [profile.brand.accentColor, ...profile.brand.colors.map((c) => `${c.hex}${c.name ? ` (${c.name})` : ''}`)].filter(Boolean).join(', ');
+  const families = [...new Set(enabledTargets(ctx.config, profile, { quiet: true }).filter((t) => t.kind === 'screenshot').map((t) => t.family))];
+  return writeBrief(
+    ctx,
+    'screens',
+    `# Brief: the app's screens in HTML (capture.mode: html)
+
+No build and no simulator: you recreate each screen of the app in HTML/CSS from its source code, and \`vitrin capture\` renders it at the device's screen size into \`.vitrin/raw/<locale>/<family>/<id>.png\`. The store screenshots are then designed around these screens as usual.
+
+## Screens
+
+| id | source |
+|---|---|
+${screens}
+
+Device families in this run: ${families.join(', ') || 'iphone'}. Locales: ${ctx.config.app.locales.join(', ')}.
+
+## Files to write
+- \`.vitrin/screens/<id>.html\` — one complete page per screen (\`<!doctype html>\`, inline \`<style>\` or a shared \`.vitrin/screens/app.css\` linked relatively; images/icons next to it, relative paths). It is rendered in a viewport of the device's screen in CSS points (iPhone 440×956, iPad 1032×1376, Mac 1440×900, Watch 211×257, TV/Vision 1920×1080, Android phone 360×640, tablet 800×1280) and must fill it exactly, without scrolling.
+- Optional \`.vitrin/screens/<id>.<family>.html\` when a family has its own layout (e.g. \`home.ipad.html\` with a sidebar, \`home.watch.html\`); otherwise the generic file is used with \`html[data-family="ipad"]\` CSS.
+- \`.vitrin/screens/strings/<locale>.json\` — \`{ "key": "text" }\` for every \`{{key}}\` placeholder used in the HTML, for each locale. Take the texts from the app's own localization (String Catalog / Localizable.strings / strings.xml / ARB / i18n JSON); never invent UI text the app does not have.
+
+## Fidelity rules (App Review 2.3: screenshots must show the app in use)
+- Recreate what the code renders: layout, hierarchy, components, spacing, corner radii, colors (asset catalog / theme${colors ? `: ${colors}` : ''}), typography (\`-apple-system\`/SF Pro on Apple platforms, Roboto on Android), light/dark appearance as \`capture.appearance\` (${ctx.config.capture.appearance}).
+- System chrome: Vitrin draws a 9:41 status bar with full battery on iPhone, iPad and Android; keep \`var(--safe-top)\` free at the top and \`var(--safe-bottom)\` at the bottom. On a dark top area set \`<html data-status-bar="light">\`; \`none\` hides it. Draw the app's own navigation bars, tab bars, lists and sheets yourself (native look: large titles, SF-like icons as inline SVG, system blue \`#007AFF\` only if the app uses the default tint).
+- Content: realistic demo data that matches the app's features (no user data, no lorem ipsum, no placeholder brands); numbers and charts consistent between screens.
+- Only features with evidence in app_profile.json; nothing the app cannot show.
+- No external network resources (fonts, images, scripts from the web); everything local.
+
+## Check
+Run \`vitrin capture --locale ${sampleLocale(ctx.config)}\` and open two of the PNGs with Read: compare them against the code (and against a real screenshot if the user has one). Fix the HTML until it matches; then the other locales only need their strings files.
 `,
   );
 }
@@ -118,7 +160,7 @@ ${sections.join('\n\n')}
 ${rivals || '- (none)'}
 Gaps: ${(competitors?.analysis.gaps ?? []).join('; ') || '(write them yourself in competitors.json analysis.gaps)'}
 
-When done: \`vitrin write\` (validates and exports to fastlane/metadata).
+When done: \`vitrin write\` (validates and exports to .vitrin/store/metadata).
 `,
   );
 }

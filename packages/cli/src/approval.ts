@@ -56,7 +56,7 @@ export interface Inventory {
 
 const MEDIA_RE = /\.(png|jpe?g|webp|mp4|mov|m4v)$/i;
 const VIDEO_RE = /\.(mp4|mov|m4v)$/i;
-/** Non-locale directories inside fastlane/metadata. */
+/** Non-locale directories inside the deliver metadata folder. */
 const APP_LEVEL_DIRS = new Set(['review_information', 'trade_representative_contact_information']);
 /** supply's image folders → kind / family. */
 const PLAY_IMAGE_DIRS: Record<string, { kind: ReviewItemKind; family?: string }> = {
@@ -122,7 +122,7 @@ export async function metadataJsonFiles(ctx: Ctx): Promise<string[]> {
 }
 
 /**
- * Writes fastlane/metadata from `.vitrin/metadata` exactly as `vitrin upload` does, so the reviewed and
+ * Writes .vitrin/store/metadata from `.vitrin/metadata` exactly as `vitrin upload` does, so the reviewed and
  * approved text files are the ones that will be uploaded. Skipped silently while metadata is incomplete.
  */
 export async function syncFastlaneMetadata(ctx: Ctx): Promise<boolean> {
@@ -135,7 +135,7 @@ export async function syncFastlaneMetadata(ctx: Ctx): Promise<boolean> {
     await syncPlayMetadata(ctx);
     return true;
   } catch (err) {
-    log.warn(`fastlane/metadata was not refreshed: ${(err as Error).message}`);
+    log.warn(`.vitrin/store/metadata was not refreshed: ${(err as Error).message}`);
     return false;
   }
 }
@@ -200,18 +200,19 @@ export async function buildInventory(ctx: Ctx): Promise<Inventory> {
     };
   };
 
-  // App Store screenshots: fastlane/screenshots/<locale>/… (deliver uploads every image, in file-name order).
+  const under = (dir: string, f: string) => toPosix(relative(dir, f)).split('/');
+  // App Store screenshots: .vitrin/store/screenshots/<locale>/… (deliver uploads every image, in file-name order).
   for (const f of await walk(p.screenshots)) {
     if (!/\.(png|jpe?g)$/i.test(f)) continue;
-    const locale = rel(f).split('/')[2];
+    const locale = under(p.screenshots, f)[0];
     const m = manifestImages.get(f);
     const target = (m && byId.get(m.target)) || targetFromName(f, targets);
     items.push(mediaItem(f, 'screenshot', 'app-store', locale, target, ascPlatform));
   }
-  // App Previews: fastlane/app-previews/<locale>/NN_<DEVICE>.mp4
+  // App Previews: .vitrin/store/app-previews/<locale>/NN_<DEVICE>.mp4
   for (const f of await walk(p.appPreviews)) {
     if (!VIDEO_RE.test(f)) continue;
-    const locale = rel(f).split('/')[2];
+    const locale = under(p.appPreviews, f)[0];
     const m = manifestVideos.get(f);
     const target = (m && byId.get(m.target)) || byId.get(basename(f).includes('IPAD') ? 'preview-ipad' : 'preview-iphone');
     items.push(mediaItem(f, 'preview', 'app-store', locale, target, ascPlatform));
@@ -219,17 +220,17 @@ export async function buildInventory(ctx: Ctx): Promise<Inventory> {
   // Creatives and event cards: .vitrin/creative/<locale>/<target>_<key>.(png|mp4)
   for (const f of await walk(p.creative)) {
     if (!MEDIA_RE.test(f) || basename(f).includes('.remotion.')) continue;
-    const locale = rel(f).split('/')[2];
+    const locale = under(p.creative, f)[0];
     const m = manifestImages.get(f) ?? manifestVideos.get(f);
     const target = (m && byId.get(m.target)) || targetFromName(f, targets);
     items.push(mediaItem(f, target?.kind === 'event' ? 'event' : 'creative', 'app-store', locale, target, ascPlatform));
   }
 
-  // App Store text: fastlane/metadata/<locale>/*.txt per locale, the rest is app level.
+  // App Store text: .vitrin/store/metadata/<locale>/*.txt per locale, the rest is app level.
   const ascMeta = (await walk(p.fastlaneMetadata)).filter((f) => !f.startsWith(p.androidMetadata + sep));
   const ascGroups = new Map<string, string[]>();
   for (const f of ascMeta) {
-    const parts = rel(f).split('/').slice(2); // after fastlane/metadata
+    const parts = under(p.fastlaneMetadata, f);
     const key = parts.length > 1 && !APP_LEVEL_DIRS.has(parts[0]!) ? parts[0]! : '';
     ascGroups.set(key, [...(ascGroups.get(key) ?? []), f]);
   }
@@ -238,11 +239,11 @@ export async function buildInventory(ctx: Ctx): Promise<Inventory> {
     items.push(await textItem(root, locale ? `metadata/app-store/${locale}` : 'metadata/app-store/app', 'app-store', ascPlatform, locale || undefined, list, join(p.fastlaneMetadata, locale), source));
   }
 
-  // Google Play (fastlane supply layout): fastlane/metadata/android/<locale>/{*.txt,changelogs/*.txt,images/**}
+  // Google Play (supply layout): .vitrin/store/metadata/android/<locale>/{*.txt,changelogs/*.txt,images/**}
   const playFiles = await walk(p.androidMetadata);
   const playText = new Map<string, string[]>();
   for (const f of playFiles) {
-    const parts = rel(f).split('/').slice(3); // after fastlane/metadata/android
+    const parts = under(p.androidMetadata, f);
     const locale = parts.length > 1 ? parts[0]! : undefined;
     if (MEDIA_RE.test(f)) {
       const m = manifestImages.get(f) ?? manifestVideos.get(f);

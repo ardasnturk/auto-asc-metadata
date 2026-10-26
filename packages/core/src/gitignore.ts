@@ -7,7 +7,7 @@ export const GITIGNORE_BEGIN = '# >>> vitrin (managed block, edits inside are ov
 export const GITIGNORE_END = '# <<< vitrin';
 
 /** Files under `.vitrin/` that are source (written by Claude or the analyzer) and meant to be committed. */
-export const VITRIN_COMMITTED = ['app_profile.json', 'metadata/', 'keywords/', 'art-direction.json', 'shots.json', 'video-plan.json', 'cpp-suggestions.json'];
+export const VITRIN_COMMITTED = ['app_profile.json', 'metadata/', 'keywords/', 'art-direction.json', 'shots.json', 'video-plan.json', 'cpp-suggestions.json', 'screens/'];
 
 /** The ignore patterns Vitrin maintains: secrets and everything it generates. */
 export function vitrinGitignoreLines(config?: Pick<VitrinConfig, 'retention'>): string[] {
@@ -19,7 +19,7 @@ export function vitrinGitignoreLines(config?: Pick<VitrinConfig, 'retention'>): 
     '# generated working files (sources stay committable)',
     '/.vitrin/*',
     ...VITRIN_COMMITTED.map((f) => `!/.vitrin/${f}`),
-    '# generated store assets',
+    '# generated store assets (older Vitrin versions wrote them under fastlane/)',
     '/fastlane/screenshots/',
     '/fastlane/app-previews/',
     '/fastlane/metadata/android/**/images/',

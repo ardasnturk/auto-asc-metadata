@@ -50,15 +50,15 @@ describe('inventory, approval and change detection', () => {
   it('inventories every uploadable file with sha256, grouped by store / platform / locale / target', async () => {
     const inv = await buildInventory(ctx);
     const paths = inv.files.map((f) => f.path);
-    expect(paths).toContain('fastlane/screenshots/en-US/01_shot1_iphone-6.3.png');
-    expect(paths).toContain('fastlane/app-previews/tr/01_IPHONE_67.mp4');
+    expect(paths).toContain('.vitrin/store/screenshots/en-US/01_shot1_iphone-6.3.png');
+    expect(paths).toContain('.vitrin/store/app-previews/tr/01_IPHONE_67.mp4');
     expect(paths).toContain('.vitrin/creative/en-US/header_header.png');
-    expect(paths).toContain('fastlane/metadata/android/en-US/images/phoneScreenshots/1_shot1.png');
+    expect(paths).toContain('.vitrin/store/metadata/android/en-US/images/phoneScreenshots/1_shot1.png');
     expect(paths.some((p) => p.includes('.remotion.'))).toBe(false);
     expect(inv.files.every((f) => /^[0-9a-f]{64}$/.test(f.sha256))).toBe(true);
     expect(inv.metadataJson.map((f) => f.path)).toEqual(expect.arrayContaining(['.vitrin/metadata/en-US.json', '.vitrin/metadata/app.json', '.vitrin/cpp-suggestions.json', '.vitrin/shots.json']));
 
-    const shot = inv.items.find((i) => i.id === 'fastlane/screenshots/tr/02_shot2_iphone-6.9.png')!;
+    const shot = inv.items.find((i) => i.id === '.vitrin/store/screenshots/tr/02_shot2_iphone-6.9.png')!;
     expect(shot).toMatchObject({ kind: 'screenshot', store: 'app-store', platform: 'ios', locale: 'tr', target: 'iphone-6.9', order: 2 });
     expect(inv.items.find((i) => i.id.endsWith('01_IPHONE_67.mp4'))).toMatchObject({ kind: 'preview', target: 'preview-iphone', durationSec: 2 });
     expect(inv.items.find((i) => i.id.endsWith('event-card_event-launch-card.png'))).toMatchObject({ kind: 'event', target: 'event-card' });
@@ -95,8 +95,8 @@ describe('inventory, approval and change detection', () => {
     appendFileSync(shot, Buffer.from([0]));
     let res = await checkApproval(ctx);
     expect(res.ok).toBe(false);
-    expect(res.changed).toEqual(['fastlane/screenshots/en-US/01_shot1_iphone-6.3.png']);
-    await expect(requireApproval(ctx)).rejects.toMatchObject({ details: ['changed: fastlane/screenshots/en-US/01_shot1_iphone-6.3.png'] });
+    expect(res.changed).toEqual(['.vitrin/store/screenshots/en-US/01_shot1_iphone-6.3.png']);
+    await expect(requireApproval(ctx)).rejects.toMatchObject({ details: ['changed: .vitrin/store/screenshots/en-US/01_shot1_iphone-6.3.png'] });
     writeFileSync(shot, original);
     expect((await checkApproval(ctx)).ok).toBe(true);
 
@@ -104,12 +104,12 @@ describe('inventory, approval and change detection', () => {
     const extra = fx.shot('tr', '04_extra_iphone-6.3.png');
     writeFileSync(extra, original);
     res = await checkApproval(ctx);
-    expect(res.added).toEqual(['fastlane/screenshots/tr/04_extra_iphone-6.3.png']);
+    expect(res.added).toEqual(['.vitrin/store/screenshots/tr/04_extra_iphone-6.3.png']);
     rmSync(extra);
-    const pv = join(fx.root, 'fastlane', 'app-previews', 'tr', '01_IPHONE_67.mp4');
+    const pv = join(fx.root, '.vitrin', 'store', 'app-previews', 'tr', '01_IPHONE_67.mp4');
     const pvData = readFileSync(pv);
     rmSync(pv);
-    expect((await checkApproval(ctx)).removed).toEqual(['fastlane/app-previews/tr/01_IPHONE_67.mp4']);
+    expect((await checkApproval(ctx)).removed).toEqual(['.vitrin/store/app-previews/tr/01_IPHONE_67.mp4']);
     writeFileSync(pv, pvData);
 
     // Metadata JSON change (the source the export and the event / CPP upload read)
@@ -139,9 +139,9 @@ describe('inventory, approval and change detection', () => {
   it('records rejections as feedback, a brief and a changes-requested approval that blocks upload', async () => {
     const inv = await buildInventory(ctx);
     expect(findItem(inv, '03_shot3_iphone-6.9.png')).toBeUndefined(); // ambiguous across locales
-    expect(findItem(inv, 'fastlane/screenshots/tr/03_shot3_iphone-6.9.png')?.locale).toBe('tr');
+    expect(findItem(inv, '.vitrin/store/screenshots/tr/03_shot3_iphone-6.9.png')?.locale).toBe('tr');
     await expect(recordRejections(ctx, inv, [{ item: 'nope.png', comment: 'x' }], 'cli')).rejects.toThrow(/Unknown or ambiguous review item/);
-    const fb = await recordRejections(ctx, inv, [{ item: 'fastlane/screenshots/tr/03_shot3_iphone-6.9.png', comment: 'Headline too long' }, { item: 'metadata/app-store/en-US', comment: 'Subtitle: say "daily"' }], 'cli');
+    const fb = await recordRejections(ctx, inv, [{ item: '.vitrin/store/screenshots/tr/03_shot3_iphone-6.9.png', comment: 'Headline too long' }, { item: 'metadata/app-store/en-US', comment: 'Subtitle: say "daily"' }], 'cli');
     expect(ReviewFeedback.parse(JSON.parse(readFileSync(ctx.paths.reviewFeedback, 'utf8'))).rejections).toHaveLength(2);
     expect(fb.rejections[1]!.files).toContain('.vitrin/metadata/en-US.json');
     const brief = readFileSync(join(ctx.paths.briefs, 'review.md'), 'utf8');

@@ -68,12 +68,20 @@ export function appPaths(root: string) {
     config: join(root, 'vitrin.config.yaml'),
     env: join(root, '.env'),
     envExample: join(root, '.env.example'),
+    /** Only the Fastfile lives here, and only when fastlane is the chosen uploader (or for Google Play supply). */
     fastlane: join(root, 'fastlane'),
-    fastlaneMetadata: join(root, 'fastlane', 'metadata'),
-    screenshots: join(root, 'fastlane', 'screenshots'),
-    appPreviews: join(root, 'fastlane', 'app-previews'),
-    /** Google Play listing exported for fastlane supply. */
-    androidMetadata: join(root, 'fastlane', 'metadata', 'android'),
+    /**
+     * The generated store set, in the layout deliver and supply read (whatever the uploader): metadata text,
+     * screenshots and App Previews. It lives inside .vitrin/ so nothing appears in the project unless asked for.
+     */
+    store: join(v, 'store'),
+    fastlaneMetadata: join(v, 'store', 'metadata'),
+    screenshots: join(v, 'store', 'screenshots'),
+    appPreviews: join(v, 'store', 'app-previews'),
+    /** Google Play listing in the supply layout. */
+    androidMetadata: join(v, 'store', 'metadata', 'android'),
+    /** HTML recreations of the app's screens (capture.mode: html), written by Claude from the source code. */
+    screens: join(v, 'screens'),
   };
 }
 export type AppPaths = ReturnType<typeof appPaths>;

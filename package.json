@@ -1,7 +1,7 @@
 {
   "name": "vitrin-monorepo",
   "private": true,
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "Vitrin — automate App Store Connect metadata, screenshots, creatives and App Previews for iOS apps",
   "type": "module",
   "packageManager": "pnpm@12.15.0",

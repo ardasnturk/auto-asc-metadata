@@ -72,6 +72,8 @@ export interface PlatformsReport {
   language: string | null;
   /** The App Store uploader the user chose (null = not chosen yet). */
   uploader: Uploader | null;
+  /** How the app's screens are made: html (from the code, no build) or a real capture. */
+  capture: VitrinConfig['capture']['mode'];
   selection: VitrinConfig['selection'];
 }
 
@@ -118,6 +120,7 @@ export function platformsReport(config: VitrinConfig, profile: AppProfile): Plat
     samples: { locale: sampleLocale(config), target: target.id, family: target.family },
     language: config.ui?.language ?? null,
     uploader: config.upload.uploader ?? null,
+    capture: config.capture.mode,
     selection: config.selection ?? {},
   };
 }
@@ -142,7 +145,7 @@ export async function platformsCommand(ctx: Ctx, opts: { json?: boolean } = {}):
   log.info(`Assets: ${report.assets.map((a) => (a.selected ? a.asset : pc.dim(a.asset))).join(', ')}`);
   log.info(`Formats: ${report.formats.map((f) => (f.selected ? f.target : pc.dim(f.target))).join(', ') || 'none'}`);
   log.info(`Locales: ${report.locales.map((l) => (l.selected ? l.locale : pc.dim(l.locale))).join(', ')} · design samples in ${report.samples.locale} (${report.samples.target})`);
-  log.info(`Language: ${report.language ?? pc.yellow('not asked yet (English)')} · uploader: ${report.uploader ?? pc.yellow('not chosen yet')}`);
+  log.info(`Language: ${report.language ?? pc.yellow('not asked yet (English)')} · uploader: ${report.uploader ?? pc.yellow('not chosen yet')} · screens: ${report.capture}`);
   log.dim('Change with: vitrin select --platforms ios,watchos --assets screenshots,previews --targets iphone-6.9,ipad-13 --locales en-US,tr --language tr --uploader asc');
   return EXIT.OK;
 }
@@ -169,7 +172,12 @@ export interface SelectionChange {
   /** ui.language; null removes it. */
   language?: string | null;
   uploader?: Uploader;
+  /** capture.mode: html (screens recreated from the code, no build) or launch-args (build + simulators). */
+  capture?: CaptureMode;
 }
+
+export const CAPTURE_MODES = ['html', 'launch-args', 'xcuitest', 'manual'] as const;
+export type CaptureMode = (typeof CAPTURE_MODES)[number];
 
 /**
  * Writes the user's choices into the YAML text, keeping comments and every other key.
@@ -188,6 +196,7 @@ export function applySelection(yamlText: string, change: SelectionChange): strin
     if (isMap(ui) && ui.items.length === 0) doc.delete('ui');
   }
   if (change.uploader !== undefined) set(['upload', 'uploader'], change.uploader);
+  if (change.capture !== undefined) set(['capture', 'mode'], change.capture);
   return doc.toString({ lineWidth: 120 });
 }
 
@@ -198,6 +207,7 @@ export interface SelectOptions {
   locales?: string | string[];
   language?: string;
   uploader?: string;
+  capture?: string;
 }
 
 export async function selectCommand(ctx: Ctx, opts: SelectOptions): Promise<number> {
@@ -211,8 +221,10 @@ export async function selectCommand(ctx: Ctx, opts: SelectOptions): Promise<numb
   const language = opts.language === undefined ? undefined : opts.language.trim() === '' || opts.language === 'default' ? null : opts.language.trim();
   if (opts.uploader !== undefined && !(UploaderEnum.options as readonly string[]).includes(opts.uploader)) throw new Error(`Unknown uploader: ${opts.uploader}. Valid: ${UploaderEnum.options.join(', ')}.`);
   const uploader = opts.uploader as Uploader | undefined;
-  const change: SelectionChange = { platforms, assets, targets, locales, language, uploader };
-  if (Object.values(change).every((v) => v === undefined)) throw new Error('Nothing to select: pass --platforms, --assets, --targets, --locales, --language and/or --uploader.');
+  if (opts.capture !== undefined && !(CAPTURE_MODES as readonly string[]).includes(opts.capture)) throw new Error(`Unknown capture mode: ${opts.capture}. Valid: ${CAPTURE_MODES.join(', ')}.`);
+  const capture = opts.capture as CaptureMode | undefined;
+  const change: SelectionChange = { platforms, assets, targets, locales, language, uploader, capture };
+  if (Object.values(change).every((v) => v === undefined)) throw new Error('Nothing to select: pass --platforms, --assets, --targets, --locales, --language, --uploader and/or --capture.');
   const text = applySelection(await readFile(ctx.paths.config, 'utf8'), change);
   await writeText(ctx.paths.config, text);
   // Re-read through the schema so an invalid file is caught now, not in the next stage.
@@ -220,7 +232,7 @@ export async function selectCommand(ctx: Ctx, opts: SelectOptions): Promise<numb
   ctx.config = config;
   const s = config.selection ?? {};
   log.ok(`selection: platforms ${s.platforms?.join(', ') ?? 'all detected'} · assets ${s.assets?.join(', ') ?? 'all'} · formats ${s.targets?.join(', ') ?? 'all'}`);
-  log.ok(`locales: ${config.app.locales.join(', ')} · language: ${config.ui?.language ?? 'English (default)'} · uploader: ${config.upload.uploader ?? 'not chosen yet'}`);
+  log.ok(`locales: ${config.app.locales.join(', ')} · language: ${config.ui?.language ?? 'English (default)'} · uploader: ${config.upload.uploader ?? 'not chosen yet'} · screens: ${config.capture.mode}`);
   const profile = await loadProfile(ctx).catch(() => undefined);
   const enabled = enabledTargets(config, profile);
   log.dim(`  ${enabled.length} formats: ${enabled.map((t) => t.id).join(', ') || 'none'}`);

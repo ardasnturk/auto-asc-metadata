@@ -15,7 +15,7 @@ import { perDisplayTypeAssetsFor } from './scope.js';
  *
  * - Text: `asc metadata push --app <id> --version <v> --platform <IOS|MAC_OS|TV_OS|VISION_OS> --dir <dir>` with
  *   `--dry-run` for the plan. asc's canonical layout (internal/cli/metadata/foundation.go: `app-info/<locale>.json`
- *   and `version/<version>/<locale>.json`) is generated from Vitrin's fastlane/metadata export.
+ *   and `version/<version>/<locale>.json`) is generated from Vitrin's .vitrin/store/metadata export.
  * - Media: one `asc screenshots upload` / `asc video-previews upload --version-localization <id> --path <dir>
  *   --device-type <type> --replace --confirm` per locale and display type: `--replace` deletes only the screenshots
  *   of that one set, so other display types stay untouched.
@@ -95,7 +95,7 @@ export function ascValidateInvocation(o: { appId: string; platform?: AscPlatform
   return { command: ASC_BIN, args, env };
 }
 
-// ---- metadata export: fastlane/metadata → asc canonical layout ----
+// ---- metadata export: .vitrin/store/metadata → asc canonical layout ----
 
 /** deliver file → asc field, per scope. */
 const APP_INFO_FIELDS: Record<string, string> = { 'name.txt': 'name', 'subtitle.txt': 'subtitle', 'privacy_url.txt': 'privacyPolicyUrl' };

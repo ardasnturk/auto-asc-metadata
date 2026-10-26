@@ -30,7 +30,7 @@ export function playMetadataDir(paths: AppPaths): string {
   return join(paths.metadataDir, 'play');
 }
 
-/** supply's metadata root: `fastlane/metadata/android/`. */
+/** supply's metadata root: `.vitrin/store/metadata/android/`. */
 export function playExportDir(paths: AppPaths): string {
   return join(paths.fastlaneMetadata, 'android');
 }
@@ -185,7 +185,7 @@ export const PLAY_LISTING_FILES: Record<string, (l: PlayListing) => string | und
 
 /**
  * Writes the supply tree:
- * `fastlane/metadata/android/<play-locale>/{title,short_description,full_description,video}.txt`,
+ * `.vitrin/store/metadata/android/<play-locale>/{title,short_description,full_description,video}.txt`,
  * `changelogs/<versionCode>.txt`, `images/{phone,sevenInch,tenInch}Screenshots/NN.png`, `images/featureGraphic.png`,
  * `images/icon.png`. Image folders of the exported languages are rebuilt so supply never uploads stale files.
  * `video` undefined = leave the remote value (no file); `video: ""` = clear it (empty file).
@@ -256,7 +256,7 @@ export async function exportPlayMetadata(
   return { root, written, skipped, sets };
 }
 
-/** Play language folders under fastlane/metadata/android that no listing produces (supply would upload them too). */
+/** Play language folders under .vitrin/store/metadata/android that no listing produces (supply would upload them too). */
 export async function strayPlayLocaleDirs(paths: AppPaths, inputs: PlayInputs, table: PlayLocaleTable = loadPlayLocales()): Promise<string[]> {
   const root = playExportDir(paths);
   if (!existsSync(root)) return [];
@@ -315,7 +315,7 @@ export function buildPlayPlan(opts: {
   const sets = opts.sets.filter((s) => playSlotSelected(s.slot, scope));
   if (!opts.packageName) res.blockers.push('[play.package] No Android application id: set profile.project.androidApplicationId (vitrin analyze) or GOOGLE_PLAY_PACKAGE_NAME.');
   if (!inputs.listings.length) res.blockers.push('[play.listing.none] No Google Play listing in .vitrin/metadata/play/<locale>.json.');
-  for (const s of opts.stray ?? []) res.blockers.push(`[play.stray-locale] fastlane/metadata/android/${s} is not produced by any listing; supply would upload it too. Remove the folder.`);
+  for (const s of opts.stray ?? []) res.blockers.push(`[play.stray-locale] .vitrin/store/metadata/android/${s} is not produced by any listing; supply would upload it too. Remove the folder.`);
   for (const i of opts.imageIssues) {
     if (i.slot && !playSlotSelected(i.slot, scope)) continue;
     (i.severity === 'error' ? res.blockers : res.warnings).push(`[${i.code}] ${i.message}`);

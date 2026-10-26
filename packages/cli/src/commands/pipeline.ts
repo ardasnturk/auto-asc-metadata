@@ -9,7 +9,8 @@ import { exportFastlaneMetadata } from '@vitrin/upload';
 import { readFile } from 'node:fs/promises';
 import { dirname, join, relative } from 'node:path';
 import pc from 'picocolors';
-import { designBrief, metadataBrief, profileBrief, videoBrief } from '../briefs.js';
+import { designBrief, metadataBrief, profileBrief, screensBrief, videoBrief } from '../briefs.js';
+import { renderHtmlScreens, type ScreenFamily } from '../html-screens.js';
 import { EXIT, loadProfile, NeedsInput, stage, type Ctx } from '../context.js';
 import { AndroidDevice, androidLocaleTag, androidTools, ensureAvd, launchArgsToExtras, serialFor, startEmulator } from '../android.js';
 import { appIdentity, buildApp } from '../build.js';
@@ -113,7 +114,7 @@ export async function writeCommand(ctx: Ctx): Promise<number> {
   const app = await readJson(ctx.paths.appMetadata, AppMetadata);
   const written = await exportFastlaneMetadata(ctx.paths, ctx.config, app, metadata);
   await ctx.state.mark('write', hashValue({ metadata, app, urls: ctx.config.urls }), written.map((w) => relative(ctx.root, w)));
-  log.ok(`Wrote fastlane/metadata (${written.length} files)`);
+  log.ok(`Wrote .vitrin/store/metadata (${written.length} files)`);
   for (const m of metadata) {
     const kw = Buffer.byteLength(m.keywords, 'utf8');
     log.dim(`  ${m.locale}: name “${m.name}”, subtitle “${m.subtitle}”, keywords ${kw}/100 bytes`);
@@ -214,11 +215,11 @@ export async function captureCommand(ctx: Ctx, opts: { families?: string[]; loca
   const profile = await loadProfile(ctx);
   const cap = ctx.config.capture;
   const kinds = captureKinds(ctx.config);
-  if (kinds.screens && !cap.screens.length) {
+  if ((kinds.screens || cap.mode === 'html') && !cap.screens.length) {
     const brief = await profileBrief(ctx, profile);
     throw new NeedsInput('Claude input needed: capture.screens is empty.', [`Brief: ${relative(ctx.root, brief)}`]);
   }
-  if (!kinds.screens && kinds.recordings && !cap.recordings.length) {
+  if (cap.mode !== 'html' && !kinds.screens && kinds.recordings && !cap.recordings.length) {
     throw new NeedsInput('Only previews are selected, but capture.recordings is empty.');
   }
   const locales = opts.locales ?? ctx.config.app.locales;
@@ -232,6 +233,7 @@ export async function captureCommand(ctx: Ctx, opts: { families?: string[]; loca
     log.ok('Manual raw captures complete.');
     return EXIT.OK;
   }
+  if (cap.mode === 'html') return captureHtml(ctx, profile, families, locales, kinds);
   if (cap.mode === 'xcuitest') {
     throw new NeedsInput('xcuitest mode: capture with `fastlane snapshot`, place the output at .vitrin/raw/<locale>/<family>/<id>.png, then use capture.mode: manual.');
   }
@@ -304,6 +306,35 @@ async function buildFor(ctx: Ctx, profile: AppProfile, platform: Platform): Prom
 }
 
 /** iPhone, iPad, Duo, Apple Watch, Apple TV and Vision Pro: dedicated simulators, simctl screenshots and recordings. */
+/** capture.mode html: renders Claude's HTML screens (.vitrin/screens) per locale and family; no build. */
+async function captureHtml(ctx: Ctx, profile: AppProfile, families: CaptureFamily[], locales: string[], kinds: ReturnType<typeof captureKinds>): Promise<number> {
+  const cap = ctx.config.capture;
+  if (!families.length) {
+    log.warn('Nothing to capture for the selected platforms and assets.');
+    return EXIT.OK;
+  }
+  if (!kinds.screens) log.info('HTML screens have no recordings: App Previews are built from the screens (scenes zoom and pan over them).');
+  const jobs = locales.flatMap((locale) => families.flatMap((f) => cap.screens.map((s) => ({ locale, family: f.family as ScreenFamily, id: s.id }))));
+  const inputs = { mode: 'html', screens: cap.screens, locales, families: families.map((f) => f.family), files: await hashPaths([ctx.paths.screens], ctx.root) };
+  let missing: { files: string[]; strings: string[] } = { files: [], strings: [] };
+  await stage(ctx, 'capture', inputs, async () => {
+    log.step(`HTML screens: ${cap.screens.length} screens × ${families.length} devices × ${locales.length} locales (no build)`);
+    const res = await renderHtmlScreens(ctx, jobs, sampleLocale(ctx.config));
+    missing = { files: res.missingFiles, strings: res.missingStrings };
+    if (res.missingFiles.length) {
+      const brief = await screensBrief(ctx, profile);
+      throw new NeedsInput('Claude input needed: HTML recreations of the app screens.', [...res.missingFiles.slice(0, 12), `Brief: ${relative(ctx.root, brief)}`]);
+    }
+    return res.outputs;
+  });
+  if (missing.strings.length) {
+    log.warn(`Text missing in .vitrin/screens/strings (rendered empty): ${missing.strings.slice(0, 12).join('; ')}${missing.strings.length > 12 ? ' …' : ''}`);
+    return EXIT.FAIL;
+  }
+  log.ok('HTML screens rendered → .vitrin/raw');
+  return EXIT.OK;
+}
+
 async function captureSimulator(ctx: Ctx, f: CaptureFamily, platform: SimPlatform, appPath: string, bundleId: string, locales: string[]): Promise<string[]> {
   const cap = ctx.config.capture;
   const kinds = captureKinds(ctx.config);
@@ -474,7 +505,7 @@ export async function designCommand(ctx: Ctx, opts: DesignOptions = {}): Promise
     const appIcon = profile.brand.appIcon ? join(profile.project.root, profile.brand.appIcon) : undefined;
     const res = await renderDesign({ paths: ctx.paths, locales: ctx.config.app.locales, primaryLocale: ctx.config.app.primaryLocale, targets, artDirection: ad, shots, onlyShots: opts.only, appIcon, appName: profile.app.displayName });
     for (const w of res.warnings) log.warn(w);
-    log.ok(`Rendered ${res.manifest.images.length} images → fastlane/screenshots, .vitrin/creative`);
+    log.ok(`Rendered ${res.manifest.images.length} images → .vitrin/store/screenshots, .vitrin/creative`);
     return res.manifest.images.map((i) => i.file);
   });
   const report = await validateAll(ctx.paths, ctx.config, { text: false, claims: true, images: true, videos: false });

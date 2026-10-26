@@ -34,8 +34,8 @@ describe('managed .gitignore block', () => {
       '.env', 'secrets/AuthKey.p8', 'AuthKey_X.p8',
       '.vitrin/state.json', '.vitrin/cache/http/a', '.vitrin/raw/tr/iphone/home.png', '.vitrin/creative/tr/header_header.png', '.vitrin/video-styles/tr/01_classic.mp4', '.vitrin/report.html', '.vitrin/approval.json',
       '.vitrin/app_profile.json', '.vitrin/metadata/tr.json', '.vitrin/keywords/tr.json', '.vitrin/art-direction.json', '.vitrin/shots.json', '.vitrin/video-plan.json', '.vitrin/cpp-suggestions.json',
-      'fastlane/screenshots/tr/01_a_iphone-6.3.png', 'fastlane/app-previews/tr/01_IPHONE_67.mp4', 'fastlane/metadata/android/en-US/images/phoneScreenshots/1.png', 'fastlane/metadata/android/en-US/title.txt',
-      'fastlane/metadata/tr/name.txt', 'fastlane/Fastfile', 'fastlane/report.xml', 'fastlane/README.md', 'metadata/app-store/ios/tr/name.txt', 'Sources/App.swift',
+      '.vitrin/store/screenshots/tr/01_a_iphone-6.3.png', '.vitrin/store/app-previews/tr/01_IPHONE_67.mp4', '.vitrin/store/metadata/android/en-US/images/phoneScreenshots/1.png', '.vitrin/store/metadata/android/en-US/title.txt',
+      '.vitrin/store/metadata/tr/name.txt', '.vitrin/screens/home.html', 'fastlane/Fastfile', 'fastlane/report.xml', 'fastlane/README.md', 'metadata/app-store/ios/tr/name.txt', 'Sources/App.swift',
     ];
     for (const f of files) {
       mkdirSync(join(root, f, '..'), { recursive: true });
@@ -56,8 +56,8 @@ describe('managed .gitignore block', () => {
         return false;
       }
     };
-    const shouldIgnore = files.slice(0, 10).concat(['fastlane/screenshots/tr/01_a_iphone-6.3.png', 'fastlane/app-previews/tr/01_IPHONE_67.mp4', 'fastlane/metadata/android/en-US/images/phoneScreenshots/1.png', 'fastlane/report.xml', 'fastlane/README.md', 'metadata/app-store/ios/tr/name.txt']);
-    const shouldKeep = ['.vitrin/app_profile.json', '.vitrin/metadata/tr.json', '.vitrin/keywords/tr.json', '.vitrin/art-direction.json', '.vitrin/shots.json', '.vitrin/video-plan.json', '.vitrin/cpp-suggestions.json', 'fastlane/metadata/android/en-US/title.txt', 'fastlane/metadata/tr/name.txt', 'fastlane/Fastfile', 'Sources/App.swift'];
+    const shouldIgnore = files.slice(0, 10).concat(['.vitrin/store/screenshots/tr/01_a_iphone-6.3.png', '.vitrin/store/app-previews/tr/01_IPHONE_67.mp4', '.vitrin/store/metadata/android/en-US/images/phoneScreenshots/1.png', '.vitrin/store/metadata/android/en-US/title.txt', '.vitrin/store/metadata/tr/name.txt', 'fastlane/report.xml', 'fastlane/README.md', 'metadata/app-store/ios/tr/name.txt']);
+    const shouldKeep = ['.vitrin/app_profile.json', '.vitrin/metadata/tr.json', '.vitrin/keywords/tr.json', '.vitrin/art-direction.json', '.vitrin/shots.json', '.vitrin/video-plan.json', '.vitrin/cpp-suggestions.json', '.vitrin/screens/home.html', 'fastlane/Fastfile', 'Sources/App.swift'];
     for (const f of shouldIgnore) expect(ignored(f), f).toBe(true);
     for (const f of shouldKeep) expect(ignored(f), f).toBe(false);
     // retention.commit: true makes metadata/ committable
@@ -83,7 +83,7 @@ describe('selection', () => {
     const play = await buildInventory(ctx);
     expect(play.items.length).toBeGreaterThan(0);
     expect(play.items.every((i) => i.store === 'google-play')).toBe(true);
-    expect(play.files.every((f) => f.path.startsWith('fastlane/metadata/android/'))).toBe(true);
+    expect(play.files.every((f) => f.path.startsWith('.vitrin/store/metadata/android/'))).toBe(true);
     expect(play.overallHash).not.toBe(all.overallHash);
     ctx.config.selection = { assets: ['metadata'] };
     const text = await buildInventory(ctx);
@@ -146,8 +146,8 @@ describe('vitrin finalize', () => {
     expect(readFileSync(join(fx.root, 'metadata/app-store/ios/en-US/name.txt'), 'utf8').trim()).toBe('Ritim: Habit Tracker');
     expect(existsSync(join(fx.root, 'metadata/google-play/android/en-US/changelogs/42.txt'))).toBe(true);
     expect(existsSync(join(fx.root, 'metadata/app-store/ios/all/events/launch.json'))).toBe(true);
-    for (const gone of ['fastlane/screenshots', 'fastlane/app-previews', '.vitrin/creative', '.vitrin/raw', '.vitrin/video-styles', '.vitrin/cache', 'fastlane/metadata/android/en-US/images']) expect(existsSync(join(fx.root, gone)), gone).toBe(false);
-    for (const kept of ['.vitrin/metadata/tr.json', '.vitrin/shots.json', '.vitrin/cpp-suggestions.json', '.vitrin/competitors.json', '.vitrin/keywords/tr.json', 'fastlane/metadata/tr/name.txt', 'fastlane/metadata/android/en-US/title.txt', 'Sources/App.swift', '.env']) expect(existsSync(join(fx.root, kept)), kept).toBe(true);
+    for (const gone of ['.vitrin/store/screenshots', '.vitrin/store/app-previews', '.vitrin/creative', '.vitrin/raw', '.vitrin/video-styles', '.vitrin/cache', '.vitrin/store/metadata/android/en-US/images']) expect(existsSync(join(fx.root, gone)), gone).toBe(false);
+    for (const kept of ['.vitrin/metadata/tr.json', '.vitrin/shots.json', '.vitrin/cpp-suggestions.json', '.vitrin/competitors.json', '.vitrin/keywords/tr.json', '.vitrin/store/metadata/tr/name.txt', '.vitrin/store/metadata/android/en-US/title.txt', 'Sources/App.swift', '.env']) expect(existsSync(join(fx.root, kept)), kept).toBe(true);
     expect(readFileSync(ctx.paths.config, 'utf8')).toMatch(/retention:\s*\n\s*keep: true/);
     expect(JSON.parse(readFileSync(ctx.paths.approval, 'utf8')).finalized.mode).toBe('keep');
   });
@@ -156,7 +156,7 @@ describe('vitrin finalize', () => {
     const { fx, ctx } = await uploaded();
     expect(await finalizeCommand(ctx, { keep: false, checked: true })).toBe(0);
     expect(existsSync(join(fx.root, 'metadata'))).toBe(false);
-    for (const gone of ['fastlane/screenshots', 'fastlane/app-previews', '.vitrin/creative', '.vitrin/cache', '.vitrin/report.html']) expect(existsSync(join(fx.root, gone)), gone).toBe(false);
+    for (const gone of ['.vitrin/store/screenshots', '.vitrin/store/app-previews', '.vitrin/creative', '.vitrin/cache', '.vitrin/report.html']) expect(existsSync(join(fx.root, gone)), gone).toBe(false);
     for (const kept of ['.vitrin/metadata/en-US.json', '.vitrin/metadata/app.json', '.vitrin/shots.json', '.vitrin/competitors.json', '.vitrin/app_profile.json', 'Sources/App.swift']) expect(existsSync(join(fx.root, kept)), kept).toBe(true);
   });
 
@@ -173,6 +173,6 @@ describe('vitrin finalize', () => {
   it('never resolves paths outside the project', () => {
     expect(() => insideProject('/tmp/app', '../etc')).toThrow(/outside the project/);
     expect(() => insideProject('/tmp/app', '.')).toThrow(/outside the project/);
-    expect(insideProject('/tmp/app', 'fastlane/screenshots')).toBe('/tmp/app/fastlane/screenshots');
+    expect(insideProject('/tmp/app', '.vitrin/store/screenshots')).toBe('/tmp/app/.vitrin/store/screenshots');
   });
 });

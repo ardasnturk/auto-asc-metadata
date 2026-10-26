@@ -48,7 +48,7 @@ export const ApprovalManifest = z.object({
   via: z.enum(['review-server', 'cli']),
   /** sha256 over every path + hash in `files` and `metadataJson` (see `overallHash()` in the CLI). */
   overallHash: z.string(),
-  /** Media and text files that would be uploaded (fastlane/metadata, screenshots, app-previews, creatives…). */
+  /** Media and text files that would be uploaded (.vitrin/store/metadata, screenshots, app-previews, creatives…). */
   files: z.array(HashedFile),
   /** Source JSON that the upload reads text from (metadata, CPP suggestions, In-App Events). */
   metadataJson: z.array(HashedFile),
