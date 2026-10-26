@@ -19,6 +19,11 @@ All notable changes to this project are documented in this file. The format is b
 - **Install without cloning:** the repository is a Claude Code plugin marketplace. `/plugin marketplace add ardasnturk/vitrin` and `/plugin install vitrin@vitrin` add the `/vitrin` skill and a `vitrin` launcher that installs the CLI for the plugin's version into `~/.local/share/vitrin/<version>/` on first use (no sudo, Playwright Chromium included).
 - **npm package `@ardasnturk/vitrin`:** one bundled CLI with its data, fastlane templates and Remotion sources; `pnpm pack:release` builds the tarball and the release workflow attaches it to the GitHub Release (and publishes to npm when `NPM_TOKEN` is set). `vitrin --version` reports the release version.
 
+- **App Store Connect API 4.5.1 alignment:** display types and App Asset Library placement types, display classes, categories and placement groups follow Apple's OpenAPI spec (`data/asc-display-types.json`); partial runs replace exactly one screenshot or preview set per locale through the classic set API, and the Asset Library is used for iPhone Duo and creatives.
+- **asc CLI uploader:** `upload.uploader: asc` uploads App Store text, screenshots and previews with [asc](https://github.com/rorkai/App-Store-Connect-CLI) (`brew install asc`), no Ruby needed; `upload.ascValidate` adds `asc validate` to doctor.
+- **App Review checks:** placeholder text, Apple-designated recognitions and Kids Category wording in metadata; generic What's New when the release adds features; short review notes; prices, URLs, © and Apple recognitions in screenshot copy (from Apple's App Review Guidelines and asset best practices).
+- **Vision Pro App Previews** (3840×2160, `preview-vision`). The Apple notes moved into the skill's references so the installed plugin carries them.
+
 ### Changed
 - The skill moved to `plugins/vitrin/skills/vitrin/` inside the Claude Code plugin (`npx skills add ardasnturk/vitrin` still finds it) and the repository links use the Vitrin name (`ardasnturk/vitrin`). `skills/…/scripts/install.sh` remains for contributors working from a clone.
 - The `/vitrin` flow asks for platforms, content, design and retention, and shows everything for approval before upload.
