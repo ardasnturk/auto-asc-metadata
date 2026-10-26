@@ -36,7 +36,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ardasnturk/auto-asc-metadata.git",
+    "url": "git+https://github.com/ardasnturk/vitrin.git",
     "directory": "packages/cli"
   },
   "description": "Vitrin CLI — App Store Connect metadata, screenshot and App Preview automation",

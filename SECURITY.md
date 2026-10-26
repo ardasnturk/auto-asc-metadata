@@ -8,7 +8,7 @@ Only the latest release on `main` receives fixes.
 
 ## Reporting a vulnerability
 
-**Please do not open a public issue.** Report privately through [GitHub Security Advisories](https://github.com/ardasnturk/auto-asc-metadata/security/advisories/new). Include the affected command, the version (`vitrin --version`) and steps to reproduce. You can expect an acknowledgement within a few days.
+**Please do not open a public issue.** Report privately through [GitHub Security Advisories](https://github.com/ardasnturk/vitrin/security/advisories/new). Include the affected command, the version (`vitrin --version`) and steps to reproduce. You can expect an acknowledgement within a few days.
 
 Examples of what we want to hear about:
 
