@@ -1,6 +1,6 @@
 # Vitrin
 
-[![CI](https://github.com/ardasnturk/auto-asc-metadata/actions/workflows/ci.yml/badge.svg)](https://github.com/ardasnturk/auto-asc-metadata/actions/workflows/ci.yml)
+[![CI](https://github.com/ardasnturk/vitrin/actions/workflows/ci.yml/badge.svg)](https://github.com/ardasnturk/vitrin/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Website](https://img.shields.io/badge/website-vitrin.ardasnturk.com-7b6cff.svg)](https://vitrin.ardasnturk.com)
 

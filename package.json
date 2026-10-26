@@ -24,10 +24,10 @@
   "author": "Arda Sentürk",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ardasnturk/auto-asc-metadata.git"
+    "url": "git+https://github.com/ardasnturk/vitrin.git"
   },
-  "homepage": "https://github.com/ardasnturk/auto-asc-metadata#readme",
+  "homepage": "https://github.com/ardasnturk/vitrin#readme",
   "bugs": {
-    "url": "https://github.com/ardasnturk/auto-asc-metadata/issues"
+    "url": "https://github.com/ardasnturk/vitrin/issues"
   }
 }
