@@ -50,7 +50,8 @@ export async function prepareStores(opts: {
   const manifest = await readJsonIfExists(paths.renderManifest, RenderManifest).catch(() => undefined);
   const { assets, unknown } = await collectRenderedAssets(paths, opts.targets ?? loadTargets(), manifest);
   for (const f of unknown) log.dim(`  ${f}: target not in data/targets.json, not uploaded`);
-  const enabled = (opts.targets ?? enabledTargets(config, profile)).filter((t) => platforms.includes(t.platform));
+  // Every format of the selected platforms, so a run limited by selection.targets counts as partial (never overwrites).
+  const enabled = (opts.targets ?? enabledTargets(config, profile, { allFormats: true })).filter((t) => platforms.includes(t.platform));
   const ctx: StoreContext = { platforms, assets, enabledTargets: enabled };
   if (!platforms.includes('android')) return ctx;
 

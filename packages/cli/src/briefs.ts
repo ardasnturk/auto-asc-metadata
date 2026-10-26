@@ -3,6 +3,7 @@ import { Competitors, KeywordPlan, StylePreset, type AppProfile } from '@vitrin/
 import { PRESETS, suggestStyles } from '@vitrin/render';
 import { join } from 'node:path';
 import type { Ctx } from './context.js';
+import { sampleLocale, sampleTarget } from './commands/select.js';
 
 /**
  * Briefs are the hand-off from the deterministic CLI to Claude: a compact summary of the inputs plus the exact
@@ -131,6 +132,7 @@ export async function designBrief(ctx: Ctx, profile: AppProfile): Promise<string
   const suggested = suggestStyles(4, category);
   const brand = [profile.brand.accentColor, ...profile.brand.colors.map((c) => c.hex)].filter((c, i, all): c is string => Boolean(c) && all.indexOf(c) === i);
   const hasShots = existsSync(ctx.paths.shots);
+  const sample = { locale: sampleLocale(ctx.config), target: sampleTarget(ctx.config, profile) };
   const presetRows = StylePreset.options.map((id) => `| \`${id}\` | ${PRESETS[id].name} | ${PRESETS[id].surfaces[0]!.dark ? 'dark' : 'light'} | ${PRESETS[id].device.tilt ? `tilted ±${PRESETS[id].device.tilt}°` : 'upright'} |`).join('\n');
   return writeBrief(
     ctx,
@@ -148,7 +150,7 @@ Method: the /vitrin skill’s references/art-direction.md (iron rules, narrative
 - Icons: Lucide names (e.g. cloud, chart-column, bell, lock, sparkles). Do not use SF Symbols.
 
 ## Step 1 — the first two shots, then samples${hasShots ? ' (shots.json exists: check its first two shots)' : ''}
-Write \`.vitrin/shots.json\` with **only the hero and the second shot** (real copy, real screens; see Step 3 for the format). Then run:
+Write \`.vitrin/shots.json\` with **only the hero and the second shot** (real copy, real screens; see Step 3 for the format), with copy in **${sample.locale} only**. The samples use one language and one format (${sample.target.id}), so capture just that first: \`vitrin capture --locale ${sample.locale} --family ${sample.target.family}\`. Then run:
 
 \`\`\`
 vitrin design --samples --json            # suggested for this app: ${suggested.join(', ')}
@@ -164,13 +166,14 @@ Show the contact sheet and ask: **“Which design should the screenshots use —
     "preset": "liquid-glass-aurora", "brand": { "primary": "${brand[0] ?? '#5B4BE8'}"${brand[1] ? `, "secondary": "${brand[1]}"` : ''} } }],
   "selected": "picked", "selectionReason": "The user chose B." }
 \`\`\`
+Then ask which store languages and which formats to produce (\`vitrin platforms --json\` → \`locales\`, \`formats\`) and store them with \`vitrin select --locales … --targets …\`. Only now capture and render the rest.
 
 | Preset | Name | Surface | Device |
 |---|---|---|---|
 ${presetRows}
 
 ## Step 3 — the full shot list
-5–7 shots for iPhone (3–5 are enough for iPad). Follow the narrative arc: 1 hero (main benefit; proof only here) → 2 differentiator → 3 ecosystem/core → features, one per shot → trust → closer (\`feature-wall\` or \`mosaic\`).
+Copy for every chosen language (\`app.locales\`: ${ctx.config.app.locales.join(', ')}); each locale is a local rewrite, not a word-for-word translation. 5–7 shots for iPhone (3–5 are enough for iPad). Follow the narrative arc: 1 hero (main benefit; proof only here) → 2 differentiator → 3 ecosystem/core → features, one per shot → trust → closer (\`feature-wall\` or \`mosaic\`).
 - **Headlines:** one idea, ≤ 5 words recommended (7 max), 3–5 words per line, ≤ 2 lines, \`\\n\` for an intentional break, exactly one \`*emphasis*\`. Write them in the preset's copy tone (styles/<preset>.md). Reinforce the main keyword from the name/subtitle. \`kicker\` ≤ 3 words.
 - **Framing varies:** leave \`"framing": "auto"\` (never repeats the previous shot) or set bleed-bottom / bleed-top / offset / tilted / two-devices / no-device yourself; mix at least two framings. 1–2 shots \`"inverted": true\` for rhythm (cycling presets change surface on their own). For 5+ shots set \`"bridge": true\` on one shot to carry a decorative element into the next (never text).
 - **Archetypes:** hero, feature, callout, fullbleed, tilted, split, collage, before-after, stat, social-proof, panoramic, statement, testimonial, feature-wall, mosaic. At least 60 % real UI, one UI shot in the first 3.

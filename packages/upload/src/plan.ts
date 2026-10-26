@@ -1,5 +1,5 @@
 import { existsSync, type AppPaths } from '@vitrin/core';
-import type { CppSuggestions, LocaleMetadata, Platform, RenderTarget, ShotList, Store, VitrinConfig } from '@vitrin/schemas';
+import { uploaderOf, type CppSuggestions, type LocaleMetadata, type Platform, type RenderTarget, type ShotList, type Store, type VitrinConfig } from '@vitrin/schemas';
 import { readdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { isEditableVersion, type AscClient } from './asc-client.js';
@@ -118,7 +118,7 @@ export async function buildPlan(opts: {
   play?: PlayPlanInput;
 }): Promise<UploadPlan> {
   const { config, metadata, client } = opts;
-  const uploader = config.upload.uploader;
+  const uploader = uploaderOf(config);
   const platforms = opts.platforms ?? platformsFromConfig(config.upload.platform);
   const apple = applePlatformsOf(platforms);
   const scope = opts.assets

@@ -69,6 +69,7 @@ export function resolveScope(opts: {
   const kinds = opts.selection?.assets?.length ? opts.selection.assets : ALL_ASSET_KINDS;
   const selected = opts.shipping.filter((p) => !opts.selection?.platforms?.length || opts.selection.platforms.includes(p));
   const locales = new Set(opts.locales);
+  const formats = opts.selection?.targets?.length ? new Set(opts.selection.targets) : undefined;
   const scope: StoreScope = { assets: kinds, apple: [] };
 
   for (const p of applePlatformsOf(opts.shipping)) {
@@ -93,7 +94,7 @@ export function resolveScope(opts: {
         ps.untouched.push(`${assetKind} not selected: stay untouched`);
         continue;
       }
-      const files = opts.assets.filter((a) => a.kind === kind && a.target.store === 'app-store' && deliverPlatformFor(a.target.platform) === p && selCovers.includes(a.target.platform) && locales.has(a.locale));
+      const files = opts.assets.filter((a) => a.kind === kind && a.target.store === 'app-store' && deliverPlatformFor(a.target.platform) === p && selCovers.includes(a.target.platform) && locales.has(a.locale) && (!formats || formats.has(a.target.id)));
       if (!files.length) continue;
       const ids = [...new Set(files.map((a) => a.target.id))].sort();
       const expected = opts.enabledTargets.filter((t) => t.kind === kind && t.store === 'app-store' && covers.includes(t.platform)).map((t) => t.id);

@@ -65,9 +65,24 @@ export function compareVersions(a: string, b: string): number {
 }
 
 async function versionOf(cmd: string, args: string[], re: RegExp, cwd?: string): Promise<string | null> {
-  const r = await exec(cmd, args, { cwd, timeoutMs: 60_000 });
+  const r = await exec(cmd, args, { cwd, timeoutMs: 60_000 }).catch(() => ({ code: 127, stdout: '', stderr: '' }));
   if (r.code !== 0) return null;
   return re.exec(r.stdout + r.stderr)?.[1] ?? null;
+}
+
+/** What is installed for uploading: the asc CLI and fastlane (from the Gemfile's bundle, else on PATH) with Ruby. */
+export interface UploaderTools {
+  asc: string | null;
+  fastlane: string | null;
+  ruby: string | null;
+  bundler: string | null;
+}
+
+export async function detectUploaderTools(root: string): Promise<UploaderTools> {
+  const [asc, ruby, bundler] = await Promise.all([ascVersion(), versionOf('ruby', ['--version'], /ruby (\d+\.\d+\.\d+)/), versionOf('bundle', ['--version'], /(\d+\.\d+\.\d+)/)]);
+  let fastlane = bundler && existsSync(join(root, 'Gemfile')) ? await versionOf('bundle', ['exec', 'fastlane', '--version'], /fastlane (\d+\.\d+\.\d+)/, root) : null;
+  fastlane ??= await versionOf('fastlane', ['--version'], /fastlane (\d+\.\d+\.\d+)/);
+  return { asc, fastlane, ruby, bundler };
 }
 
 /**
@@ -160,20 +175,19 @@ export async function runDoctor(ctx: Ctx, opts: { createVersion?: string; offlin
   add({ id: 'node', title: `Node.js ${node}`, status: compareVersions(node, '22.0.0') >= 0 ? 'ok' : 'fail', fix: 'Install Node 22 or later.' });
   const pnpm = await versionOf('pnpm', ['--version'], /(\d+\.\d+\.\d+)/);
   add({ id: 'pnpm', title: 'pnpm', status: pnpm ? 'ok' : 'warn', detail: pnpm ?? 'not found', fix: 'corepack enable && corepack prepare pnpm@latest --activate (only needed to install Vitrin from source).' });
-  // With the asc uploader, Apple uploads need no Ruby; fastlane is then only used for supply (Android) and `vitrin submit`.
-  const useAsc = ctx.config.upload.uploader === 'asc';
-  const rubyNeeded = (ok: boolean): CheckStatus => (ok ? 'ok' : useAsc && !platforms.includes('android') ? 'warn' : 'fail');
-  if (useAsc) {
-    const asc = await ascVersion();
-    add({ id: 'asc', title: 'asc CLI (upload.uploader: asc)', status: asc ? 'ok' : 'fail', detail: asc ?? 'not found', fix: ASC_INSTALL_HINT });
+  // The user chooses the App Store uploader (asc CLI or fastlane). With asc, Apple uploads need no Ruby; fastlane is
+  // then only used for supply (Android) and `vitrin submit`. Before the choice, missing tools are warnings only.
+  const chosen = ctx.config.upload.uploader;
+  const useAsc = chosen === 'asc';
+  const fastlaneRequired = platforms.includes('android') || (apple.length > 0 && chosen !== undefined && chosen !== 'asc');
+  const rubyNeeded = (ok: boolean): CheckStatus => (ok ? 'ok' : fastlaneRequired ? 'fail' : 'warn');
+  const { asc, ruby, bundler, fastlane } = await detectUploaderTools(ctx.root);
+  if (apple.length) {
+    if (!chosen) add({ id: 'uploader', title: 'App Store uploader', status: 'warn', detail: `not chosen yet (asc CLI ${asc ? asc : 'not installed'}, fastlane ${fastlane ?? 'not installed'})`, fix: 'vitrin uploader shows the options; the user picks one: vitrin select --uploader asc|deliver' });
+    add({ id: 'asc', title: 'asc CLI', status: asc ? 'ok' : useAsc ? 'fail' : 'skip', detail: asc ?? (useAsc ? 'not found' : 'not installed (only needed for upload.uploader: asc)'), fix: ASC_INSTALL_HINT });
   }
-  const ruby = await versionOf('ruby', ['--version'], /ruby (\d+\.\d+\.\d+)/);
   add({ id: 'ruby', title: 'Ruby', status: rubyNeeded(Boolean(ruby)), detail: ruby ?? 'not found', fix: useAsc ? 'brew install ruby (with the asc uploader only needed for Google Play and `vitrin submit`)' : 'brew install ruby' });
-  const bundler = await versionOf('bundle', ['--version'], /(\d+\.\d+\.\d+)/);
   add({ id: 'bundler', title: 'Bundler', status: rubyNeeded(Boolean(bundler)), detail: bundler ?? 'not found', fix: 'gem install bundler' });
-  const hasGemfile = existsSync(join(ctx.root, 'Gemfile'));
-  let fastlane = hasGemfile ? await versionOf('bundle', ['exec', 'fastlane', '--version'], /fastlane (\d+\.\d+\.\d+)/, ctx.root) : null;
-  fastlane ??= await versionOf('fastlane', ['--version'], /fastlane (\d+\.\d+\.\d+)/);
   add({
     id: 'fastlane',
     title: `fastlane ≥ ${MIN_FASTLANE}`,

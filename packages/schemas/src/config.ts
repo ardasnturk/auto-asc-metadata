@@ -6,6 +6,10 @@ import { PlatformEnum } from './targets.js';
 export const AssetKindEnum = z.enum(['metadata', 'screenshots', 'previews', 'creatives', 'events']);
 export type AssetKind = z.infer<typeof AssetKindEnum>;
 
+/** Ways App Store content is uploaded (Google Play always uses fastlane supply). */
+export const UploaderEnum = z.enum(['deliver', 'asset-library', 'asc']);
+export type Uploader = z.infer<typeof UploaderEnum>;
+
 export const CaptureScreen = z.object({
   id: z.string().regex(/^[a-z0-9-]+$/),
   /** Extra launch arguments, e.g. ["-VitrinScreen", "home"]. -VitrinDemo is always added. */
@@ -59,6 +63,11 @@ export const VitrinConfig = z.object({
     /** ASC Apple ID (numeric). Read from the API when empty. */
     appleId: z.string().optional(),
   }),
+  /**
+   * The language Vitrin talks to the user in: the skill's questions and summaries and the review gallery.
+   * BCP 47 tag (en, tr, de, pt-BR …). Unset = English until the user is asked. Store copy follows app.locales instead.
+   */
+  ui: z.object({ language: z.string().regex(/^[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})*$/).optional() }).default({}),
   storefronts: z.array(z.string().length(2)).default(['us']),
   urls: z.object({
     support: z.string().url().optional(),
@@ -103,6 +112,11 @@ export const VitrinConfig = z.object({
     .object({
       platforms: z.array(PlatformEnum).optional(),
       assets: z.array(AssetKindEnum).optional(),
+      /**
+       * Formats (target ids from data/targets.json, e.g. iphone-6.9, ipad-13) the user asked for. Unset = every
+       * format of the selected platforms. Unselected formats are not rendered, and their store sets stay untouched.
+       */
+      targets: z.array(z.string()).optional(),
     })
     .default({}),
   /** What happens to generated files after a successful, user-checked upload. Unset = ask the user. */
@@ -148,16 +162,25 @@ export const VitrinConfig = z.object({
   upload: z
     .object({
       /**
-       * deliver (default): fastlane deliver for text and complete sets; partial sets per display type through the
+       * deliver: fastlane deliver for text and complete sets; partial sets per display type through the
        * ASC API. asset-library: media through the App Asset Library. asc: the `asc` CLI (rorkai/App-Store-Connect-CLI,
        * `brew install asc`, no Ruby) for text and per-display-type media.
+       * Unset until the user chooses (`vitrin uploader` shows what is installed); behaves like deliver until then.
        */
-      uploader: z.enum(['deliver', 'asset-library', 'asc']).default('deliver'),
+      uploader: UploaderEnum.optional(),
       platform: z.enum(['ios', 'osx', 'appletvos', 'xros']).default('ios'),
       appVersion: z.string().optional(),
       /** `vitrin doctor` also runs `asc validate --app <id>` (submission readiness) when the asc CLI is installed. */
       ascValidate: z.boolean().optional(),
     })
-    .default({ uploader: 'deliver', platform: 'ios' }),
+    .default({ platform: 'ios' }),
 });
 export type VitrinConfig = z.infer<typeof VitrinConfig>;
+
+/**
+ * The uploader in effect. Unset (the user has not chosen yet) behaves like `deliver`; `vitrin upload` asks for a
+ * choice before it uploads anything (`vitrin uploader`, `vitrin select --uploader`).
+ */
+export function uploaderOf(config: Pick<VitrinConfig, 'upload'>): Uploader {
+  return config.upload.uploader ?? 'deliver';
+}

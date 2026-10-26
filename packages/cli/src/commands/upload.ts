@@ -1,5 +1,5 @@
-import { existsSync, log, readJson, readJsonIfExists, writeJson } from '@vitrin/core';
-import { AppMetadata, CppSuggestions, ShotList } from '@vitrin/schemas';
+import { existsSync, log, readJson, readJsonIfExists, selectedPlatforms, writeJson } from '@vitrin/core';
+import { AppMetadata, CppSuggestions, ShotList, uploaderOf } from '@vitrin/schemas';
 import {
   AscClient,
   buildPlan,
@@ -8,6 +8,7 @@ import {
   credentialsFromEnv,
   exportFastlaneMetadata,
   formatPlan,
+  installFastlaneTemplates,
   prepareStores,
   readBack,
   runDeliverForPlatforms,
@@ -49,6 +50,7 @@ export async function uploadCommand(ctx: Ctx, opts: UploadOptions): Promise<numb
   if (opts.uploader && !['deliver', 'asset-library', 'asc'].includes(opts.uploader)) throw new NeedsInput(`Unknown uploader “${opts.uploader}”: use deliver, asset-library or asc.`);
   if (opts.uploader) ctx.config.upload.uploader = opts.uploader;
   const profile = await loadProfile(ctx);
+  const shipping = selectedPlatforms(ctx.config, profile).platforms;
   const bundleId = bundleIdOf(ctx, profile);
   const metadata = await loadLocaleMetadata(ctx);
   if (!existsSync(ctx.paths.appMetadata) || metadata.length !== ctx.config.app.locales.length) throw new NeedsInput('Metadata is missing; run `vitrin write` first.');
@@ -60,6 +62,13 @@ export async function uploadCommand(ctx: Ctx, opts: UploadOptions): Promise<numb
   else {
     const approval = await checkApproval(ctx);
     if (!approval.ok) log.warn(`Not approved for upload yet: ${approval.reason} (a real upload needs \`vitrin review\` + the user's approval).`);
+  }
+  // The user picks fastlane or the asc CLI (`vitrin uploader` shows what is installed); never assume one for them.
+  if (!ctx.config.upload.uploader && !opts.dryRun && shipping.some((p) => p !== 'android')) {
+    throw new NeedsInput('No uploader chosen for App Store Connect yet.', ['`vitrin uploader` shows whether fastlane and the asc CLI are installed; ask the user, then `vitrin select --uploader asc|deliver`.']);
+  }
+  if (uploaderOf(ctx.config) !== 'asc' || shipping.includes('android')) {
+    for (const f of await installFastlaneTemplates(ctx.paths)) log.ok(`Wrote ${relative(ctx.root, f)}`);
   }
 
   const validation = await validateAll(ctx.paths, ctx.config);

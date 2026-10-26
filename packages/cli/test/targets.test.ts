@@ -91,6 +91,12 @@ describe('selection', () => {
     expect(ids(configWith({ selection: { platforms: ['ios'] } }), profileWith({ platforms: ['android'], supportsIPhone: false }))).toContain('iphone-6.3');
   });
 
+  it('limits formats to selection.targets unless allFormats is asked for', () => {
+    const config = configWith({ selection: { targets: ['iphone-6.9', 'watch-ultra'] } });
+    expect(ids(config, multi).sort()).toEqual(['iphone-6.9', 'watch-ultra']);
+    expect(enabledTargets(config, multi, { allFormats: true }).map((t) => t.id)).toEqual(expect.arrayContaining(['iphone-6.3', 'ipad-13', 'play-phone']));
+  });
+
   it('unset selection keeps the detected platforms', () => {
     expect(selectedPlatforms(configWith(), multi)).toEqual({ platforms: ['ios', 'watchos', 'android'], undetected: [] });
   });

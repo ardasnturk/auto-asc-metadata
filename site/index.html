@@ -35,7 +35,7 @@
     "url": "https://vitrin.ardasnturk.com/",
     "codeRepository": "https://github.com/ardasnturk/vitrin",
     "license": "https://opensource.org/licenses/MIT",
-    "softwareVersion": "0.4.0",
+    "softwareVersion": "0.5.0",
     "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
   }
   </script>
@@ -397,7 +397,7 @@
           </article>
           <article class="card">
             <h3>Safe, partial uploads</h3>
-            <p>One fastlane <code>deliver</code> run per Apple platform, <code>supply</code> for Google Play (listing and images only). Partial selections never delete or overwrite anything you did not select. Read-back after every upload.</p>
+            <p>You pick the App Store uploader: the asc CLI (no Ruby) or fastlane <code>deliver</code>, one run per Apple platform; <code>supply</code> for Google Play (listing and images only). Partial selections never delete or overwrite anything you did not select. Read-back after every upload.</p>
           </article>
           <article class="card">
             <h3>Tidy repository</h3>
@@ -428,7 +428,7 @@
             <h3>Open your app in Claude Code</h3>
             <div class="code"><pre><code>cd path/to/YourApp
 claude</code></pre><button class="copy" type="button" data-copy="cd path/to/YourApp &amp;&amp; claude" aria-label="Copy commands">Copy</button></div>
-            <p>No clone of Vitrin needed. On a new repo it creates <code>vitrin.config.yaml</code>, <code>.env.example</code>, the <code>.gitignore</code> block and the fastlane files. Keys go in <code>.env</code> — never in the chat.</p>
+            <p>No clone of Vitrin needed. It first asks which language to talk in (English by default). On a new repo it creates <code>vitrin.config.yaml</code>, <code>.env.example</code> and the <code>.gitignore</code> block; fastlane files only if you choose fastlane. Keys are asked for at the upload and go in <code>.env</code> — never in the chat.</p>
           </li>
           <li>
             <h3>Type /vitrin</h3>
@@ -492,7 +492,7 @@ claude</code></pre><button class="copy" type="button" data-copy="cd path/to/Your
       <div class="brand">
         <img src="assets/logo.svg" alt="" width="24" height="24">
         <span>Vitrin</span>
-        <a class="version" href="https://github.com/ardasnturk/vitrin/blob/main/CHANGELOG.md">v0.4.0</a>
+        <a class="version" href="https://github.com/ardasnturk/vitrin/blob/main/CHANGELOG.md">v0.5.0</a>
       </div>
       <ul class="footer-links">
         <li><a href="https://github.com/ardasnturk/vitrin">GitHub</a></li>

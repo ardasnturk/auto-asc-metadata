@@ -15,6 +15,7 @@ import { AndroidDevice, androidLocaleTag, androidTools, ensureAvd, launchArgsToE
 import { appIdentity, buildApp } from '../build.js';
 import { bootAndPrepare, ensureSimulator, isBlankCapture, languageArgs, launch, MacApp, macLaunchArgs, record, screenshot, setSystemLocale, shutdown, sleep, type SimPlatform } from '../simulator.js';
 import { rm } from 'node:fs/promises';
+import { sampleLocale, sampleTarget } from './select.js';
 
 export function printIssues(issues: Issue[], max = 40): void {
   const order = { error: 0, warning: 1, info: 2 } as const;
@@ -442,6 +443,8 @@ export interface DesignOptions {
   count?: number;
   /** Preset ids to sample instead of the suggested ones. */
   styles?: string[];
+  /** Locale of the samples (default: sampleLocale — English when the app has it). */
+  locale?: string;
 }
 
 export async function designCommand(ctx: Ctx, opts: DesignOptions = {}): Promise<number> {
@@ -490,13 +493,16 @@ async function designSamples(ctx: Ctx, profile: AppProfile, opts: DesignOptions)
   const known = StylePreset.options as readonly string[];
   const unknown = (opts.styles ?? []).filter((s) => !known.includes(s));
   if (unknown.length) throw new NeedsInput(`Unknown style preset: ${unknown.join(', ')} (${known.join(', ')}).`);
-  const shotTargets = enabledTargets(ctx.config, profile, { quiet: true }).filter((t) => t.kind === 'screenshot');
-  // The main iPhone target; apps without iPhone screenshots sample on their first screenshot target.
-  const target = shotTargets.find((t) => t.id === 'iphone-6.9') ?? shotTargets.find((t) => t.family === 'iphone') ?? shotTargets[0] ?? getTarget('iphone-6.9');
+  // One locale (English when the app has it) and the main iPhone format: the user picks a design before Vitrin
+  // spends time on every language and size.
+  const target = sampleTarget(ctx.config, profile);
+  const locale = opts.locale ?? sampleLocale(ctx.config);
+  const missingCopy = shots.shots.slice(0, 2).filter((s) => !s.copy[locale]);
+  if (missingCopy.length) log.warn(`shots ${missingCopy.map((s) => s.id).join(', ')} have no ${locale} copy; the samples use another locale's text.`);
   const appIcon = profile.brand.appIcon ? join(profile.project.root, profile.brand.appIcon) : undefined;
   const res = await renderDesignSamples({
     paths: ctx.paths,
-    primaryLocale: ctx.config.app.primaryLocale,
+    primaryLocale: locale,
     target,
     shots,
     artDirection: ad,
@@ -506,7 +512,7 @@ async function designSamples(ctx: Ctx, profile: AppProfile, opts: DesignOptions)
     appIcon,
     appName: profile.app.displayName,
   });
-  const out = { contactSheet: res.contactSheet, target: target.id, samples: res.samples.map((s) => ({ letter: s.letter, preset: s.style, name: s.name, files: s.files })), warnings: res.warnings };
+  const out = { contactSheet: res.contactSheet, target: target.id, locale, samples: res.samples.map((s) => ({ letter: s.letter, preset: s.style, name: s.name, files: s.files })), warnings: res.warnings };
   if (ctx.json) {
     process.stdout.write(JSON.stringify(out, null, 2) + '\n');
     return EXIT.OK;
@@ -514,7 +520,7 @@ async function designSamples(ctx: Ctx, profile: AppProfile, opts: DesignOptions)
   for (const w of res.warnings) log.warn(w);
   for (const s of res.samples) log.ok(`${s.letter}  ${s.name} (${s.style}) — ${s.files.map((f) => relative(ctx.root, f)).join(', ')}`);
   log.ok(`Contact sheet: ${relative(ctx.root, res.contactSheet)}`);
-  log.info('Show the contact sheet, ask which design (A/B/C/D) to use, then set its preset in art-direction.json (options[].preset + selected) and run `vitrin design`.');
+  log.info(`Samples: ${locale}, ${target.id}. Show the contact sheet and ask which design (A/B/C/D) to use; set its preset in art-direction.json (options[].preset + selected). Then ask which store languages and formats to produce (vitrin select --locales … --targets …) before \`vitrin design\`.`);
   return EXIT.OK;
 }
 
