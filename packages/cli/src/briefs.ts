@@ -211,16 +211,18 @@ vitrin design --samples --json            # suggested for this app: ${suggested.
 vitrin design --samples --styles a,b,c,d  # or pick the presets yourself (2–8, --count N)
 \`\`\`
 
-It renders those shots in each preset (\`metadata/design-samples/<preset>/\`), one contact sheet labelled A, B, C, D (\`metadata/design-samples/contact-sheet.png\`) and a store preview (\`metadata/design-samples/store-preview.html\` and \`.png\`): each option as an App Store search result and product page, “if you choose A it looks like this”. Pick presets that differ clearly (light and dark, sans and serif, upright and tilted) and that stand apart from the competitor palettes above.
+It renders those shots in each design (\`metadata/design-samples/<id>/\`), one contact sheet labelled A, B, C, D (\`metadata/design-samples/contact-sheet.png\`) and a store preview (\`metadata/design-samples/store-preview.html\` and \`.png\`) with menus for the **store** (App Store iPhone; iPad and Google Play when those formats are enabled), the **design** (A, B, C, D or all side by side) and light/dark **appearance**. Pick designs that differ clearly (light and dark, sans and serif, upright and tilted) and that stand apart from the competitor palettes above.
+
+**Do not only pick presets.** At least one of the four should be designed for this app: write a bespoke option into \`metadata/art-direction.json\` (its own \`palette\`, \`typography\`, \`background\` and \`device\` taken from the app's brand, icon and subject — no \`preset\`, or a preset with overrides) and sample it by its id: \`--styles ${suggested[0]},${suggested[1]},<your-option-id>,…\`. For screenshots no preset can express (a hand-built collage, a story across two devices, a layout shaped by the app's own UI), give a shot a bespoke \`template\` (references/custom-designs.md): an HTML layout in \`metadata/designs/\` with the copy placeholders and \`<vitrin-device>\` mockups — it renders in every sampled design's colors and fonts.
 
 ## Step 2 — ask the user
-Open the store preview for the user (\`open metadata/design-samples/store-preview.html\` on macOS), show \`store-preview.png\` in the chat too, and ask: **“Which design should the screenshots use — A, B, C or D?”** Wait for the answer; never choose for them. Then write \`metadata/art-direction.json\`:
+Open the store preview for the user (\`open metadata/design-samples/store-preview.html\` on macOS), tell them they can switch the store and the design with the menus at the top, show \`store-preview.png\` in the chat too, and ask: **“Which design should the screenshots use — A, B, C or D?”** Wait for the answer; never choose for them, and change nothing until they answered. Then write \`metadata/art-direction.json\` (a bespoke choice keeps its own option; set \`selected\` to it):
 \`\`\`json
 { "options": [{ "id": "picked", "name": "…", "rationale": "why it fits the app", "differentiation": "why it stands apart from competitors",
     "preset": "liquid-glass-aurora", "brand": { "primary": "${brand[0] ?? '#5B4BE8'}"${brand[1] ? `, "secondary": "${brand[1]}"` : ''} } }],
   "selected": "picked", "selectionReason": "The user chose B." }
 \`\`\`
-Then ask which store languages and which formats to produce (\`vitrin platforms --json\` → \`locales\`, \`formats\`) and store them with \`vitrin select --locales … --targets …\`. Only now capture and render the rest.
+Only now — after the user approved a design — ask how the listing should be uploaded (\`vitrin uploader --json\`: asc CLI or fastlane; if the chosen tool is missing, say it will be installed first and install it only after their yes), store it with \`vitrin select --uploader asc|deliver\`, then ask which store languages and which formats to produce (\`vitrin platforms --json\` → \`locales\`, \`formats\`) and store them with \`vitrin select --locales … --targets …\`. Only now capture and render the rest.
 
 | Preset | Name | Surface | Device |
 |---|---|---|---|

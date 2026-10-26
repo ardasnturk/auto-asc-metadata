@@ -2,7 +2,7 @@
 
 Each preset is a complete look — palette, type pairing, background recipe, decoration recipe, device treatment and copy tone — that Vitrin renders from HTML. Set it in `art-direction.json` → `options[].preset`; the app's brand colors tint it (`options[].brand`, or app_profile.brand). Read [`../art-direction.md`](../art-direction.md) first: its iron rules and quality bar apply to every preset.
 
-Use `vitrin design --samples` to show the user several presets side by side before writing the full shot list.
+Use `vitrin design --samples` to show the user several presets side by side before writing the full shot list. Presets are starting points: sample at least one bespoke direction made for the app next to them ([`../custom-designs.md`](../custom-designs.md)).
 
 | Preset | Spec | Feel | Surface | Tilt | Use for |
 |---|---|---|---|---|---|

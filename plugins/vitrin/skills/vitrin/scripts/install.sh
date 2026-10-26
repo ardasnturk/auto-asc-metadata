@@ -37,5 +37,6 @@ esac
 mkdir -p "$SKILL_DIR"
 cp "$SKILL_SRC/SKILL.md" "$SKILL_DIR/SKILL.md"
 rm -rf "$SKILL_DIR/references" && cp -R "$SKILL_SRC/references" "$SKILL_DIR/references"
+rm -rf "$SKILL_DIR/assets" && cp -R "$SKILL_SRC/assets" "$SKILL_DIR/assets"
 echo "✓ Skill installed: $SKILL_DIR"
 echo "✓ Next: run vitrin init in your app repo, then /vitrin in Claude Code"

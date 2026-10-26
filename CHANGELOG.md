@@ -2,6 +2,23 @@
 
 All notable changes to this project are documented in this file. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## 0.8.0 — 2026-10-26
+
+### Added — Designed for each app, shown in the store you ship to
+- **Bespoke designs:** Claude now designs screenshots for the app instead of only picking presets. Art directions without a preset (own palette, typography, background and device treatment) can be sampled next to presets (`vitrin design --samples --styles <preset>,<option-id>`), up to six options per `art-direction.json`. A shot can have its own HTML layout (`"template": "plan.html"` in `metadata/designs/`, per family `plan.ipad.html` …) with `{{headline}}`/`{{subheadline}}`/`{{badges}}` placeholders and `<vitrin-device screen="…">` mockups; it renders through the same size checks, quality gate and review. Guide: `references/custom-designs.md`.
+- **Store preview with menus:** `store-preview.html` now has drop-down menus for the store (App Store iPhone; iPad and Google Play phone when those formats are enabled), the design (A, B, C, D or all side by side) and light/dark appearance. The samples are rendered for every store view; Google Play gets its own listing layout.
+- **Ready-made device mockups:** `vitrin mockups` renders transparent templates with their screen rectangles (`mockups.json`) for iPhone, iPad, iPhone Duo closed, open (with its fold crease) and both together, Apple Watch, Mac laptop and window, Apple TV, Vision Pro, Android phone and tablet; `--screens` places the rendered screens into them. Prerendered templates ship with the skill (`assets/mockups/`).
+- **1:1 screens from any framework:** a native UI kit (`ios.css`, `material.css`, `watchos.css`, `macos.css`) is copied to `metadata/screens/kit/`, and the screens brief plus `references/screen-recreation.md` map SwiftUI/UIKit, Compose/XML, Flutter and React Native layouts to HTML with measured values.
+
+### Changed
+- **Everything lives in `metadata/`:** the workspace moved from `.vitrin/` to the project's `metadata/` folder (`listing/` for the store copy JSON, `research/` for competitors, keywords and downloads, `screens/`, `designs/`, `mockups/`, `design-samples/`, `store/`, …). An existing `.vitrin/` folder is moved automatically on the next command; a `metadata/` folder the user owns is never touched.
+- **The upload tool is asked after the design is approved**, not at the start. `vitrin uploader` warns when the chosen tool (asc CLI or fastlane) is missing: it is installed first, and only after the user agrees. `vitrin init` no longer writes fastlane files.
+- **finalize asks about the research data:** `vitrin finalize --checked --delete-research | --keep-research`. Generated files stay in `metadata/`; only `metadata/research/` is deleted, and only when the user said so. `--keep`/`--discard` and `retention.keep` are gone.
+- The skill does nothing the user has not approved: creating files, installing tools, uploading and deleting all wait for an explicit yes.
+
+### Fixed
+- HTML screens are loaded from a file, so the CSS, fonts and images they link render (pages set from a string could not read `file://` resources).
+
 ## 0.7.0 — 2026-10-26
 
 ### Added — See your choice in the store
