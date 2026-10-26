@@ -27,7 +27,7 @@ export function printIssues(issues: Issue[], max = 40): void {
     const tag = i.severity === 'error' ? pc.red('ERROR') : i.severity === 'warning' ? pc.yellow('WARN ') : pc.dim('info ');
     log.info(`${tag} ${pc.dim(i.code)} ${i.locale ? `[${i.locale}] ` : ''}${i.message}${i.fix ? pc.dim(` → ${i.fix}`) : ''}`);
   }
-  if (sorted.length > max) log.info(pc.dim(`… and ${sorted.length - max} more (.vitrin/validation.json)`));
+  if (sorted.length > max) log.info(pc.dim(`… and ${sorted.length - max} more (metadata/validation.json)`));
 }
 
 // ---------------------------------------------------------------- analyze
@@ -116,11 +116,11 @@ export async function writeCommand(ctx: Ctx): Promise<number> {
   const app = await readJson(ctx.paths.appMetadata, AppMetadata);
   const written = await exportFastlaneMetadata(ctx.paths, ctx.config, app, metadata);
   await ctx.state.mark('write', hashValue({ metadata, app, urls: ctx.config.urls }), written.map((w) => relative(ctx.root, w)));
-  log.ok(`Wrote .vitrin/store/metadata (${written.length} files)`);
+  log.ok(`Wrote metadata/store/metadata (${written.length} files)`);
   // The finished text, readable in the project: metadata/app-store/<platform>/<locale>/*.txt (+ google-play).
   const project = await exportProjectMetadata(ctx);
-  if (project.skipped) log.warn(`${project.skipped}; the metadata text stays in .vitrin/store/metadata.`);
-  else log.ok(`Metadata in the project: metadata/ (${project.files.length} files)`);
+  if (project.skipped) log.warn(`${project.skipped}; the metadata text stays in metadata/store/metadata.`);
+  else log.ok(`Store text, readable: metadata/app-store/ and metadata/google-play/ (${project.files.length} files)`);
   for (const m of metadata) {
     const kw = Buffer.byteLength(m.keywords, 'utf8');
     log.dim(`  ${m.locale}: name “${m.name}”, subtitle “${m.subtitle}”, keywords ${kw}/100 bytes`);
@@ -133,7 +133,7 @@ export async function writeCommand(ctx: Ctx): Promise<number> {
 }
 
 // ---------------------------------------------------------------- capture
-/** Raw-capture family → platform it is built and run on. Raw files live at .vitrin/raw/<locale>/<family>/<id>.png. */
+/** Raw-capture family → platform it is built and run on. Raw files live at metadata/raw/<locale>/<family>/<id>.png. */
 export const FAMILY_PLATFORM: Record<CaptureFamilyName, Platform> = {
   iphone: 'ios',
   ipad: 'ios',
@@ -241,7 +241,7 @@ export async function captureCommand(ctx: Ctx, opts: { families?: string[]; loca
   }
   if (cap.mode === 'html') return captureHtml(ctx, profile, families, locales, kinds);
   if (cap.mode === 'xcuitest') {
-    throw new NeedsInput('xcuitest mode: capture with `fastlane snapshot`, place the output at .vitrin/raw/<locale>/<family>/<id>.png, then use capture.mode: manual.');
+    throw new NeedsInput('xcuitest mode: capture with `fastlane snapshot`, place the output at metadata/raw/<locale>/<family>/<id>.png, then use capture.mode: manual.');
   }
   if (!profile.signals['vitrin.demo-mode']) {
     log.warn('No trace of -VitrinDemo in the app: captures may show real user data. See the /vitrin skill’s references/troubleshooting.md “Demo mode”.');
@@ -312,7 +312,7 @@ async function buildFor(ctx: Ctx, profile: AppProfile, platform: Platform): Prom
 }
 
 /** iPhone, iPad, Duo, Apple Watch, Apple TV and Vision Pro: dedicated simulators, simctl screenshots and recordings. */
-/** capture.mode html: renders Claude's HTML screens (.vitrin/screens) per locale and family; no build. */
+/** capture.mode html: renders Claude's HTML screens (metadata/screens) per locale and family; no build. */
 async function captureHtml(ctx: Ctx, profile: AppProfile, families: CaptureFamily[], locales: string[], kinds: ReturnType<typeof captureKinds>): Promise<number> {
   const cap = ctx.config.capture;
   if (!families.length) {
@@ -334,10 +334,10 @@ async function captureHtml(ctx: Ctx, profile: AppProfile, families: CaptureFamil
     return res.outputs;
   });
   if (missing.strings.length) {
-    log.warn(`Text missing in .vitrin/screens/strings (rendered empty): ${missing.strings.slice(0, 12).join('; ')}${missing.strings.length > 12 ? ' …' : ''}`);
+    log.warn(`Text missing in metadata/screens/strings (rendered empty): ${missing.strings.slice(0, 12).join('; ')}${missing.strings.length > 12 ? ' …' : ''}`);
     return EXIT.FAIL;
   }
-  log.ok('HTML screens rendered → .vitrin/raw');
+  log.ok('HTML screens rendered → metadata/raw');
   return EXIT.OK;
 }
 
@@ -511,7 +511,7 @@ export async function designCommand(ctx: Ctx, opts: DesignOptions = {}): Promise
     const appIcon = profile.brand.appIcon ? join(profile.project.root, profile.brand.appIcon) : undefined;
     const res = await renderDesign({ paths: ctx.paths, locales: ctx.config.app.locales, primaryLocale: ctx.config.app.primaryLocale, targets, artDirection: ad, shots, onlyShots: opts.only, appIcon, appName: profile.app.displayName });
     for (const w of res.warnings) log.warn(w);
-    log.ok(`Rendered ${res.manifest.images.length} images → .vitrin/store/screenshots, .vitrin/creative`);
+    log.ok(`Rendered ${res.manifest.images.length} images → metadata/store/screenshots, metadata/creative`);
     return res.manifest.images.map((i) => i.file);
   });
   const report = await validateAll(ctx.paths, ctx.config, { text: false, claims: true, images: true, videos: false });

@@ -1,9 +1,10 @@
 import { analyzeProject, locateProject } from '@vitrin/analyzer';
-import { appPaths, ensureDir, ensureVitrinGitignore, existsSync, loadConfig, log, storefrontForLocale, writeText } from '@vitrin/core';
+import { appPaths, ensureVitrinGitignore, ensureWorkspace, existsSync, WorkspaceTaken, loadConfig, log, storefrontForLocale, writeText } from '@vitrin/core';
 import { UploaderEnum, uploaderOf } from '@vitrin/schemas';
 import { installFastlaneTemplates } from '@vitrin/upload';
 import { relative, resolve } from 'node:path';
 import { stringify } from 'yaml';
+import { NeedsInput } from '../context.js';
 
 // Secrets, caches and machine-local pipeline state stay out of git; the JSON Claude writes is meant to be committed.
 
@@ -12,6 +13,14 @@ export async function initCommand(opts: { cwd?: string; force?: boolean; uploade
   const root = resolve(opts.cwd ?? process.cwd());
   const paths = appPaths(root);
   log.step(`Vitrin setup: ${root}`);
+  // Everything Vitrin generates lives in metadata/; a user folder with that name stops the setup before it writes anything.
+  try {
+    const ws = await ensureWorkspace(root);
+    if (ws.migrated.length) log.ok(`Moved the Vitrin files from .vitrin/ to metadata/ (${ws.migrated.length} entries).`);
+  } catch (err) {
+    if (err instanceof WorkspaceTaken) throw new NeedsInput(err.message);
+    throw err;
+  }
 
   let detectedAndroid: boolean | undefined;
   if (!existsSync(paths.config) || opts.force) {
@@ -85,7 +94,6 @@ export async function initCommand(opts: { cwd?: string; force?: boolean; uploade
   if (gi.changed) log.ok('.gitignore: wrote the Vitrin block (secrets and generated files are not committed).');
   if (gi.trackedIgnored.length) log.warn(`Already tracked but now ignored: ${gi.trackedIgnored.map((g) => g.path).join(', ')} — to stop tracking: git rm -r --cached ${gi.trackedIgnored.map((g) => g.path).join(' ')}`);
 
-  await ensureDir(paths.vitrin);
   // fastlane files only when fastlane will be used: deliver/asset-library chosen, or supply for an Android app.
   const config = loadConfig(paths.config);
   if ((config.upload.uploader && uploaderOf(config) !== 'asc') || detectedAndroid) {

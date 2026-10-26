@@ -238,7 +238,7 @@ describe('fastlane lanes', () => {
   });
 
   it('builds the supply invocation without putting the key content anywhere', () => {
-    const inv = supplyLaneInvocation({ packageName: 'com.x.app', metadataPath: '/r/.vitrin/store/metadata/android', track: 'production', versionCode: 42, validateOnly: true, jsonKeyPath: '/r/secrets/k.json' });
+    const inv = supplyLaneInvocation({ packageName: 'com.x.app', metadataPath: '/r/metadata/store/metadata/android', track: 'production', versionCode: 42, validateOnly: true, jsonKeyPath: '/r/secrets/k.json' });
     expect(inv.args).toEqual(['exec', 'fastlane', 'android', 'vitrin_play_upload', 'validate_only:true']);
     expect(inv.env).toMatchObject({ VITRIN_PLAY_PACKAGE_NAME: 'com.x.app', VITRIN_PLAY_TRACK: 'production', VITRIN_PLAY_VERSION_CODE: '42', VITRIN_PLAY_VALIDATE_ONLY: '1', VITRIN_PLAY_JSON_KEY_PATH: '/r/secrets/k.json' });
     expect(Object.keys(inv.env).some((k) => /BASE64|JSON_KEY_DATA/.test(k))).toBe(false);

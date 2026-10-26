@@ -40,7 +40,7 @@ function mockRunner(answers: Array<[string, Partial<ExecResult>]> = []) {
   return { runner, calls, lines: () => calls.map((c) => [c.cmd, ...c.args].join(' ')) };
 }
 
-const base: BuildInput = { root: '/app', kind: 'native', platform: 'ios', iosDir: '.', xcodeproj: 'App.xcodeproj', scheme: 'App', configuration: 'Debug', derivedData: '/app/.vitrin/cache/DerivedData' };
+const base: BuildInput = { root: '/app', kind: 'native', platform: 'ios', iosDir: '.', xcodeproj: 'App.xcodeproj', scheme: 'App', configuration: 'Debug', derivedData: '/app/metadata/.cache/DerivedData' };
 const never = () => false;
 const always = () => true;
 
@@ -50,7 +50,7 @@ describe('build commands per kind and platform', () => {
     const [step] = compileSteps(base);
     expect(step!.cmd).toBe('xcodebuild');
     expect(step!.args).toEqual(['-project', '/app/App.xcodeproj', '-scheme', 'App', '-configuration', 'Debug', '-destination', 'generic/platform=iOS Simulator', '-derivedDataPath', base.derivedData, 'build', 'CODE_SIGNING_ALLOWED=NO', 'COMPILER_INDEX_STORE_ENABLE=NO']);
-    expect(artifactDir(base)).toEqual({ dir: '/app/.vitrin/cache/DerivedData/Build/Products/Debug-iphonesimulator', ext: '.app', preferred: 'App.app' });
+    expect(artifactDir(base)).toEqual({ dir: '/app/metadata/.cache/DerivedData/Build/Products/Debug-iphonesimulator', ext: '.app', preferred: 'App.app' });
   });
 
   it('simulator SDKs and macOS variants', () => {
@@ -386,7 +386,7 @@ describe('vitrin platforms / select', () => {
     const dir = mkdtempSync(join(tmpdir(), 'vitrin-select-'));
     const file = join(dir, 'vitrin.config.yaml');
     writeFileSync(file, '# keep me\napp:\n  bundleId: com.a\nurls: {}\n');
-    const ctx = { root: dir, paths: { config: file, profile: join(dir, '.vitrin', 'app_profile.json') }, config: configWith() } as unknown as Ctx;
+    const ctx = { root: dir, paths: { config: file, profile: join(dir, 'metadata', 'app_profile.json') }, config: configWith() } as unknown as Ctx;
     await selectCommand(ctx, { platforms: 'ios,android', assets: 'screenshots' });
     const { readFileSync } = await import('node:fs');
     const text = readFileSync(file, 'utf8');

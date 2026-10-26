@@ -97,11 +97,11 @@ function rejectControl(item: InventoryItem): string {
   return `<div class="decide"><button type="button" class="rej" data-reject="${esc(item.id)}">${esc(T.reject)}</button><textarea class="comment" placeholder="${esc(T.rejectPlaceholder)}" hidden></textarea><code class="item-id" title="Item id">${esc(item.id)}</code></div>`;
 }
 
-/** `.vitrin/report.html` — the complete review gallery: everything that would be uploaded, grouped by store → platform → locale → target. */
+/** `metadata/report.html` — the complete review gallery: everything that would be uploaded, grouped by store → platform → locale → target. */
 export async function buildReport(ctx: Ctx, opts: { inventory?: Inventory; text?: UiText } = {}): Promise<string> {
   T = opts.text ?? (await loadUiText(ctx)).text;
   const p = ctx.paths;
-  // Refresh .vitrin/store/metadata so the text shown is byte-for-byte what deliver will read.
+  // Refresh metadata/store/metadata so the text shown is byte-for-byte what deliver will read.
   if (!opts.inventory) await syncFastlaneMetadata(ctx);
   const inv = opts.inventory ?? (await buildInventory(ctx));
   const profile = await readJsonIfExists(p.profile, AppProfile).catch(() => undefined);
@@ -123,8 +123,8 @@ export async function buildReport(ctx: Ctx, opts: { inventory?: Inventory; text?
   for (const issue of validation?.issues ?? []) {
     const file = issue.file ? relative(ctx.root, resolve(ctx.root, issue.file)).split('\\').join('/') : undefined;
     let target = file ? inv.items.find((i) => i.abs && i.files.includes(file)) : undefined;
-    if (!target && issue.locale && (issue.field || (file && file.startsWith('.vitrin/metadata/')))) target = inv.items.find((i) => i.kind === 'metadata' && i.locale === issue.locale);
-    if (!target && file === '.vitrin/metadata/app.json') target = inv.items.find((i) => i.id === 'metadata/app-store/app');
+    if (!target && issue.locale && (issue.field || (file && file.startsWith('metadata/listing/')))) target = inv.items.find((i) => i.kind === 'metadata' && i.locale === issue.locale);
+    if (!target && file === 'metadata/listing/app.json') target = inv.items.find((i) => i.id === 'metadata/app-store/app');
     if (target) add(target.id, issue);
     else general.push(issue);
   }

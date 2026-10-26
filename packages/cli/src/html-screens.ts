@@ -8,10 +8,10 @@ import type { Ctx } from './context.js';
 
 /**
  * capture.mode `html`: no build, no simulator. Claude reads the app's source and writes each screen as an HTML/CSS
- * recreation with demo data in `.vitrin/screens/<id>.html` (optionally `<id>.<family>.html` for an iPad, Mac, Watch
- * … layout), with text as `{{key}}` placeholders filled from `.vitrin/screens/strings/<locale>.json`. Vitrin renders
+ * recreation with demo data in `metadata/screens/<id>.html` (optionally `<id>.<family>.html` for an iPad, Mac, Watch
+ * … layout), with text as `{{key}}` placeholders filled from `metadata/screens/strings/<locale>.json`. Vitrin renders
  * each screen per locale and device family at the device's screen size into the same raw files a simulator capture
- * writes (`.vitrin/raw/<locale>/<family>/<id>.png`), so design, video and review work unchanged.
+ * writes (`metadata/raw/<locale>/<family>/<id>.png`), so design, video and review work unchanged.
  */
 
 export type ScreenFamily = 'iphone' | 'ipad' | 'duo' | 'mac' | 'watch' | 'tv' | 'vision' | 'android-phone' | 'android-tablet';
@@ -130,7 +130,7 @@ export interface HtmlScreenJob {
 export async function renderHtmlScreens(ctx: Ctx, jobs: HtmlScreenJob[], fallbackLocale: string): Promise<{ outputs: string[]; missingFiles: string[]; missingStrings: string[] }> {
   const dir = ctx.paths.screens;
   const strings = await loadStrings(dir);
-  const missingFiles = [...new Set(jobs.filter((j) => !screenFile(dir, j.id, j.family)).map((j) => `.vitrin/screens/${j.id}.html`))];
+  const missingFiles = [...new Set(jobs.filter((j) => !screenFile(dir, j.id, j.family)).map((j) => `metadata/screens/${j.id}.html`))];
   const missingStrings: string[] = [];
   const outputs: string[] = [];
   if (missingFiles.length) return { outputs, missingFiles, missingStrings };

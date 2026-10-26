@@ -1,6 +1,6 @@
 # App Previews and creative videos
 
-Vitrin renders videos with Remotion. You write `.vitrin/video-plan.json`; the CLI builds the scene list, fits it to 15–30 s, renders it and normalizes it to the App Store format (H.264 High@4.0, 30 fps, stereo AAC).
+Vitrin renders videos with Remotion. You write `metadata/video-plan.json`; the CLI builds the scene list, fits it to 15–30 s, renders it and normalizes it to the App Store format (H.264 High@4.0, 30 fps, stereo AAC).
 
 ## Rules (Apple)
 
@@ -26,7 +26,7 @@ The preview takes its colors and fonts from the selected art direction (its styl
 | `kinetic` | Modern, typographic | A full-screen text card that bursts in word by word before each beat, device "punch-in", slide/push/wipe transitions |
 | `energetic` | Games, sports, music | Tilted, shaking device, caption band in the accent color, moving striped background, wipe/flip/slide |
 
-If unsure, `vitrin video --styles all` renders the first preview in all four styles under `.vitrin/video-styles/<locale>/` (not uploaded). Show them to the user and write the chosen one to the `style` field. `transition` (`fade|slide|wipe|flip|push|iris|none`) forces a single transition type; `lightLeaks` turns light leaks on/off.
+If unsure, `vitrin video --styles all` renders the first preview in all four styles under `metadata/video-styles/<locale>/` (not uploaded). Show them to the user and write the chosen one to the `style` field. `transition` (`fade|slide|wipe|flip|push|iris|none`) forces a single transition type; `lightLeaks` turns light leaks on/off.
 
 ## Scenes (`beats[].scene`)
 

@@ -3,7 +3,7 @@ import { existsSync } from 'node:fs';
 import { readJson, writeJson } from './fsx.js';
 
 /**
- * `.vitrin/state.json` — which stages completed and with what input hash.
+ * `metadata/state.json` — which stages completed and with what input hash.
  * A stage whose input hash is unchanged is skipped unless `--force` is passed.
  */
 export class StateStore {

@@ -9,3 +9,4 @@ export * from './env-keys.js';
 export * from './http.js';
 export * from './targets.js';
 export * from './gitignore.js';
+export * from './workspace-dir.js';

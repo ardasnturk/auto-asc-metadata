@@ -1,6 +1,6 @@
 /** Props passed from the CLI to the Remotion compositions (must stay JSON-serialisable). */
 export interface MediaRef {
-  /** Path relative to the bundle's public dir (.vitrin/raw), resolved with staticFile(). */
+  /** Path relative to the bundle's public dir (metadata/raw), resolved with staticFile(). */
   path: string;
   kind: 'video' | 'image';
   /** Seconds into the source video where this beat starts. */

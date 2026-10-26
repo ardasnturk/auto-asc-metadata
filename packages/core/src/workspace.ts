@@ -34,21 +34,34 @@ export function vitrinVersion(home: string = VITRIN_HOME): string {
   }
 }
 
+/** Folder in the app repository that holds everything Vitrin generates (sources, research, renders, store set). */
+export const WORKSPACE_DIR = 'metadata';
+/** Marker file that says the metadata/ folder belongs to Vitrin (a user folder with that name is never touched). */
+export const WORKSPACE_MARKER = '.vitrin-workspace';
+
 /** Paths inside the app repository that Vitrin reads and writes. */
 export function appPaths(root: string) {
-  const v = join(root, '.vitrin');
+  const v = join(root, WORKSPACE_DIR);
+  const research = join(v, 'research');
   return {
     root,
+    /** The workspace: `<project>/metadata/`. Every generated file lives under it. */
     vitrin: v,
+    marker: join(v, WORKSPACE_MARKER),
     state: join(v, 'state.json'),
-    cache: join(v, 'cache'),
+    /** Render cache (HTML pages, thumbnails, Remotion, DerivedData); safe to delete at any time. */
+    cache: join(v, '.cache'),
     profile: join(v, 'app_profile.json'),
-    competitors: join(v, 'competitors.json'),
-    keywords: join(v, 'keywords'),
-    keywordFile: (locale: string) => join(v, 'keywords', `${locale}.json`),
-    metadataDir: join(v, 'metadata'),
-    metadataFile: (locale: string) => join(v, 'metadata', `${locale}.json`),
-    appMetadata: join(v, 'metadata', 'app.json'),
+    /** Everything the research stage downloads or derives: deleted together only when the user asks. */
+    research,
+    researchCache: join(research, 'cache'),
+    competitors: join(research, 'competitors.json'),
+    keywords: join(research, 'keywords'),
+    keywordFile: (locale: string) => join(research, 'keywords', `${locale}.json`),
+    /** The store copy Claude writes (JSON, validated by `vitrin write`). */
+    metadataDir: join(v, 'listing'),
+    metadataFile: (locale: string) => join(v, 'listing', `${locale}.json`),
+    appMetadata: join(v, 'listing', 'app.json'),
     cpp: join(v, 'cpp-suggestions.json'),
     artDirection: join(v, 'art-direction.json'),
     shots: join(v, 'shots.json'),
@@ -70,10 +83,7 @@ export function appPaths(root: string) {
     envExample: join(root, '.env.example'),
     /** Only the Fastfile lives here, and only when fastlane is the chosen uploader (or for Google Play supply). */
     fastlane: join(root, 'fastlane'),
-    /**
-     * The generated store set, in the layout deliver and supply read (whatever the uploader): metadata text,
-     * screenshots and App Previews. It lives inside .vitrin/ so nothing appears in the project unless asked for.
-     */
+    /** The generated store set, in the layout deliver and supply read (whatever the uploader): metadata text, screenshots and App Previews. */
     store: join(v, 'store'),
     fastlaneMetadata: join(v, 'store', 'metadata'),
     screenshots: join(v, 'store', 'screenshots'),
@@ -82,6 +92,10 @@ export function appPaths(root: string) {
     androidMetadata: join(v, 'store', 'metadata', 'android'),
     /** HTML recreations of the app's screens (capture.mode: html), written by Claude from the source code. */
     screens: join(v, 'screens'),
+    /** Bespoke screenshot layouts Claude writes for this app (`shots[].template`). */
+    designs: join(v, 'designs'),
+    /** Device mockups (empty templates and the app's screens placed in them). */
+    mockups: join(v, 'mockups'),
   };
 }
 export type AppPaths = ReturnType<typeof appPaths>;

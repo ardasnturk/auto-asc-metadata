@@ -87,7 +87,7 @@ if (!args.includes('--no-video')) {
   ffmpeg(['-ss', '5', '-i', preview, '-frames:v', '1', '-vf', 'scale=432:-2', join(out, 'preview.jpg')]);
   // Short silent loops of each style for the style picker.
   for (const style of ['classic', 'showcase', 'kinetic', 'energetic']) {
-    const src = missing(join(ex, `.vitrin/video-styles/en-US/01_${style}.mp4`));
+    const src = missing(join(ex, `metadata/video-styles/en-US/01_${style}.mp4`));
     ffmpeg(['-ss', '2', '-t', '7', '-i', src, '-vf', 'scale=300:-2', '-c:v', 'libx264', '-preset', 'slow', '-crf', '29', '-pix_fmt', 'yuv420p', '-an', '-movflags', '+faststart', join(out, `style-${style}.mp4`)]);
     ffmpeg(['-ss', '3.5', '-i', src, '-frames:v', '1', '-vf', 'scale=300:-2', join(out, `style-${style}.jpg`)]);
   }

@@ -83,12 +83,12 @@ export function validateText(input: TextValidationInput): { issues: IssueList; m
 
   for (const locale of config.app.locales) {
     if (!locales.has(locale)) {
-      issues.error('metadata.missing-locale', `No metadata file for ${locale} (.vitrin/metadata/${locale}.json).`, { locale });
+      issues.error('metadata.missing-locale', `No metadata file for ${locale} (metadata/listing/${locale}.json).`, { locale });
     }
   }
 
   for (const [locale, m] of locales) {
-    const at = (field: string) => ({ locale, field, file: `.vitrin/metadata/${locale}.json` });
+    const at = (field: string) => ({ locale, field, file: `metadata/listing/${locale}.json` });
     const lm: Measurements[string] = {};
     measurements[locale] = lm;
 
@@ -281,12 +281,12 @@ export function validateText(input: TextValidationInput): { issues: IssueList; m
   // ---- app level ----
   if (appMetadata) {
     if (!/^\d{4}\s+\S/.test(appMetadata.copyright)) {
-      issues.error('copyright.format', `Copyright must be in the form “2026 Company Name”: “${appMetadata.copyright}”.`, { field: 'copyright', file: '.vitrin/metadata/app.json' });
+      issues.error('copyright.format', `Copyright must be in the form “2026 Company Name”: “${appMetadata.copyright}”.`, { field: 'copyright', file: 'metadata/listing/app.json' });
     }
     if (appMetadata.reviewNotes.trim().length < 40) {
-      issues.warn('review.notes-short', 'Review notes are empty or very short; describe new features specifically, how to reach them and any demo account or demo mode (App Review 2.1, 2.3.1).', { field: 'reviewNotes', file: '.vitrin/metadata/app.json' });
+      issues.warn('review.notes-short', 'Review notes are empty or very short; describe new features specifically, how to reach them and any demo account or demo mode (App Review 2.1, 2.3.1).', { field: 'reviewNotes', file: 'metadata/listing/app.json' });
     } else if (findPlaceholder(appMetadata.reviewNotes)) {
-      issues.error('text.placeholder', 'Review notes contain template text; App Review rejects placeholder content (2.1).', { field: 'reviewNotes', file: '.vitrin/metadata/app.json' });
+      issues.error('text.placeholder', 'Review notes contain template text; App Review rejects placeholder content (2.1).', { field: 'reviewNotes', file: 'metadata/listing/app.json' });
     }
     if (appMetadata.copyright.includes('©')) issues.warn('copyright.symbol', 'Do not include the © symbol; the App Store adds it.', { field: 'copyright' });
     const notesBytes = byteLength(appMetadata.reviewNotes);
@@ -295,7 +295,7 @@ export function validateText(input: TextValidationInput): { issues: IssueList; m
       issues.error('category.same', 'Primary and secondary category cannot be the same.', { field: 'secondaryCategory' });
     }
   } else {
-    issues.error('metadata.app-missing', '.vitrin/metadata/app.json is missing (copyright, categories, review notes).');
+    issues.error('metadata.app-missing', 'metadata/listing/app.json is missing (copyright, categories, review notes).');
   }
 
   return { issues, measurements };
@@ -331,7 +331,7 @@ export interface PlayTextValidationInput {
   config: VitrinConfig;
   profile?: AppProfile;
   competitors?: Competitors;
-  /** Keyed by ASC locale (the file name under .vitrin/metadata/play/). */
+  /** Keyed by ASC locale (the file name under metadata/listing/play/). */
   listings: Map<string, PlayListing>;
   app?: PlayAppMetadata;
   /** Defaults to data/play-locales.json. */
@@ -405,13 +405,13 @@ export function validatePlayText(input: PlayTextValidationInput): { issues: Issu
     const mapped = table.map[locale];
     if (mapped === null || mapped === undefined) continue;
     const sev = locale === config.app.primaryLocale ? 'error' : 'warn';
-    issues[sev]('play.missing-locale', `No Google Play listing for ${locale} (.vitrin/metadata/play/${locale}.json, Play language ${mapped}).`, { locale });
+    issues[sev]('play.missing-locale', `No Google Play listing for ${locale} (metadata/listing/play/${locale}.json, Play language ${mapped}).`, { locale });
   }
 
   const seenPlay = new Map<string, string>();
   let anyChangelog = false;
   for (const [locale, l] of listings) {
-    const at = (field: string) => ({ locale, field, file: `.vitrin/metadata/play/${locale}.json` });
+    const at = (field: string) => ({ locale, field, file: `metadata/listing/play/${locale}.json` });
     const lm: Measurements[string] = {};
     measurements[`play:${locale}`] = lm;
 
@@ -524,7 +524,7 @@ export function validatePlayText(input: PlayTextValidationInput): { issues: Issu
   }
 
   if (anyChangelog && !app?.versionCode) {
-    issues.warn('play.changelog.no-version-code', 'A changelog is set but .vitrin/metadata/play/app.json has no versionCode; the release notes are not uploaded.', { file: '.vitrin/metadata/play/app.json', field: 'versionCode' });
+    issues.warn('play.changelog.no-version-code', 'A changelog is set but metadata/listing/play/app.json has no versionCode; the release notes are not uploaded.', { file: 'metadata/listing/play/app.json', field: 'versionCode' });
   }
   return { issues, measurements };
 }

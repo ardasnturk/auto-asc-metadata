@@ -30,7 +30,7 @@ beforeAll(async () => {
 
 async function project(): Promise<string> {
   const root = mkdtempSync(join(tmpdir(), 'vitrin-samples-'));
-  const raw = join(root, '.vitrin', 'raw', 'en-US', 'iphone');
+  const raw = join(root, 'metadata', 'raw', 'en-US', 'iphone');
   mkdirSync(raw, { recursive: true });
   // A light "app screen": white with a header bar and a few cards.
   const card = (top: number, color: string) => ({ input: { create: { width: 1100, height: 260, channels: 3 as const, background: color } }, left: 53, top });
@@ -69,7 +69,7 @@ describe('design samples', () => {
     expect(existsSync(res.contactSheet)).toBe(true);
     const sheet = await sharp(res.contactSheet).metadata();
     expect(sheet.width!).toBeGreaterThan(sheet.height!);
-    const manifest = JSON.parse(readFileSync(join(root, '.vitrin', 'design-samples', 'samples.json'), 'utf8'));
+    const manifest = JSON.parse(readFileSync(join(root, 'metadata', 'design-samples', 'samples.json'), 'utf8'));
     expect(manifest.samples[1].style).toBe('swiss-grid-bold');
   }, 120_000);
 
@@ -81,7 +81,7 @@ describe('design samples', () => {
     try {
       const page = await (await browser.newContext({ viewport: { width: 220, height: 478 }, deviceScaleFactor: 2 })).newPage();
       const ad = resolveDirection({ id: 'x', name: 'x', rationale: '', differentiation: '', preset: 'liquid-glass-aurora' });
-      const screen = { src: `file://${join(root, '.vitrin', 'raw', 'en-US', 'iphone', 'home.png')}`, aspect: 2622 / 1206, family: 'iphone' as const };
+      const screen = { src: `file://${join(root, 'metadata', 'raw', 'en-US', 'iphone', 'home.png')}`, aspect: 2622 / 1206, family: 'iphone' as const };
       const html = buildPage({ target, locale: 'en-US', ad, archetype: 'hero', headline: 'Keep your *streak*', subheadline: 'One tap a day', kicker: 'Habits', badges: [], screens: [screen], appName: 'Ritim' });
       const m = await renderOne(page, html, join(root, 'h.html'), join(root, 'out.png'), target, { preset: 'liquid-glass-aurora', framing: 'bleed-bottom', family: 'iphone', hasDevice: true });
       expect(m.overflow).toEqual([]);

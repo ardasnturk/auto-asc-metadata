@@ -23,7 +23,7 @@ export interface VideoRenderOptions {
   /** preview-iphone / preview-ipad / preview-mac / preview-tv ids that are enabled for this app. */
   enabledPreviewTargets: string[];
   /**
-   * Comparison mode: render the first preview once per style into .vitrin/video-styles/<locale>/
+   * Comparison mode: render the first preview once per style into metadata/video-styles/<locale>/
    * (never uploaded) instead of the normal outputs.
    */
   styleVariants?: PreviewPlan['style'][];

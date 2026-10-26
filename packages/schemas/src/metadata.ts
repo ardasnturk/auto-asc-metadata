@@ -8,7 +8,7 @@ export const Claim = z.object({
 });
 export type Claim = z.infer<typeof Claim>;
 
-/** `.vitrin/metadata/<locale>.json` — written by Claude, validated by the CLI. */
+/** `metadata/listing/<locale>.json` — written by Claude, validated by the CLI. */
 export const LocaleMetadata = z.object({
   locale: AscLocale,
   name: z.string(),
@@ -27,7 +27,7 @@ export const LocaleMetadata = z.object({
 });
 export type LocaleMetadata = z.infer<typeof LocaleMetadata>;
 
-/** `.vitrin/metadata/app.json` — non-localized, app level. */
+/** `metadata/listing/app.json` — non-localized, app level. */
 export const AppMetadata = z.object({
   copyright: z.string(),
   primaryCategory: z.string(),
@@ -70,7 +70,7 @@ export const PlayLocale = z.string().regex(/^[a-z]{2,3}(-([A-Z]{2}|\d{3}))?$/, '
 export type PlayLocale = z.infer<typeof PlayLocale>;
 
 /**
- * `.vitrin/metadata/play/<asc-locale>.json` — Google Play store listing for one language, written by Claude.
+ * `metadata/listing/play/<asc-locale>.json` — Google Play store listing for one language, written by Claude.
  * Play has no keyword field: the title, short description and full description are all indexed.
  */
 export const PlayListing = z.object({
@@ -94,7 +94,7 @@ export const PlayListing = z.object({
 });
 export type PlayListing = z.infer<typeof PlayListing>;
 
-/** `.vitrin/metadata/play/app.json` — app-level Google Play settings for the metadata upload. */
+/** `metadata/listing/play/app.json` — app-level Google Play settings for the metadata upload. */
 export const PlayAppMetadata = z.object({
   /** Version code whose release notes receive `changelog`. supply needs a release with this code on `track`. */
   versionCode: z.number().int().positive().optional(),

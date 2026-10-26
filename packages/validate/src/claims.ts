@@ -23,14 +23,14 @@ export function validateClaims(opts: {
   for (const f of profile.features) {
     for (const ev of f.evidence) {
       if (!existsSync(join(profile.project.root, ev.path))) {
-        issues.error('evidence.missing-file', `Evidence file for feature “${f.id}” does not exist: ${ev.path}.`, { file: '.vitrin/app_profile.json', fix: 'Point the evidence to a real file or remove the feature.' });
+        issues.error('evidence.missing-file', `Evidence file for feature “${f.id}” does not exist: ${ev.path}.`, { file: 'metadata/app_profile.json', fix: 'Point the evidence to a real file or remove the feature.' });
       }
     }
   }
 
   const checkIds = (ids: string[], where: string) => {
     for (const id of ids) {
-      if (!features.has(id)) issues.error('claim.unknown-feature', `${where}: “${id}” is not an evidenced feature in app_profile.`, { file: '.vitrin/shots.json', fix: 'Do not show features the app does not have (App Review 2.3).' });
+      if (!features.has(id)) issues.error('claim.unknown-feature', `${where}: “${id}” is not an evidenced feature in app_profile.`, { file: 'metadata/shots.json', fix: 'Do not show features the app does not have (App Review 2.3).' });
     }
   };
 
@@ -115,7 +115,7 @@ export function validateClaims(opts: {
       for (const locale of config.app.locales) {
         const copy = s.copy[locale];
         if (!copy) {
-          issues.error('shot.missing-copy', `${where}: no headline for ${locale}.`, { locale, file: '.vitrin/shots.json' });
+          issues.error('shot.missing-copy', `${where}: no headline for ${locale}.`, { locale, file: 'metadata/shots.json' });
           continue;
         }
         const plain = copy.headline.replace(/\*/g, '');

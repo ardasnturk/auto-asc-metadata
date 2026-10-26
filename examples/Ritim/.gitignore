@@ -3,43 +3,47 @@
 .env
 *.p8
 secrets/
-.vitrin/cache/
-.vitrin/raw/
+metadata/.cache/
+metadata/raw/
 fastlane/report.xml
 fastlane/README.md
 # Vitrin render çıktıları (büyük; `vitrin design` / `vitrin video` yeniden üretir)
 fastlane/screenshots/
 fastlane/app-previews/
-.vitrin/creative/
-.vitrin/report.html
-.vitrin/render-manifest.json
-.vitrin/video-styles/
+metadata/creative/
+metadata/report.html
+metadata/render-manifest.json
+metadata/video-styles/
 
 # Vitrin
-.vitrin/briefs/
-.vitrin/state.json
-.vitrin/upload-plan.json
+metadata/briefs/
+metadata/state.json
+metadata/upload-plan.json
 
 # >>> vitrin (managed block, edits inside are overwritten)
 # secrets
 .env
 *.p8
 secrets/
-# generated working files (sources stay committable)
-/.vitrin/*
-!/.vitrin/app_profile.json
-!/.vitrin/metadata/
-!/.vitrin/keywords/
-!/.vitrin/art-direction.json
-!/.vitrin/shots.json
-!/.vitrin/video-plan.json
-!/.vitrin/cpp-suggestions.json
-# generated store assets
+# Vitrin workspace: generated files stay local, the sources Claude writes are committable
+/metadata/*
+!/metadata/.vitrin-workspace
+!/metadata/app_profile.json
+!/metadata/listing/
+!/metadata/art-direction.json
+!/metadata/shots.json
+!/metadata/video-plan.json
+!/metadata/cpp-suggestions.json
+!/metadata/screens/
+!/metadata/designs/
+!/metadata/research/
+/metadata/research/*
+!/metadata/research/keywords/
+# older Vitrin versions
+/.vitrin/
 /fastlane/screenshots/
 /fastlane/app-previews/
 /fastlane/metadata/android/**/images/
 /fastlane/report.xml
 /fastlane/README.md
-# kept uploads (retention.commit: false)
-/metadata/
 # <<< vitrin

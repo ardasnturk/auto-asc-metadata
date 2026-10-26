@@ -415,7 +415,7 @@ export interface SampleOptions {
   appIcon?: string;
   appName?: string;
   brand?: BrandTint;
-  /** Output root (default .vitrin/design-samples). */
+  /** Output root (default metadata/design-samples). */
   outDir?: string;
   /** Subtitle shown in the store preview (the metadata subtitle once written). */
   subtitle?: string;

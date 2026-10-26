@@ -44,7 +44,7 @@ export function storefrontPlan(config: VitrinConfig): Array<{ locale: string; st
 
 export async function runResearch(opts: ResearchOptions): Promise<ResearchResult> {
   const { paths, config, profile, env } = opts;
-  const cacheDir = join(paths.cache, 'http');
+  const cacheDir = join(paths.researchCache, 'http');
   const itunes = new ItunesClient({ cacheDir, ttlHours: config.research.cacheHours, minIntervalMs: 3100 });
   const plan = storefrontPlan(config);
   const storefronts = [...new Set([...config.storefronts, ...plan.map((p) => p.storefront)])];
@@ -102,8 +102,8 @@ export async function runResearch(opts: ResearchOptions): Promise<ResearchResult
   }
 
   // Reviews (top 5 per storefront) and screenshot analysis (top 8 per storefront).
-  const ocrBin = opts.skipImages || !config.research.ocr ? null : await ocrBinary(paths.cache);
-  const shotDir = join(paths.cache, 'competitor-shots');
+  const ocrBin = opts.skipImages || !config.research.ocr ? null : await ocrBinary(paths.researchCache);
+  const shotDir = join(paths.researchCache, 'competitor-shots');
   await ensureDir(shotDir);
   for (const storefront of storefronts) {
     const list = kept.filter((a) => a.storefront === storefront);

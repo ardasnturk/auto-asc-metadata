@@ -244,7 +244,7 @@ export const InAppEventSpec = z.object({
   detail: CreativeSpec,
 });
 
-/** `.vitrin/shots.json` — written by Claude in the design step. */
+/** `metadata/shots.json` — written by Claude in the design step. */
 export const ShotList = z.object({
   shots: z.array(Shot).min(1).max(10),
   creatives: z
@@ -328,7 +328,7 @@ export const LoopPlan = z.object({
 });
 export type LoopPlan = z.infer<typeof LoopPlan>;
 
-/** `.vitrin/video-plan.json` — written by Claude. */
+/** `metadata/video-plan.json` — written by Claude. */
 export const VideoPlan = z.object({
   previews: z.array(PreviewPlan).max(3),
   loops: z.object({ header: LoopPlan.optional(), search: LoopPlan.optional() }).default({}),

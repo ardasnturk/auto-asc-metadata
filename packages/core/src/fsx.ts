@@ -106,6 +106,8 @@ export async function listFiles(root: string, opts: { skip?: Set<string>; maxDep
       const full = join(dir, e.name);
       if (e.isDirectory()) {
         if (skip.has(e.name) || e.name.startsWith('.')) continue;
+        // Vitrin's own workspace (metadata/ with its marker) is generated output, never app source.
+        if (existsSync(join(full, '.vitrin-workspace'))) continue;
         // Bundles we want to inspect as directories
         await walk(full, depth + 1);
       } else if (e.isFile()) {

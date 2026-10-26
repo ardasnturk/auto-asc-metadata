@@ -141,7 +141,7 @@ export async function googlePlayChecks(opts: { env: NodeJS.ProcessEnv; root: str
   try {
     const state = await new PlayClient(key.account, opts.fetchImpl).readState(opts.packageName, 'production');
     out.push({ id: 'play-api', title: 'Google Play API', status: 'ok', detail: `${state.listings.length} listings, production track: ${state.releases ? `${state.releases.length} releases` : 'none'}` });
-    if (!state.releases?.length) out.push({ id: 'play-track', title: 'Play track release', status: 'warn', detail: 'no release on production', fix: 'supply needs an existing release on the track it updates; set track in .vitrin/metadata/play/app.json or upload a build once.' });
+    if (!state.releases?.length) out.push({ id: 'play-track', title: 'Play track release', status: 'warn', detail: 'no release on production', fix: 'supply needs an existing release on the track it updates; set track in metadata/listing/play/app.json or upload a build once.' });
   } catch (err) {
     const status = err instanceof PlayApiError ? err.status : 0;
     const fix =

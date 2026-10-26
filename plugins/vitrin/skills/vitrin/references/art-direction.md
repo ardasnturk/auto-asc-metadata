@@ -5,10 +5,10 @@
 ## Workflow
 
 1. Write the first two shots of `shots.json` (hero + second shot, real copy, real screens).
-2. Run `vitrin design --samples` (default 4 presets, `--styles a,b,c` to choose them, `--count N`). It renders those two shots in clearly different presets into `.vitrin/design-samples/<preset>/` and one **contact sheet** labelled A/B/C/D (`.vitrin/design-samples/contact-sheet.png`; `--json` prints the paths).
+2. Run `vitrin design --samples` (default 4 presets, `--styles a,b,c` to choose them, `--count N`). It renders those two shots in clearly different presets into `metadata/design-samples/<preset>/` and one **contact sheet** labelled A/B/C/D (`metadata/design-samples/contact-sheet.png`; `--json` prints the paths).
 3. Show the contact sheet to the user and ask which design they want (A/B/C/D). Do not pick for them.
 4. Write `art-direction.json` with the chosen preset (`options[].preset`, `selected`), then the full `shots.json`, then `vitrin design`.
-5. Open the rendered PNGs yourself (at least the first three iPhone shots, one iPad, one Android if present) and read `.vitrin/validation.json` — the quality gate below measures every image.
+5. Open the rendered PNGs yourself (at least the first three iPhone shots, one iPad, one Android if present) and read `metadata/validation.json` — the quality gate below measures every image.
 
 ## art-direction.json
 
@@ -124,7 +124,7 @@ Fix by shortening the headline, choosing another framing, or a preset whose surf
 
 ## Thumbnail test
 
-Shrink the first three screenshots to ~220 px wide (`.vitrin/cache/thumbs`). In one sentence you must be able to say: what style is this, what does the app do, why tap it. If not, the headline is too long or too thin.
+Shrink the first three screenshots to ~220 px wide (`metadata/.cache/thumbs`). In one sentence you must be able to say: what style is this, what does the app do, why tap it. If not, the headline is too long or too thin.
 
 ## Store graphics
 

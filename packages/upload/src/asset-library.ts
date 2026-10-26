@@ -142,7 +142,7 @@ export function resolvePlacementGroup(ref: RefData, spec: Pick<PlacementSpec, 'p
   else if (ids.length > 1 && !native && ids.includes(DEFAULT_CREATIVE_GROUP)) group = DEFAULT_CREATIVE_GROUP;
   else if (ids.length > 1) throw new Error(`refData lists several placement groups for ${spec.platform}/${spec.displayClass} (${ids.join(', ')}); refusing to guess.`);
   else if (!native) group = DEFAULT_CREATIVE_GROUP;
-  else throw new Error(`refData has no placement group for ${spec.placementType} ${spec.platform}/${spec.displayClass}; see .vitrin/cache/refdata.json.`);
+  else throw new Error(`refData has no placement group for ${spec.placementType} ${spec.platform}/${spec.displayClass}; see metadata/.cache/refdata.json.`);
   const pt = ref.placementTypes.find((p) => p.placementTypeId === spec.placementType);
   const allowed = (pt?.specMappings ?? []).map((m) => m.placementGroupId).filter(Boolean);
   if (allowed.length && !allowed.includes(group)) throw new Error(`refData does not allow placement group ${group} for ${spec.placementType} (allowed: ${allowed.join(', ')}).`);
@@ -274,7 +274,7 @@ export function diffRefData(refData: unknown, targets: Array<{ id: string; kind:
   const ref = parseRefData(refData);
   const out: string[] = [];
   if (!ref.placementProfileGroups.length && !ref.displayClasses.length) {
-    return ['refData has no placementProfileGroups or displayClasses; its shape differs from the 4.5.1 spec (see .vitrin/cache/refdata.json).'];
+    return ['refData has no placementProfileGroups or displayClasses; its shape differs from the 4.5.1 spec (see metadata/.cache/refdata.json).'];
   }
   const byId = new Map(targets.map((t) => [t.id, t]));
   for (const [id, d] of Object.entries(file.targets)) {

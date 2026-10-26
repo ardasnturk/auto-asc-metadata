@@ -74,7 +74,7 @@ program
     }),
   );
 
-program.command('analyze').description('reads the Xcode project → .vitrin/app_profile.json').action(action(async () => analyzeCommand(await createContext(globals()))));
+program.command('analyze').description('reads the Xcode project → metadata/app_profile.json').action(action(async () => analyzeCommand(await createContext(globals()))));
 
 program
   .command('research')
@@ -82,7 +82,7 @@ program
   .option('--no-images', 'do not download competitor screenshots (no OCR/palette)')
   .action(action(async (o: { images: boolean }) => researchCommand(await createContext(globals()), { skipImages: !o.images })));
 
-program.command('write').description('validates the metadata Claude wrote and exports it to .vitrin/store/metadata').action(action(async () => writeCommand(await createContext(globals()))));
+program.command('write').description('validates the metadata Claude wrote and exports it to metadata/store/metadata').action(action(async () => writeCommand(await createContext(globals()))));
 
 program
   .command('platforms')
@@ -110,7 +110,7 @@ program
 
 program
   .command('capture')
-  .description('raw screens → .vitrin/raw: HTML screens from .vitrin/screens (capture.mode html, no build) or simulators / Mac window / Android emulator')
+  .description('raw screens → metadata/raw: HTML screens from metadata/screens (capture.mode html, no build) or simulators / Mac window / Android emulator')
   .option('--family <families>', 'iphone,ipad,duo,mac,watch,tv,vision,android-phone,android-tablet')
   .option('--locale <locales>', 'comma-separated locales')
   .action(action(async (o: { family?: string; locale?: string }) => captureCommand(await createContext(globals()), { families: o.family?.split(','), locales: o.locale?.split(',') })));
@@ -138,7 +138,7 @@ program
 
 program
   .command('validate')
-  .description('text, image, video and claim-evidence checks → .vitrin/validation.json')
+  .description('text, image, video and claim-evidence checks → metadata/validation.json')
   .action(
     action(async () => {
       const ctx = await createContext(globals());
@@ -150,15 +150,15 @@ program
 
 program
   .command('review')
-  .description('review gallery of everything that would be uploaded → .vitrin/report.html (--serve: approve/reject in the browser)')
+  .description('review gallery of everything that would be uploaded → metadata/report.html (--serve: approve/reject in the browser)')
   .option('--serve', 'serve the gallery on 127.0.0.1 with approve / reject buttons; waits for the decision')
   .option('--port <port>', 'port for --serve (0 = any free port)', '4870')
-  .option('--print-labels', 'print the gallery words in English as JSON, to translate into .vitrin/i18n/<language>.json')
+  .option('--print-labels', 'print the gallery words in English as JSON, to translate into metadata/i18n/<language>.json')
   .action(action(async (o: { serve?: boolean; port: string; printLabels?: boolean }) => reviewCommand(await createContext(globals()), { serve: o.serve, port: Number(o.port), printLabels: o.printLabels })));
 
 program
   .command('approve')
-  .description('records the user\'s approval of exactly the reviewed content → .vitrin/approval.json (only after an explicit "yes")')
+  .description('records the user\'s approval of exactly the reviewed content → metadata/approval.json (only after an explicit "yes")')
   .option('--expect-hash <hash>', 'overall hash (or its prefix) the user reviewed; refuses if the content differs')
   .option('--reject <items...>', 'reject these review items (id or file path from the report) instead of approving')
   .option('--comment <text>', 'the user\'s comment for --reject')
@@ -182,14 +182,14 @@ program
 
 program
   .command('finalize')
-  .description('after a checked upload: keep the uploaded set in metadata/ (--keep) or delete the generated files (--discard)')
-  .option('--keep', 'copy exactly the uploaded files to metadata/, then delete the working copies')
-  .option('--discard', 'delete the generated media; keep the source JSON')
+  .description('after a checked upload: everything stays in metadata/; delete the research data only if the user says so')
+  .option('--delete-research', 'the user wants the research data deleted (metadata/research/: competitors, keywords, downloads)')
+  .option('--keep-research', 'the user wants to keep the research data')
   .option('--checked', 'the user checked the read-back / store listing after the upload')
   .action(
-    action(async (o: { keep?: boolean; discard?: boolean; checked?: boolean }) => {
-      if (o.keep && o.discard) throw new NeedsInput('Choose one: --keep or --discard.');
-      return finalizeCommand(await createContext(globals()), { keep: o.keep ? true : o.discard ? false : undefined, checked: o.checked });
+    action(async (o: { deleteResearch?: boolean; keepResearch?: boolean; checked?: boolean }) => {
+      if (o.deleteResearch && o.keepResearch) throw new NeedsInput('Choose one: --delete-research or --keep-research.');
+      return finalizeCommand(await createContext(globals()), { deleteResearch: o.deleteResearch ? true : o.keepResearch ? false : undefined, checked: o.checked });
     }),
   );
 

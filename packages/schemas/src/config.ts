@@ -124,16 +124,16 @@ export const VitrinConfig = z.object({
   /** What happens to generated files after a successful, user-checked upload. Unset = ask the user. */
   retention: z
     .object({
-      /** true → copy the uploaded set into `metadata/` in the project; false → delete it. */
+      /** Ignored since 0.8.0 (everything stays in `metadata/`; finalize asks about the research data). */
       keep: z.boolean().optional(),
-      /** Commit the kept `metadata/` folder (otherwise it is git-ignored). */
+      /** Commit the store outputs in `metadata/` (store/, creative/, mockups/, app-store/, google-play/); otherwise git-ignored. */
       commit: z.boolean().default(false),
     })
     .default({ commit: false }),
   capture: z
     .object({
       /**
-       * html: Claude recreates each screen in HTML/CSS from the source code (.vitrin/screens/), rendered at the
+       * html: Claude recreates each screen in HTML/CSS from the source code (metadata/screens/), rendered at the
        * device's screen size — no build, no simulator. launch-args: build the app and capture it in simulators /
        * emulators. xcuitest: fastlane snapshot. manual: you place the raw files yourself.
        */

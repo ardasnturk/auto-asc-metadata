@@ -23,7 +23,7 @@ const h = (c: string) => c.repeat(64);
 describe('approval hashing', () => {
   it('overall hash is order-independent and changes with any path or content', () => {
     const a = [{ path: 'a.png', sha256: h('1'), bytes: 1 }, { path: 'b.png', sha256: h('2'), bytes: 1 }];
-    const m = [{ path: '.vitrin/metadata/tr.json', sha256: h('3'), bytes: 1 }];
+    const m = [{ path: 'metadata/listing/tr.json', sha256: h('3'), bytes: 1 }];
     expect(overallHash(a, m)).toBe(overallHash([...a].reverse(), m));
     expect(overallHash(a, m)).not.toBe(overallHash([a[0]!, { ...a[1]!, sha256: h('4') }], m));
     expect(overallHash(a, m)).not.toBe(overallHash([a[0]!, { ...a[1]!, path: 'c.png' }], m));
@@ -50,19 +50,19 @@ describe('inventory, approval and change detection', () => {
   it('inventories every uploadable file with sha256, grouped by store / platform / locale / target', async () => {
     const inv = await buildInventory(ctx);
     const paths = inv.files.map((f) => f.path);
-    expect(paths).toContain('.vitrin/store/screenshots/en-US/01_shot1_iphone-6.3.png');
-    expect(paths).toContain('.vitrin/store/app-previews/tr/01_IPHONE_67.mp4');
-    expect(paths).toContain('.vitrin/creative/en-US/header_header.png');
-    expect(paths).toContain('.vitrin/store/metadata/android/en-US/images/phoneScreenshots/1_shot1.png');
+    expect(paths).toContain('metadata/store/screenshots/en-US/01_shot1_iphone-6.3.png');
+    expect(paths).toContain('metadata/store/app-previews/tr/01_IPHONE_67.mp4');
+    expect(paths).toContain('metadata/creative/en-US/header_header.png');
+    expect(paths).toContain('metadata/store/metadata/android/en-US/images/phoneScreenshots/1_shot1.png');
     expect(paths.some((p) => p.includes('.remotion.'))).toBe(false);
     expect(inv.files.every((f) => /^[0-9a-f]{64}$/.test(f.sha256))).toBe(true);
-    expect(inv.metadataJson.map((f) => f.path)).toEqual(expect.arrayContaining(['.vitrin/metadata/en-US.json', '.vitrin/metadata/app.json', '.vitrin/cpp-suggestions.json', '.vitrin/shots.json']));
+    expect(inv.metadataJson.map((f) => f.path)).toEqual(expect.arrayContaining(['metadata/listing/en-US.json', 'metadata/listing/app.json', 'metadata/cpp-suggestions.json', 'metadata/shots.json']));
 
-    const shot = inv.items.find((i) => i.id === '.vitrin/store/screenshots/tr/02_shot2_iphone-6.9.png')!;
+    const shot = inv.items.find((i) => i.id === 'metadata/store/screenshots/tr/02_shot2_iphone-6.9.png')!;
     expect(shot).toMatchObject({ kind: 'screenshot', store: 'app-store', platform: 'ios', locale: 'tr', target: 'iphone-6.9', order: 2 });
     expect(inv.items.find((i) => i.id.endsWith('01_IPHONE_67.mp4'))).toMatchObject({ kind: 'preview', target: 'preview-iphone', durationSec: 2 });
     expect(inv.items.find((i) => i.id.endsWith('event-card_event-launch-card.png'))).toMatchObject({ kind: 'event', target: 'event-card' });
-    expect(inv.items.find((i) => i.id === 'event/launch')?.files).toContain('.vitrin/creative/en-US/event-card_event-launch-card.png');
+    expect(inv.items.find((i) => i.id === 'event/launch')?.files).toContain('metadata/creative/en-US/event-card_event-launch-card.png');
     expect(inv.items.find((i) => i.id === 'cpp/students')).toMatchObject({ kind: 'cpp', store: 'app-store' });
     const play = inv.items.filter((i) => i.store === 'google-play');
     expect(play.find((i) => i.kind === 'screenshot')).toMatchObject({ platform: 'android', locale: 'en-US' });
@@ -70,13 +70,13 @@ describe('inventory, approval and change detection', () => {
     expect(summarize(inv).lines.join('\n')).toMatch(/Google Play · android · en-US: .*2 screenshots/);
   });
 
-  it('exports and covers the App Store text files from .vitrin/metadata', async () => {
+  it('exports and covers the App Store text files from metadata/listing', async () => {
     const { syncFastlaneMetadata } = await import('../src/approval.js');
     expect(await syncFastlaneMetadata(ctx)).toBe(true);
     const inv = await buildInventory(ctx);
     const en = inv.items.find((i) => i.id === 'metadata/app-store/en-US')!;
     expect(en.fields?.find((f) => f.key === 'name')?.value).toBe('Ritim: Habit Tracker');
-    expect(en.files).toContain('.vitrin/metadata/en-US.json');
+    expect(en.files).toContain('metadata/listing/en-US.json');
     expect(inv.items.find((i) => i.id === 'metadata/app-store/app')?.fields?.map((f) => f.key)).toContain('copyright');
   });
 
@@ -95,8 +95,8 @@ describe('inventory, approval and change detection', () => {
     appendFileSync(shot, Buffer.from([0]));
     let res = await checkApproval(ctx);
     expect(res.ok).toBe(false);
-    expect(res.changed).toEqual(['.vitrin/store/screenshots/en-US/01_shot1_iphone-6.3.png']);
-    await expect(requireApproval(ctx)).rejects.toMatchObject({ details: ['changed: .vitrin/store/screenshots/en-US/01_shot1_iphone-6.3.png'] });
+    expect(res.changed).toEqual(['metadata/store/screenshots/en-US/01_shot1_iphone-6.3.png']);
+    await expect(requireApproval(ctx)).rejects.toMatchObject({ details: ['changed: metadata/store/screenshots/en-US/01_shot1_iphone-6.3.png'] });
     writeFileSync(shot, original);
     expect((await checkApproval(ctx)).ok).toBe(true);
 
@@ -104,19 +104,19 @@ describe('inventory, approval and change detection', () => {
     const extra = fx.shot('tr', '04_extra_iphone-6.3.png');
     writeFileSync(extra, original);
     res = await checkApproval(ctx);
-    expect(res.added).toEqual(['.vitrin/store/screenshots/tr/04_extra_iphone-6.3.png']);
+    expect(res.added).toEqual(['metadata/store/screenshots/tr/04_extra_iphone-6.3.png']);
     rmSync(extra);
-    const pv = join(fx.root, '.vitrin', 'store', 'app-previews', 'tr', '01_IPHONE_67.mp4');
+    const pv = join(fx.root, 'metadata', 'store', 'app-previews', 'tr', '01_IPHONE_67.mp4');
     const pvData = readFileSync(pv);
     rmSync(pv);
-    expect((await checkApproval(ctx)).removed).toEqual(['.vitrin/store/app-previews/tr/01_IPHONE_67.mp4']);
+    expect((await checkApproval(ctx)).removed).toEqual(['metadata/store/app-previews/tr/01_IPHONE_67.mp4']);
     writeFileSync(pv, pvData);
 
     // Metadata JSON change (the source the export and the event / CPP upload read)
-    const meta = join(fx.root, '.vitrin', 'metadata', 'tr.json');
+    const meta = join(fx.root, 'metadata', 'listing', 'tr.json');
     const metaData = readFileSync(meta, 'utf8');
     writeFileSync(meta, metaData.replace('Seriyi bozma', 'Seriyi asla bozma'));
-    expect((await checkApproval(ctx)).changed).toEqual(['.vitrin/metadata/tr.json']);
+    expect((await checkApproval(ctx)).changed).toEqual(['metadata/listing/tr.json']);
     writeFileSync(meta, metaData);
     expect((await checkApproval(ctx)).ok).toBe(true);
   });
@@ -129,21 +129,21 @@ describe('inventory, approval and change detection', () => {
     const fresh = await buildInventory(ctx);
     await expect(requireReviewedContent(ctx, fresh)).resolves.toBeUndefined();
     await expect(requireReviewedContent(ctx, fresh, h('0'))).rejects.toThrow(/content changed/);
-    const card = join(fx.root, '.vitrin', 'creative', 'tr', 'header_header.png');
+    const card = join(fx.root, 'metadata', 'creative', 'tr', 'header_header.png');
     const data = readFileSync(card);
     appendFileSync(card, Buffer.from([1]));
-    await expect(requireReviewedContent(ctx, await buildInventory(ctx))).rejects.toMatchObject({ details: ['changed: .vitrin/creative/tr/header_header.png'] });
+    await expect(requireReviewedContent(ctx, await buildInventory(ctx))).rejects.toMatchObject({ details: ['changed: metadata/creative/tr/header_header.png'] });
     writeFileSync(card, data);
   });
 
   it('records rejections as feedback, a brief and a changes-requested approval that blocks upload', async () => {
     const inv = await buildInventory(ctx);
     expect(findItem(inv, '03_shot3_iphone-6.9.png')).toBeUndefined(); // ambiguous across locales
-    expect(findItem(inv, '.vitrin/store/screenshots/tr/03_shot3_iphone-6.9.png')?.locale).toBe('tr');
+    expect(findItem(inv, 'metadata/store/screenshots/tr/03_shot3_iphone-6.9.png')?.locale).toBe('tr');
     await expect(recordRejections(ctx, inv, [{ item: 'nope.png', comment: 'x' }], 'cli')).rejects.toThrow(/Unknown or ambiguous review item/);
-    const fb = await recordRejections(ctx, inv, [{ item: '.vitrin/store/screenshots/tr/03_shot3_iphone-6.9.png', comment: 'Headline too long' }, { item: 'metadata/app-store/en-US', comment: 'Subtitle: say "daily"' }], 'cli');
+    const fb = await recordRejections(ctx, inv, [{ item: 'metadata/store/screenshots/tr/03_shot3_iphone-6.9.png', comment: 'Headline too long' }, { item: 'metadata/app-store/en-US', comment: 'Subtitle: say "daily"' }], 'cli');
     expect(ReviewFeedback.parse(JSON.parse(readFileSync(ctx.paths.reviewFeedback, 'utf8'))).rejections).toHaveLength(2);
-    expect(fb.rejections[1]!.files).toContain('.vitrin/metadata/en-US.json');
+    expect(fb.rejections[1]!.files).toContain('metadata/listing/en-US.json');
     const brief = readFileSync(join(ctx.paths.briefs, 'review.md'), 'utf8');
     expect(brief).toContain('Headline too long');
     expect(brief).toContain('`metadata/app-store/en-US`');

@@ -28,7 +28,7 @@ export async function profileBrief(ctx: Ctx, profile: AppProfile): Promise<strin
     'analyze',
     `# Brief: complete app_profile
 
-File: \`.vitrin/app_profile.json\` (schema: AppProfile). The analyzer filled in the deterministic part. Your tasks:
+File: \`metadata/app_profile.json\` (schema: AppProfile). The analyzer filled in the deterministic part. Your tasks:
 
 1. Read the source code (especially screen/view files) and add the **core features** the analyzer could not see to the \`features\` list:
    \`{ "id": "kebab-case", "title": "…", "description": "…", "kind": "core", "evidence": [{ "path": "path relative to the project root", "line": 12 }], "confidence": "high", "source": "claude" }\`
@@ -56,7 +56,7 @@ When done, there is no need to re-run \`vitrin analyze\` (your additions survive
   );
 }
 
-/** capture.mode html: what Claude writes in .vitrin/screens so Vitrin can render the screens without a build. */
+/** capture.mode html: what Claude writes in metadata/screens so Vitrin can render the screens without a build. */
 export async function screensBrief(ctx: Ctx, profile: AppProfile): Promise<string> {
   const screens = ctx.config.capture.screens.map((s) => `| \`${s.id}\` | ${(s.source ?? []).map((f) => `\`${f}\``).join(', ') || '(find the view)'} |`).join('\n');
   const colors = [profile.brand.accentColor, ...profile.brand.colors.map((c) => `${c.hex}${c.name ? ` (${c.name})` : ''}`)].filter(Boolean).join(', ');
@@ -66,7 +66,7 @@ export async function screensBrief(ctx: Ctx, profile: AppProfile): Promise<strin
     'screens',
     `# Brief: the app's screens in HTML (capture.mode: html)
 
-No build and no simulator: you recreate each screen of the app in HTML/CSS from its source code, and \`vitrin capture\` renders it at the device's screen size into \`.vitrin/raw/<locale>/<family>/<id>.png\`. The store screenshots are then designed around these screens as usual.
+No build and no simulator: you recreate each screen of the app in HTML/CSS from its source code, and \`vitrin capture\` renders it at the device's screen size into \`metadata/raw/<locale>/<family>/<id>.png\`. The store screenshots are then designed around these screens as usual.
 
 ## Screens
 
@@ -77,9 +77,9 @@ ${screens}
 Device families in this run: ${families.join(', ') || 'iphone'}. Locales: ${ctx.config.app.locales.join(', ')}.
 
 ## Files to write
-- \`.vitrin/screens/<id>.html\` — one complete page per screen (\`<!doctype html>\`, inline \`<style>\` or a shared \`.vitrin/screens/app.css\` linked relatively; images/icons next to it, relative paths). It is rendered in a viewport of the device's screen in CSS points (iPhone 440×956, iPad 1032×1376, Mac 1440×900, Watch 211×257, TV/Vision 1920×1080, Android phone 360×640, tablet 800×1280) and must fill it exactly, without scrolling.
-- Optional \`.vitrin/screens/<id>.<family>.html\` when a family has its own layout (e.g. \`home.ipad.html\` with a sidebar, \`home.watch.html\`); otherwise the generic file is used with \`html[data-family="ipad"]\` CSS.
-- \`.vitrin/screens/strings/<locale>.json\` — \`{ "key": "text" }\` for every \`{{key}}\` placeholder used in the HTML, for each locale. Take the texts from the app's own localization (String Catalog / Localizable.strings / strings.xml / ARB / i18n JSON); never invent UI text the app does not have.
+- \`metadata/screens/<id>.html\` — one complete page per screen (\`<!doctype html>\`, inline \`<style>\` or a shared \`metadata/screens/app.css\` linked relatively; images/icons next to it, relative paths). It is rendered in a viewport of the device's screen in CSS points (iPhone 440×956, iPad 1032×1376, Mac 1440×900, Watch 211×257, TV/Vision 1920×1080, Android phone 360×640, tablet 800×1280) and must fill it exactly, without scrolling.
+- Optional \`metadata/screens/<id>.<family>.html\` when a family has its own layout (e.g. \`home.ipad.html\` with a sidebar, \`home.watch.html\`); otherwise the generic file is used with \`html[data-family="ipad"]\` CSS.
+- \`metadata/screens/strings/<locale>.json\` — \`{ "key": "text" }\` for every \`{{key}}\` placeholder used in the HTML, for each locale. Take the texts from the app's own localization (String Catalog / Localizable.strings / strings.xml / ARB / i18n JSON); never invent UI text the app does not have.
 
 ## Fidelity rules (App Review 2.3: screenshots must show the app in use)
 - Recreate what the code renders: layout, hierarchy, components, spacing, corner radii, colors (asset catalog / theme${colors ? `: ${colors}` : ''}), typography (\`-apple-system\`/SF Pro on Apple platforms, Roboto on Android), light/dark appearance as \`capture.appearance\` (${ctx.config.capture.appearance}).
@@ -109,7 +109,7 @@ export async function metadataBrief(ctx: Ctx, profile: AppProfile): Promise<stri
     sections.push(`### ${locale} — ${localeInfo(locale)?.name ?? locale}
 - Storefront: ${sf ? `${sf.country} (default ${sf.default}; additional: ${sf.additional.join(', ') || 'none'})` : '?'}
 - Candidate keywords (~ = estimated popularity): ${top || '(research has not run)'}
-- Files: \`.vitrin/metadata/${locale}.json\`; also fill in each candidate's \`relevance\` (0–1) in \`.vitrin/keywords/${locale}.json\` and write \`selected\`.`);
+- Files: \`metadata/listing/${locale}.json\`; also fill in each candidate's \`relevance\` (0–1) in \`metadata/research/keywords/${locale}.json\` and write \`selected\`.`);
   }
   const rivals = (competitors?.apps ?? [])
     .slice(0, 12)
@@ -136,20 +136,20 @@ Developer: ${ctx.config.copyrightHolder ?? '?'} — this name does not go in the
 - en-US copy should use the target concepts clearly for App Store tags (tags are assigned only in the US, from en-US).
 
 ## Files to write
-\`.vitrin/metadata/<locale>.json\` (one per locale, e.g. \`en-US\`, \`tr\`):
+\`metadata/listing/<locale>.json\` (one per locale, e.g. \`en-US\`, \`tr\`):
 \`\`\`json
 { "locale": "en-US", "name": "", "subtitle": "", "promotionalText": "", "description": "", "keywords": "keyword1,keyword2",
   "whatsNew": "", "claims": [{ "text": "exact phrase from the description", "featureIds": ["icloud-sync"] }] }
 \`\`\`
-\`.vitrin/metadata/app.json\`:
+\`metadata/listing/app.json\`:
 \`\`\`json
 { "copyright": "${new Date().getFullYear()} ${ctx.config.copyrightHolder ?? 'Company'}", "primaryCategory": "${profile.categorySuggestion?.primary ?? 'PRODUCTIVITY'}", "secondaryCategory": "",
   "reviewNotes": "Demo mode, test steps…", "ageRatingDraft": { "answers": {}, "rationale": "", "needsUserConfirmation": true },
   "accessibilityDraft": [{ "criterion": "VoiceOver", "supported": "partial", "evidence": "…" }] }
 \`\`\`
-Optional \`.vitrin/cpp-suggestions.json\`: 2–5 Custom Product Page suggestions (segment, rationale, non-overlapping keyword set, shot ids to use).
+Optional \`metadata/cpp-suggestions.json\`: 2–5 Custom Product Page suggestions (segment, rationale, non-overlapping keyword set, shot ids to use).
 ${profile.app.platforms.includes('android') ? `
-**Google Play listing** (the app ships on Android). For each locale write \`.vitrin/metadata/play/<locale>.json\`: \`{ "locale", "title" (≤ 30, brand + primary keyword, no emoji/ALL CAPS/#1/best/free/new), "shortDescription" (≤ 80, one benefit sentence with the secondary keyword), "fullDescription" (≤ 4000; indexed, so use the main phrases naturally 2–3 times; no keyword lists; no App Store/iPhone mentions), "changelog" (≤ 500, optional), "video" (optional public YouTube URL), "claims" }\`. Set \`playLocale\` only to override data/play-locales.json. Write \`.vitrin/metadata/play/app.json\` with \`{ "track": "production", "versionCode": <int, only with a changelog> }\`. Google Play has no keyword field; see references/aso-rules.md (Google Play).
+**Google Play listing** (the app ships on Android). For each locale write \`metadata/listing/play/<locale>.json\`: \`{ "locale", "title" (≤ 30, brand + primary keyword, no emoji/ALL CAPS/#1/best/free/new), "shortDescription" (≤ 80, one benefit sentence with the secondary keyword), "fullDescription" (≤ 4000; indexed, so use the main phrases naturally 2–3 times; no keyword lists; no App Store/iPhone mentions), "changelog" (≤ 500, optional), "video" (optional public YouTube URL), "claims" }\`. Set \`playLocale\` only to override data/play-locales.json. Write \`metadata/listing/play/app.json\` with \`{ "track": "production", "versionCode": <int, only with a changelog> }\`. Google Play has no keyword field; see references/aso-rules.md (Google Play).
 ` : ''}
 For the age rating questionnaire and accessibility, see app_profile.signals (age.*, accessibility.*); these are drafts, the user gives final approval.
 
@@ -160,7 +160,7 @@ ${sections.join('\n\n')}
 ${rivals || '- (none)'}
 Gaps: ${(competitors?.analysis.gaps ?? []).join('; ') || '(write them yourself in competitors.json analysis.gaps)'}
 
-When done: \`vitrin write\` (validates and exports to .vitrin/store/metadata).
+When done: \`vitrin write\` (validates and exports to metadata/store/metadata).
 `,
   );
 }
@@ -192,17 +192,17 @@ Method: the /vitrin skill’s references/art-direction.md (iron rules, narrative
 - Icons: Lucide names (e.g. cloud, chart-column, bell, lock, sparkles). Do not use SF Symbols.
 
 ## Step 1 — the first three shots, then samples${hasShots ? ' (shots.json exists: check its first three shots)' : ''}
-Write \`.vitrin/shots.json\` with **only the first three shots** — what the App Store search result shows (real copy, real screens; see Step 3 for the format), with copy in **${sample.locale} only**. The samples use one language and one format (${sample.target.id}), so capture just that first: \`vitrin capture --locale ${sample.locale} --family ${sample.target.family}\`. Then run:
+Write \`metadata/shots.json\` with **only the first three shots** — what the App Store search result shows (real copy, real screens; see Step 3 for the format), with copy in **${sample.locale} only**. The samples use one language and one format (${sample.target.id}), so capture just that first: \`vitrin capture --locale ${sample.locale} --family ${sample.target.family}\`. Then run:
 
 \`\`\`
 vitrin design --samples --json            # suggested for this app: ${suggested.join(', ')}
 vitrin design --samples --styles a,b,c,d  # or pick the presets yourself (2–8, --count N)
 \`\`\`
 
-It renders those shots in each preset (\`.vitrin/design-samples/<preset>/\`), one contact sheet labelled A, B, C, D (\`.vitrin/design-samples/contact-sheet.png\`) and a store preview (\`.vitrin/design-samples/store-preview.html\` and \`.png\`): each option as an App Store search result and product page, “if you choose A it looks like this”. Pick presets that differ clearly (light and dark, sans and serif, upright and tilted) and that stand apart from the competitor palettes above.
+It renders those shots in each preset (\`metadata/design-samples/<preset>/\`), one contact sheet labelled A, B, C, D (\`metadata/design-samples/contact-sheet.png\`) and a store preview (\`metadata/design-samples/store-preview.html\` and \`.png\`): each option as an App Store search result and product page, “if you choose A it looks like this”. Pick presets that differ clearly (light and dark, sans and serif, upright and tilted) and that stand apart from the competitor palettes above.
 
 ## Step 2 — ask the user
-Open the store preview for the user (\`open .vitrin/design-samples/store-preview.html\` on macOS), show \`store-preview.png\` in the chat too, and ask: **“Which design should the screenshots use — A, B, C or D?”** Wait for the answer; never choose for them. Then write \`.vitrin/art-direction.json\`:
+Open the store preview for the user (\`open metadata/design-samples/store-preview.html\` on macOS), show \`store-preview.png\` in the chat too, and ask: **“Which design should the screenshots use — A, B, C or D?”** Wait for the answer; never choose for them. Then write \`metadata/art-direction.json\`:
 \`\`\`json
 { "options": [{ "id": "picked", "name": "…", "rationale": "why it fits the app", "differentiation": "why it stands apart from competitors",
     "preset": "liquid-glass-aurora", "brand": { "primary": "${brand[0] ?? '#5B4BE8'}"${brand[1] ? `, "secondary": "${brand[1]}"` : ''} } }],
@@ -234,7 +234,7 @@ Copy for every chosen language (\`app.locales\`: ${ctx.config.app.locales.join('
 \`creatives.header\` also supplies the Google Play feature graphic line (short brand line, not a screenshot headline).
 
 ## Step 4 — render and check
-Run \`vitrin design\`. Open the first three iPhone PNGs, one iPad and one Android/Duo/Mac/Watch PNG if those targets are enabled, and read the quality issues in \`.vitrin/validation.json\` (\`image.device-small\`, \`image.empty-band\`, \`image.headline-contrast\`, \`image.thumbnail\` …). Fix copy or framing until the set passes the thumbnail test.
+Run \`vitrin design\`. Open the first three iPhone PNGs, one iPad and one Android/Duo/Mac/Watch PNG if those targets are enabled, and read the quality issues in \`metadata/validation.json\` (\`image.device-small\`, \`image.empty-band\`, \`image.headline-contrast\`, \`image.thumbnail\` …). Fix copy or framing until the set passes the thumbnail test.
 `,
   );
 }
@@ -246,7 +246,7 @@ export async function videoBrief(ctx: Ctx): Promise<string> {
     'video',
     `# Brief: video plan
 
-Write \`.vitrin/video-plan.json\` (details: the /vitrin skill’s references/video.md). App Preview: 886×1920 (iPhone), 1200×1600 (iPad), 1920×1080 landscape for \`"device": "mac"\` / \`"tv"\` (targets preview-mac / preview-tv); 30 fps, 15–30 s (target 20–25).
+Write \`metadata/video-plan.json\` (details: the /vitrin skill’s references/video.md). App Preview: 886×1920 (iPhone), 1200×1600 (iPad), 1920×1080 landscape for \`"device": "mac"\` / \`"tv"\` (targets preview-mac / preview-tv); 30 fps, 15–30 s (target 20–25).
 The preview uses the art direction's preset colors and fonts and the same device frames as the screenshots, so keep the hook line consistent with the hero screenshot.
 Real app footage should dominate; keep text cards short. The first ~1.5 s of each recording is the app launch: \`from\` ≥ 1.5.
 Sources: recordings (${recs.join(', ') || 'capture.recordings is empty'}) or screen ids (${ctx.config.capture.screens.map((s) => s.id).join(', ')}).

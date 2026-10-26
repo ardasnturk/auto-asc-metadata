@@ -64,27 +64,27 @@ describe('HTML screens (capture.mode: html)', () => {
     if (!browserOk) ctx.skip();
     const root = mkdtempSync(join(tmpdir(), 'vitrin-html-'));
     write(join(root, 'vitrin.config.yaml'), 'app:\n  bundleId: com.example.a\n  primaryLocale: en-US\n  locales: [en-US, tr]\nurls: {}\ncapture:\n  mode: html\n  screens:\n    - id: home\n      source: [App/HomeView.swift]\nselection:\n  assets: [screenshots]\n');
-    write(join(root, '.vitrin', 'app_profile.json'), JSON.stringify({ generatedAt: 'x', project: { root: '.', targets: [] }, app: { displayName: 'A', platforms: ['ios'], supportsIPhone: true, supportsIPad: true }, features: [], brand: {}, docs: {} }));
+    write(join(root, 'metadata', 'app_profile.json'), JSON.stringify({ generatedAt: 'x', project: { root: '.', targets: [] }, app: { displayName: 'A', platforms: ['ios'], supportsIPhone: true, supportsIPad: true }, features: [], brand: {}, docs: {} }));
     // Without the HTML: exit 2 with the screens brief.
     let res = await vitrin(root, 'capture');
     expect(res.code).toBe(2);
-    expect(res.out).toContain('.vitrin/screens/home.html');
-    expect(readFileSync(join(root, '.vitrin', 'briefs', 'screens.md'), 'utf8')).toContain('App/HomeView.swift');
+    expect(res.out).toContain('metadata/screens/home.html');
+    expect(readFileSync(join(root, 'metadata', 'briefs', 'screens.md'), 'utf8')).toContain('App/HomeView.swift');
 
-    write(join(root, '.vitrin', 'screens', 'home.html'), '<!doctype html><html><head><meta charset="utf-8"><style>body{background:#123;color:#fff;font:20px sans-serif}h1{margin:0;padding-top:var(--safe-top)}</style></head><body><h1>{{title}}</h1></body></html>');
-    write(join(root, '.vitrin', 'screens', 'strings', 'en-US.json'), JSON.stringify({ title: 'Today' }));
-    write(join(root, '.vitrin', 'screens', 'strings', 'tr.json'), JSON.stringify({ title: 'Bugün' }));
+    write(join(root, 'metadata', 'screens', 'home.html'), '<!doctype html><html><head><meta charset="utf-8"><style>body{background:#123;color:#fff;font:20px sans-serif}h1{margin:0;padding-top:var(--safe-top)}</style></head><body><h1>{{title}}</h1></body></html>');
+    write(join(root, 'metadata', 'screens', 'strings', 'en-US.json'), JSON.stringify({ title: 'Today' }));
+    write(join(root, 'metadata', 'screens', 'strings', 'tr.json'), JSON.stringify({ title: 'Bugün' }));
     res = await vitrin(root, 'capture');
     expect(res.code, res.out).toBe(0);
     for (const [family, w, h] of [['iphone', 1320, 2868], ['ipad', 2064, 2752]] as const) {
       for (const locale of ['en-US', 'tr']) {
-        const file = join(root, '.vitrin', 'raw', locale, family, 'home.png');
+        const file = join(root, 'metadata', 'raw', locale, family, 'home.png');
         expect(existsSync(file), file).toBe(true);
         const meta = await sharp(file).metadata();
         expect([meta.width, meta.height]).toEqual([w, h]);
       }
     }
-    // Nothing was built and nothing appeared outside .vitrin/.
+    // Nothing was built and nothing appeared outside metadata/.
     expect(existsSync(join(root, 'fastlane'))).toBe(false);
     expect(existsSync(join(root, '.env.example'))).toBe(false);
   }, 120_000);

@@ -27,7 +27,7 @@ import { loadLocaleMetadata } from './commands/pipeline.js';
 
 /**
  * The review-and-approve gate. Everything `vitrin upload` could send is inventoried here, hashed, shown in the
- * report, and signed off in `.vitrin/approval.json`. A real upload refuses unless every hash still matches.
+ * report, and signed off in `metadata/approval.json`. A real upload refuses unless every hash still matches.
  */
 
 /** A review item plus what the gallery needs to show it. */
@@ -122,7 +122,7 @@ export async function metadataJsonFiles(ctx: Ctx): Promise<string[]> {
 }
 
 /**
- * Writes .vitrin/store/metadata from `.vitrin/metadata` exactly as `vitrin upload` does, so the reviewed and
+ * Writes metadata/store/metadata from `metadata/listing` exactly as `vitrin upload` does, so the reviewed and
  * approved text files are the ones that will be uploaded. Skipped silently while metadata is incomplete.
  */
 export async function syncFastlaneMetadata(ctx: Ctx): Promise<boolean> {
@@ -135,7 +135,7 @@ export async function syncFastlaneMetadata(ctx: Ctx): Promise<boolean> {
     await syncPlayMetadata(ctx);
     return true;
   } catch (err) {
-    log.warn(`.vitrin/store/metadata was not refreshed: ${(err as Error).message}`);
+    log.warn(`metadata/store/metadata was not refreshed: ${(err as Error).message}`);
     return false;
   }
 }
@@ -201,7 +201,7 @@ export async function buildInventory(ctx: Ctx): Promise<Inventory> {
   };
 
   const under = (dir: string, f: string) => toPosix(relative(dir, f)).split('/');
-  // App Store screenshots: .vitrin/store/screenshots/<locale>/… (deliver uploads every image, in file-name order).
+  // App Store screenshots: metadata/store/screenshots/<locale>/… (deliver uploads every image, in file-name order).
   for (const f of await walk(p.screenshots)) {
     if (!/\.(png|jpe?g)$/i.test(f)) continue;
     const locale = under(p.screenshots, f)[0];
@@ -209,7 +209,7 @@ export async function buildInventory(ctx: Ctx): Promise<Inventory> {
     const target = (m && byId.get(m.target)) || targetFromName(f, targets);
     items.push(mediaItem(f, 'screenshot', 'app-store', locale, target, ascPlatform));
   }
-  // App Previews: .vitrin/store/app-previews/<locale>/NN_<DEVICE>.mp4
+  // App Previews: metadata/store/app-previews/<locale>/NN_<DEVICE>.mp4
   for (const f of await walk(p.appPreviews)) {
     if (!VIDEO_RE.test(f)) continue;
     const locale = under(p.appPreviews, f)[0];
@@ -217,7 +217,7 @@ export async function buildInventory(ctx: Ctx): Promise<Inventory> {
     const target = (m && byId.get(m.target)) || byId.get(basename(f).includes('IPAD') ? 'preview-ipad' : 'preview-iphone');
     items.push(mediaItem(f, 'preview', 'app-store', locale, target, ascPlatform));
   }
-  // Creatives and event cards: .vitrin/creative/<locale>/<target>_<key>.(png|mp4)
+  // Creatives and event cards: metadata/creative/<locale>/<target>_<key>.(png|mp4)
   for (const f of await walk(p.creative)) {
     if (!MEDIA_RE.test(f) || basename(f).includes('.remotion.')) continue;
     const locale = under(p.creative, f)[0];
@@ -226,7 +226,7 @@ export async function buildInventory(ctx: Ctx): Promise<Inventory> {
     items.push(mediaItem(f, target?.kind === 'event' ? 'event' : 'creative', 'app-store', locale, target, ascPlatform));
   }
 
-  // App Store text: .vitrin/store/metadata/<locale>/*.txt per locale, the rest is app level.
+  // App Store text: metadata/store/metadata/<locale>/*.txt per locale, the rest is app level.
   const ascMeta = (await walk(p.fastlaneMetadata)).filter((f) => !f.startsWith(p.androidMetadata + sep));
   const ascGroups = new Map<string, string[]>();
   for (const f of ascMeta) {
@@ -239,7 +239,7 @@ export async function buildInventory(ctx: Ctx): Promise<Inventory> {
     items.push(await textItem(root, locale ? `metadata/app-store/${locale}` : 'metadata/app-store/app', 'app-store', ascPlatform, locale || undefined, list, join(p.fastlaneMetadata, locale), source));
   }
 
-  // Google Play (supply layout): .vitrin/store/metadata/android/<locale>/{*.txt,changelogs/*.txt,images/**}
+  // Google Play (supply layout): metadata/store/metadata/android/<locale>/{*.txt,changelogs/*.txt,images/**}
   const playFiles = await walk(p.androidMetadata);
   const playText = new Map<string, string[]>();
   for (const f of playFiles) {
@@ -356,9 +356,9 @@ export async function checkApproval(ctx: Ctx, inv?: Inventory): Promise<Approval
   try {
     approval = await readApproval(ctx);
   } catch (err) {
-    return { ok: false, reason: `.vitrin/approval.json is invalid: ${(err as Error).message}`, ...empty };
+    return { ok: false, reason: `metadata/approval.json is invalid: ${(err as Error).message}`, ...empty };
   }
-  if (!approval) return { ok: false, reason: 'Nothing has been approved yet (.vitrin/approval.json is missing).', ...empty };
+  if (!approval) return { ok: false, reason: 'Nothing has been approved yet (metadata/approval.json is missing).', ...empty };
   if (approval.status !== 'approved') return { ok: false, reason: `The last review requested changes (${approval.rejections.length} rejected items).`, approval, ...empty };
   const current = inv ?? (await buildInventory(ctx));
   const files = diffHashes(approval.files, current.files);
@@ -404,7 +404,7 @@ export async function requireReviewedContent(ctx: Ctx, inv: Inventory, expectHas
     throw new NeedsInput(`The content changed: expected hash ${expectHash.slice(0, 12)}…, current ${inv.overallHash.slice(0, 12)}…. Regenerate the report with \`vitrin review\` and show it to the user again.`);
   }
   const snap = await readJsonIfExists(ctx.paths.reviewSnapshot, ReviewSnapshot).catch(() => undefined);
-  if (!snap) throw new NeedsInput('No review report has been generated for this content; run `vitrin review` and show `.vitrin/report.html` to the user first.');
+  if (!snap) throw new NeedsInput('No review report has been generated for this content; run `vitrin review` and show `metadata/report.html` to the user first.');
   if (snap.overallHash !== inv.overallHash) {
     const f = diffHashes(snap.files, inv.files);
     const j = diffHashes(snap.metadataJson, inv.metadataJson);
@@ -490,12 +490,12 @@ async function reviewBrief(ctx: Ctx, feedback: ReviewFeedback): Promise<string> 
 
 Nothing may be uploaded until the user approves. Fix each item below at its source, then regenerate it:
 
-- Metadata text → \`.vitrin/metadata/<locale>.json\` (or the Google Play listing JSON) → \`vitrin write\`.
-- Screenshots / creatives / event cards → \`.vitrin/shots.json\` or \`art-direction.json\` → \`vitrin design\` (\`--only <shot ids>\`).
-- App Previews / loops → \`.vitrin/video-plan.json\` → \`vitrin video\`.
-- Custom Product Pages → \`.vitrin/cpp-suggestions.json\`; In-App Events → \`shots.json\` → \`creatives.events\`.
+- Metadata text → \`metadata/listing/<locale>.json\` (or the Google Play listing JSON) → \`vitrin write\`.
+- Screenshots / creatives / event cards → \`metadata/shots.json\` or \`art-direction.json\` → \`vitrin design\` (\`--only <shot ids>\`).
+- App Previews / loops → \`metadata/video-plan.json\` → \`vitrin video\`.
+- Custom Product Pages → \`metadata/cpp-suggestions.json\`; In-App Events → \`shots.json\` → \`creatives.events\`.
 
-Then run \`vitrin validate\` and \`vitrin review\` again and show the user the new report. Machine-readable copy: \`.vitrin/review-feedback.json\`.
+Then run \`vitrin validate\` and \`vitrin review\` again and show the user the new report. Machine-readable copy: \`metadata/review-feedback.json\`.
 
 ${rows}`,
   );
@@ -538,7 +538,7 @@ export async function approveCommand(ctx: Ctx, opts: ApproveOptions): Promise<nu
     if (!opts.comment?.trim()) throw new NeedsInput('--reject needs --comment "<what the user wants changed>".');
     const feedback = await recordRejections(ctx, inv, opts.reject.map((item) => ({ item, comment: opts.comment! })), 'cli');
     for (const r of feedback.rejections) log.warn(`Rejected: ${r.label} — ${r.comment}`);
-    log.info(`Feedback: ${relative(ctx.root, ctx.paths.reviewFeedback)}, brief: .vitrin/briefs/review.md. Fix the items, then run \`vitrin review\` again.`);
+    log.info(`Feedback: ${relative(ctx.root, ctx.paths.reviewFeedback)}, brief: metadata/briefs/review.md. Fix the items, then run \`vitrin review\` again.`);
     log.result({ rejected: feedback.rejections.map((r) => r.item), feedback: ctx.paths.reviewFeedback });
     return EXIT.NEEDS_INPUT;
   }
@@ -563,6 +563,6 @@ export async function approvalStage(ctx: Ctx): Promise<number> {
   }
   for (const l of summarize(inv).lines) log.info(`  ${l}`);
   for (const f of [...res.changed, ...res.added, ...res.removed].slice(0, 20)) log.info(`  changed since approval: ${f}`);
-  log.warn(`${res.reason} Show .vitrin/report.html (or \`vitrin review --serve\`) to the user and record their decision (\`vitrin approve\`).`);
+  log.warn(`${res.reason} Show metadata/report.html (or \`vitrin review --serve\`) to the user and record their decision (\`vitrin approve\`).`);
   return EXIT.NEEDS_INPUT;
 }

@@ -37,7 +37,7 @@ export const ReviewRejection = z.object({
 export type ReviewRejection = z.infer<typeof ReviewRejection>;
 
 /**
- * `.vitrin/approval.json` — the user's sign-off on the exact bytes that `vitrin upload` may send.
+ * `metadata/approval.json` — the user's sign-off on the exact bytes that `vitrin upload` may send.
  * A real upload refuses unless `status` is `approved` and every hash still matches the files on disk.
  */
 export const ApprovalManifest = z.object({
@@ -48,7 +48,7 @@ export const ApprovalManifest = z.object({
   via: z.enum(['review-server', 'cli']),
   /** sha256 over every path + hash in `files` and `metadataJson` (see `overallHash()` in the CLI). */
   overallHash: z.string(),
-  /** Media and text files that would be uploaded (.vitrin/store/metadata, screenshots, app-previews, creatives…). */
+  /** Media and text files that would be uploaded (metadata/store/metadata, screenshots, app-previews, creatives…). */
   files: z.array(HashedFile),
   /** Source JSON that the upload reads text from (metadata, CPP suggestions, In-App Events). */
   metadataJson: z.array(HashedFile),
@@ -63,12 +63,12 @@ export const ApprovalManifest = z.object({
       differences: z.array(z.string()).default([]),
     })
     .optional(),
-  /** Set by `vitrin finalize` once the generated files were kept in `metadata/` or deleted. */
-  finalized: z.object({ at: z.string(), mode: z.enum(['keep', 'discard']) }).optional(),
+  /** Set by `vitrin finalize`: whether the user had the research data deleted (keep/discard: older Vitrin versions). */
+  finalized: z.object({ at: z.string(), mode: z.enum(['keep-research', 'delete-research', 'keep', 'discard']) }).optional(),
 });
 export type ApprovalManifest = z.infer<typeof ApprovalManifest>;
 
-/** `.vitrin/review-feedback.json` — rejected items with the user's comments, for Claude to fix. */
+/** `metadata/review-feedback.json` — rejected items with the user's comments, for Claude to fix. */
 export const ReviewFeedback = z.object({
   generatedAt: z.string(),
   overallHash: z.string(),
@@ -76,7 +76,7 @@ export const ReviewFeedback = z.object({
 });
 export type ReviewFeedback = z.infer<typeof ReviewFeedback>;
 
-/** `.vitrin/review-snapshot.json` — what the last generated report showed, so approval binds to that content. */
+/** `metadata/review-snapshot.json` — what the last generated report showed, so approval binds to that content. */
 export const ReviewSnapshot = z.object({
   generatedAt: z.string(),
   overallHash: z.string(),

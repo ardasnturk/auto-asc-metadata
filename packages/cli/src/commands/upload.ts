@@ -56,7 +56,7 @@ export async function uploadCommand(ctx: Ctx, opts: UploadOptions): Promise<numb
   if (!existsSync(ctx.paths.appMetadata) || metadata.length !== ctx.config.app.locales.length) throw new NeedsInput('Metadata is missing; run `vitrin write` first.');
   const app = await readJson(ctx.paths.appMetadata, AppMetadata);
   await exportFastlaneMetadata(ctx.paths, ctx.config, app, metadata);
-  // Approval gate: a real upload sends only the exact files the user reviewed and approved (.vitrin/approval.json).
+  // Approval gate: a real upload sends only the exact files the user reviewed and approved (metadata/approval.json).
   // Checked after the export so the text files compared are the ones deliver would read. --yes never skips this.
   if (!opts.dryRun) await requireApproval(ctx);
   else {
@@ -148,7 +148,7 @@ export async function uploadCommand(ctx: Ctx, opts: UploadOptions): Promise<numb
         log.warn(`asc dry run: ${(err as Error).message}`);
       }
     }
-    log.ok(`Plan: .vitrin/upload-plan.json (--dry-run, nothing was uploaded)`);
+    log.ok(`Plan: metadata/upload-plan.json (--dry-run, nothing was uploaded)`);
     return plan.blockers.length ? EXIT.NEEDS_INPUT : EXIT.OK;
   }
 
@@ -224,7 +224,7 @@ export async function uploadCommand(ctx: Ctx, opts: UploadOptions): Promise<numb
     return EXIT.FAIL;
   }
   log.ok('Text in the stores matches the local files.');
-  log.info('Next: show the user the read-back above; once they confirm the listing, run `vitrin finalize --checked` (keeps the uploaded set in metadata/ or deletes the generated files, per retention.keep).');
+  log.info('Next: show the user the read-back above; once they confirm the listing, ask whether to delete the research data and run `vitrin finalize --checked --delete-research` or `--keep-research`.');
   await ctx.state.mark('upload', plan.generatedAt, [relative(ctx.root, ctx.paths.uploadPlan)]);
   log.info('Reminder: final approval of the privacy labels and age rating questionnaire is yours; check the App Store tags (US) after the upload.');
   return EXIT.OK;

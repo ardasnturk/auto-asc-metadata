@@ -4,7 +4,7 @@ Text that earns ranking in App Store search comes from three fields: **name**, *
 
 ## Keyword selection
 
-1. Set `relevance` (0–1) for the candidates in `.vitrin/keywords/<locale>.json`: does the app really do the job of the person searching for this term? If not, 0.
+1. Set `relevance` (0–1) for the candidates in `metadata/research/keywords/<locale>.json`: does the app really do the job of the person searching for this term? If not, 0.
 2. `total = relevance × popularity × (1 − competition)` — computed by the CLI. `popularity.source: "estimate"` is an estimate; do not present it as an exact number.
 3. Distribution: the strongest 1–2 terms go into the **name**, the next 1–2 into the **subtitle**, the rest into the **keyword field**. Write them to the `selected` field.
 
@@ -43,14 +43,14 @@ Text that earns ranking in App Store search comes from three fields: **name**, *
 
 ## Google Play
 
-Write `.vitrin/metadata/play/<asc-locale>.json` (`PlayListing`) for each locale when `android` is in `app.platforms`. The Play language comes from `data/play-locales.json` (`tr` → `tr-TR`, `he` → `iw-IL`, `es-MX` → `es-419`); set `playLocale` only to override it. Validation codes start with `play.`.
+Write `metadata/listing/play/<asc-locale>.json` (`PlayListing`) for each locale when `android` is in `app.platforms`. The Play language comes from `data/play-locales.json` (`tr` → `tr-TR`, `he` → `iw-IL`, `es-MX` → `es-419`); set `playLocale` only to override it. Validation codes start with `play.`.
 
 - **No keyword field.** Google Play indexes the **title, short description and full description**, so the keywords you would put into the App Store keyword field have to appear naturally in the listing text. (Fields per the Android Publisher API `Listing` resource: `title`, `shortDescription`, `fullDescription`, `video` — there is nothing else to fill.)
 - **Title (≤ 30):** brand + the single strongest keyword phrase, as on the App Store. Policy: no emoji, emoticons or repeated special characters, no ALL CAPS unless it is the brand, no ranking or performance claims (“#1”, “best”, “top”), no price or promotion (“free”, “sale”, “new”), no calls to action (`play.title.*`, errors). Do not repeat a word in the title.
 - **Short description (≤ 80):** the hook shown on the listing before “About this app” is opened; one benefit sentence that carries the second keyword phrase. Keep it free of ranking, price and promo wording too (`play.short.promo`, warning).
 - **Full description (≤ 4000):** indexed, so the main keyword phrases should appear a few times in natural sentences — but repetition reads as spam: Vitrin warns when one word appears more than 5 times and above ~3 % of the words (`play.description.stuffing`), and on bare comma lists of keywords (`play.description.keyword-list`). Lead with what the app does; basic formatting (`<b>`, `<i>`, `<u>`, `<br>`) is rendered, other markup is not.
 - Do not mention the App Store, iPhone, iPad or other Apple-only things in the Play listing (`play.text.other-store`), and no competitor brands (`play.text.competitor-brand`).
-- **Release notes (≤ 500)** go to `changelog` and need `versionCode` in `.vitrin/metadata/play/app.json`; supply replaces the notes of that version code for **every** language at once, so write one for each language that already has notes (the plan blocks otherwise).
+- **Release notes (≤ 500)** go to `changelog` and need `versionCode` in `metadata/listing/play/app.json`; supply replaces the notes of that version code for **every** language at once, so write one for each language that already has notes (the plan blocks otherwise).
 - **Promo video:** `video` takes one public YouTube video URL (no playlist, not age-restricted). Leave it out to keep the current one; `""` removes it.
 
 Sources opened for this section: fastlane 2.241.1 `supply` source (`lib/supply.rb`, `lib/supply/uploader.rb`, `lib/supply/languages.rb`) and the Android Publisher v3 discovery document (`Listing`, image types). The Play Console Help pages on the metadata policy and store listing limits (support.google.com/googleplay/android-developer/answer/9898842 and /13393723) could **not** be opened from the build session; the limits and policy points above follow the task brief and should be re-checked there.

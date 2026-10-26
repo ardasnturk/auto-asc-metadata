@@ -6,29 +6,35 @@ import { exec } from './exec.js';
 export const GITIGNORE_BEGIN = '# >>> vitrin (managed block, edits inside are overwritten)';
 export const GITIGNORE_END = '# <<< vitrin';
 
-/** Files under `.vitrin/` that are source (written by Claude or the analyzer) and meant to be committed. */
-export const VITRIN_COMMITTED = ['app_profile.json', 'metadata/', 'keywords/', 'art-direction.json', 'shots.json', 'video-plan.json', 'cpp-suggestions.json', 'screens/'];
+/** Files under `metadata/` that are source (written by Claude or the analyzer) and meant to be committed. */
+export const VITRIN_COMMITTED = ['.vitrin-workspace', 'app_profile.json', 'listing/', 'art-direction.json', 'shots.json', 'video-plan.json', 'cpp-suggestions.json', 'screens/', 'designs/'];
+
+/** Readable outputs under `metadata/` that are committed only with `retention.commit: true`. */
+export const VITRIN_OUTPUTS = ['app-store/', 'google-play/', 'manifest.json', 'store/', 'creative/', 'mockups/'];
 
 /** The ignore patterns Vitrin maintains: secrets and everything it generates. */
 export function vitrinGitignoreLines(config?: Pick<VitrinConfig, 'retention'>): string[] {
-  const lines = [
+  return [
     '# secrets',
     '.env',
     '*.p8',
     'secrets/',
-    '# generated working files (sources stay committable)',
-    '/.vitrin/*',
-    ...VITRIN_COMMITTED.map((f) => `!/.vitrin/${f}`),
-    '# generated store assets (older Vitrin versions wrote them under fastlane/)',
+    '# Vitrin workspace: generated files stay local, the sources Claude writes are committable',
+    '/metadata/*',
+    ...VITRIN_COMMITTED.map((f) => `!/metadata/${f}`),
+    // Keyword research is worth keeping in git; downloads and competitor data are not.
+    '!/metadata/research/',
+    '/metadata/research/*',
+    '!/metadata/research/keywords/',
+    ...(config?.retention?.commit ? ['# store outputs (retention.commit: true)', ...VITRIN_OUTPUTS.map((f) => `!/metadata/${f}`)] : []),
+    '# older Vitrin versions',
+    '/.vitrin/',
     '/fastlane/screenshots/',
     '/fastlane/app-previews/',
     '/fastlane/metadata/android/**/images/',
     '/fastlane/report.xml',
     '/fastlane/README.md',
   ];
-  // `vitrin finalize --keep` copies the uploaded set into metadata/; committed only when the user wants it.
-  if (!config?.retention?.commit) lines.push('# kept uploads (retention.commit: false)', '/metadata/');
-  return lines;
 }
 
 function renderBlock(lines: string[]): string {
@@ -55,7 +61,7 @@ export interface GitignoreResult {
 /** Top-level path a tracked, ignored file belongs to (what `git rm -r --cached` should be given). */
 function groupOf(file: string): string {
   const parts = file.split('/');
-  if (parts[0] === '.vitrin' || parts[0] === 'metadata') return parts.length > 2 ? `${parts[0]}/${parts[1]}/` : file;
+  if (parts[0] === 'metadata' || parts[0] === '.vitrin') return parts.length > 2 ? `${parts[0]}/${parts[1]}/` : file;
   if (parts[0] === 'fastlane' && parts.length > 2) {
     const img = parts.indexOf('images');
     if (img > 0) return `${parts.slice(0, img + 1).join('/')}/`;

@@ -5,7 +5,7 @@ import type { Ctx } from './context.js';
 
 /**
  * Words of the review gallery (`vitrin review`) in the language the user talks to Vitrin in (`ui.language`).
- * English and Turkish are built in. For any other language Claude writes `.vitrin/i18n/<language>.json` (same keys,
+ * English and Turkish are built in. For any other language Claude writes `metadata/i18n/<language>.json` (same keys,
  * translated values; `vitrin review --print-labels` prints the English set to start from). Missing keys fall back
  * to English. Placeholders like {n} are filled in at render time. Store copy is never translated here.
  */
@@ -179,7 +179,7 @@ export function i18nFile(ctx: Pick<Ctx, 'paths'>, language: string): string {
 }
 
 /**
- * The gallery words for `ui.language`: `.vitrin/i18n/<tag>.json` (or its base language) over the built-in set,
+ * The gallery words for `ui.language`: `metadata/i18n/<tag>.json` (or its base language) over the built-in set,
  * over English. Reports when a language has neither, so Claude can write the file.
  */
 export async function loadUiText(ctx: Pick<Ctx, 'paths' | 'config'>): Promise<{ text: UiText; language: string; missing: boolean }> {
