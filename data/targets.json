@@ -426,7 +426,8 @@
         "png",
         "jpeg"
       ],
-      "notes": "Required for Mac apps (16:10). Verified on the screenshot specifications page, 2026-10-26. Captured from the Mac app window (screencapture -l), scaled to 2880x1800."
+      "notes": "Required for Mac apps (16:10). Verified on the screenshot specifications page, 2026-10-26. Captured from the Mac app window (screencapture -l), scaled to 2880x1800.",
+      "assetLibraryDisplayClass": "DESKTOP"
     },
     {
       "id": "watch-ultra",
@@ -459,7 +460,8 @@
         "jpeg"
       ],
       "simulator": "Apple Watch Ultra 3 (49mm)",
-      "notes": "Required for Apple Watch apps. Apple Watch is one screenshot class: use the same size in every localization. 422x514 (Ultra 4, Ultra 3) and 410x502 (Ultra 2, Ultra) verified 2026-10-26. The simulator name is unverified on Xcode 27."
+      "notes": "Required for Apple Watch apps. Apple Watch is one screenshot class: use the same size in every localization. 422x514 (Ultra 4, Ultra 3) and 410x502 (Ultra 2, Ultra) verified 2026-10-26. The simulator name is unverified on Xcode 27.",
+      "assetLibraryDisplayClass": "WATCH_ULTRA"
     },
     {
       "id": "watch-series",
@@ -500,7 +502,8 @@
         "jpeg"
       ],
       "simulator": "Apple Watch Series 11 (46mm)",
-      "notes": "Alternative to watch-ultra (same class; upload only one size, consistently across localizations). Sizes verified 2026-10-26."
+      "notes": "Alternative to watch-ultra (same class; upload only one size, consistently across localizations). Sizes verified 2026-10-26.",
+      "assetLibraryDisplayClass": "WATCH_SERIES_10"
     },
     {
       "id": "appletv-4k",
@@ -533,7 +536,8 @@
         "jpeg"
       ],
       "simulator": "Apple TV 4K (3rd generation)",
-      "notes": "Required for Apple TV apps; 1920x1080 and 3840x2160 verified 2026-10-26. Landscape only."
+      "notes": "Required for Apple TV apps; 1920x1080 and 3840x2160 verified 2026-10-26. Landscape only.",
+      "assetLibraryDisplayClass": "APPLE_TV"
     },
     {
       "id": "vision-pro",
@@ -562,7 +566,8 @@
         "jpeg"
       ],
       "simulator": "Apple Vision Pro",
-      "notes": "Required for visionOS apps; 3840x2160 verified 2026-10-26. iPad apps running \"Designed for iPad\" on Vision Pro use the iPad screenshots instead."
+      "notes": "Required for visionOS apps; 3840x2160 verified 2026-10-26. iPad apps running \"Designed for iPad\" on Vision Pro use the iPad screenshots instead.",
+      "assetLibraryDisplayClass": "APPLE_VISION_PRO"
     },
     {
       "id": "preview-mac",
@@ -592,7 +597,8 @@
         "maxBytes": 500000000,
         "h264Level": "4.0"
       },
-      "notes": "1920x1080 landscape, verified on the app preview specifications page 2026-10-26. Opt-in like preview-ipad (targets.enable)."
+      "notes": "1920x1080 landscape, verified on the app preview specifications page 2026-10-26. Opt-in like preview-ipad (targets.enable).",
+      "assetLibraryDisplayClass": "DESKTOP"
     },
     {
       "id": "preview-tv",
@@ -622,7 +628,8 @@
         "maxBytes": 500000000,
         "h264Level": "4.0"
       },
-      "notes": "1920x1080 landscape, verified on the app preview specifications page 2026-10-26. Opt-in like preview-ipad (targets.enable)."
+      "notes": "1920x1080 landscape, verified on the app preview specifications page 2026-10-26. Opt-in like preview-ipad (targets.enable).",
+      "assetLibraryDisplayClass": "APPLE_TV"
     },
     {
       "id": "play-phone",
