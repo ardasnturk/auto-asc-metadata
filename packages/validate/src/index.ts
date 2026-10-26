@@ -62,7 +62,8 @@ export async function validateAll(paths: AppPaths, config: VitrinConfig, scope: 
       }
     }
     for (const extra of await strayLocaleDirs(paths.fastlaneMetadata, config.app.locales)) {
-      if (!['default'].includes(extra)) issues.error('metadata.stray-locale', `fastlane/metadata/${extra} is a locale not in the config; deliver will upload it too.`);
+      // `android/` is supply's Google Play folder; deliver runs get per-platform copies without it.
+      if (!['default', 'android'].includes(extra)) issues.error('metadata.stray-locale', `fastlane/metadata/${extra} is a locale not in the config; deliver will upload it too.`);
     }
     const text = validateText({ config, profile, competitors, appMetadata, locales });
     issues.push(...text.issues.items);
