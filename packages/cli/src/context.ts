@@ -1,4 +1,4 @@
-import { appPaths, findAppRoot, hashValue, loadConfig, loadEnv, log, readJson, StateStore, type AppPaths } from '@vitrin/core';
+import { appPaths, ensureVitrinGitignore, findAppRoot, hashValue, loadConfig, loadEnv, log, readJson, StateStore, type AppPaths } from '@vitrin/core';
 import { AppProfile, type StageName, type VitrinConfig } from '@vitrin/schemas';
 import { existsSync } from 'node:fs';
 
@@ -37,7 +37,23 @@ export async function createContext(opts: GlobalOptions): Promise<Ctx> {
   const env = loadEnv(paths.env);
   const config = loadConfig(paths.config);
   const state = await StateStore.load(paths.state);
+  await syncGitignore(root, config);
   return { root, paths, config, state, env, force: Boolean(opts.force), json: Boolean(opts.json) };
+}
+
+/** Keeps the managed .gitignore block current (every command that writes files runs through here). */
+async function syncGitignore(root: string, config: VitrinConfig): Promise<void> {
+  try {
+    const res = await ensureVitrinGitignore(root, config);
+    if (res.changed) log.dim('.gitignore: updated the Vitrin block (generated files are not committed).');
+    if (res.trackedIgnored.length) {
+      const total = res.trackedIgnored.reduce((n, g) => n + g.files, 0);
+      const paths = res.trackedIgnored.map((g) => g.path);
+      log.warn(`${total} generated file(s) are tracked by git but now ignored (${paths.slice(0, 6).join(', ')}${paths.length > 6 ? ', …' : ''}); to stop tracking them: git rm -r --cached ${paths.slice(0, 6).join(' ')}`);
+    }
+  } catch (err) {
+    log.warn(`.gitignore was not updated: ${(err as Error).message}`);
+  }
 }
 
 export async function loadProfile(ctx: Ctx): Promise<AppProfile> {
