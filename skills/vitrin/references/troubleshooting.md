@@ -114,7 +114,7 @@ val vitrinScreen = intent.getStringExtra("vitrinScreen") // "home", "stats", …
 ## iPhone Duo
 
 - fastlane < 2.241.1 does not recognize the Duo sizes and **aborts the whole upload** → `>= 2.241.1` in the Gemfile, `bundle update fastlane`.
-- The deliver documentation does not mention a Duo class; if the upload fails, use `vitrin upload --uploader=asset-library` (`IPHONE_DUO` is verified in the API).
+- The deliver documentation does not mention a Duo class, and the ASC API 4.5.1 classic `ScreenshotDisplayType` has none. A Duo-only or partial run always goes through the App Asset Library (`IPHONE_DUO`, in the spec); if a full deliver run fails on Duo, use `vitrin upload --uploader=asset-library`.
 - The fold posture (outer/inner display) cannot be automated in the simulator: select it manually in the simulator during capture, or provide the Duo raw screenshots with `capture.mode: manual`. If there is no Duo raw screenshot, the iPhone screenshot is used and a warning is shown.
 
 ## No app record / 403
@@ -136,7 +136,16 @@ val vitrinScreen = intent.getStringExtra("vitrinScreen") // "home", "stats", …
 
 ## deliver deprecation / legacy screenshot endpoints
 
-- ASC API 4.5.1 deprecated Screenshot/Preview Sets. If deliver fails on these endpoints, Vitrin's message suggests `--uploader=asset-library`. The Asset Library attribute names are not fully verified (docs/apple-notes.md); on the first run, check `.vitrin/cache/refdata.json`.
+- The ASC API 4.5.1 release notes deprecate Screenshot/Preview Sets; the 4.5.1 spec still lists them and Vitrin uses them for single display types. If deliver fails on these endpoints, Vitrin's message suggests `--uploader=asset-library` or `--uploader=asc`.
+- Asset Library names come from the 4.5.1 spec (docs/apple-notes.md). If doctor reports “refData has no placement group for …” or a size that is not among a display class's `screenDimensions`, open `.vitrin/cache/refdata.json`: the device set is the `placementProfileGroups[].placementProfileGroupId` with that `platform` and `displayClassId`; fix `data/asc-display-types.json` if Apple maps the size to another class.
+- A partial upload stops with “refusing to touch any set” / “Refusing to replace”: App Store Connect returned a set or placement of another type for a filtered request, so Vitrin deleted nothing. Replace that set in App Store Connect by hand and report it.
+
+## asc uploader (`upload.uploader: asc`)
+
+- `asc is not installed` / doctor “asc CLI” fails: `brew install asc` (https://github.com/rorkai/App-Store-Connect-CLI), then `asc version`.
+- asc reads the same `.env` keys through its environment credential (`ASC_KEY_ID`, `ASC_ISSUER_ID`, `ASC_PRIVATE_KEY_PATH` or `ASC_PRIVATE_KEY_B64`, set by Vitrin). If asc still uses another account, a stored asc profile may win: unset `ASC_PROFILE` and check `asc auth status`.
+- asc's `metadata push` does not upload categories, copyright or review information; set them in App Store Connect or run that part with the deliver uploader.
+- `upload.ascValidate: true` makes `vitrin doctor` run `asc validate --app <id>`; its warnings (no build attached, pricing) do not block an upload.
 
 ## Playwright / fonts
 

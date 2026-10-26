@@ -13,6 +13,7 @@ The single source of truth is `data/targets.json` and `docs/apple-notes.md`; thi
 | `duo-inner` | iPhone Duo inner | 2007×2853 | Same |
 | `preview-iphone` | App Preview iPhone (including Duo) | 886×1920 | Optional, ≤ 3 |
 | `preview-ipad` | App Preview iPad | 1200×1600 | Optional (enable in config) |
+| `preview-mac` / `preview-tv` / `preview-vision` | App Preview Mac / Apple TV / Vision Pro (landscape) | 1920×1080 / 1920×1080 / 3840×2160 | Optional (enable in config) |
 | `header` | Product page header 21:9 | 3840×1646 | Optional, Asset Library |
 | `search` | Search result 3:2 | 1920×1280 – 3840×2560 | Optional, Asset Library |
 | `event-card` / `event-detail` | In-App Event 16:9 / 9:16 | range | If there are events |
@@ -43,5 +44,7 @@ Name 2–30 · subtitle 30 · promotional text 170 · description 4000 · What's
 
 ## API
 
-- ASC API 4.5.1: Screenshot/Preview Sets deprecated → App Asset Library (images, videos, placements). `GET /v1/appAssetLibraryRefData` returns the supported placements/sizes; doctor compares it with targets.json.
+- ASC API 4.5.1 (OpenAPI spec 4.5.1; details in docs/apple-notes.md): the release notes deprecate Screenshot/Preview Sets in favour of the App Asset Library, but the spec still lists them. Classic types per target are in `data/asc-display-types.json` — 6.9" iPhone is `APP_IPHONE_67` / preview `IPHONE_67` (there is no 69), Mac `APP_DESKTOP`/`DESKTOP`, TV `APP_APPLE_TV`/`APPLE_TV`, Vision `APP_APPLE_VISION_PRO`/`APPLE_VISION_PRO`; iPhone Duo has no classic type.
+- Partial runs replace one set per localization and display type through the classic API; iPhone Duo and the header/search creatives go through the App Asset Library (`placementType` + `placementGroup` from `GET /v1/appAssetLibraryRefData`, `category`, ordering requests). doctor compares refData with `data/asc-display-types.json`.
+- `upload.uploader: asc` uses the asc CLI (`brew install asc`, no Ruby) for App Store text and media; fastlane deliver stays the default.
 - An app record cannot be created with an API key (403). For an app that is only on TestFlight, the first App Store version may have to be created manually.
