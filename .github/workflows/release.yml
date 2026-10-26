@@ -3,9 +3,12 @@ name: Release
 # Pushing a tag v<version> (matching package.json, plugin.json and marketplace.json) builds and tests the
 # repository, packs @ardasnturk/vitrin, creates the GitHub Release with that version's CHANGELOG section and the
 # tarball the Claude Code plugin's launcher downloads, and publishes to npm when the NPM_TOKEN secret is set.
+# It can also be started by hand (Actions → Release → Run workflow) on main: the release then creates the
+# v<version> tag on the commit it built.
 on:
   push:
     tags: ['v*']
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -31,7 +34,12 @@ jobs:
       - name: Check the tag matches the release version
         run: |
           version=$(node -p 'require("./package.json").version')
-          if [ "${GITHUB_REF_NAME}" != "v${version}" ]; then
+          if [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then
+            if [ "${GITHUB_REF_NAME}" != "main" ]; then
+              echo "::error::Run the release by hand from main, not ${GITHUB_REF_NAME}"
+              exit 1
+            fi
+          elif [ "${GITHUB_REF_NAME}" != "v${version}" ]; then
             echo "::error::Tag ${GITHUB_REF_NAME} does not match package.json version ${version}"
             exit 1
           fi
@@ -53,10 +61,12 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release create "$GITHUB_REF_NAME" "${{ steps.pack.outputs.tarball }}" \
+          # A tag push releases that tag; a manual run creates v<version> on the commit it built.
+          if [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then tag_args=(--target "$GITHUB_SHA"); else tag_args=(--verify-tag); fi
+          gh release create "v${VERSION}" "${{ steps.pack.outputs.tarball }}" \
             --title "Vitrin ${VERSION}" \
             --notes-file "$RUNNER_TEMP/release-notes.md" \
-            --verify-tag
+            "${tag_args[@]}"
       - name: Publish to npm (only when NPM_TOKEN is set)
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
