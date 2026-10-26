@@ -1,7 +1,7 @@
 import { PreviewPlan } from '@vitrin/schemas';
 import { describe, expect, it } from 'vitest';
 import { resolveDirection } from '@vitrin/render';
-import { buildPreviewProps, compositionSize, fitDurations, isLandscape, lookFrom, previewDurationFrames, previewDurationSec, previewTargetId, resolveTransitions, type Look, type MediaRef } from '../src/index.js';
+import { buildPreviewProps, compositionSize, fitDurations, isLandscape, lookFrom, previewDurationFrames, previewDurationSec, previewTargetId, renderScale, resolveTransitions, type Look, type MediaRef } from '../src/index.js';
 
 const look = { background: ['#000000'], accent: '#FF8A6B', text: '#FFFFFF', textMuted: '#DDDDDD', surface: '#111111', badgeBackground: '#FFFFFF', badgeText: '#111111', headlineFont: 'Inter', bodyFont: 'Inter', headlineWeight: 800, dir: 'ltr', deviceFamily: 'iphone', aspect: 2 } satisfies Look;
 const media: MediaRef = { path: 'tr/iphone/home.png', kind: 'image', from: 0, aspect: 2 };
@@ -83,6 +83,12 @@ describe('device frames and landscape previews', () => {
     expect(compositionSize('mac')).toEqual({ width: 960, height: 540 });
     expect(compositionSize('tv')).toEqual({ width: 960, height: 540 });
     expect(isLandscape('tv')).toBe(true);
+    // Vision Pro: authored 960×540 like Mac/TV, rendered at 4× → 3840×2160.
+    expect(isLandscape('vision')).toBe(true);
+    expect(compositionSize('vision')).toEqual({ width: 960, height: 540 });
+    expect(renderScale('vision') * 960).toBe(3840);
+    expect(renderScale('iphone')).toBe(2);
+    expect(previewTargetId('vision')).toBe('preview-vision');
     expect(previewTargetId('mac')).toBe('preview-mac');
     expect(PreviewPlan.parse({ ...plan().valueOf(), device: 'tv' }).device).toBe('tv');
   });

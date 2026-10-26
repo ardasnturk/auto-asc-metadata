@@ -67,8 +67,8 @@ export function screenRect(look: Look, width: number, aspect: number): { x: numb
   const f = look.frame;
   if (f) {
     const k = width / f.width;
-    // Fixed-shape displays (Mac, TV) keep their own screen; phones follow the media aspect.
-    const fixed = look.deviceFamily === 'mac' || look.deviceFamily === 'tv';
+    // Fixed-shape displays (Mac, TV, Vision Pro window) keep their own screen; phones follow the media aspect.
+    const fixed = look.deviceFamily === 'mac' || look.deviceFamily === 'tv' || look.deviceFamily === 'vision';
     const sh = fixed ? f.screen.h * k : f.screen.w * k * aspect;
     return { x: f.screen.x * k, y: f.screen.y * k, w: f.screen.w * k, h: sh, r: f.screen.r * k, height: (f.height - f.screen.h) * k + sh };
   }

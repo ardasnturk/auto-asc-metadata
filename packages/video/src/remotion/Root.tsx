@@ -15,7 +15,7 @@ const defaultLook = {
   bodyFont: 'Inter',
   headlineWeight: 800,
   dir: 'ltr' as const,
-  deviceFamily: 'iphone' as 'iphone' | 'ipad' | 'mac' | 'tv',
+  deviceFamily: 'iphone' as 'iphone' | 'ipad' | 'mac' | 'tv' | 'vision',
   aspect: 2622 / 1206,
 };
 

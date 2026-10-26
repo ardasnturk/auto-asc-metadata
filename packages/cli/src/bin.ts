@@ -157,7 +157,7 @@ program
   .description('uploads with fastlane + the ASC API (plan first; --dry-run shows the plan only)')
   .option('--dry-run', 'show the plan only')
   .option('--yes', 'skip the terminal prompt (only if the user explicitly said yes); never skips the approval gate')
-  .option('--uploader <name>', 'deliver | asset-library')
+  .option('--uploader <name>', 'deliver | asset-library | asc')
   .option('--creatives', 'also upload the product page header and search creatives')
   .option('--cpp', 'create the Custom Product Page suggestions')
   .option('--events', 'create the In-App Event drafts')

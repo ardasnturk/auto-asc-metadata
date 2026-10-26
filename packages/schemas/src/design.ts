@@ -302,8 +302,8 @@ export type VideoTransition = z.infer<typeof VideoTransition>;
 
 export const PreviewPlan = z.object({
   id: z.string().regex(/^\d{2}$/),
-  /** mac and tv previews are landscape 1920×1080 (targets preview-mac / preview-tv). */
-  device: z.enum(['iphone', 'ipad', 'mac', 'tv']),
+  /** mac and tv previews are landscape 1920×1080 (preview-mac / preview-tv); vision is 3840×2160 (preview-vision). */
+  device: z.enum(['iphone', 'ipad', 'mac', 'tv', 'vision']),
   style: VideoStyle.default('showcase'),
   transition: VideoTransition.default('auto'),
   /** Light-leak overlays on cuts (showcase default on). */

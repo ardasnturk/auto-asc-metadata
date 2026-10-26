@@ -5,7 +5,7 @@ import { readdir, rm } from 'node:fs/promises';
 import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import sharp from 'sharp';
-import { FPS_PREVIEW, previewDurationSec, STYLE_DEFAULTS, type AppPreviewProps, type Look, type LoopProps, type MediaRef, type PreviewFamily, type Scene, type TransitionKind } from './types.js';
+import { FPS_PREVIEW, previewDurationSec, STYLE_DEFAULTS, type AppPreviewProps, type Look, type LoopProps, type MediaRef, type PreviewFamily, renderScale, type Scene, type TransitionKind } from './types.js';
 
 const ENTRY = join(dirname(fileURLToPath(import.meta.url)), '..', 'src', 'remotion', 'index.ts');
 
@@ -86,7 +86,7 @@ export function lookFrom(ad: ResolvedDirection, locale: string, family: PreviewF
 }
 
 /** deliver device names for preview files; core's map wins where it has an entry. */
-const PREVIEW_DEVICE_FALLBACK: Record<string, string> = { 'preview-mac': 'DESKTOP', 'preview-tv': 'APPLE_TV' };
+const PREVIEW_DEVICE_FALLBACK: Record<string, string> = { 'preview-mac': 'DESKTOP', 'preview-tv': 'APPLE_TV', 'preview-vision': 'APPLE_VISION_PRO' };
 
 export function previewTargetId(family: PreviewFamily): string {
   return `preview-${family}`;
@@ -221,7 +221,7 @@ export async function renderVideos(opts: VideoRenderOptions): Promise<VideoRende
     webpackOverride: (c) => ({ ...c, resolve: { ...c.resolve, extensionAlias: { '.js': ['.ts', '.tsx', '.js'] } } }),
   });
 
-  const render = async (id: string, inputProps: Record<string, unknown>, out: string, h264Level: boolean) => {
+  const render = async (id: string, inputProps: Record<string, unknown>, out: string, h264Level: boolean, scale = 2) => {
     const composition = await selectComposition({ serveUrl, id, inputProps });
     // Render outside fastlane/ so a crashed render never leaves a file deliver would upload.
     const tmp = join(paths.cache, 'remotion', `${Date.now()}-${out.split('/').pop()}`);
@@ -234,8 +234,8 @@ export async function renderVideos(opts: VideoRenderOptions): Promise<VideoRende
       codec: 'h264',
       outputLocation: tmp,
       inputProps,
-      scale: 2,
-      videoBitrate: '11M',
+      scale,
+      videoBitrate: scale > 2 ? '40M' : '11M',
       audioCodec: 'aac',
       audioBitrate: '256k',
       enforceAudioTrack: true,
@@ -271,7 +271,7 @@ export async function renderVideos(opts: VideoRenderOptions): Promise<VideoRende
         const props = buildPreviewProps({ plan: p, locale, look: lookFrom(ad, locale, base.device, hook.aspect), hookMedia: hook.ref, beats, icon });
         const out = join(paths.vitrin, 'video-styles', locale, `${base.id}_${style}.mp4`);
         log.step(`Style variant ${style} (${locale}) — ${props.scenes.length} scenes, ${previewDurationSec(props).toFixed(1)} s`);
-        await render('AppPreview', props, out, true);
+        await render('AppPreview', props, out, base.device !== 'vision', renderScale(base.device));
         videos.push({ file: out, target: 'preview-variant', locale, id: `${base.id}-${style}`, durationSec: previewDurationSec(props) });
       }
     }
@@ -303,7 +303,8 @@ export async function renderVideos(opts: VideoRenderOptions): Promise<VideoRende
         if (total < 15 || total > 30) throw new Error(`App Preview ${p.id} is ${total.toFixed(1)} s long; it must be 15–30 s (reduce the number of beats).`);
         const out = join(dir, `${p.id}_${DELIVER_PREVIEW_DEVICE[target.id] ?? PREVIEW_DEVICE_FALLBACK[target.id] ?? 'IPHONE_67'}.mp4`);
         log.step(`App Preview ${p.id} (${locale}, ${family}, ${p.style}) — ${props.scenes.length} scenes, ${total.toFixed(1)} s @ ${FPS_PREVIEW} fps`);
-        await render('AppPreview', props, out, true);
+        // H.264 High@4.0 tops out below 4K, so Vision Pro previews keep High profile without the 4.0 level.
+        await render('AppPreview', props, out, family !== 'vision', renderScale(family));
         videos.push({ file: out, target: target.id, locale, id: p.id, durationSec: total });
       }
     }

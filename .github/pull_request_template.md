@@ -10,4 +10,4 @@
 
 ## Apple rules
 
-<!-- If this touches sizes, limits or upload behaviour: link the Apple page you checked and update docs/apple-notes.md and data/targets.json. -->
+<!-- If this touches sizes, limits or upload behaviour: link the Apple page you checked and update plugins/vitrin/skills/vitrin/references/apple-notes.md and data/targets.json. -->

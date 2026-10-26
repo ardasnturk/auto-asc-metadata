@@ -310,7 +310,12 @@ export async function buildReport(ctx: Ctx, opts: { inventory?: Inventory } = {}
   }
 
   // ---------------------------------------------------------------- summary: exactly what goes where
-  const uploader = ctx.config.upload.uploader === 'asset-library' ? 'deliver (text) + App Asset Library (media)' : 'fastlane deliver';
+  const uploader =
+    ctx.config.upload.uploader === 'asset-library'
+      ? 'deliver (text) + App Asset Library (media)'
+      : ctx.config.upload.uploader === 'asc'
+        ? 'asc CLI (text and media) + App Asset Library (iPhone Duo)'
+        : 'fastlane deliver';
   const dest = (store: string, kind: string) =>
     store === 'google-play'
       ? 'Google Play · fastlane supply'

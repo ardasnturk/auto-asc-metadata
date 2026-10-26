@@ -33,7 +33,7 @@ export interface Look {
   preset?: string;
 }
 
-export type PreviewFamily = 'iphone' | 'ipad' | 'mac' | 'tv';
+export type PreviewFamily = 'iphone' | 'ipad' | 'mac' | 'tv' | 'vision';
 
 export interface FrameShellProps {
   under: string;
@@ -43,12 +43,17 @@ export interface FrameShellProps {
   screen: { x: number; y: number; w: number; h: number; r: number };
 }
 
-/** Landscape previews (Mac, Apple TV) are 1920×1080; phones and tablets are portrait. */
+/** Landscape previews (Mac, Apple TV 1920×1080; Vision Pro 3840×2160); phones and tablets are portrait. */
 export function isLandscape(family: PreviewFamily): boolean {
-  return family === 'mac' || family === 'tv';
+  return family === 'mac' || family === 'tv' || family === 'vision';
 }
 
-/** Composition size in CSS px (rendered at scale 2): iPhone 443×960, iPad 600×800, Mac/TV 960×540. */
+/** Render scale from the composition size to the delivery size: Vision Pro previews are 4K, everything else 2×. */
+export function renderScale(family: PreviewFamily): number {
+  return family === 'vision' ? 4 : 2;
+}
+
+/** Composition size in CSS px (rendered at `renderScale`): iPhone 443×960, iPad 600×800, Mac/TV/Vision 960×540. */
 export function compositionSize(family: PreviewFamily): { width: number; height: number } {
   if (family === 'ipad') return { width: 600, height: 800 };
   if (isLandscape(family)) return { width: 960, height: 540 };

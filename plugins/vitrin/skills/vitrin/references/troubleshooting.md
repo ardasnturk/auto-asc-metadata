@@ -137,7 +137,7 @@ val vitrinScreen = intent.getStringExtra("vitrinScreen") // "home", "stats", …
 ## deliver deprecation / legacy screenshot endpoints
 
 - The ASC API 4.5.1 release notes deprecate Screenshot/Preview Sets; the 4.5.1 spec still lists them and Vitrin uses them for single display types. If deliver fails on these endpoints, Vitrin's message suggests `--uploader=asset-library` or `--uploader=asc`.
-- Asset Library names come from the 4.5.1 spec (docs/apple-notes.md). If doctor reports “refData has no placement group for …” or a size that is not among a display class's `screenDimensions`, open `.vitrin/cache/refdata.json`: the device set is the `placementProfileGroups[].placementProfileGroupId` with that `platform` and `displayClassId`; fix `data/asc-display-types.json` if Apple maps the size to another class.
+- Asset Library names come from the 4.5.1 spec (references/apple-notes.md). If doctor reports “refData has no placement group for …” or a size that is not among a display class's `screenDimensions`, open `.vitrin/cache/refdata.json`: the device set is the `placementProfileGroups[].placementProfileGroupId` with that `platform` and `displayClassId`; fix `data/asc-display-types.json` if Apple maps the size to another class.
 - A partial upload stops with “refusing to touch any set” / “Refusing to replace”: App Store Connect returned a set or placement of another type for a filtered request, so Vitrin deleted nothing. Replace that set in App Store Connect by hand and report it.
 
 ## asc uploader (`upload.uploader: asc`)

@@ -6,7 +6,7 @@ Thanks for helping! Vitrin automates App Store Connect metadata, screenshots, cr
 
 - **Never commit secrets.** `.env`, `*.p8` and `secrets/` are git-ignored; keep it that way. Do not paste key values into issues or PRs.
 - **Truthful store content.** Vitrin must not help ship screenshots, videos or copy that show features an app does not have (App Review Guideline 2.3). New features that create marketing content need a claim ↔ evidence check in `packages/validate`.
-- **Apple rules change.** If you change a size, limit or upload behaviour, cite the Apple page you checked in the PR and update `docs/apple-notes.md` and `data/targets.json`.
+- **Apple rules change.** If you change a size, limit or upload behaviour, cite the Apple page you checked in the PR and update `plugins/vitrin/skills/vitrin/references/apple-notes.md` and `data/targets.json`.
 - Be kind — see the [Code of Conduct](CODE_OF_CONDUCT.md).
 
 ## Development setup

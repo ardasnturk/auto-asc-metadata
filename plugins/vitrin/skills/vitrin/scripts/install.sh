@@ -37,7 +37,5 @@ esac
 mkdir -p "$SKILL_DIR"
 cp "$SKILL_SRC/SKILL.md" "$SKILL_DIR/SKILL.md"
 rm -rf "$SKILL_DIR/references" && cp -R "$SKILL_SRC/references" "$SKILL_DIR/references"
-# SKILL.md points to the Apple notes; in the installed skill they live under references/.
-cp "$ROOT/docs/apple-notes.md" "$SKILL_DIR/references/apple-notes.md"
 echo "✓ Skill installed: $SKILL_DIR"
 echo "✓ Next: run vitrin init in your app repo, then /vitrin in Claude Code"

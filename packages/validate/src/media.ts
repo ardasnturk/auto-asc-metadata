@@ -16,10 +16,11 @@ export function storeName(t: Pick<RenderTarget, 'store'>): string {
 }
 
 /** Device family of an App Preview file from its deliver device name (`NN_<DEVICE>.mp4`). */
-export function previewFamily(device: string): 'iphone' | 'ipad' | 'mac' | 'tv' {
+export function previewFamily(device: string): 'iphone' | 'ipad' | 'mac' | 'tv' | 'vision' {
   if (device.startsWith('IPAD')) return 'ipad';
   if (device === 'DESKTOP') return 'mac';
   if (device.startsWith('APPLE_TV')) return 'tv';
+  if (device === 'APPLE_VISION_PRO') return 'vision';
   return 'iphone';
 }
 
