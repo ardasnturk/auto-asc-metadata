@@ -282,7 +282,7 @@ export async function analyzeProject(opts: AnalyzeOptions): Promise<AppProfile> 
   }
   todo.push('positioning (audience, user job, tone) must be filled in by Claude.');
   if (!signals['vitrin.demo-mode']) {
-    todo.push('The app has no -VitrinDemo seed-data mode. For capture, show the user which file to add it to (skill/references/troubleshooting.md).');
+    todo.push('The app has no -VitrinDemo seed-data mode. For capture, show the user which file to add it to (skills/vitrin/references/troubleshooting.md).');
   }
 
   return {

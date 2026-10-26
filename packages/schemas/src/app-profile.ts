@@ -1,5 +1,10 @@
 import { z } from 'zod';
 import { AscLocale, Evidence, FeatureId, HexColor, Timestamp } from './common.js';
+import { PlatformEnum } from './targets.js';
+
+/** How the app is built: native Xcode (Swift/SwiftUI, the primary case) or a cross-platform framework. */
+export const ProjectKind = z.enum(['native', 'flutter', 'react-native', 'expo']);
+export type ProjectKind = z.infer<typeof ProjectKind>;
 
 export const TargetKind = z.enum(['app', 'widget', 'watch', 'extension', 'app-clip', 'unit-tests', 'ui-tests', 'other']);
 
@@ -41,6 +46,12 @@ export const AppProfile = z.object({
   generatedAt: Timestamp,
   project: z.object({
     root: z.string(),
+    kind: ProjectKind.default('native'),
+    /** Directory of the iOS host project relative to root (`ios` for Flutter/React Native, `.` for native). */
+    iosDir: z.string().optional(),
+    /** Android Gradle project directory relative to root (`android` for Flutter/React Native, or a native Android app). */
+    androidDir: z.string().optional(),
+    androidApplicationId: z.string().optional(),
     xcodeproj: z.string().optional(),
     workspace: z.string().optional(),
     scheme: z.string().optional(),
@@ -54,6 +65,10 @@ export const AppProfile = z.object({
     deploymentTarget: z.string().optional(),
     supportsIPhone: z.boolean().default(true),
     supportsIPad: z.boolean().default(false),
+    /** iPhone Duo (foldable) layouts detected in the project. */
+    supportsDuo: z.boolean().default(false),
+    /** Every platform the project ships on, detected from targets, SDKs and framework folders. */
+    platforms: z.array(PlatformEnum).default(['ios']),
     developmentRegion: z.string().optional(),
     knownRegions: z.array(z.string()).default([]),
     locales: z.array(LocaleMapping).default([]),

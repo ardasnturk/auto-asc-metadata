@@ -3,7 +3,7 @@
 # Environment: CLAUDE_SKILLS_DIR (default ~/.claude/skills), VITRIN_BIN_DIR (default: npm's global bin), VITRIN_SKIP_BUILD=1.
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 SKILL_DIR="${CLAUDE_SKILLS_DIR:-$HOME/.claude/skills}/vitrin"
 BIN_DIR="${VITRIN_BIN_DIR:-$(npm prefix -g)/bin}"
 
@@ -31,8 +31,8 @@ case ":$PATH:" in
 esac
 
 mkdir -p "$SKILL_DIR"
-cp "$ROOT/skill/SKILL.md" "$SKILL_DIR/SKILL.md"
-rm -rf "$SKILL_DIR/references" && cp -R "$ROOT/skill/references" "$SKILL_DIR/references"
+cp "$ROOT/skills/vitrin/SKILL.md" "$SKILL_DIR/SKILL.md"
+rm -rf "$SKILL_DIR/references" && cp -R "$ROOT/skills/vitrin/references" "$SKILL_DIR/references"
 # SKILL.md points to the Apple notes; in the installed skill they live under references/.
 cp "$ROOT/docs/apple-notes.md" "$SKILL_DIR/references/apple-notes.md"
 echo "✓ Skill installed: $SKILL_DIR"

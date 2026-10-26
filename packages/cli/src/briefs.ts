@@ -35,7 +35,7 @@ File: \`.vitrin/app_profile.json\` (schema: AppProfile). The analyzer filled in 
 2. Fill in \`positioning\`: \`{ "audience": "…", "jobToBeDone": "…", "tone": "…" }\`.
 3. Correct \`categorySuggestion\` if needed (an ASC category constant, e.g. HEALTH_AND_FITNESS) and write down the reasoning.
 4. In \`vitrin.config.yaml\`, write 4–8 seed search terms per locale under \`research.seeds\` (phrases users would actually type in the App Store; not competitor brands).
-5. Fill \`capture.screens\` with the app's 5–8 screens worth showing (launch arguments such as \`-VitrinScreen <id>\`). If the app has no \`-VitrinDemo\` support, show the user the file to add (skill/references/troubleshooting.md).
+5. Fill \`capture.screens\` with the app's 5–8 screens worth showing (launch arguments such as \`-VitrinScreen <id>\`). If the app has no \`-VitrinDemo\` support, show the user the file to add (skills/vitrin/references/troubleshooting.md).
 
 Open notes (todo):
 ${profile.todo.map((t) => `- ${t}`).join('\n') || '- none'}
@@ -149,7 +149,7 @@ Propose 2–3 directions (palette, typography, background language, device frame
 Background styles: solid, linear, radial, mesh, grid, dots, panoramic (continues across consecutive shots). Text/background contrast ≥ 3:1 (validate measures it).
 
 ## 2) \`.vitrin/shots.json\`
-5–7 shots (3–5 are enough for iPad). Archetypes: hero, feature, callout, fullbleed, tilted, split, collage, before-after, stat, social-proof, panoramic, statement, testimonial (see skill/references/art-direction.md).
+5–7 shots (3–5 are enough for iPad). Archetypes: hero, feature, callout, fullbleed, tilted, split, collage, before-after, stat, social-proof, panoramic, statement, testimonial (see skills/vitrin/references/art-direction.md).
 - First 3 shots = hook (outcome) → proof (core action, real UI) → trust/payoff. At least 60% real UI; at least one UI in the first 3.
 - Headlines: 5 words or fewer recommended (limit 7), at most 2 lines, and they **reinforce the main keyword** from the name/subtitle. \`kicker\` is a small line above (≤ 3 words); \`*word*\` is drawn in the accent color.
 - No calls to action (“Download now”), other platform names or prices. One caption position for the whole set (\`captionPosition\`: top/bottom).
@@ -178,7 +178,7 @@ export async function videoBrief(ctx: Ctx): Promise<string> {
     'video',
     `# Brief: video plan
 
-Write \`.vitrin/video-plan.json\` (details: skill/references/video.md). App Preview: 886×1920, 30 fps, 15–30 s (target 20–25).
+Write \`.vitrin/video-plan.json\` (details: skills/vitrin/references/video.md). App Preview: 886×1920, 30 fps, 15–30 s (target 20–25).
 Real app footage should dominate; keep text cards short. The first ~1.5 s of each recording is the app launch: \`from\` ≥ 1.5.
 Sources: recordings (${recs.join(', ') || 'capture.recordings is empty'}) or screen ids (${ctx.config.capture.screens.map((s) => s.id).join(', ')}).
 

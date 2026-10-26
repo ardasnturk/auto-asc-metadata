@@ -34,7 +34,7 @@ Apple's rules as of October 2026, and the points that could not be verified, are
 ## Installation
 
 ```bash
-skill/scripts/install.sh
+skills/vitrin/scripts/install.sh
 ```
 
 The script installs dependencies, builds the CLI, downloads Playwright Chromium, writes a `vitrin` launcher into npm's global bin directory (`npm prefix -g`/bin; override with `VITRIN_BIN_DIR`), and copies the skill to `~/.claude/skills/vitrin` (override with `CLAUDE_SKILLS_DIR`). The launcher runs the build inside this repository, so if you move the repository, run the script again.

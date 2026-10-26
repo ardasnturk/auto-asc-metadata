@@ -154,7 +154,7 @@ export async function captureCommand(ctx: Ctx, opts: { families?: string[]; loca
     throw new NeedsInput('xcuitest mode: capture with `fastlane snapshot`, place the output at .vitrin/raw/<locale>/<family>/<id>.png, then use capture.mode: manual.');
   }
   if (!profile.signals['vitrin.demo-mode']) {
-    log.warn('No trace of -VitrinDemo in the app: captures may show real user data. See skill/references/troubleshooting.md “Demo mode”.');
+    log.warn('No trace of -VitrinDemo in the app: captures may show real user data. See skills/vitrin/references/troubleshooting.md “Demo mode”.');
   }
   const bundleId = profile.app.bundleId!;
   const inputs = { cap, locales, families, build: ctx.state.get('analyze')?.inputHash };
