@@ -1,5 +1,10 @@
 import { z } from 'zod';
 import { AscLocale } from './common.js';
+import { PlatformEnum } from './targets.js';
+
+/** Kinds of content a run can produce and upload; the user picks a subset per run. */
+export const AssetKindEnum = z.enum(['metadata', 'screenshots', 'previews', 'creatives', 'events']);
+export type AssetKind = z.infer<typeof AssetKindEnum>;
 
 export const CaptureScreen = z.object({
   id: z.string().regex(/^[a-z0-9-]+$/),
@@ -61,6 +66,25 @@ export const VitrinConfig = z.object({
       disable: z.array(z.string()).default([]),
     })
     .default({ enable: [], disable: [] }),
+  /**
+   * What the user asked for in this run (the skill asks with a multiple-choice list). Unset = everything detected.
+   * Stages skip what is not selected, and upload leaves unselected platforms and asset kinds untouched in the store.
+   */
+  selection: z
+    .object({
+      platforms: z.array(PlatformEnum).optional(),
+      assets: z.array(AssetKindEnum).optional(),
+    })
+    .default({}),
+  /** What happens to generated files after a successful, user-checked upload. Unset = ask the user. */
+  retention: z
+    .object({
+      /** true → copy the uploaded set into `metadata/` in the project; false → delete it. */
+      keep: z.boolean().optional(),
+      /** Commit the kept `metadata/` folder (otherwise it is git-ignored). */
+      commit: z.boolean().default(false),
+    })
+    .default({ commit: false }),
   capture: z
     .object({
       mode: z.enum(['launch-args', 'xcuitest', 'manual']).default('launch-args'),
