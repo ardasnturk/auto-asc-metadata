@@ -18,6 +18,7 @@ import { readdir, rm } from 'node:fs/promises';
 import { join, relative } from 'node:path';
 import { createInterface } from 'node:readline/promises';
 import pc from 'picocolors';
+import { checkApproval, requireApproval } from '../approval.js';
 import { bundleIdOf, EXIT, loadProfile, NeedsInput, type Ctx } from '../context.js';
 import { missingUploadKeys, runDoctor } from './doctor.js';
 import { loadLocaleMetadata, printIssues } from './pipeline.js';
@@ -47,6 +48,14 @@ export async function uploadCommand(ctx: Ctx, opts: UploadOptions): Promise<numb
   const metadata = await loadLocaleMetadata(ctx);
   if (!existsSync(ctx.paths.appMetadata) || metadata.length !== ctx.config.app.locales.length) throw new NeedsInput('Metadata is missing; run `vitrin write` first.');
   const app = await readJson(ctx.paths.appMetadata, AppMetadata);
+  await exportFastlaneMetadata(ctx.paths, ctx.config, app, metadata);
+  // Approval gate: a real upload sends only the exact files the user reviewed and approved (.vitrin/approval.json).
+  // Checked after the export so the text files compared are the ones deliver would read. --yes never skips this.
+  if (!opts.dryRun) await requireApproval(ctx);
+  else {
+    const approval = await checkApproval(ctx);
+    if (!approval.ok) log.warn(`Not approved for upload yet: ${approval.reason} (a real upload needs \`vitrin review\` + the user's approval).`);
+  }
 
   const validation = await validateAll(ctx.paths, ctx.config);
   if (!validation.ok) {
@@ -75,7 +84,6 @@ export async function uploadCommand(ctx: Ctx, opts: UploadOptions): Promise<numb
     log.warn(`ASC keys missing (${missing.map((m) => m.name).join(', ')}); showing the plan without the remote state.`);
   }
 
-  await exportFastlaneMetadata(ctx.paths, ctx.config, app, metadata);
   const shots = await readJsonIfExists(ctx.paths.shots, ShotList).catch(() => undefined);
   const cpp = await readJsonIfExists(ctx.paths.cpp, CppSuggestions).catch(() => undefined);
   const plan = await buildPlan({
@@ -109,6 +117,9 @@ export async function uploadCommand(ctx: Ctx, opts: UploadOptions): Promise<numb
   if (!opts.yes && !(await confirm(pc.bold('Upload this plan to App Store Connect?')))) {
     throw new NeedsInput('Upload needs explicit approval: if the user approves, run `vitrin upload --yes`.');
   }
+
+  // Files may have changed while the plan was built or the prompt was open: check once more right before sending.
+  await requireApproval(ctx);
 
   const languages = ctx.config.app.locales;
   if (plan.firstRelease) {
