@@ -91,9 +91,9 @@ describe('helpers', () => {
     expect(isEditableVersion({ attributes: { appStoreState: 'READY_FOR_SALE' } })).toBe(false);
   });
 
-  it('diffs refData against known targets', () => {
-    const known = [{ width: 1206, height: 2622, assetLibraryDisplayClass: 'IPHONE_61' }, { width: 1398, height: 2034, assetLibraryDisplayClass: 'IPHONE_DUO' }];
-    const ref = { data: [{ attributes: { displayClass: 'IPHONE_DUO', width: 1398, height: 2034 } }, { attributes: { displayClass: 'IPHONE_FOLD', width: 1, height: 2 } }] };
+  it('diffs refData against data/asc-display-types.json', () => {
+    const known = [{ id: 'duo-outer', kind: 'screenshot', width: 1398, height: 2034 }];
+    const ref = { data: [{ attributes: { placementProfileGroups: [{ placementProfileGroupId: 'IPHONE_DUO_PROFILE', platform: 'IPHONE_APP_STORE', displayClassId: 'IPHONE_DUO' }], displayClasses: [{ displayClassId: 'IPHONE_DUO', screenDimensions: ['1398x2034'] }, { displayClassId: 'IPHONE_FOLD' }] } }] };
     const d = diffRefData(ref, known);
     expect(d).toHaveLength(1);
     expect(d[0]).toContain('IPHONE_FOLD');

@@ -231,7 +231,7 @@ export async function runLane(paths: AppPaths, lane: string, env: LaneEnv, runne
   if (res.code !== 0) {
     const text = res.stdout + res.stderr;
     if (/deprecat|appScreenshotSets|appPreviewSets|410 Gone/i.test(text)) {
-      throw new Error('fastlane failed on the legacy media endpoints (ASC API 4.5.1 deprecation). Retry with `vitrin upload --uploader=asset-library`.');
+      throw new Error('fastlane failed on the legacy media endpoints (ASC API 4.5.1 deprecation). Retry with `vitrin upload --uploader=asset-library` (App Asset Library) or `--uploader=asc` (asc CLI).');
     }
     if (/Could not find (a )?version|no editable|cannot create.*version/i.test(text)) {
       throw new Error('No editable App Store version. Create the first version once in App Store Connect, then say “continue”.');

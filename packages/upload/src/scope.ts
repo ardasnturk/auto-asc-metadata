@@ -6,7 +6,8 @@ import { applePlatformsOf, deliverPlatformFor, type DeliverPlatform, type Render
  * - `replace-all`: deliver with overwrite. deliver 2.241.1 then deletes EVERY screenshot set (every display type)
  *   of each locale it uploads to — and, for previews, every preview type of the locale. Only used when the run
  *   carries a complete set for that platform and locale.
- * - `per-display-type`: App Asset Library, replacing only the display classes in this run; other sets stay.
+ * - `per-display-type`: one set per localization and display type is replaced — classic appScreenshotSets/
+ *   appPreviewSets API (or `asc … upload --replace`), the App Asset Library for iPhone Duo; other sets stay.
  * - `skip`: not part of the run; the store content stays untouched.
  */
 export type ReplaceMode = 'replace-all' | 'per-display-type' | 'skip';
@@ -52,8 +53,9 @@ export const ALL_ASSET_KINDS: AssetKind[] = ['metadata', 'screenshots', 'preview
  *
  * deliver's overwrite (replace-all) is used only when, for every locale in the run, the run contains every
  * enabled target of that App Store version (e.g. iPhone, iPad and Apple Watch for iOS) and every covered platform
- * is selected. Anything less is a partial run: the selected display types go through the App Asset Library,
- * one display class at a time, and everything else stays as it is in App Store Connect.
+ * is selected. Anything less is a partial run: the selected display types are replaced one set at a time (classic
+ * API, App Asset Library for iPhone Duo), and everything else stays as it is in App Store Connect. The asc and
+ * asset-library uploaders always replace one display type at a time.
  */
 export function resolveScope(opts: {
   shipping: Platform[];
@@ -62,7 +64,7 @@ export function resolveScope(opts: {
   /** Targets enabled for the app (core enabledTargets); used to decide whether a set is complete. */
   enabledTargets: RenderTarget[];
   locales: string[];
-  uploader: 'deliver' | 'asset-library';
+  uploader: 'deliver' | 'asset-library' | 'asc';
 }): StoreScope {
   const kinds = opts.selection?.assets?.length ? opts.selection.assets : ALL_ASSET_KINDS;
   const selected = opts.shipping.filter((p) => !opts.selection?.platforms?.length || opts.selection.platforms.includes(p));
@@ -135,7 +137,7 @@ export function deliverAssetsFor(scope: PlatformScope, assets: RenderedAsset[]):
   );
 }
 
-/** The files that must be replaced one display class at a time through the App Asset Library. */
+/** The files that must be replaced one display type at a time (classic API or App Asset Library). */
 export function perDisplayTypeAssetsFor(scope: PlatformScope, assets: RenderedAsset[]): RenderedAsset[] {
   return assets.filter(
     (a) =>

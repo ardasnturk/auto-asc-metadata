@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import { isEditableVersion, type AscClient } from './asc-client.js';
 import { ASC_PLATFORM, applePlatformsOf, deliverAcceptsPreview, platformsFromConfig, routeAssets, type DeliverPlatform, type RenderedAsset } from './platforms.js';
 import { resolveScope, type StoreScope } from './scope.js';
+import { classicTypeFor, displayTypesFor, perTypeRoute } from './display-types.js';
 import { buildPlayPlan, type PlayImageIssue, type PlayImageSet, type PlayInputs } from './play.js';
 import type { PlayRemoteState } from './play-client.js';
 
@@ -21,7 +22,8 @@ export interface PlanItem {
   change: ChangeKind;
   local?: string;
   remote?: string;
-  via: 'deliver' | 'asset-library' | 'asc-api' | 'supply';
+  /** asc-api: Vitrin's own ASC API calls (classic screenshot/preview sets, CPP, events); asc-cli: the asc uploader. */
+  via: 'deliver' | 'asset-library' | 'asc-api' | 'asc-cli' | 'supply';
   note?: string;
 }
 
@@ -40,7 +42,7 @@ export interface UploadPlan {
   appId?: string;
   /** The iOS version (or the first Apple platform's) — kept for single-platform callers. */
   version?: { id: string; versionString: string; state: string };
-  uploader: 'deliver' | 'asset-library';
+  uploader: 'deliver' | 'asset-library' | 'asc';
   remoteKnown: boolean;
   /** True when the app was never released (App Store Connect rejects release notes then). */
   firstRelease?: boolean;
@@ -163,6 +165,10 @@ export async function buildPlan(opts: {
 
   // ---- App Store text: app info once (shared by every platform), version text per platform ----
   const textPlatforms = plan.platforms.filter((pp) => !scope || scopeOf(pp.platform)?.metadata);
+  const textVia: PlanItem['via'] = uploader === 'asc' ? 'asc-cli' : 'deliver';
+  if (textPlatforms.length && uploader === 'asc') {
+    plan.items.push({ area: 'app', change: 'skip', via: 'asc-cli', note: 'asc metadata push does not upload categories, copyright or review information; they stay as they are in App Store Connect' });
+  }
   if (textPlatforms.length) {
     for (const m of metadata) {
       const compare = (fields: Array<[keyof LocaleMetadata, string]>, remote: { attributes: Record<string, string | null> } | undefined, pp?: PlatformPlan) => {
@@ -176,7 +182,7 @@ export async function buildPlan(opts: {
           if (!value && !(CLEARABLE_FIELDS.has(local) && rv)) continue;
           const platform = pp?.platform;
           if (!plan.remoteKnown) {
-            plan.items.push({ area: 'metadata', platform, locale: m.locale, field: local, change: 'unknown', local: short(value), via: 'deliver' });
+            plan.items.push({ area: 'metadata', platform, locale: m.locale, field: local, change: 'unknown', local: short(value), via: textVia });
             continue;
           }
           plan.items.push({
@@ -187,7 +193,7 @@ export async function buildPlan(opts: {
             change: !remote ? 'create' : rv === value ? 'unchanged' : 'update',
             local: value ? short(value) : '(empty — will be cleared)',
             remote: rv ? short(rv) : undefined,
-            via: 'deliver',
+            via: textVia,
           });
         }
       };
@@ -216,18 +222,27 @@ export async function buildPlan(opts: {
       for (const g of groups.values()) {
         const isShot = g.kind === 'screenshot';
         const mode = isShot ? ps.screenshots : ps.previews;
-        const cls = g.target.assetLibraryDisplayClass;
-        // deliver has no preview type for Mac/TV/Vision, so those always go through the Asset Library.
-        const viaDeliver = mode === 'replace-all' && (isShot || deliverAcceptsPreview(p, g.file));
-        if (!viaDeliver && !cls) {
-          plan.blockers.push(`${PLATFORM_LABEL[p]} ${g.locale} ${g.target.id}: replacing only this set needs its App Asset Library display class, which data/targets.json does not define; upload the full set or place it in App Store Connect by hand.`);
+        // deliver has no preview type for Mac/TV/Vision, so those are always replaced one set at a time.
+        const viaDeliver = uploader === 'deliver' && mode === 'replace-all' && (isShot || deliverAcceptsPreview(p, g.file));
+        const route = viaDeliver ? 'deliver' : perTypeRoute(g.target, uploader);
+        const classicType = classicTypeFor(g.target);
+        const al = displayTypesFor(g.target.id)?.assetLibrary;
+        if (route === 'none') {
+          plan.blockers.push(`${PLATFORM_LABEL[p]} ${g.locale} ${g.target.id}: replacing only this set needs a classic display type or an App Asset Library placement, and data/asc-display-types.json has neither; upload the full set or place it in App Store Connect by hand.`);
         }
-        const note = viaDeliver
-          ? isShot
-            ? `replaces EVERY screenshot set of ${g.locale} on ${PLATFORM_LABEL[p]} (deliver overwrite)`
-            : `replaces every App Preview set of ${g.locale} on ${PLATFORM_LABEL[p]} (deliver overwrite); processing can take up to 24 hours`
-          : `replaces only the ${cls ?? g.target.id} ${isShot ? 'screenshot' : 'preview'} set; other display types stay untouched${isShot ? '' : `${deliverAcceptsPreview(p, g.file) ? '' : `; deliver has no ${PLATFORM_LABEL[p]} App Preview type`}`} (App Asset Library, unverified display class)`;
-        plan.items.push({ area: isShot ? 'screenshots' : 'previews', platform: p, locale: g.locale, field: g.target.id, change: 'update', local: `${g.n} ${isShot ? 'images' : 'videos'}`, via: viaDeliver ? 'deliver' : 'asset-library', note });
+        const what = isShot ? 'screenshot' : 'preview';
+        const note =
+          route === 'deliver'
+            ? isShot
+              ? `replaces EVERY screenshot set of ${g.locale} on ${PLATFORM_LABEL[p]} (deliver overwrite)`
+              : `replaces every App Preview set of ${g.locale} on ${PLATFORM_LABEL[p]} (deliver overwrite); processing can take up to 24 hours`
+            : route === 'classic'
+              ? `replaces only the ${classicType} ${what} set of ${g.locale}; other display types stay untouched (${uploader === 'asc' ? `asc ${isShot ? 'screenshots' : 'video-previews'} upload --replace` : `${isShot ? 'appScreenshotSets' : 'appPreviewSets'} API`})${isShot ? '' : '; processing can take up to 24 hours'}`
+              : route === 'asset-library'
+                ? `replaces only the ${al!.placementType} placements of ${al!.platform}/${al!.displayClass} in ${g.locale}; other display types stay untouched (App Asset Library, placementGroup from refData)`
+                : `cannot be replaced on its own`;
+        const via: PlanItem['via'] = route === 'deliver' ? 'deliver' : route === 'classic' ? (uploader === 'asc' ? 'asc-cli' : 'asc-api') : 'asset-library';
+        plan.items.push({ area: isShot ? 'screenshots' : 'previews', platform: p, locale: g.locale, field: g.target.id, change: 'update', local: `${g.n} ${isShot ? 'images' : 'videos'}`, via, note });
       }
       for (const u of ps.untouched) plan.items.push({ area: 'app', platform: p, change: 'skip', via: 'deliver', note: u });
     }
@@ -241,11 +256,11 @@ export async function buildPlan(opts: {
         byTarget.set(t, (byTarget.get(t) ?? 0) + 1);
       }
       for (const [t, n] of byTarget) {
-        plan.items.push({ area: 'screenshots', locale, field: t, change: 'update', local: `${n} images`, via: uploader, note: 'replaces the existing set' });
+        plan.items.push({ area: 'screenshots', locale, field: t, change: 'update', local: `${n} images`, via: uploader === 'asc' ? 'asc-cli' : uploader, note: 'replaces the existing set' });
       }
       const pdir = join(opts.paths.appPreviews, locale);
       const previews = existsSync(pdir) ? (await readdir(pdir)).filter((f) => /\.(mp4|mov)$/.test(f)) : [];
-      if (previews.length) plan.items.push({ area: 'previews', locale, change: 'update', local: previews.join(', '), via: uploader, note: 'processing can take up to 24 hours' });
+      if (previews.length) plan.items.push({ area: 'previews', locale, change: 'update', local: previews.join(', '), via: uploader === 'asc' ? 'asc-cli' : uploader, note: 'processing can take up to 24 hours' });
     }
   }
 

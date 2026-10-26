@@ -39,7 +39,6 @@
         "jpeg"
       ],
       "simulator": "iPhone 17 Pro",
-      "assetLibraryDisplayClass": "IPHONE_61",
       "notes": "Required iPhone class (at least one set)."
     },
     {
@@ -77,7 +76,6 @@
         "jpeg"
       ],
       "simulator": "iPhone 17 Pro Max",
-      "assetLibraryDisplayClass": "IPHONE_69",
       "notes": "Recommended; third-party guides still list it as required, so always produce it."
     },
     {
@@ -110,8 +108,7 @@
         "png",
         "jpeg"
       ],
-      "simulator": "iPad Pro 13-inch (M5)",
-      "assetLibraryDisplayClass": "IPAD_PRO_3GEN_129"
+      "simulator": "iPad Pro 13-inch (M5)"
     },
     {
       "id": "duo-outer",
@@ -140,7 +137,6 @@
         "jpeg"
       ],
       "simulator": "iPhone Duo",
-      "assetLibraryDisplayClass": "IPHONE_DUO",
       "notes": "Required from April 2027 with the iOS 27.1 SDK; fastlane >= 2.241.1."
     },
     {
@@ -170,7 +166,6 @@
         "jpeg"
       ],
       "simulator": "iPhone Duo",
-      "assetLibraryDisplayClass": "IPHONE_DUO",
       "notes": "The fold posture is set manually in the simulator (there is no automation command)."
     },
     {
@@ -192,7 +187,6 @@
       "formats": [
         "mp4"
       ],
-      "assetLibraryDisplayClass": "IPHONE_61",
       "video": {
         "minSec": 15,
         "maxSec": 30,
@@ -222,7 +216,6 @@
       "formats": [
         "mp4"
       ],
-      "assetLibraryDisplayClass": "IPAD_PRO_3GEN_129",
       "video": {
         "minSec": 15,
         "maxSec": 30,
@@ -426,8 +419,7 @@
         "png",
         "jpeg"
       ],
-      "notes": "Required for Mac apps (16:10). Verified on the screenshot specifications page, 2026-10-26. Captured from the Mac app window (screencapture -l), scaled to 2880x1800.",
-      "assetLibraryDisplayClass": "DESKTOP"
+      "notes": "Required for Mac apps (16:10). Verified on the screenshot specifications page, 2026-10-26. Captured from the Mac app window (screencapture -l), scaled to 2880x1800."
     },
     {
       "id": "watch-ultra",
@@ -460,8 +452,7 @@
         "jpeg"
       ],
       "simulator": "Apple Watch Ultra 3 (49mm)",
-      "notes": "Required for Apple Watch apps. Apple Watch is one screenshot class: use the same size in every localization. 422x514 (Ultra 4, Ultra 3) and 410x502 (Ultra 2, Ultra) verified 2026-10-26. The simulator name is unverified on Xcode 27.",
-      "assetLibraryDisplayClass": "WATCH_ULTRA"
+      "notes": "Required for Apple Watch apps. Apple Watch is one screenshot class: use the same size in every localization. 422x514 (Ultra 4, Ultra 3) and 410x502 (Ultra 2, Ultra) verified 2026-10-26. The simulator name is unverified on Xcode 27."
     },
     {
       "id": "watch-series",
@@ -502,8 +493,7 @@
         "jpeg"
       ],
       "simulator": "Apple Watch Series 11 (46mm)",
-      "notes": "Alternative to watch-ultra (same class; upload only one size, consistently across localizations). Sizes verified 2026-10-26.",
-      "assetLibraryDisplayClass": "WATCH_SERIES_10"
+      "notes": "Alternative to watch-ultra (same class; upload only one size, consistently across localizations). Sizes verified 2026-10-26."
     },
     {
       "id": "appletv-4k",
@@ -536,8 +526,7 @@
         "jpeg"
       ],
       "simulator": "Apple TV 4K (3rd generation)",
-      "notes": "Required for Apple TV apps; 1920x1080 and 3840x2160 verified 2026-10-26. Landscape only.",
-      "assetLibraryDisplayClass": "APPLE_TV"
+      "notes": "Required for Apple TV apps; 1920x1080 and 3840x2160 verified 2026-10-26. Landscape only."
     },
     {
       "id": "vision-pro",
@@ -566,8 +555,7 @@
         "jpeg"
       ],
       "simulator": "Apple Vision Pro",
-      "notes": "Required for visionOS apps; 3840x2160 verified 2026-10-26. iPad apps running \"Designed for iPad\" on Vision Pro use the iPad screenshots instead.",
-      "assetLibraryDisplayClass": "APPLE_VISION_PRO"
+      "notes": "Required for visionOS apps; 3840x2160 verified 2026-10-26. iPad apps running \"Designed for iPad\" on Vision Pro use the iPad screenshots instead."
     },
     {
       "id": "preview-mac",
@@ -597,8 +585,7 @@
         "maxBytes": 500000000,
         "h264Level": "4.0"
       },
-      "notes": "1920x1080 landscape, verified on the app preview specifications page 2026-10-26. Opt-in like preview-ipad (targets.enable).",
-      "assetLibraryDisplayClass": "DESKTOP"
+      "notes": "1920x1080 landscape, verified on the app preview specifications page 2026-10-26. Opt-in like preview-ipad (targets.enable)."
     },
     {
       "id": "preview-tv",
@@ -628,8 +615,37 @@
         "maxBytes": 500000000,
         "h264Level": "4.0"
       },
-      "notes": "1920x1080 landscape, verified on the app preview specifications page 2026-10-26. Opt-in like preview-ipad (targets.enable).",
-      "assetLibraryDisplayClass": "APPLE_TV"
+      "notes": "1920x1080 landscape, verified on the app preview specifications page 2026-10-26. Opt-in like preview-ipad (targets.enable)."
+    },
+    {
+      "id": "preview-vision",
+      "kind": "preview",
+      "label": "App Preview Apple Vision Pro (16:9)",
+      "family": "vision",
+      "store": "app-store",
+      "platform": "visionos",
+      "width": 3840,
+      "height": 2160,
+      "logical": {
+        "width": 1920,
+        "height": 1080,
+        "scale": 2
+      },
+      "requirement": "optional",
+      "defaultEnabled": false,
+      "formats": [
+        "mp4",
+        "mov"
+      ],
+      "video": {
+        "minSec": 15,
+        "maxSec": 30,
+        "fps": [
+          30
+        ],
+        "maxBytes": 500000000
+      },
+      "notes": "3840x2160 landscape only (App Preview specifications, read 2026-10-26; classic PreviewType APPLE_VISION_PRO). H.264 High@4.0 applies to iPhone previews; Apple allows up to 4K here, so no H.264 level is pinned. Opt-in like preview-mac/tv (targets.enable)."
     },
     {
       "id": "play-phone",

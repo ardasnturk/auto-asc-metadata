@@ -1,0 +1,88 @@
+{
+  "updatedAt": "2026-10-26",
+  "source": [
+    "App Store Connect API OpenAPI specification 4.5.1 (info.version \"4.5.1\"), offline snapshot docs/openapi/latest.json of github.com/rorkai/App-Store-Connect-CLI (MIT), last synced 2026-10-07; it mirrors Apple's download https://developer.apple.com/sample-code/app-store-connect/app-store-connect-openapi-specification.zip",
+    "components.schemas: ScreenshotDisplayType, PreviewType, AppAssetLibraryPlacementType, AppAssetLibraryDisplayClass, AppAssetLibraryPlacementPlatform, AppAssetLibraryAssetCategory",
+    "rorkai/App-Store-Connect-CLI internal/screenshotcatalog/catalog.go (APP_IPHONE_69 is a local alias the CLI sends as APP_IPHONE_67) and internal/cli/assets/assets_previews.go (IPHONE_69 → IPHONE_67)"
+  ],
+  "notes": [
+    "Every value below is a member of the named 4.5.1 enum. Which enum member belongs to which Vitrin target is the mapping Vitrin uses; for the classic types it follows the pixel sizes in Apple's screenshot specifications and fastlane/asc (6.9\" iPhone = APP_IPHONE_67 — the classic enum has no 69).",
+    "screenshotDisplayType/previewType null = the classic appScreenshotSets/appPreviewSets API has no type for this target (iPhone Duo is not in ScreenshotDisplayType or PreviewType of 4.5.1); those go through the App Asset Library.",
+    "Asset Library placements carry placementType + placementGroup. The placementGroup id is not an enum: it is resolved at run time from GET /v1/appAssetLibraryRefData placementProfileGroups[] by (platform, displayClassId). `vitrin doctor` checks every mapping below against refData.",
+    "category: APP_SCREENSHOTS_AND_PREVIEWS for APP_SCREENSHOT/APP_PREVIEW, CREATIVE_ASSETS for header, search and event assets."
+  ],
+  "targets": {
+    "iphone-6.3": {
+      "screenshotDisplayType": "APP_IPHONE_61",
+      "assetLibrary": { "placementType": "APP_SCREENSHOT", "displayClass": "IPHONE_DYNAMIC_ISLAND_MEDIUM_DISPLAY", "platform": "IPHONE_APP_STORE", "category": "APP_SCREENSHOTS_AND_PREVIEWS" }
+    },
+    "iphone-6.9": {
+      "screenshotDisplayType": "APP_IPHONE_67",
+      "assetLibrary": { "placementType": "APP_SCREENSHOT", "displayClass": "IPHONE_DYNAMIC_ISLAND_LARGE_DISPLAY", "platform": "IPHONE_APP_STORE", "category": "APP_SCREENSHOTS_AND_PREVIEWS" }
+    },
+    "ipad-13": {
+      "screenshotDisplayType": "APP_IPAD_PRO_3GEN_129",
+      "assetLibrary": { "placementType": "APP_SCREENSHOT", "displayClass": "IPAD_13_DISPLAY", "platform": "IPAD_APP_STORE", "category": "APP_SCREENSHOTS_AND_PREVIEWS" }
+    },
+    "duo-outer": {
+      "screenshotDisplayType": null,
+      "assetLibrary": { "placementType": "APP_SCREENSHOT", "displayClass": "IPHONE_DUO", "platform": "IPHONE_APP_STORE", "category": "APP_SCREENSHOTS_AND_PREVIEWS" }
+    },
+    "duo-inner": {
+      "screenshotDisplayType": null,
+      "assetLibrary": { "placementType": "APP_SCREENSHOT", "displayClass": "IPHONE_DUO", "platform": "IPHONE_APP_STORE", "category": "APP_SCREENSHOTS_AND_PREVIEWS" }
+    },
+    "mac-16x10": {
+      "screenshotDisplayType": "APP_DESKTOP",
+      "assetLibrary": { "placementType": "APP_SCREENSHOT", "displayClass": "DEFAULT", "platform": "MAC_APP_STORE", "category": "APP_SCREENSHOTS_AND_PREVIEWS" }
+    },
+    "watch-ultra": {
+      "screenshotDisplayType": "APP_WATCH_ULTRA",
+      "assetLibrary": { "placementType": "APP_SCREENSHOT", "displayClass": "WATCH_ULTRA", "platform": "WATCH_APP_STORE", "category": "APP_SCREENSHOTS_AND_PREVIEWS" }
+    },
+    "watch-series": {
+      "screenshotDisplayType": "APP_WATCH_SERIES_10",
+      "assetLibrary": { "placementType": "APP_SCREENSHOT", "displayClass": "WATCH_SERIES_10", "platform": "WATCH_APP_STORE", "category": "APP_SCREENSHOTS_AND_PREVIEWS" }
+    },
+    "appletv-4k": {
+      "screenshotDisplayType": "APP_APPLE_TV",
+      "assetLibrary": { "placementType": "APP_SCREENSHOT", "displayClass": "DEFAULT", "platform": "TV_APP_STORE", "category": "APP_SCREENSHOTS_AND_PREVIEWS" }
+    },
+    "vision-pro": {
+      "screenshotDisplayType": "APP_APPLE_VISION_PRO",
+      "assetLibrary": { "placementType": "APP_SCREENSHOT", "displayClass": "DEFAULT", "platform": "VISION_PRO_APP_STORE", "category": "APP_SCREENSHOTS_AND_PREVIEWS" }
+    },
+    "preview-iphone": {
+      "previewType": "IPHONE_67",
+      "assetLibrary": { "placementType": "APP_PREVIEW", "displayClass": "IPHONE_DYNAMIC_ISLAND_LARGE_DISPLAY", "platform": "IPHONE_APP_STORE", "category": "APP_SCREENSHOTS_AND_PREVIEWS" }
+    },
+    "preview-ipad": {
+      "previewType": "IPAD_PRO_3GEN_129",
+      "assetLibrary": { "placementType": "APP_PREVIEW", "displayClass": "IPAD_13_DISPLAY", "platform": "IPAD_APP_STORE", "category": "APP_SCREENSHOTS_AND_PREVIEWS" }
+    },
+    "preview-mac": {
+      "previewType": "DESKTOP",
+      "assetLibrary": { "placementType": "APP_PREVIEW", "displayClass": "DEFAULT", "platform": "MAC_APP_STORE", "category": "APP_SCREENSHOTS_AND_PREVIEWS" }
+    },
+    "preview-tv": {
+      "previewType": "APPLE_TV",
+      "assetLibrary": { "placementType": "APP_PREVIEW", "displayClass": "DEFAULT", "platform": "TV_APP_STORE", "category": "APP_SCREENSHOTS_AND_PREVIEWS" }
+    },
+    "preview-vision": {
+      "previewType": "APPLE_VISION_PRO",
+      "assetLibrary": { "placementType": "APP_PREVIEW", "displayClass": "DEFAULT", "platform": "VISION_PRO_APP_STORE", "category": "APP_SCREENSHOTS_AND_PREVIEWS" }
+    },
+    "header": {
+      "assetLibrary": { "placementType": "PRODUCT_PAGE_HEADER_ASSET", "displayClass": "DEFAULT", "platform": "ANY", "category": "CREATIVE_ASSETS" }
+    },
+    "search": {
+      "assetLibrary": { "placementType": "APP_STORE_SEARCH_RESULTS_ASSET", "displayClass": "DEFAULT", "platform": "ANY", "category": "CREATIVE_ASSETS" }
+    },
+    "event-card": {
+      "assetLibrary": { "placementType": "EVENT_CARD_ASSET", "displayClass": "DEFAULT", "platform": "ANY", "category": "CREATIVE_ASSETS" }
+    },
+    "event-detail": {
+      "assetLibrary": { "placementType": "EVENT_DETAILS_PAGE_ASSET", "displayClass": "DEFAULT", "platform": "ANY", "category": "CREATIVE_ASSETS" }
+    }
+  }
+}

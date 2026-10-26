@@ -91,6 +91,7 @@ export async function initCommand(opts: { cwd?: string; force?: boolean }): Prom
   const installed = await installFastlaneTemplates(paths, opts.force);
   for (const f of installed) log.ok(`Wrote ${relative(root, f)}`);
   log.dim('The Fastfile has one deliver lane per App Store platform (platform:ios|osx|appletvos|xros) and a supply lane for Google Play; for Android apps set GOOGLE_PLAY_JSON_KEY_PATH in .env.');
+  log.dim('No Ruby? Set `upload.uploader: asc` in vitrin.config.yaml and `brew install asc` (App-Store-Connect-CLI) for Apple uploads without fastlane; Google Play still uses supply.');
   log.info('\nNext step: `vitrin doctor` (generation still works if keys are missing).');
   return 0;
 }
