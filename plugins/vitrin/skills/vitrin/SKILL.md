@@ -5,7 +5,7 @@ description: Generates, validates and uploads store listings for mobile apps —
 
 # /vitrin
 
-Vitrin has two parts. The `vitrin` CLI (installed globally) does the deterministic work: project detection, data collection, rendering, validation, upload. **You** make the creative decisions: copy, keyword selection, art direction, shot list, video plan, competitor interpretation. You save what you write to schema-conforming JSON files; the CLI validates them. No additional LLM API key is needed.
+Vitrin has two parts. The `vitrin` CLI (it comes with the Vitrin plugin and installs itself on first use) does the deterministic work: project detection, data collection, rendering, validation, upload. **You** make the creative decisions: copy, keyword selection, art direction, shot list, video plan, competitor interpretation. You save what you write to schema-conforming JSON files; the CLI validates them. No additional LLM API key is needed.
 
 All images are rendered from HTML (Playwright) and all videos are rendered in code (Remotion). Never produce store images or videos any other way.
 
@@ -23,8 +23,14 @@ Stages are idempotent: a stage whose inputs have not changed is skipped (force w
 
 Whenever this flow says **ask**, use your multiple-choice question tool (in Claude Code: AskUserQuestion; `multiSelect: true` where several answers are allowed). Without such a tool, show a short numbered list and wait for the answer. Never pick for the user when the flow says ask; recommend an option when you have a reason.
 
+Paths such as `references/aso-rules.md` in this skill and in the CLI's briefs are relative to this skill's directory: `${CLAUDE_SKILL_DIR}`.
+
 ## Flow
 
+0. **CLI check** — run `vitrin --version` before anything else, with a long timeout (10 minutes), and never run other `vitrin` commands in parallel with it.
+   - The first time, the Vitrin plugin's `vitrin` launcher installs the CLI for this plugin version into `~/.local/share/vitrin/<version>/`: no sudo and no global npm packages, but it downloads roughly 450 MB (npm packages and Playwright Chromium) and takes a few minutes. Tell the user that this one-time install is running before you start it; later runs start instantly.
+   - `Node.js 22 or newer is required` → ask the user to install or update Node.js (`brew install node`), then run it again. A network error → run it once more, then show the user the error.
+   - `vitrin: command not found` → the skill was installed without the plugin. Ask the user to install the plugin (`/plugin marketplace add ardasnturk/vitrin`, then `/plugin install vitrin@vitrin`) and restart Claude Code. Never ask the user to clone the Vitrin repository.
 1. **doctor (early warning)** — `vitrin doctor`. On code 2, tell the user which keys are missing (template below) but **keep generating**. If a tool is missing (fastlane < 2.241.1, ffmpeg, Playwright, Android SDK for Android apps), give the install command.
    If the repository is used for the first time, run `vitrin init` first. Vitrin maintains its own block in `.gitignore` on every command so generated files are never committed; if it reports files that are already tracked, show the user the suggested `git rm -r --cached …` command and let them decide.
 2. **analyze** — `vitrin analyze`. It detects the project kind (native Xcode, Flutter, React Native, Expo, native Android) and every platform the app ships on. Code 2 → `.vitrin/briefs/analyze.md`:
@@ -74,7 +80,7 @@ Take the list from the doctor output; include only keys that are actually missin
 - Every image, video and metadata text must be shown to the user (the review gallery) and approved before upload. Never run `vitrin approve` without the user's explicit approval of the report you showed them, never edit or delete `.vitrin/approval.json` by hand, and never regenerate assets between their approval and the upload.
 - Never run `git rm --cached` or commit on the user's behalf; when Vitrin reports tracked files that are now ignored, show the suggested command and let the user decide.
 - Proof badges only with the real rating from Lookup; no price badges; Apple marks only when the integration is real.
-- When unsure about an Apple or Google Play rule, check `references/apple-notes.md` (in the repository: `docs/apple-notes.md`) and references/apple-specs.md; if it is still unclear, ask the user.
+- When unsure about an Apple or Google Play rule, check the Apple notes (`references/apple-notes.md` if this skill has it, otherwise read https://github.com/ardasnturk/vitrin/blob/main/docs/apple-notes.md) and references/apple-specs.md; if it is still unclear, ask the user.
 
 ## References (read when needed)
 

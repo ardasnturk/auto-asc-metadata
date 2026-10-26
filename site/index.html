@@ -35,7 +35,7 @@
     "url": "https://vitrin.ardasnturk.com/",
     "codeRepository": "https://github.com/ardasnturk/vitrin",
     "license": "https://opensource.org/licenses/MIT",
-    "softwareVersion": "0.3.0",
+    "softwareVersion": "0.4.0",
     "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
   }
   </script>
@@ -78,8 +78,8 @@
             <a class="btn btn-ghost" href="https://github.com/ardasnturk/vitrin">View on GitHub</a>
           </div>
           <div class="install" role="group" aria-label="Install command">
-            <code><span class="prompt" aria-hidden="true">$</span> git clone https://github.com/ardasnturk/vitrin &amp;&amp; vitrin/skills/vitrin/scripts/install.sh</code>
-            <button class="copy" type="button" data-copy="git clone https://github.com/ardasnturk/vitrin && vitrin/skills/vitrin/scripts/install.sh" aria-label="Copy install command">Copy</button>
+            <code><span class="prompt" aria-hidden="true">$</span> claude plugin install vitrin --marketplace ardasnturk/vitrin</code>
+            <button class="copy" type="button" data-copy="claude plugin install vitrin --marketplace ardasnturk/vitrin" aria-label="Copy install command">Copy</button>
           </div>
         </div>
         <div class="hero-visual" aria-label="Example output for the sample app Ritim">
@@ -250,18 +250,19 @@
     <section id="start" aria-labelledby="start-title">
       <div class="wrap">
         <h2 id="start-title" class="section-title">Quick start</h2>
-        <p class="section-lead">Requires macOS, Node.js 22+, pnpm, Xcode, Ruby + Bundler and ffmpeg. Run <code>vitrin doctor</code> to check them.</p>
+        <p class="section-lead">Requires macOS, Node.js 22+, Xcode, Ruby + Bundler and ffmpeg. Vitrin runs <code>vitrin doctor</code> to check them and tells you what is missing.</p>
         <ol class="quick">
           <li>
-            <h3>Install the CLI and the skill</h3>
-            <div class="code"><pre><code>git clone https://github.com/ardasnturk/vitrin
-vitrin/skills/vitrin/scripts/install.sh</code></pre><button class="copy" type="button" data-copy="git clone https://github.com/ardasnturk/vitrin&#10;vitrin/skills/vitrin/scripts/install.sh" aria-label="Copy install commands">Copy</button></div>
+            <h3>Install the plugin in Claude Code</h3>
+            <div class="code"><pre><code>/plugin marketplace add ardasnturk/vitrin
+/plugin install vitrin@vitrin</code></pre><button class="copy" type="button" data-copy="/plugin marketplace add ardasnturk/vitrin&#10;/plugin install vitrin@vitrin" aria-label="Copy install commands">Copy</button></div>
+            <p>No clone needed. On its first run the plugin installs the <code>vitrin</code> CLI and Chromium into <code>~/.local/share/vitrin</code> (about 450 MB, once per version, no sudo).</p>
           </li>
           <li>
-            <h3>Set up your app repo</h3>
+            <h3>Open your app repo in Claude Code</h3>
             <div class="code"><pre><code>cd path/to/YourApp
-vitrin init</code></pre><button class="copy" type="button" data-copy="vitrin init" aria-label="Copy vitrin init">Copy</button></div>
-            <p>Creates <code>vitrin.config.yaml</code>, <code>.env.example</code> and the fastlane files. Add your App Store Connect API key to <code>.env</code> — never to the chat.</p>
+claude</code></pre><button class="copy" type="button" data-copy="cd path/to/YourApp &amp;&amp; claude" aria-label="Copy commands">Copy</button></div>
+            <p>On first use Vitrin creates <code>vitrin.config.yaml</code>, <code>.env.example</code> and the fastlane files. Add your App Store Connect API key to <code>.env</code> — never to the chat.</p>
           </li>
           <li>
             <h3>Run it in Claude Code</h3>

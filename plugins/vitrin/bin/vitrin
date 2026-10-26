@@ -1,0 +1,112 @@
+#!/bin/sh
+# Vitrin launcher (the Claude Code plugin puts this directory on the Bash tool's PATH).
+# On first use it installs the Vitrin CLI pinned to this plugin's version into a per-user directory
+# (no sudo, no global npm prefix), downloads Playwright Chromium once, then runs the CLI.
+#
+# Environment:
+#   VITRIN_HOME          install root (default: ${XDG_DATA_HOME:-$HOME/.local/share}/vitrin); one folder per version
+#   VITRIN_TARBALL       npm install spec for the CLI package (default: the GitHub release tarball of this version)
+#   VITRIN_DEV           path to a Vitrin checkout: run its local build (packages/cli/dist/bin.js) instead
+#   VITRIN_SKIP_BROWSER  1 = do not install Playwright Chromium
+set -eu
+
+say() { printf 'vitrin: %s\n' "$*" >&2; }
+die() { say "$*"; exit 1; }
+
+# --- Node.js ---------------------------------------------------------------------------------------
+command -v node >/dev/null 2>&1 || die "Node.js 22 or newer is required, but node is not on PATH. Install it from https://nodejs.org (or: brew install node), then run vitrin again."
+major=$(node -p 'process.versions.node.split(".")[0]' 2>/dev/null || echo 0)
+case $major in '' | *[!0-9]*) major=0 ;; esac
+if [ "$major" -lt 22 ]; then
+  die "Node.js 22 or newer is required; found $(node --version 2>/dev/null || echo 'an unknown version'). Update Node.js (https://nodejs.org), then run vitrin again."
+fi
+
+# --- Local checkout (contributors) -----------------------------------------------------------------
+if [ -n "${VITRIN_DEV:-}" ]; then
+  dev_bin=$VITRIN_DEV/packages/cli/dist/bin.js
+  [ -f "$dev_bin" ] || die "VITRIN_DEV=$VITRIN_DEV has no build ($dev_bin). Run pnpm install && pnpm build there."
+  exec node "$dev_bin" "$@"
+fi
+
+# --- Pinned version (from the plugin manifest next to this script) ---------------------------------
+self=$0
+while [ -h "$self" ]; do
+  link=$(readlink "$self")
+  case $link in /*) self=$link ;; *) self=$(dirname "$self")/$link ;; esac
+done
+plugin_root=$(CDPATH='' cd -- "$(dirname "$self")/.." && pwd -P)
+manifest=$plugin_root/.claude-plugin/plugin.json
+version=${VITRIN_VERSION:-}
+if [ -z "$version" ]; then
+  [ -f "$manifest" ] || die "cannot read the plugin version: $manifest is missing."
+  version=$(sed -n 's/^[[:space:]]*"version"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "$manifest" | head -n 1)
+  [ -n "$version" ] || die "cannot read the plugin version from $manifest."
+fi
+
+base=${VITRIN_HOME:-${XDG_DATA_HOME:-$HOME/.local/share}/vitrin}
+dir=$base/$version
+entry=$dir/node_modules/@ardasnturk/vitrin/dist/bin.js
+ready=$dir/.vitrin-installed
+
+if [ -f "$ready" ] && [ -f "$entry" ]; then
+  exec node "$entry" "$@"
+fi
+
+# --- One-time install (serialised with a lock directory; mkdir is atomic) ---------------------------
+command -v npm >/dev/null 2>&1 || die "npm is required for the one-time install (it ships with Node.js)."
+mkdir -p "$base" || die "cannot create $base (set VITRIN_HOME to a writable folder)."
+lock=$base/.$version.lock
+stage=$base/.$version.tmp.$$
+cleanup() { rm -rf "$stage"; rm -rf "$lock"; }
+waited=0
+until mkdir "$lock" 2>/dev/null; do
+  holder=$(cat "$lock/pid" 2>/dev/null || true)
+  if [ -n "$holder" ] && ! kill -0 "$holder" 2>/dev/null; then
+    say "removing a stale install lock (process $holder is gone)"
+    rm -rf "$lock"
+    continue
+  fi
+  [ "$waited" -eq 0 ] && say "another session is installing Vitrin $version; waiting for it to finish…"
+  waited=$((waited + 1))
+  [ "$waited" -le 1200 ] || die "timed out waiting for $lock; if no install is running, delete it and run vitrin again."
+  sleep 1
+done
+echo $$ >"$lock/pid"
+trap cleanup EXIT
+trap 'cleanup; exit 130' INT TERM HUP
+
+if [ ! -f "$ready" ] || [ ! -f "$entry" ]; then
+  spec=${VITRIN_TARBALL:-https://github.com/ardasnturk/vitrin/releases/download/v$version/ardasnturk-vitrin-$version.tgz}
+  case $spec in
+    http://* | https://* | /*) ;;
+    *) if [ -e "$spec" ]; then spec=$(CDPATH='' cd -- "$(dirname "$spec")" && pwd -P)/$(basename "$spec"); fi ;;
+  esac
+  say "first run: installing Vitrin $version into $dir"
+  say "this happens once per version and downloads roughly 450 MB (npm packages + Chromium); it takes a few minutes…"
+  rm -rf "$stage"
+  mkdir -p "$stage"
+  printf '{ "name": "vitrin-install", "private": true }\n' >"$stage/package.json"
+  # npm prints to stdout; keep stdout clean for `vitrin --json`.
+  if ! npm install --prefix "$stage" --no-fund --no-audit --no-update-notifier --loglevel=error "$spec" >&2; then
+    die "npm install failed for $spec. Check the network connection (or set VITRIN_TARBALL), then run vitrin again."
+  fi
+  [ -f "$stage/node_modules/@ardasnturk/vitrin/dist/bin.js" ] || die "the installed package has no dist/bin.js ($spec)."
+  rm -rf "$dir"
+  mv "$stage" "$dir"
+
+  if [ "${VITRIN_SKIP_BROWSER:-0}" != "1" ]; then
+    say "installing Playwright Chromium (renders the screenshots)…"
+    pw=$dir/node_modules/playwright/cli.js
+    if [ -f "$pw" ] && node "$pw" install chromium >&2; then
+      :
+    else
+      say "warning: the Chromium download failed; screenshots cannot render until it succeeds. Retry with: node \"$pw\" install chromium"
+    fi
+  fi
+  date >"$ready"
+  say "✓ Vitrin $version installed"
+fi
+
+cleanup
+trap - EXIT INT TERM HUP
+exec node "$entry" "$@"

@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { log, mask, SchemaError, setLogMode } from '@vitrin/core';
+import { log, mask, SchemaError, setLogMode, vitrinVersion } from '@vitrin/core';
 import { Command } from 'commander';
 import pc from 'picocolors';
 import { approvalStage, approveCommand } from './approval.js';
@@ -16,7 +16,7 @@ const program = new Command();
 program
   .name('vitrin')
   .description('iOS App Store Connect metadata, screenshot, creative and App Preview automation')
-  .version('0.3.0')
+  .version(vitrinVersion())
   .option('-C, --cwd <dir>', 'app repository (default: current directory)')
   .option('-f, --force', 're-run the stage even if its inputs are unchanged')
   .option('--json', 'machine-readable output')

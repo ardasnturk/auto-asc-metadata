@@ -16,9 +16,11 @@ All notable changes to this project are documented in this file. The format is b
 - **Google Play:** listing schema, Play locale mapping, Play text and image rules, export to the `supply` layout, `vitrin_play_upload` lane (listing and images only), Play key checks in doctor.
 - **Multi-platform App Store upload:** one deliver run per Apple platform; partial selections are replaced per display type and never delete unselected sets; the dry-run plan lists what is replaced and what stays untouched.
 - **Tidy repository:** a managed `.gitignore` block kept up to date by every command; `vitrin finalize` keeps the uploaded set in `metadata/` or deletes it, as the user chooses, and always removes research downloads.
+- **Install without cloning:** the repository is a Claude Code plugin marketplace. `/plugin marketplace add ardasnturk/vitrin` and `/plugin install vitrin@vitrin` add the `/vitrin` skill and a `vitrin` launcher that installs the CLI for the plugin's version into `~/.local/share/vitrin/<version>/` on first use (no sudo, Playwright Chromium included).
+- **npm package `@ardasnturk/vitrin`:** one bundled CLI with its data, fastlane templates and Remotion sources; `pnpm pack:release` builds the tarball and the release workflow attaches it to the GitHub Release (and publishes to npm when `NPM_TOKEN` is set). `vitrin --version` reports the release version.
 
 ### Changed
-- The skill moved to `skills/vitrin/` (`npx skills add ardasnturk/vitrin` can find it) and the repository links use the Vitrin name (`ardasnturk/vitrin`).
+- The skill moved to `plugins/vitrin/skills/vitrin/` inside the Claude Code plugin (`npx skills add ardasnturk/vitrin` still finds it) and the repository links use the Vitrin name (`ardasnturk/vitrin`). `skills/…/scripts/install.sh` remains for contributors working from a clone.
 - The `/vitrin` flow asks for platforms, content, design and retention, and shows everything for approval before upload.
 
 ## 0.3.0 — 2026-10-24

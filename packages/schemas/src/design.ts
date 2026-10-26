@@ -35,7 +35,7 @@ export const BackgroundStyle = z.enum(['solid', 'linear', 'radial', 'mesh', 'gri
 /**
  * Named style presets (a curated port of ParthJadhav/app-store-screenshots, MIT): each one is a full token set —
  * palette, type pairing, background recipe, decoration recipe and device treatment.
- * See skills/vitrin/references/styles/. `vitrin-classic` is Vitrin's original mesh look and the default.
+ * See plugins/vitrin/skills/vitrin/references/styles/. `vitrin-classic` is Vitrin's original mesh look and the default.
  */
 export const StylePreset = z.enum([
   'vitrin-classic',
