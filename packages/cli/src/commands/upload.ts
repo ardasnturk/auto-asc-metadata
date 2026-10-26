@@ -1,4 +1,4 @@
-import { existsSync, getTarget, log, readJson, readJsonIfExists, writeJson } from '@vitrin/core';
+import { existsSync, log, readJson, readJsonIfExists, writeJson } from '@vitrin/core';
 import { AppMetadata, CppSuggestions, ShotList } from '@vitrin/schemas';
 import {
   AscClient,
@@ -9,11 +9,15 @@ import {
   credentialsFromEnv,
   exportFastlaneMetadata,
   formatPlan,
+  prepareStores,
   readBack,
+  runDeliverForPlatforms,
   runLane,
+  runPlayUpload,
+  uploadPerDisplayType,
   type UploadPlan,
 } from '@vitrin/upload';
-import { validateAll } from '@vitrin/validate';
+import { validateAll, validatePlayText } from '@vitrin/validate';
 import { readdir, rm } from 'node:fs/promises';
 import { join, relative } from 'node:path';
 import { createInterface } from 'node:readline/promises';
@@ -58,21 +62,35 @@ export async function uploadCommand(ctx: Ctx, opts: UploadOptions): Promise<numb
     log.warn('There are validation errors; showing the plan anyway.');
   }
 
+  // Every store/platform the app ships on: rendered files routed by target, and the Google Play listing for Android.
+  const stores = await prepareStores({ paths: ctx.paths, config: ctx.config, profile, env: ctx.env, online: true });
+  const hasApple = stores.platforms.some((p) => p !== 'android');
+  if (stores.play) {
+    const playText = validatePlayText({ config: ctx.config, profile, listings: new Map(stores.play.inputs.listings.map((l) => [l.locale, l])), app: stores.play.inputs.app });
+    if (playText.issues.errors.length) {
+      printIssues(playText.issues.errors);
+      if (!opts.dryRun) {
+        log.error('Not uploading while the Google Play listing has validation errors.');
+        return EXIT.FAIL;
+      }
+    }
+  }
+
   // Early warning vs. late gate: a dry run works without keys (remote state unknown); a real upload does not.
-  const missing = missingUploadKeys(ctx.env);
+  const missing = missingUploadKeys(ctx.env, stores.platforms);
   let client: AscClient | undefined;
-  if (!missing.length) {
+  if (!missing.length && hasApple) {
     try {
       client = new AscClient(credentialsFromEnv(process.env));
     } catch (err) {
       if (!opts.dryRun) throw err;
       log.warn((err as Error).message);
     }
-  } else if (!opts.dryRun) {
+  } else if (missing.length && !opts.dryRun) {
     const doctor = await runDoctor(ctx, { offline: true });
     return doctor.exitCode;
-  } else {
-    log.warn(`ASC keys missing (${missing.map((m) => m.name).join(', ')}); showing the plan without the remote state.`);
+  } else if (missing.length) {
+    log.warn(`Upload keys missing (${missing.map((m) => m.name).join(', ')}); showing the plan without the remote state.`);
   }
 
   await exportFastlaneMetadata(ctx.paths, ctx.config, app, metadata);
@@ -87,10 +105,23 @@ export async function uploadCommand(ctx: Ctx, opts: UploadOptions): Promise<numb
     cpp,
     client,
     include: { creatives: Boolean(opts.creatives), cpp: Boolean(opts.cpp), events: Boolean(opts.events) },
+    platforms: stores.platforms,
+    assets: stores.assets,
+    enabledTargets: stores.enabledTargets,
+    play: stores.play?.plan,
   });
   await writeJson(ctx.paths.uploadPlan, plan);
   log.info('\n' + formatPlan(plan) + '\n');
   if (opts.dryRun) {
+    // Google Play: supply validate_only uploads into a throw-away edit that Google validates and never commits.
+    if (stores.play?.client && stores.play.packageName && existsSync(join(ctx.root, 'Gemfile'))) {
+      try {
+        await runPlayUpload(ctx.paths, stores.play, stores.assets, { validateOnly: true, skipScreenshots: opts.skipScreenshots, scope: plan.scope?.play });
+        log.ok('Google Play accepted the listing (validate_only, nothing was published).');
+      } catch (err) {
+        log.warn(`Google Play validate_only: ${(err as Error).message}`);
+      }
+    }
     log.ok(`Plan: .vitrin/upload-plan.json (--dry-run, nothing was uploaded)`);
     return plan.blockers.length ? EXIT.NEEDS_INPUT : EXIT.OK;
   }
@@ -115,16 +146,21 @@ export async function uploadCommand(ctx: Ctx, opts: UploadOptions): Promise<numb
     for (const l of languages) await rm(join(ctx.paths.fastlaneMetadata, l, 'release_notes.txt'), { force: true });
     log.dim('First release: App Store Connect has no “What’s New” field yet, so release_notes.txt is not uploaded.');
   }
-  if (ctx.config.upload.uploader === 'deliver') {
-    log.step('fastlane deliver (text, screenshots, App Previews)…');
-    await runLane(ctx.paths, 'vitrin_upload', { bundleId, languages, appVersion: plan.version?.versionString, platform: ctx.config.upload.platform, skipScreenshots: opts.skipScreenshots });
-  } else {
-    log.step('fastlane deliver (text only) + App Asset Library (images/videos)…');
-    await runLane(ctx.paths, 'vitrin_upload', { bundleId, languages, appVersion: plan.version?.versionString, platform: ctx.config.upload.platform, skipScreenshots: true });
-    if (!opts.skipScreenshots) await uploadMediaViaAssetLibrary(ctx, client!, plan);
+  // One deliver run per selected Apple platform (iOS incl. Apple Watch, macOS, tvOS, visionOS) with complete sets
+  // only; partial sets are replaced per display class through the App Asset Library (see plan.scope).
+  if (hasApple) {
+    await runDeliverForPlatforms(ctx.paths, plan, stores.assets, { bundleId, languages, skipScreenshots: opts.skipScreenshots });
+    if (!opts.skipScreenshots && client) {
+      const n = await uploadPerDisplayType(client, plan, stores.assets, languages);
+      if (n) log.ok(`App Asset Library: ${n} files placed (only the selected display types were replaced).`);
+    }
   }
+  // Google Play: listing text, release notes and images only (never a binary, track change or rollout).
+  if (stores.play) await runPlayUpload(ctx.paths, stores.play, stores.assets, { validateOnly: false, skipScreenshots: opts.skipScreenshots, scope: plan.scope?.play });
 
-  if (opts.creatives) await uploadCreatives(ctx, client!, plan);
+  // Unselected asset kinds (config.selection.assets) stay untouched in the store.
+  const kindOn = (k: 'creatives' | 'events') => plan.scope?.assets.includes(k) ?? true;
+  if (opts.creatives && kindOn('creatives')) await uploadCreatives(ctx, client!, plan);
   if (opts.cpp && cpp) {
     const existing = new Set((await client!.getAll<{ name?: string }>(`/v1/apps/${plan.appId}/appCustomProductPages?limit=200`)).map((p) => p.attributes.name));
     for (const page of cpp.pages) {
@@ -136,7 +172,7 @@ export async function uploadCommand(ctx: Ctx, opts: UploadOptions): Promise<numb
       log.ok(`Created CPP “${page.name}” (${res.pageId}); images are placed by the --creatives flow, Apple approval required.`);
     }
   }
-  if (opts.events && shots) {
+  if (opts.events && shots && kindOn('events')) {
     const existing = new Set((await client!.getAll<{ referenceName?: string }>(`/v1/apps/${plan.appId}/appEvents?limit=200`)).map((e) => e.attributes.referenceName));
     for (const e of shots.creatives.events) {
       if (existing.has(e.id)) {
@@ -148,61 +184,17 @@ export async function uploadCommand(ctx: Ctx, opts: UploadOptions): Promise<numb
     }
   }
 
-  log.step('Reading back from ASC…');
-  const diffs = await readBack({ paths: ctx.paths, config: ctx.config, bundleId, metadata, client: client! });
+  log.step('Reading back from the stores…');
+  const play = stores.play?.client && stores.play.packageName ? { client: stores.play.client, packageName: stores.play.packageName, inputs: stores.play.inputs } : undefined;
+  const diffs = await readBack({ paths: ctx.paths, config: ctx.config, bundleId, metadata, client, platforms: stores.platforms, play });
   if (diffs.length) {
     for (const d of diffs) log.warn(d);
     return EXIT.FAIL;
   }
-  log.ok('Text in ASC matches the local files.');
+  log.ok('Text in the stores matches the local files.');
   await ctx.state.mark('upload', plan.generatedAt, [relative(ctx.root, ctx.paths.uploadPlan)]);
   log.info('Reminder: final approval of the privacy labels and age rating questionnaire is yours; check the App Store tags (US) after the upload.');
   return EXIT.OK;
-}
-
-async function uploadMediaViaAssetLibrary(ctx: Ctx, client: AscClient, plan: UploadPlan): Promise<void> {
-  const lib = new AssetLibraryClient(client);
-  const libraryId = await lib.libraryId(plan.appId!);
-  const locs = await client.versionLocalizations(plan.version!.id);
-  for (const locale of ctx.config.app.locales) {
-    const loc = locs.find((l) => l.attributes.locale === locale);
-    if (!loc) {
-      log.warn(`${locale}: no version localization (upload the text first).`);
-      continue;
-    }
-    const owner = { type: 'appStoreVersionLocalizations', id: loc.id };
-    // Same semantics as deliver's overwrite_screenshots: the set for each display class is replaced, not appended.
-    const groups = new Map<string, { kind: 'image' | 'video'; placement: string; displayClass?: string; files: string[] }>();
-    const shotDir = join(ctx.paths.screenshots, locale);
-    for (const f of existsSync(shotDir) ? (await readdir(shotDir)).sort() : []) {
-      const t = /_([a-z0-9.-]+)\.(png|jpe?g)$/.exec(f)?.[1];
-      if (!t) continue;
-      const target = getTarget(t);
-      const key = `SCREENSHOT:${target.assetLibraryDisplayClass}`;
-      const g = groups.get(key) ?? { kind: 'image' as const, placement: 'SCREENSHOT', displayClass: target.assetLibraryDisplayClass, files: [] };
-      g.files.push(join(shotDir, f));
-      groups.set(key, g);
-    }
-    const previewDir = join(ctx.paths.appPreviews, locale);
-    for (const f of existsSync(previewDir) ? (await readdir(previewDir)).filter((x) => /^\d{2}_[A-Z0-9_]+\.(mp4|mov)$/.test(x)).sort() : []) {
-      const target = getTarget(f.includes('IPAD') ? 'preview-ipad' : 'preview-iphone');
-      const key = `APP_PREVIEW:${target.assetLibraryDisplayClass}`;
-      const g = groups.get(key) ?? { kind: 'video' as const, placement: 'APP_PREVIEW', displayClass: target.assetLibraryDisplayClass, files: [] };
-      g.files.push(join(previewDir, f));
-      groups.set(key, g);
-    }
-    for (const g of groups.values()) {
-      const removed = await lib.clearPlacements(owner, g.placement, g.displayClass);
-      if (removed) log.dim(`  ${locale} ${g.placement}/${g.displayClass}: removed ${removed} old placements`);
-      const placements: string[] = [];
-      for (const file of g.files) {
-        const assetId = await lib.upload(libraryId, file, g.kind);
-        placements.push(await lib.place(assetId, g.kind, owner, g.placement, g.displayClass));
-        log.dim(`  ${locale} ${file.split('/').pop()}`);
-      }
-      if (placements.length > 1) await lib.order(placements);
-    }
-  }
 }
 
 async function uploadCreatives(ctx: Ctx, client: AscClient, plan: UploadPlan): Promise<void> {

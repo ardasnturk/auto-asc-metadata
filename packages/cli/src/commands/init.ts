@@ -95,6 +95,7 @@ export async function initCommand(opts: { cwd?: string; force?: boolean }): Prom
   await ensureDir(paths.vitrin);
   const installed = await installFastlaneTemplates(paths, opts.force);
   for (const f of installed) log.ok(`Wrote ${relative(root, f)}`);
+  log.dim('The Fastfile has one deliver lane per App Store platform (platform:ios|osx|appletvos|xros) and a supply lane for Google Play; for Android apps set GOOGLE_PLAY_JSON_KEY_PATH in .env.');
   log.info('\nNext step: `vitrin doctor` (generation still works if keys are missing).');
   return 0;
 }
