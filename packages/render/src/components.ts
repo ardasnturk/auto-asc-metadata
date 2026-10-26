@@ -1,13 +1,19 @@
-import type { ArtDirectionOption, Badge } from '@vitrin/schemas';
+import type { Badge, Palette } from '@vitrin/schemas';
 import { lucideIcon } from './assets.js';
 import { mix, withAlpha } from './color.js';
+
+/** The parts of a direction the legacy components read. */
+export interface PaletteDirection {
+  palette: Palette;
+  background?: { style: string; angle: number; intensity: number };
+}
 
 export function esc(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
 /** Background layer. `panorama` = { index, total } shifts a shared canvas so consecutive shots connect. */
-export function Background(ad: ArtDirectionOption, w: number, h: number, panorama?: { index: number; total: number }): string {
+export function Background(ad: PaletteDirection & { background: { style: string; angle: number; intensity: number } }, w: number, h: number, panorama?: { index: number; total: number }): string {
   const c0 = ad.palette.background[0]!;
   const c1 = ad.palette.background[1] ?? c0;
   const c2 = ad.palette.background[2] ?? c1;
@@ -70,55 +76,10 @@ export function Background(ad: ArtDirectionOption, w: number, h: number, panoram
   return `<div class="bg" style="position:absolute;inset:0;overflow:hidden;${css}">${deco}</div>`;
 }
 
-export interface DeviceOptions {
-  family: 'iphone' | 'ipad' | 'duo';
-  frame: ArtDirectionOption['device']['frame'];
-  shadow: boolean;
-  tilt: number;
-  /** Rendered width in CSS px. */
-  width: number;
-  /** Raw screenshot aspect (height / width). */
-  aspect: number;
-  src: string;
-  style?: string;
-  className?: string;
-  dim?: boolean;
-}
-
-/**
- * Generic device frame drawn in CSS (no Apple product imagery). Screen corner radius and the island pill
- * follow the proportions of modern iPhones so the raw simulator capture sits naturally inside.
- */
-export function DeviceFrame(o: DeviceOptions): string {
-  const bezel = o.frame === 'none' ? 0 : Math.round(o.width * (o.family === 'ipad' ? 0.022 : 0.032));
-  const screenW = o.width - bezel * 2;
-  const screenH = Math.round(screenW * o.aspect);
-  const radiusRatio = o.family === 'ipad' ? 0.035 : o.family === 'duo' ? 0.08 : 0.137;
-  const screenR = Math.round(screenW * radiusRatio);
-  const outerR = screenR + bezel;
-  const shadow = o.shadow ? `box-shadow:0 ${o.width * 0.06}px ${o.width * 0.14}px rgba(0,0,0,.32), 0 ${o.width * 0.01}px ${o.width * 0.03}px rgba(0,0,0,.18);` : '';
-  const frameColor = '#0E0F12';
-  const ring = o.frame === 'realistic' ? `outline:${Math.max(1, Math.round(o.width * 0.004))}px solid #3A3D44;outline-offset:-${Math.max(1, Math.round(o.width * 0.004))}px;` : '';
-  const island =
-    o.family === 'iphone' && o.frame !== 'none'
-      ? `<div style="position:absolute;left:50%;top:${Math.round(screenW * 0.027) + bezel}px;transform:translateX(-50%);width:${Math.round(screenW * 0.31)}px;height:${Math.round(screenW * 0.092)}px;border-radius:999px;background:#000;"></div>`
-      : '';
-  const buttons =
-    o.frame === 'realistic' && o.family !== 'ipad'
-      ? `<div style="position:absolute;left:-${Math.round(o.width * 0.012)}px;top:${screenH * 0.2}px;width:${Math.round(o.width * 0.012)}px;height:${screenH * 0.07}px;background:${frameColor};border-radius:3px 0 0 3px;"></div>
-         <div style="position:absolute;right:-${Math.round(o.width * 0.012)}px;top:${screenH * 0.26}px;width:${Math.round(o.width * 0.012)}px;height:${screenH * 0.11}px;background:${frameColor};border-radius:0 3px 3px 0;"></div>`
-      : '';
-  const transform = o.tilt ? `transform:rotate(${o.tilt}deg);` : '';
-  return `<div class="device ${o.className ?? ''}" data-family="${o.family}" style="position:absolute;width:${o.width}px;height:${screenH + bezel * 2}px;border-radius:${outerR}px;background:${o.frame === 'none' ? 'transparent' : frameColor};${shadow}${ring}${transform}${o.style ?? ''}">
-  <img src="${o.src}" style="position:absolute;left:${bezel}px;top:${bezel}px;width:${screenW}px;height:${screenH}px;border-radius:${screenR}px;object-fit:cover;object-position:top;${o.dim ? 'filter:saturate(.35) brightness(.85);' : ''}">
-  ${island}${buttons}
-</div>`;
-}
-
 export interface BadgeRenderOptions {
   badge: Badge;
   locale: string;
-  ad: ArtDirectionOption;
+  ad: PaletteDirection;
   fontSize: number;
   floating?: boolean;
   style?: string;
@@ -182,7 +143,7 @@ export function LaurelBadge(o: BadgeRenderOptions): string {
 }
 
 /** Card with a verbatim App Store review (stars, quote, optional author). */
-export function QuoteCard(o: { text: string; rating: number; author?: string; ad: ArtDirectionOption; fontSize: number; width: number; style?: string }): string {
+export function QuoteCard(o: { text: string; rating: number; author?: string; ad: PaletteDirection; fontSize: number; width: number; style?: string }): string {
   const { ad, fontSize } = o;
   return `<div class="quote" style="width:${o.width}px;box-sizing:border-box;padding:${fontSize * 1.1}px ${fontSize * 1.2}px;border-radius:${fontSize * 1.1}px;background:${ad.palette.badgeBackground};color:${ad.palette.badgeText};box-shadow:0 ${fontSize * 0.6}px ${fontSize * 2}px rgba(0,0,0,.22);${o.style ?? ''}">
   ${Stars(o.rating, fontSize * 0.95, ad.palette.accent)}
@@ -213,7 +174,7 @@ function defaultIcon(b: Badge): string {
 }
 
 /** Black or white text, whichever reads better on `bg` (falls back to palette text). */
-export function pickTextOn(bg: string, ad: ArtDirectionOption): string {
+export function pickTextOn(bg: string, ad: PaletteDirection): string {
   const dark = '#0B0B0F';
   const light = '#FFFFFF';
   const lum = (hex: string) => {
@@ -223,41 +184,7 @@ export function pickTextOn(bg: string, ad: ArtDirectionOption): string {
   return lum(bg) > 0.55 ? (lum(ad.palette.text) < 0.3 ? ad.palette.text : dark) : light;
 }
 
-export interface CaptionOptions {
-  headline: string;
-  subheadline: string;
-  ad: ArtDirectionOption;
-  headlineSize: number;
-  minHeadlineSize: number;
-  subSize: number;
-  width: number;
-  height: number;
-  align: 'start' | 'center';
-  kicker?: string;
-  /** Anchor the text block to the bottom of its box (caption below the device). */
-  bottom?: boolean;
-  style?: string;
-  above?: string;
-  below?: string;
-}
-
 /** Escapes, then turns *word* into accent-coloured spans. */
 export function accentMarkup(text: string, accent: string): string {
   return esc(text).replace(/\*([^*]+)\*/g, `<span class="accent" style="color:${accent}">$1</span>`);
-}
-
-/** Headline + subheadline block; the in-page fitter shrinks text until it fits the box (never below the minimum). */
-export function Caption(o: CaptionOptions): string {
-  const t = o.ad.typography;
-  const transform = t.headlineCase === 'upper' ? 'text-transform:uppercase;' : '';
-  const kicker = o.kicker
-    ? `<div class="kicker" style="font-family:var(--body);font-size:${Math.round(o.headlineSize * 0.42)}px;font-weight:600;letter-spacing:.01em;line-height:1.1;color:${o.ad.palette.textMuted};margin-bottom:${-o.subSize * 0.35}px">${accentMarkup(o.kicker, o.ad.palette.accent)}</div>`
-    : '';
-  return `<div class="caption" data-bottom="${o.bottom ? 1 : 0}" style="position:absolute;width:${o.width}px;height:${o.height}px;display:flex;flex-direction:column;justify-content:${o.bottom ? 'flex-end' : 'flex-start'};align-items:${o.align === 'center' ? 'center' : 'flex-start'};text-align:${o.align === 'center' ? 'center' : 'start'};gap:${o.subSize * 0.6}px;${o.style ?? ''}">
-  ${o.above ?? ''}
-  ${kicker}
-  <h1 class="headline fit" data-min="${o.minHeadlineSize}" style="margin:0;font-family:var(--headline);font-size:${o.headlineSize}px;font-weight:${t.headlineWeight};letter-spacing:${t.letterSpacing}em;line-height:1.06;color:${o.ad.palette.text};text-wrap:balance;max-width:100%;overflow-wrap:normal;${transform}">${accentMarkup(o.headline, o.ad.palette.accent)}</h1>
-  ${o.subheadline ? `<p class="subheadline fit" data-min="${Math.round(o.subSize * 0.8)}" style="margin:0;font-family:var(--body);font-size:${o.subSize}px;font-weight:500;line-height:1.25;color:${o.ad.palette.textMuted};text-wrap:balance;max-width:100%;">${esc(o.subheadline)}</p>` : ''}
-  ${o.below ?? ''}
-</div>`;
 }

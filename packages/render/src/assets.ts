@@ -6,15 +6,27 @@ import { pathToFileURL } from 'node:url';
 
 const require = createRequire(import.meta.url);
 
-/** Bundled OFL families (via @fontsource-variable). Key = name used in art-direction.json. */
-export const FONT_FAMILIES: Record<string, { pkg: string; family: string; serif?: boolean }> = {
+/**
+ * Bundled OFL families (via @fontsource / @fontsource-variable). Key = name used in art-direction.json.
+ * `css` lists the stylesheet files to load (default: wght.css + wght-italic.css when present, else index.css).
+ */
+export const FONT_FAMILIES: Record<string, { pkg: string; family: string; serif?: boolean; css?: string[] }> = {
   Inter: { pkg: '@fontsource-variable/inter', family: 'Inter Variable' },
+  'Inter Tight': { pkg: '@fontsource-variable/inter-tight', family: 'Inter Tight Variable' },
   Manrope: { pkg: '@fontsource-variable/manrope', family: 'Manrope Variable' },
   'Space Grotesk': { pkg: '@fontsource-variable/space-grotesk', family: 'Space Grotesk Variable' },
   'Plus Jakarta Sans': { pkg: '@fontsource-variable/plus-jakarta-sans', family: 'Plus Jakarta Sans Variable' },
   'DM Sans': { pkg: '@fontsource-variable/dm-sans', family: 'DM Sans Variable' },
-  Fraunces: { pkg: '@fontsource-variable/fraunces', family: 'Fraunces Variable', serif: true },
+  'Bricolage Grotesque': { pkg: '@fontsource-variable/bricolage-grotesque', family: 'Bricolage Grotesque Variable', css: ['index.css'] },
+  Rubik: { pkg: '@fontsource-variable/rubik', family: 'Rubik Variable' },
+  Anton: { pkg: '@fontsource/anton', family: 'Anton', css: ['400.css'] },
+  'Barlow Condensed': { pkg: '@fontsource/barlow-condensed', family: 'Barlow Condensed', css: ['600.css', '700.css', '700-italic.css', '800.css', '800-italic.css'] },
+  'JetBrains Mono': { pkg: '@fontsource-variable/jetbrains-mono', family: 'JetBrains Mono Variable' },
+  Caveat: { pkg: '@fontsource-variable/caveat', family: 'Caveat Variable' },
+  // Fraunces ships every axis (opsz, SOFT, WONK) in full.css: the editorial and clay presets need them.
+  Fraunces: { pkg: '@fontsource-variable/fraunces', family: 'Fraunces Variable', serif: true, css: ['full.css', 'full-italic.css'] },
   'Playfair Display': { pkg: '@fontsource-variable/playfair-display', family: 'Playfair Display Variable', serif: true },
+  'Shippori Mincho': { pkg: '@fontsource/shippori-mincho', family: 'Shippori Mincho', serif: true, css: ['500.css', '600.css', '700.css'] },
   'Noto Sans': { pkg: '@fontsource-variable/noto-sans', family: 'Noto Sans Variable' },
 };
 
@@ -38,34 +50,58 @@ export const SCRIPT_FALLBACK: Record<string, { pkg: string; family: string }> = 
   oriya: { pkg: '@fontsource-variable/noto-sans-oriya', family: 'Noto Sans Oriya Variable' },
 };
 
-function pkgCssUrl(pkg: string): string {
+/** file:// URLs of the stylesheets a font package needs. */
+export function fontCssUrls(pkg: string, css?: string[]): string[] {
   const dir = dirname(require.resolve(`${pkg}/package.json`));
-  const css = existsSync(join(dir, 'wght.css')) ? 'wght.css' : 'index.css';
-  return pathToFileURL(join(dir, css)).href;
+  const files = css ?? (existsSync(join(dir, 'wght.css')) ? ['wght.css', ...(existsSync(join(dir, 'wght-italic.css')) ? ['wght-italic.css'] : [])] : ['index.css']);
+  return files.map((f) => pathToFileURL(join(dir, f)).href);
 }
 
 export interface FontSetup {
   links: string;
   headlineStack: string;
   bodyStack: string;
+  /** Stack for any extra family (labels, scripts, mono) requested through `extra`. */
+  stacks: Record<string, string>;
   dir: 'ltr' | 'rtl';
   serifHeadline: boolean;
 }
 
-export function fontSetup(headline: string, body: string, locale: string): FontSetup {
+export function fontSetup(headline: string, body: string, locale: string, extra: string[] = []): FontSetup {
+  const unknown = (kind: string, f: string) => new Error(`Unknown ${kind} font “${f}”. Available: ${Object.keys(FONT_FAMILIES).join(', ')}`);
   const h = FONT_FAMILIES[headline];
   const b = FONT_FAMILIES[body];
-  if (!h) throw new Error(`Unknown headline font “${headline}”. Available: ${Object.keys(FONT_FAMILIES).join(', ')}`);
-  if (!b) throw new Error(`Unknown body font “${body}”. Available: ${Object.keys(FONT_FAMILIES).join(', ')}`);
+  if (!h) throw unknown('headline', headline);
+  if (!b) throw unknown('body', body);
+  const extras = extra.map((e) => {
+    const f = FONT_FAMILIES[e];
+    if (!f) throw unknown('label', e);
+    return [e, f] as const;
+  });
   const info = localeInfo(locale);
   const script = info?.script ?? 'latin';
   const fallback = SCRIPT_FALLBACK[script];
   const noto = FONT_FAMILIES['Noto Sans']!;
-  const pkgs = [...new Set([h.pkg, b.pkg, noto.pkg, ...(fallback ? [fallback.pkg] : [])])];
-  const links = pkgs.map((p) => `<link rel="stylesheet" href="${pkgCssUrl(p)}">`).join('\n');
+  const all = [h, b, ...extras.map(([, f]) => f), noto];
+  const seen = new Set<string>();
+  const urls: string[] = [];
+  for (const f of all) {
+    if (seen.has(f.pkg)) continue;
+    seen.add(f.pkg);
+    urls.push(...fontCssUrls(f.pkg, f.css));
+  }
+  if (fallback) urls.push(...fontCssUrls(fallback.pkg));
+  const links = urls.map((u) => `<link rel="stylesheet" href="${u}">`).join('\n');
   // Latin display faces first so Latin glyphs keep the art direction; script fallback covers the rest.
   const stack = (f: string) => [`'${f}'`, fallback ? `'${fallback.family}'` : '', `'${noto.family}'`, 'sans-serif'].filter(Boolean).join(', ');
-  return { links, headlineStack: stack(h.family), bodyStack: stack(b.family), dir: info?.dir ?? 'ltr', serifHeadline: Boolean(h.serif) };
+  return {
+    links,
+    headlineStack: stack(h.family),
+    bodyStack: stack(b.family),
+    stacks: Object.fromEntries(extras.map(([name, f]) => [name, stack(f.family)])),
+    dir: info?.dir ?? 'ltr',
+    serifHeadline: Boolean(h.serif),
+  };
 }
 
 const iconCache = new Map<string, string>();

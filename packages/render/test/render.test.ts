@@ -29,7 +29,9 @@ describe('page builder', () => {
   it('builds a page at the logical size with escaped copy', () => {
     const html = buildPage({ target: getTarget('iphone-6.9'), locale: 'tr', ad, archetype: 'hero', headline: 'Serini <koru>', subheadline: 'alt', badges: [], screens: [screen] });
     expect(html).toContain('width:440px; height:956px');
-    expect(html).toContain('Serini &lt;koru&gt;');
+    expect(html).toContain('>Serini</span>');
+    expect(html).toContain('&lt;koru&gt;');
+    expect(html).not.toContain('<koru>');
     expect(html).toContain('dir="ltr"');
     expect(html).toContain('Plus Jakarta Sans Variable');
   });
@@ -66,7 +68,7 @@ describe('new archetypes', () => {
     const t = getTarget('iphone-6.3');
     const hero = buildPage({ target: t, locale: 'tr', ad, archetype: 'hero', kicker: 'Takip', headline: 'Serini *kırma*', subheadline: '', badges: [], screens: [screen] });
     expect(hero).toContain('class="kicker"');
-    expect(hero).toMatch(/<span class="accent" style="color:#FF8A6B">kırma<\/span>/);
+    expect(hero).toMatch(/<span class="em em-color" style="color:#FF8A6B"><span class="w"[^>]*>kırma<\/span>/);
     const callout = buildPage({ target: t, locale: 'tr', ad, archetype: 'callout', headline: 'x', subheadline: '', badges: [], screens: [screen], callouts: [{ screen: 0, rect: { x: 0.1, y: 0.4, w: 0.8, h: 0.2 }, rects: {}, scale: 1.4, side: 'center', at: 0.5 }] });
     expect(callout).toContain('class="callout');
     const ipad = buildPage({ target: getTarget('ipad-13'), locale: 'tr', ad, archetype: 'callout', headline: 'x', subheadline: '', badges: [], screens: [{ ...screen, family: 'ipad' }], callouts: [{ screen: 0, rect: { x: 0.1, y: 0.4, w: 0.8, h: 0.2 }, rects: {}, scale: 1.4, side: 'center', at: 0.5 }] });
@@ -75,6 +77,6 @@ describe('new archetypes', () => {
     expect(quotes).toContain('“Çok sade”');
     const bottom = buildPage({ target: t, locale: 'tr', ad, archetype: 'fullbleed', captionPosition: 'bottom', headline: 'x', subheadline: '', badges: [], screens: [screen] });
     expect(bottom).toContain('data-bottom="1"');
-    expect(bottom).toContain('class="grow"');
+    expect(bottom).toContain('data-family="iphone"');
   });
 });
