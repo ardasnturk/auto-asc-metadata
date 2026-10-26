@@ -1,9 +1,11 @@
 {
-  "updatedAt": "2026-10-24",
+  "updatedAt": "2026-10-26",
   "source": [
     "https://developer.apple.com/help/app-store-connect/reference/app-information/screenshot-specifications",
     "https://developer.apple.com/help/app-store-connect/reference/app-information/app-preview-specifications",
-    "https://developer.apple.com/help/app-store-connect/reference/app-information/creative-assets-specifications"
+    "https://developer.apple.com/help/app-store-connect/reference/app-information/creative-assets-specifications",
+    "https://developer.android.com/google-play/resources/icon-design-specifications",
+    "https://support.google.com/googleplay/android-developer/answer/9866151"
   ],
   "targets": [
     {
@@ -11,6 +13,8 @@
       "kind": "screenshot",
       "label": "iPhone 6.3\" (Dynamic Island, medium)",
       "family": "iphone",
+      "store": "app-store",
+      "platform": "ios",
       "width": 1206,
       "height": 2622,
       "logical": {
@@ -43,6 +47,8 @@
       "kind": "screenshot",
       "label": "iPhone 6.9\" (Dynamic Island, large)",
       "family": "iphone",
+      "store": "app-store",
+      "platform": "ios",
       "width": 1320,
       "height": 2868,
       "logical": {
@@ -79,6 +85,8 @@
       "kind": "screenshot",
       "label": "iPad 13\"",
       "family": "ipad",
+      "store": "app-store",
+      "platform": "ios",
       "width": 2064,
       "height": 2752,
       "logical": {
@@ -110,6 +118,8 @@
       "kind": "screenshot",
       "label": "iPhone Duo outer display",
       "family": "duo",
+      "store": "app-store",
+      "platform": "ios",
       "width": 1398,
       "height": 2034,
       "logical": {
@@ -138,6 +148,8 @@
       "kind": "screenshot",
       "label": "iPhone Duo inner display",
       "family": "duo",
+      "store": "app-store",
+      "platform": "ios",
       "width": 2007,
       "height": 2853,
       "logical": {
@@ -166,6 +178,8 @@
       "kind": "preview",
       "label": "App Preview iPhone (all modern classes, including Duo)",
       "family": "iphone",
+      "store": "app-store",
+      "platform": "ios",
       "width": 886,
       "height": 1920,
       "logical": {
@@ -194,6 +208,8 @@
       "kind": "preview",
       "label": "App Preview iPad 13\"/11\"",
       "family": "ipad",
+      "store": "app-store",
+      "platform": "ios",
       "width": 1200,
       "height": 1600,
       "logical": {
@@ -222,6 +238,8 @@
       "kind": "creative",
       "label": "Product page header (21:9)",
       "family": "any",
+      "store": "app-store",
+      "platform": "ios",
       "width": 3840,
       "height": 1646,
       "logical": {
@@ -251,6 +269,8 @@
       "kind": "creative",
       "label": "Search result creative (3:2)",
       "family": "any",
+      "store": "app-store",
+      "platform": "ios",
       "width": 3840,
       "height": 2560,
       "logical": {
@@ -291,6 +311,8 @@
       "kind": "event",
       "label": "In-App Event card (16:9)",
       "family": "any",
+      "store": "app-store",
+      "platform": "ios",
       "width": 3840,
       "height": 2160,
       "logical": {
@@ -330,6 +352,8 @@
       "kind": "event",
       "label": "In-App Event detail (9:16)",
       "family": "any",
+      "store": "app-store",
+      "platform": "ios",
       "width": 2160,
       "height": 3840,
       "logical": {
@@ -365,10 +389,12 @@
       }
     },
     {
-      "id": "mac",
+      "id": "mac-16x10",
       "kind": "screenshot",
       "label": "Mac (16:10)",
       "family": "mac",
+      "store": "app-store",
+      "platform": "macos",
       "width": 2880,
       "height": 1800,
       "logical": {
@@ -394,18 +420,95 @@
           800
         ]
       ],
+      "requirement": "always",
+      "defaultEnabled": true,
+      "formats": [
+        "png",
+        "jpeg"
+      ],
+      "notes": "Required for Mac apps (16:10). Verified on the screenshot specifications page, 2026-10-26. Captured from the Mac app window (screencapture -l), scaled to 2880x1800."
+    },
+    {
+      "id": "watch-ultra",
+      "kind": "screenshot",
+      "label": "Apple Watch Ultra 4/3",
+      "family": "watch",
+      "store": "app-store",
+      "platform": "watchos",
+      "width": 422,
+      "height": 514,
+      "logical": {
+        "width": 211,
+        "height": 257,
+        "scale": 2
+      },
+      "acceptedSizes": [
+        [
+          422,
+          514
+        ],
+        [
+          410,
+          502
+        ]
+      ],
+      "requirement": "always",
+      "defaultEnabled": true,
+      "formats": [
+        "png",
+        "jpeg"
+      ],
+      "simulator": "Apple Watch Ultra 3 (49mm)",
+      "notes": "Required for Apple Watch apps. Apple Watch is one screenshot class: use the same size in every localization. 422x514 (Ultra 4, Ultra 3) and 410x502 (Ultra 2, Ultra) verified 2026-10-26. The simulator name is unverified on Xcode 27."
+    },
+    {
+      "id": "watch-series",
+      "kind": "screenshot",
+      "label": "Apple Watch Series 12/11/10",
+      "family": "watch",
+      "store": "app-store",
+      "platform": "watchos",
+      "width": 416,
+      "height": 496,
+      "logical": {
+        "width": 208,
+        "height": 248,
+        "scale": 2
+      },
+      "acceptedSizes": [
+        [
+          416,
+          496
+        ],
+        [
+          396,
+          484
+        ],
+        [
+          368,
+          448
+        ],
+        [
+          312,
+          390
+        ]
+      ],
       "requirement": "optional",
       "defaultEnabled": false,
       "formats": [
         "png",
         "jpeg"
-      ]
+      ],
+      "simulator": "Apple Watch Series 11 (46mm)",
+      "notes": "Alternative to watch-ultra (same class; upload only one size, consistently across localizations). Sizes verified 2026-10-26."
     },
     {
-      "id": "tv",
+      "id": "appletv-4k",
       "kind": "screenshot",
-      "label": "Apple TV",
+      "label": "Apple TV 4K",
       "family": "tv",
+      "store": "app-store",
+      "platform": "tvos",
       "width": 3840,
       "height": 2160,
       "logical": {
@@ -423,18 +526,22 @@
           1080
         ]
       ],
-      "requirement": "optional",
-      "defaultEnabled": false,
+      "requirement": "always",
+      "defaultEnabled": true,
       "formats": [
         "png",
         "jpeg"
-      ]
+      ],
+      "simulator": "Apple TV 4K (3rd generation)",
+      "notes": "Required for Apple TV apps; 1920x1080 and 3840x2160 verified 2026-10-26. Landscape only."
     },
     {
-      "id": "vision",
+      "id": "vision-pro",
       "kind": "screenshot",
       "label": "Apple Vision Pro",
       "family": "vision",
+      "store": "app-store",
+      "platform": "visionos",
       "width": 3840,
       "height": 2160,
       "logical": {
@@ -448,12 +555,216 @@
           2160
         ]
       ],
-      "requirement": "optional",
-      "defaultEnabled": false,
+      "requirement": "always",
+      "defaultEnabled": true,
       "formats": [
         "png",
         "jpeg"
-      ]
+      ],
+      "simulator": "Apple Vision Pro",
+      "notes": "Required for visionOS apps; 3840x2160 verified 2026-10-26. iPad apps running \"Designed for iPad\" on Vision Pro use the iPad screenshots instead."
+    },
+    {
+      "id": "preview-mac",
+      "kind": "preview",
+      "label": "App Preview Mac (16:9)",
+      "family": "mac",
+      "store": "app-store",
+      "platform": "macos",
+      "width": 1920,
+      "height": 1080,
+      "logical": {
+        "width": 960,
+        "height": 540,
+        "scale": 2
+      },
+      "requirement": "optional",
+      "defaultEnabled": false,
+      "formats": [
+        "mp4"
+      ],
+      "video": {
+        "minSec": 15,
+        "maxSec": 30,
+        "fps": [
+          30
+        ],
+        "maxBytes": 500000000,
+        "h264Level": "4.0"
+      },
+      "notes": "1920x1080 landscape, verified on the app preview specifications page 2026-10-26. Opt-in like preview-ipad (targets.enable)."
+    },
+    {
+      "id": "preview-tv",
+      "kind": "preview",
+      "label": "App Preview Apple TV (16:9)",
+      "family": "tv",
+      "store": "app-store",
+      "platform": "tvos",
+      "width": 1920,
+      "height": 1080,
+      "logical": {
+        "width": 960,
+        "height": 540,
+        "scale": 2
+      },
+      "requirement": "optional",
+      "defaultEnabled": false,
+      "formats": [
+        "mp4"
+      ],
+      "video": {
+        "minSec": 15,
+        "maxSec": 30,
+        "fps": [
+          30
+        ],
+        "maxBytes": 500000000,
+        "h264Level": "4.0"
+      },
+      "notes": "1920x1080 landscape, verified on the app preview specifications page 2026-10-26. Opt-in like preview-ipad (targets.enable)."
+    },
+    {
+      "id": "play-phone",
+      "kind": "screenshot",
+      "label": "Google Play phone screenshot (9:16)",
+      "family": "android-phone",
+      "store": "google-play",
+      "platform": "android",
+      "width": 1080,
+      "height": 1920,
+      "logical": {
+        "width": 360,
+        "height": 640,
+        "scale": 3
+      },
+      "acceptedSizes": [
+        [
+          1080,
+          1920
+        ]
+      ],
+      "requirement": "always",
+      "defaultEnabled": true,
+      "formats": [
+        "png",
+        "jpeg"
+      ],
+      "simulator": "pixel_9",
+      "notes": "UNVERIFIED (Play Console help was unreachable on 2026-10-26): 2-8 phone screenshots, JPEG or 24-bit PNG without alpha, each side 320-3840 px, long side at most twice the short side; 1080x1920 meets the promotion guideline. simulator = avdmanager device profile for the raw capture AVD."
+    },
+    {
+      "id": "play-tablet-7",
+      "kind": "screenshot",
+      "label": "Google Play 7\" tablet screenshot",
+      "family": "android-tablet",
+      "store": "google-play",
+      "platform": "android",
+      "width": 1200,
+      "height": 1920,
+      "logical": {
+        "width": 600,
+        "height": 960,
+        "scale": 2
+      },
+      "acceptedSizes": [
+        [
+          1200,
+          1920
+        ]
+      ],
+      "requirement": "optional",
+      "defaultEnabled": true,
+      "formats": [
+        "png",
+        "jpeg"
+      ],
+      "simulator": "Nexus 7 2013",
+      "notes": "UNVERIFIED (Play Console help unreachable): 7-inch tablet screenshots, each side 320-3840 px. Enabled only when the Android app has tablet resources (sw600dp/large)."
+    },
+    {
+      "id": "play-tablet-10",
+      "kind": "screenshot",
+      "label": "Google Play 10\" tablet screenshot",
+      "family": "android-tablet",
+      "store": "google-play",
+      "platform": "android",
+      "width": 1600,
+      "height": 2560,
+      "logical": {
+        "width": 800,
+        "height": 1280,
+        "scale": 2
+      },
+      "acceptedSizes": [
+        [
+          1600,
+          2560
+        ]
+      ],
+      "requirement": "optional",
+      "defaultEnabled": true,
+      "formats": [
+        "png",
+        "jpeg"
+      ],
+      "simulator": "pixel_tablet",
+      "notes": "UNVERIFIED (Play Console help unreachable): 10-inch tablet screenshots, each side 1080-7680 px. Enabled only when the Android app has tablet resources (sw600dp/large)."
+    },
+    {
+      "id": "play-feature-graphic",
+      "kind": "creative",
+      "label": "Google Play feature graphic",
+      "family": "any",
+      "store": "google-play",
+      "platform": "android",
+      "width": 1024,
+      "height": 500,
+      "logical": {
+        "width": 1024,
+        "height": 500,
+        "scale": 1
+      },
+      "acceptedSizes": [
+        [
+          1024,
+          500
+        ]
+      ],
+      "requirement": "always",
+      "defaultEnabled": true,
+      "formats": [
+        "png",
+        "jpeg"
+      ],
+      "notes": "UNVERIFIED (Play Console help unreachable): exactly 1024x500, JPEG or 24-bit PNG without alpha; required to publish."
+    },
+    {
+      "id": "play-icon",
+      "kind": "creative",
+      "label": "Google Play app icon",
+      "family": "any",
+      "store": "google-play",
+      "platform": "android",
+      "width": 512,
+      "height": 512,
+      "logical": {
+        "width": 512,
+        "height": 512,
+        "scale": 1
+      },
+      "acceptedSizes": [
+        [
+          512,
+          512
+        ]
+      ],
+      "requirement": "always",
+      "defaultEnabled": true,
+      "formats": [
+        "png"
+      ],
+      "notes": "512x512, 32-bit PNG (alpha allowed), sRGB, at most 1024 KB, full square (Play applies the mask and shadow). Verified on developer.android.com icon design specifications 2026-10-26."
     }
   ]
 }
