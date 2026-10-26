@@ -1,5 +1,5 @@
 import { exec, existsSync } from '@vitrin/core';
-import { MAX_HEADLINE_LINES, MAX_PREVIEWS, MAX_SCREENSHOTS, MIN_HEADLINE_PX_69, WCAG_AA_LARGE, type RenderManifest, type RenderTarget } from '@vitrin/schemas';
+import { MAX_HEADLINE_LINES, MAX_PREVIEWS, MAX_SCREENSHOTS, MIN_HEADLINE_PX_69, QUALITY_BAR, WCAG_AA_LARGE, WCAG_AA_NORMAL, type ImageQuality, type RenderManifest, type RenderTarget } from '@vitrin/schemas';
 import { readdir, stat } from 'node:fs/promises';
 import { basename, join } from 'node:path';
 import sharp from 'sharp';
@@ -9,6 +9,29 @@ import { IssueList } from './issues.js';
 export const SCREENSHOT_RE = /^(\d{2})_([a-z0-9-]+)_([a-z0-9.-]+)\.(png|jpe?g)$/;
 /** Preview file pattern: `NN_<DELIVER_DEVICE>.mp4`. */
 export const PREVIEW_RE = /^(\d{2})_([A-Z0-9_]+)\.(mp4|mov|m4v)$/;
+
+/** Store name for messages. */
+export function storeName(t: Pick<RenderTarget, 'store'>): string {
+  return t.store === 'google-play' ? 'Google Play' : 'the App Store';
+}
+
+/** Device family of an App Preview file from its deliver device name (`NN_<DEVICE>.mp4`). */
+export function previewFamily(device: string): 'iphone' | 'ipad' | 'mac' | 'tv' {
+  if (device.startsWith('IPAD')) return 'ipad';
+  if (device === 'DESKTOP') return 'mac';
+  if (device.startsWith('APPLE_TV')) return 'tv';
+  return 'iphone';
+}
+
+/** Screenshots per set: 10 on the App Store, 8 on Google Play. */
+export function maxScreenshots(t: Pick<RenderTarget, 'store'>): number {
+  return t.store === 'google-play' ? 8 : MAX_SCREENSHOTS;
+}
+
+/** Targets whose images may keep an alpha channel (Google Play hi-res icon). */
+export function alphaAllowed(t: Pick<RenderTarget, 'id'>): boolean {
+  return t.id === 'play-icon';
+}
 
 export function sizeAccepted(t: RenderTarget, w: number, h: number): boolean {
   if (t.sizeRange) {
@@ -55,8 +78,9 @@ export async function validateScreenshots(opts: {
       if (!sizeAccepted(target, meta.width ?? 0, meta.height ?? 0)) {
         issues.error('image.size', `${locale}/${f}: ${meta.width}×${meta.height} px; ${target.label} expects ${target.width}×${target.height}.`, { locale, file });
       }
-      if (meta.hasAlpha || meta.channels === 4) {
-        issues.error('image.alpha', `${locale}/${f}: has an alpha channel; the App Store does not accept transparency.`, { locale, file, fix: 'Apply flatten + removeAlpha with sharp (vitrin design does this).' });
+      // Google Play's hi-res icon may carry alpha; every other store image must be opaque.
+      if ((meta.hasAlpha || meta.channels === 4) && !alphaAllowed(target)) {
+        issues.error('image.alpha', `${locale}/${f}: has an alpha channel; ${storeName(target)} does not accept transparency.`, { locale, file, fix: 'Apply flatten + removeAlpha with sharp (vitrin design does this).' });
       }
       if (!['png', 'jpeg'].includes(meta.format ?? '')) issues.error('image.format', `${locale}/${f}: format is ${meta.format}; must be PNG or JPEG.`, { locale, file });
       const byLocale = counts.get(target.id) ?? new Map<string, number>();
@@ -72,8 +96,8 @@ export async function validateScreenshots(opts: {
       if (n === 0) {
         const sev = t.requirement === 'always' || t.requirement === 'if-ipad' ? 'error' : 'warning';
         issues[sev === 'error' ? 'error' : 'warn']('image.missing-target', `${locale}: no screenshots for ${t.label}.`, { locale });
-      } else if (n > MAX_SCREENSHOTS) {
-        issues.error('image.too-many', `${locale}: ${n} screenshots for ${t.label}; maximum ${MAX_SCREENSHOTS}.`, { locale });
+      } else if (n > maxScreenshots(t)) {
+        issues.error('image.too-many', `${locale}: ${n} screenshots for ${t.label}; ${storeName(t)} allows at most ${maxScreenshots(t)}.`, { locale });
       }
     }
     const values = [...(byLocale?.values() ?? [])];
@@ -96,7 +120,52 @@ export async function validateScreenshots(opts: {
     if (img.headlineLines !== undefined && img.headlineLines > MAX_HEADLINE_LINES && SCREENSHOT_RE.test(basename(img.file))) {
       issues.warn('image.headline-lines', `${where}: headline is ${img.headlineLines} lines; at most ${MAX_HEADLINE_LINES} lines is recommended.`, { locale: img.locale, file: img.file, fix: 'Shorten the headline.' });
     }
-    if (img.thumbnailLegible === false) issues.warn('image.thumbnail', `${where}: headline is illegible at 25% size; use a shorter, larger headline.`, { locale: img.locale, file: img.file });
+    if (img.thumbnailLegible === false && !img.quality) issues.warn('image.thumbnail', `${where}: headline is illegible at 25% size; use a shorter, larger headline.`, { locale: img.locale, file: img.file });
+    if (img.quality) issues.push(...qualityIssues(img.quality, where, { locale: img.locale, file: img.file, firstThree: Number(img.shot) <= 3 }).items);
+  }
+  return issues;
+}
+
+/**
+ * Quality-bar issues for one rendered image. Errors are what the quality bar auto-rejects outright (device
+ * under 65 % of the canvas, a word wider than the canvas allows, headline contrast under 3:1); the rest are
+ * warnings to fix before shipping.
+ */
+export function qualityIssues(q: ImageQuality, where: string, ctx: { locale?: string; file?: string; firstThree?: boolean } = {}): IssueList {
+  const issues = new IssueList();
+  const meta = { locale: ctx.locale, file: ctx.file };
+  const pct = (n: number) => `${Math.round(n * 100)}%`;
+  if (q.deviceRule === 'phone' && q.deviceHeightRatio !== undefined) {
+    if (q.deviceHeightRatio < QUALITY_BAR.deviceHeightReject) {
+      issues.error('image.device-small', `${where}: the device covers ${pct(q.deviceHeightRatio)} of the canvas height; at least ${pct(QUALITY_BAR.deviceHeightMin)} (it reads small and the slide empty).`, { ...meta, fix: 'Shorten the headline or drop the subheadline so the device can grow; anchor it to an edge.' });
+    } else if (q.deviceHeightRatio < QUALITY_BAR.deviceHeightMin) {
+      issues.warn('image.device-small', `${where}: the device covers ${pct(q.deviceHeightRatio)} of the canvas height; ${pct(QUALITY_BAR.deviceHeightMin)}–${pct(QUALITY_BAR.deviceHeightMax)} is recommended.`, meta);
+    } else if (q.deviceHeightRatio > 0.9) {
+      issues.warn('image.device-large', `${where}: the device covers ${pct(q.deviceHeightRatio)} of the canvas height; above ${pct(QUALITY_BAR.deviceHeightMax)} the headline loses room.`, meta);
+    }
+  }
+  if (q.largestEmptyBand > QUALITY_BAR.maxEmptyBand) {
+    issues.warn('image.empty-band', `${where}: an empty band covers ${pct(q.largestEmptyBand)} of the canvas height; at most ${pct(QUALITY_BAR.maxEmptyBand)}.`, { ...meta, fix: 'Anchor the device to the top or bottom edge, or use a framing that fills the canvas.' });
+  }
+  if (q.widestWordRatio > QUALITY_BAR.maxWordWidth) {
+    issues.error('image.word-width', `${where}: a headline word spans ${pct(q.widestWordRatio)} of the canvas width; at most ${pct(QUALITY_BAR.maxWordWidth)}.`, { ...meta, fix: 'Use a shorter word or break it onto its own line.' });
+  }
+  if (q.headlineContrast < WCAG_AA_LARGE) {
+    issues.error('image.headline-contrast', `${where}: headline contrast is ${q.headlineContrast.toFixed(2)}:1 against the worst pixel under its letters; WCAG AA needs 4.5:1.`, { ...meta, fix: 'Darken/lighten the emphasis color, add a scrim, or move the headline off the busy area.' });
+  } else if (q.headlineContrast < QUALITY_BAR.minHeadlineContrast) {
+    issues.warn('image.headline-contrast', `${where}: headline contrast is ${q.headlineContrast.toFixed(2)}:1 against the worst pixel under its letters; WCAG AA asks for 4.5:1.`, meta);
+  }
+  if (q.supportContrast !== undefined && q.supportContrast < WCAG_AA_NORMAL) {
+    issues.warn('image.text-contrast', `${where}: kicker/subheadline contrast is ${q.supportContrast.toFixed(2)}:1; small text needs 4.5:1.`, meta);
+  }
+  if (q.layers > QUALITY_BAR.maxLayers) {
+    issues.warn('image.layers', `${where}: ${q.layers} visual layers; keep background → device → headline + one accent.`, { ...meta, fix: 'Remove floating badges or callouts until one accent is left.' });
+  }
+  if (!q.thumbnail.legible) {
+    const msg = `${where}: at search-result size (${q.thumbnail.width} px wide) the headline is ${q.thumbnail.headlinePx.toFixed(1)} px with ${q.thumbnail.contrast.toFixed(1)}:1 contrast — not legible.`;
+    // The first three screenshots are the ones search results show.
+    if (ctx.firstThree) issues.warn('image.thumbnail', msg, { ...meta, fix: 'Use fewer, bigger words with a heavier weight and stronger contrast.' });
+    else issues.info('image.thumbnail', msg, meta);
   }
   return issues;
 }
@@ -194,7 +263,7 @@ export async function validateVideos(opts: { previewsDir: string; creativeDir: s
         continue;
       }
       perDevice.set(m[2]!, (perDevice.get(m[2]!) ?? 0) + 1);
-      const target = previewTargets.find((t) => (m[2]!.startsWith('IPAD') ? t.family === 'ipad' : t.family === 'iphone'));
+      const target = previewTargets.find((t) => t.family === previewFamily(m[2]!));
       if (!target) {
         issues.error('video.disabled-target', `${locale}/${f}: no preview target is enabled for this device (targets.enable); deliver will upload it anyway.`, { locale });
         continue;
