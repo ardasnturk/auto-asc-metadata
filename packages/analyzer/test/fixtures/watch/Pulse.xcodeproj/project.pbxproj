@@ -1,0 +1,19 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	objectVersion = 77;
+	objects = {
+		T0 /* Pulse */ = { isa = PBXNativeTarget; buildConfigurationList = TL0; name = "Pulse"; productName = "Pulse"; productType = "com.apple.product-type.application"; };
+		TL0 = { isa = XCConfigurationList; buildConfigurations = ( TC0D, TC0R ); };
+		TC0D = { isa = XCBuildConfiguration; name = Debug; buildSettings = { PRODUCT_BUNDLE_IDENTIFIER = "com.example.pulse"; SDKROOT = "iphoneos"; TARGETED_DEVICE_FAMILY = "1"; }; };
+		TC0R = { isa = XCBuildConfiguration; name = Release; buildSettings = { PRODUCT_BUNDLE_IDENTIFIER = "com.example.pulse"; SDKROOT = "iphoneos"; TARGETED_DEVICE_FAMILY = "1"; }; };
+		T1 /* Pulse Watch App */ = { isa = PBXNativeTarget; buildConfigurationList = TL1; name = "Pulse Watch App"; productName = "Pulse Watch App"; productType = "com.apple.product-type.application"; };
+		TL1 = { isa = XCConfigurationList; buildConfigurations = ( TC1D, TC1R ); };
+		TC1D = { isa = XCBuildConfiguration; name = Debug; buildSettings = { PRODUCT_BUNDLE_IDENTIFIER = "com.example.pulse.watchkitapp"; SDKROOT = "watchos"; TARGETED_DEVICE_FAMILY = "4"; WATCHOS_DEPLOYMENT_TARGET = "11.0"; }; };
+		TC1R = { isa = XCBuildConfiguration; name = Release; buildSettings = { PRODUCT_BUNDLE_IDENTIFIER = "com.example.pulse.watchkitapp"; SDKROOT = "watchos"; TARGETED_DEVICE_FAMILY = "4"; WATCHOS_DEPLOYMENT_TARGET = "11.0"; }; };
+		PL = { isa = XCConfigurationList; buildConfigurations = ( PC ); };
+		PC = { isa = XCBuildConfiguration; name = Release; buildSettings = {  }; };
+		P0 /* Project object */ = { isa = PBXProject; attributes = { LastUpgradeCheck = 1600; }; buildConfigurationList = PL; developmentRegion = en; knownRegions = ( en, Base, ); targets = ( T0, T1, ); };
+	};
+	rootObject = P0 /* Project object */;
+}

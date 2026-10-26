@@ -1,0 +1,10 @@
+{
+  "name": "trail-notes",
+  "version": "0.0.1",
+  "main": "expo-router/entry",
+  "dependencies": {
+    "expo": "~54.0.0",
+    "react-native": "0.81.0",
+    "expo-notifications": "~0.32.0"
+  }
+}

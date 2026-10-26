@@ -1,0 +1,15 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	objectVersion = 77;
+	objects = {
+		T0 /* Pods-Pocket */ = { isa = PBXNativeTarget; buildConfigurationList = TL0; name = "Pods-Pocket"; productName = "Pods-Pocket"; productType = "com.apple.product-type.framework"; };
+		TL0 = { isa = XCConfigurationList; buildConfigurations = ( TC0D, TC0R ); };
+		TC0D = { isa = XCBuildConfiguration; name = Debug; buildSettings = { SDKROOT = "iphoneos"; }; };
+		TC0R = { isa = XCBuildConfiguration; name = Release; buildSettings = { SDKROOT = "iphoneos"; }; };
+		PL = { isa = XCConfigurationList; buildConfigurations = ( PC ); };
+		PC = { isa = XCBuildConfiguration; name = Release; buildSettings = {  }; };
+		P0 /* Project object */ = { isa = PBXProject; attributes = { LastUpgradeCheck = 1600; }; buildConfigurationList = PL; developmentRegion = en; knownRegions = ( en, Base, ); targets = ( T0, ); };
+	};
+	rootObject = P0 /* Project object */;
+}

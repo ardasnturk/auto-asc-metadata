@@ -19,6 +19,35 @@ export const CaptureRecording = CaptureScreen.extend({
   durationSec: z.number().min(3).max(60).default(12),
 });
 
+export const CaptureAndroid = z.object({
+  /**
+   * AVD per family, e.g. { "android-phone": "Pixel_9_API_36" }. Without one, Vitrin uses or creates
+   * `Vitrin_<device>` from the target's device profile and the newest installed system image.
+   */
+  avds: z.record(z.string(), z.string()).default({}),
+  /** Falls back to the analyzer's applicationId (build.gradle, app.json expo.android.package). */
+  applicationId: z.string().optional(),
+  /** Gradle task for native Android apps (default: assembleDebug; React Native/Expo see `reactNative.metro`). */
+  gradleTask: z.string().optional(),
+  /** Launcher activity (`.MainActivity` or a full class name). Resolved from the device when empty. */
+  activity: z.string().optional(),
+  /** Run the emulator without a window (`-no-window`). */
+  headless: z.boolean().default(true),
+  bootTimeoutSec: z.number().int().positive().default(300),
+});
+
+export const CaptureReactNative = z.object({
+  /**
+   * false (default): build Release variants that embed the JS bundle, so no Metro server is needed and no dev overlays show.
+   * true: build Debug variants (`assembleDebug`, Debug configuration) and load JS from a Metro server you start yourself.
+   */
+  metro: z.boolean().default(false),
+  /** Run `pod install` in ios/ before xcodebuild. */
+  podInstall: z.boolean().default(true),
+  /** Expo: run `npx expo prebuild` when ios/ or android/ is missing. */
+  prebuild: z.boolean().default(true),
+});
+
 export const VitrinConfig = z.object({
   app: z.object({
     /** Falls back to APP_BUNDLE_ID, then to the Xcode project. */
@@ -92,10 +121,27 @@ export const VitrinConfig = z.object({
       appearance: z.enum(['light', 'dark']).default('light'),
       screens: z.array(CaptureScreen).default([]),
       recordings: z.array(CaptureRecording).default([]),
-      /** Override simulator per family, e.g. { iphone: "iPhone 17 Pro" }. */
+      /**
+       * Override the simulator device type per family, e.g. { iphone: "iPhone 17 Pro", watch: "Apple Watch Series 11 (46mm)" }.
+       * Families: iphone, ipad, duo, watch, tv, vision. Android families use `android.avds`.
+       */
       simulators: z.record(z.string(), z.string()).default({}),
+      /** Pre-built artifacts per platform (`ios`, `macos`, `watchos`, `tvos`, `visionos`: .app; `android`: .apk); skips the build. */
+      prebuilt: z.record(z.string(), z.string()).default({}),
+      android: CaptureAndroid.default({ avds: {}, headless: true, bootTimeoutSec: 300 }),
+      reactNative: CaptureReactNative.default({ metro: false, podInstall: true, prebuild: true }),
     })
-    .default({ mode: 'launch-args', configuration: 'Debug', appearance: 'light', screens: [], recordings: [], simulators: {} }),
+    .default({
+      mode: 'launch-args',
+      configuration: 'Debug',
+      appearance: 'light',
+      screens: [],
+      recordings: [],
+      simulators: {},
+      prebuilt: {},
+      android: { avds: {}, headless: true, bootTimeoutSec: 300 },
+      reactNative: { metro: false, podInstall: true, prebuild: true },
+    }),
   video: z
     .object({ enabled: z.boolean().default(true), loops: z.boolean().default(true) })
     .default({ enabled: true, loops: true }),
