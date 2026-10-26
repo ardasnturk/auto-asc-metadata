@@ -6,7 +6,7 @@ import { applyGitignoreBlock, ensureVitrinGitignore, GITIGNORE_BEGIN, vitrinGiti
 import { describe, expect, it } from 'vitest';
 import { buildInventory, recordApproval, recordUpload } from '../src/approval.js';
 import { createContext, NeedsInput } from '../src/context.js';
-import { finalizeCommand, insideProject } from '../src/finalize.js';
+import { exportProjectMetadata, finalizeCommand, insideProject } from '../src/finalize.js';
 import { makeFixture } from './fixture.js';
 
 const git = (cwd: string, ...args: string[]) => execFileSync('git', args, { cwd, encoding: 'utf8', env: { ...process.env, GIT_AUTHOR_NAME: 't', GIT_AUTHOR_EMAIL: 't@t', GIT_COMMITTER_NAME: 't', GIT_COMMITTER_EMAIL: 't@t' } });
@@ -112,6 +112,28 @@ async function uploaded(opts: { readBack?: string[] } = {}) {
   await recordUpload(ctx, approval, opts.readBack ?? []);
   return { fx, ctx, approval };
 }
+
+describe('metadata in the project', () => {
+  it('copies the written store text into metadata/ and never touches a user folder', async () => {
+    const fx = await makeFixture({ android: true });
+    const ctx = await createContext({ cwd: fx.root });
+    const res = await exportProjectMetadata(ctx);
+    expect(res.skipped).toBeUndefined();
+    expect(readFileSync(join(fx.root, 'metadata/app-store/ios/en-US/name.txt'), 'utf8')).toBe(readFileSync(join(fx.root, '.vitrin/store/metadata/en-US/name.txt'), 'utf8'));
+    expect(res.files).toContain('metadata/google-play/android/en-US/title.txt');
+    const manifest = JSON.parse(readFileSync(join(fx.root, 'metadata/manifest.json'), 'utf8'));
+    expect(manifest.generator).toBe('vitrin');
+    // Running again replaces its own files.
+    expect((await exportProjectMetadata(ctx)).files.length).toBe(res.files.length);
+
+    const other = await makeFixture({ android: false });
+    mkdirSync(join(other.root, 'metadata'), { recursive: true });
+    writeFileSync(join(other.root, 'metadata', 'notes.md'), 'mine');
+    const skipped = await exportProjectMetadata(await createContext({ cwd: other.root }));
+    expect(skipped.skipped).toMatch(/not written by Vitrin/);
+    expect(existsSync(join(other.root, 'metadata', 'app-store'))).toBe(false);
+  });
+});
 
 describe('vitrin finalize', () => {
   it('refuses without a recorded, clean upload', async () => {

@@ -111,6 +111,47 @@ function keepPath(item: InventoryItem, source: string): string {
   return `${base}/${MEDIA_DIR[item.kind] ?? 'other'}/${source.split('/').pop()}`;
 }
 
+interface ProjectManifest {
+  generator?: string;
+  files?: KeptFile[];
+}
+
+async function readProjectManifest(file: string): Promise<ProjectManifest | undefined> {
+  return existsSync(file) ? (JSON.parse(await readFile(file, 'utf8')) as ProjectManifest) : undefined;
+}
+
+/**
+ * After a successful `vitrin write`: the validated store text, readable in the project as
+ * `metadata/<store>/<platform>/<locale>/<field>.txt` (the same layout `finalize --keep` uses). A `metadata/`
+ * folder Vitrin did not write is never touched.
+ */
+export async function exportProjectMetadata(ctx: Ctx): Promise<{ files: string[]; skipped?: string }> {
+  const outRoot = insideProject(ctx.root, 'metadata');
+  const manifestFile = join(outRoot, 'manifest.json');
+  const prev = await readProjectManifest(manifestFile);
+  if (existsSync(outRoot) && (await readdir(outRoot)).length && prev?.generator !== 'vitrin') return { files: [], skipped: 'metadata/ already exists and was not written by Vitrin' };
+  await syncFastlaneMetadata(ctx);
+  const inv = await buildInventory(ctx);
+  const text: KeptFile[] = [];
+  for (const item of inv.items.filter((i) => i.kind === 'metadata')) {
+    for (const f of item.fields ?? []) {
+      if (!f.file.startsWith('.vitrin/store/')) continue;
+      const dest = keepPath(item, f.file);
+      const abs = insideProject(ctx.root, dest);
+      await ensureDir(dirname(abs));
+      await copyFile(insideProject(ctx.root, f.file), abs);
+      text.push({ path: dest, source: f.file, sha256: await hashFile(abs), bytes: (await lstat(abs)).size });
+    }
+  }
+  // Text from an earlier write that is no longer produced goes; media kept by `finalize --keep` stays.
+  const written = new Set(text.map((f) => f.path));
+  const old = prev?.files ?? [];
+  for (const f of old) if (f.source.startsWith('.vitrin/store/metadata/') && !written.has(f.path)) await rm(insideProject(ctx.root, f.path), { force: true });
+  const kept = old.filter((f) => !f.source.startsWith('.vitrin/store/metadata/'));
+  await writeJson(manifestFile, { generator: 'vitrin', updatedAt: new Date().toISOString(), files: [...kept, ...text] });
+  return { files: text.map((f) => f.path) };
+}
+
 /** Copies exactly the approved, uploaded set into metadata/ and writes metadata/manifest.json with hashes. */
 async function keepUploaded(ctx: Ctx): Promise<{ kept: KeptFile[]; bytes: number }> {
   // A first-release upload removes release_notes.txt after the gate; re-export restores the approved text files.

@@ -191,18 +191,18 @@ Method: the /vitrin skill’s references/art-direction.md (iron rules, narrative
 - Captured screens (capture.screens): ${screens || '(none)'}
 - Icons: Lucide names (e.g. cloud, chart-column, bell, lock, sparkles). Do not use SF Symbols.
 
-## Step 1 — the first two shots, then samples${hasShots ? ' (shots.json exists: check its first two shots)' : ''}
-Write \`.vitrin/shots.json\` with **only the hero and the second shot** (real copy, real screens; see Step 3 for the format), with copy in **${sample.locale} only**. The samples use one language and one format (${sample.target.id}), so capture just that first: \`vitrin capture --locale ${sample.locale} --family ${sample.target.family}\`. Then run:
+## Step 1 — the first three shots, then samples${hasShots ? ' (shots.json exists: check its first three shots)' : ''}
+Write \`.vitrin/shots.json\` with **only the first three shots** — what the App Store search result shows (real copy, real screens; see Step 3 for the format), with copy in **${sample.locale} only**. The samples use one language and one format (${sample.target.id}), so capture just that first: \`vitrin capture --locale ${sample.locale} --family ${sample.target.family}\`. Then run:
 
 \`\`\`
 vitrin design --samples --json            # suggested for this app: ${suggested.join(', ')}
 vitrin design --samples --styles a,b,c,d  # or pick the presets yourself (2–8, --count N)
 \`\`\`
 
-It renders those two shots in each preset (\`.vitrin/design-samples/<preset>/\`) plus one contact sheet labelled A, B, C, D (\`.vitrin/design-samples/contact-sheet.png\`). Pick presets that differ clearly (light and dark, sans and serif, upright and tilted) and that stand apart from the competitor palettes above.
+It renders those shots in each preset (\`.vitrin/design-samples/<preset>/\`), one contact sheet labelled A, B, C, D (\`.vitrin/design-samples/contact-sheet.png\`) and a store preview (\`.vitrin/design-samples/store-preview.html\` and \`.png\`): each option as an App Store search result and product page, “if you choose A it looks like this”. Pick presets that differ clearly (light and dark, sans and serif, upright and tilted) and that stand apart from the competitor palettes above.
 
 ## Step 2 — ask the user
-Show the contact sheet and ask: **“Which design should the screenshots use — A, B, C or D?”** Wait for the answer; never choose for them. Then write \`.vitrin/art-direction.json\`:
+Open the store preview for the user (\`open .vitrin/design-samples/store-preview.html\` on macOS), show \`store-preview.png\` in the chat too, and ask: **“Which design should the screenshots use — A, B, C or D?”** Wait for the answer; never choose for them. Then write \`.vitrin/art-direction.json\`:
 \`\`\`json
 { "options": [{ "id": "picked", "name": "…", "rationale": "why it fits the app", "differentiation": "why it stands apart from competitors",
     "preset": "liquid-glass-aurora", "brand": { "primary": "${brand[0] ?? '#5B4BE8'}"${brand[1] ? `, "secondary": "${brand[1]}"` : ''} } }],
@@ -217,6 +217,7 @@ ${presetRows}
 ## Step 3 — the full shot list
 Copy for every chosen language (\`app.locales\`: ${ctx.config.app.locales.join(', ')}); each locale is a local rewrite, not a word-for-word translation. 5–7 shots for iPhone (3–5 are enough for iPad). Follow the narrative arc: 1 hero (main benefit; proof only here) → 2 differentiator → 3 ecosystem/core → features, one per shot → trust → closer (\`feature-wall\` or \`mosaic\`).
 - **Headlines:** one idea, ≤ 5 words recommended (7 max), 3–5 words per line, ≤ 2 lines, \`\\n\` for an intentional break, exactly one \`*emphasis*\`. Write them in the preset's copy tone (styles/<preset>.md). Reinforce the main keyword from the name/subtitle. \`kicker\` ≤ 3 words.
+- **Panoramic pair:** \`"archetype": "panoramic", "bridge": true\` puts a large tilted phone on the right edge that continues into the next screenshot, which shows its other half next to its own device (the two read as one image in the store). Use it once, e.g. shots 2→3, and give the next shot a real screen of its own.
 - **Framing varies:** leave \`"framing": "auto"\` (never repeats the previous shot) or set bleed-bottom / bleed-top / offset / tilted / two-devices / no-device yourself; mix at least two framings. 1–2 shots \`"inverted": true\` for rhythm (cycling presets change surface on their own). For 5+ shots set \`"bridge": true\` on one shot to carry a decorative element into the next (never text).
 - **Archetypes:** hero, feature, callout, fullbleed, tilted, split, collage, before-after, stat, social-proof, panoramic, statement, testimonial, feature-wall, mosaic. At least 60 % real UI, one UI shot in the first 3.
 - No calls to action (“Download now”), other platform names, prices or unproven awards. Badges: feature/new need \`featureId\`; proof only a real Lookup rating or documented award, on the hero; platform only if supported. Max 2 badges on the hero.

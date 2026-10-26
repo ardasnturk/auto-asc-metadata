@@ -1,11 +1,12 @@
 import { ensureDir, existsSync, log, writeJson, writeText, type AppPaths } from '@vitrin/core';
 import { QUALITY_BAR, type ArtDirection, type ArtDirectionOption, type Badge, type CreativeSpec, type ImageQuality, type RenderManifest, type RenderTarget, type Shot, type ShotList, type StylePreset } from '@vitrin/schemas';
 import { readdir, readFile, rm } from 'node:fs/promises';
-import { join } from 'node:path';
+import { dirname, join, relative, sep } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { chromium, type Browser, type Page } from 'playwright';
 import sharp from 'sharp';
 import { contrastRatio } from './color.js';
+import { esc } from './components.js';
 import { CONTAINED_FAMILIES, type DeviceFamily } from './frames.js';
 import { buildPage, frameFamily, MEASURE_SCRIPT, planFramings, type PageInput, type ScreenImage } from './layout.js';
 import { measureGlyphContrast, type WordBox } from './quality.js';
@@ -243,6 +244,9 @@ export async function renderDesign(opts: RenderOptions): Promise<RenderResult> {
           if (!copy) throw new Error(`shots.json: ${shot.id} has no ${locale} copy.`);
           const idx = ordered.indexOf(shot);
           const screens = await Promise.all(shot.screens.map((id) => raw.get(locale, family, id)));
+          // The previous shot is a bridged panoramic one: its device continues on this canvas.
+          const prev = idx > 0 ? ordered[idx - 1] : undefined;
+          const spanIn = prev?.archetype === 'panoramic' && prev.bridge && prev.screens[0] ? await raw.get(locale, family, prev.screens[0]) : undefined;
           const input: PageInput = {
             target,
             locale,
@@ -265,6 +269,7 @@ export async function renderDesign(opts: RenderOptions): Promise<RenderResult> {
             inverted: shot.inverted,
             bridgeOut: shot.bridge,
             bridgeIn: idx > 0 && Boolean(ordered[idx - 1]!.bridge),
+            spanIn,
             appName,
             wall: (shot.wall ?? []).map((l) => l[locale] ?? '').filter(Boolean),
           };
@@ -412,11 +417,35 @@ export interface SampleOptions {
   brand?: BrandTint;
   /** Output root (default .vitrin/design-samples). */
   outDir?: string;
+  /** Subtitle shown in the store preview (the metadata subtitle once written). */
+  subtitle?: string;
+  /** Words of the store preview page in the user's language (English by default). */
+  labels?: Partial<StorePreviewLabels>;
 }
+
+export interface StorePreviewLabels {
+  title: string;
+  intro: string;
+  option: string;
+  searchResult: string;
+  productPage: string;
+  get: string;
+}
+
+const STORE_PREVIEW_EN: StorePreviewLabels = {
+  title: 'Choose a design',
+  intro: 'Each column shows how your App Store listing looks with that design: the search result first, then the product page. Pick A, B, C or D.',
+  option: 'If you choose {letter}',
+  searchResult: 'Search result',
+  productPage: 'Product page',
+  get: 'Get',
+};
 
 export interface SampleResult {
   samples: Array<{ letter: string; style: StylePreset; name: string; files: string[] }>;
   contactSheet: string;
+  /** App Store–like page: each option as a search result and product page (HTML, and a PNG of it). */
+  storePreview: { html: string; png: string };
   warnings: string[];
 }
 
@@ -445,7 +474,8 @@ export async function renderDesignSamples(opts: SampleOptions): Promise<SampleRe
   const styles = (opts.styles?.length ? opts.styles : suggestStyles(count, opts.category)).slice(0, opts.styles?.length ? opts.styles.length : count);
   const outRoot = opts.outDir ?? join(opts.paths.vitrin, 'design-samples');
   const ordered = [...opts.shots.shots].sort((a, b) => a.id.localeCompare(b.id));
-  const picked = ordered.slice(0, 2);
+  // The search result shows the first three screenshots, so the samples do too when the set has them.
+  const picked = ordered.slice(0, 3);
   if (!picked.length) throw new Error('shots.json has no shots to sample.');
   const base = opts.artDirection?.options.find((o) => o.id === opts.artDirection?.selected);
   const raw = new RawLibrary(opts.paths, opts.primaryLocale);
@@ -453,7 +483,7 @@ export async function renderDesignSamples(opts: SampleOptions): Promise<SampleRe
   const target = opts.target;
   const family = familyOfTarget(target);
   const locale = opts.primaryLocale;
-  const result: SampleResult = { samples: [], contactSheet: join(outRoot, 'contact-sheet.png'), warnings: [] };
+  const result: SampleResult = { samples: [], contactSheet: join(outRoot, 'contact-sheet.png'), storePreview: { html: join(outRoot, 'store-preview.html'), png: join(outRoot, 'store-preview.png') }, warnings: [] };
   await rm(outRoot, { recursive: true, force: true });
   let browser: Browser | undefined;
   try {
@@ -469,7 +499,9 @@ export async function renderDesignSamples(opts: SampleOptions): Promise<SampleRe
         if (!copy) continue;
         const idx = ordered.indexOf(shot);
         const screens = await Promise.all(shot.screens.map((id) => raw.get(locale, family, id)));
-        const input: PageInput = { target, locale, ad, archetype: shot.archetype, headline: copy.headline, subheadline: copy.subheadline, kicker: copy.kicker, badges: shot.badges, stat: shot.stat?.value, callouts: shot.callouts, quotes: shot.quotes[locale] ?? [], icon, screens, index: idx, total: ordered.length, framing: framings[idx], inverted: shot.inverted, appName };
+        const prev = idx > 0 ? ordered[idx - 1] : undefined;
+        const spanIn = prev?.archetype === 'panoramic' && prev.bridge && prev.screens[0] && picked.includes(prev) ? await raw.get(locale, family, prev.screens[0]) : undefined;
+        const input: PageInput = { target, locale, ad, archetype: shot.archetype, headline: copy.headline, subheadline: copy.subheadline, kicker: copy.kicker, badges: shot.badges, stat: shot.stat?.value, callouts: shot.callouts, quotes: shot.quotes[locale] ?? [], icon, screens, index: idx, total: ordered.length, framing: framings[idx], inverted: shot.inverted, appName, bridgeOut: shot.bridge && picked.includes(ordered[idx + 1]!), bridgeIn: Boolean(prev?.bridge && picked.includes(prev)), spanIn };
         const out = join(outRoot, style, `${shot.id}_${shot.slug}.png`);
         await renderOne(page, buildPage(input), join(outRoot, style, `${shot.id}.html`), out, target, { preset: style, framing: framings[idx] ?? 'auto', family, hasDevice: screens.length > 0 });
         files.push(out);
@@ -478,12 +510,62 @@ export async function renderDesignSamples(opts: SampleOptions): Promise<SampleRe
     }
     await context.close();
     await renderContactSheet(browser, result, outRoot);
+    await renderStorePreview(browser, result, { appName, subtitle: opts.subtitle, icon, labels: { ...STORE_PREVIEW_EN, ...opts.labels }, landscape: target.width > target.height });
   } finally {
     await browser?.close();
   }
-  await writeJson(join(outRoot, 'samples.json'), { generatedAt: new Date().toISOString(), target: target.id, locale, samples: result.samples.map((s) => ({ letter: s.letter, style: s.style, name: s.name, files: s.files })), contactSheet: result.contactSheet });
+  await writeJson(join(outRoot, 'samples.json'), { generatedAt: new Date().toISOString(), target: target.id, locale, samples: result.samples.map((s) => ({ letter: s.letter, style: s.style, name: s.name, files: s.files })), contactSheet: result.contactSheet, storePreview: result.storePreview });
   result.warnings.push(...raw.warnings);
   return result;
+}
+
+/**
+ * The choice page: one App Store–like column per option — the search result (icon, name, subtitle, Get, the
+ * first three screenshots) and the product page's screenshot row — so the user sees what each choice means
+ * in the store. Relative image paths, so the HTML opens in any browser; also rendered to a PNG.
+ */
+async function renderStorePreview(browser: Browser, r: SampleResult, o: { appName: string; subtitle?: string; icon?: string; labels: StorePreviewLabels; landscape: boolean }): Promise<void> {
+  const L = o.labels;
+  const name = esc(o.appName || 'App');
+  const rel = (f: string) => relative(dirname(r.storePreview.html), f).split(sep).map(encodeURIComponent).join('/');
+  const icon = o.icon ? `<img class="icon" src="${o.icon}" alt="">` : `<div class="icon ph">${name.slice(0, 1)}</div>`;
+  const cols = r.samples.map((s) => {
+    const shots = s.files.map((f) => `<img src="${rel(f)}" alt="">`).join('');
+    return `<section class="opt"><h2><span class="letter">${s.letter}</span><span>${esc(L.option.replace('{letter}', s.letter))}<small>${esc(s.name)}</small></span></h2>
+  <h3>${esc(L.searchResult)}</h3>
+  <div class="phone"><div class="sr"><div class="row">${icon}<div class="meta"><b>${name}</b>${o.subtitle ? `<span>${esc(o.subtitle)}</span>` : ''}<i>★★★★★</i></div><span class="get">${esc(L.get)}</span></div><div class="shots${o.landscape ? ' land' : ''}">${shots}</div></div></div>
+  <h3>${esc(L.productPage)}</h3>
+  <div class="phone"><div class="pp"><div class="row">${icon.replace('class="icon', 'class="icon big')}<div class="meta"><b class="big">${name}</b>${o.subtitle ? `<span>${esc(o.subtitle)}</span>` : ''}<span class="get">${esc(L.get)}</span></div></div><div class="strip${o.landscape ? ' land' : ''}">${shots}</div></div></div>
+</section>`;
+  });
+  const html = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(L.title)} — ${name}</title><style>
+  *{box-sizing:border-box}body{margin:0;background:#F2F2F7;color:#1D1D1F;font:15px/1.4 -apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;padding:32px 24px 48px}
+  header{max-width:1500px;margin:0 auto 24px}h1{margin:0 0 6px;font-size:30px}header p{margin:0;color:#6E6E73;max-width:760px}
+  .grid{display:grid;grid-template-columns:repeat(${Math.min(4, r.samples.length)},minmax(0,1fr));gap:22px;max-width:1500px;margin:0 auto;width:max-content}
+  .opt{background:#fff;border-radius:22px;padding:18px;box-shadow:0 1px 3px rgba(0,0,0,.06);width:340px}
+  h2{display:flex;gap:12px;align-items:center;margin:0 0 14px;font-size:18px}h2 small{display:block;font-weight:500;color:#6E6E73;font-size:13px}
+  .letter{display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:12px;background:#0A84FF;color:#fff;font-size:22px;font-weight:800;flex:none}
+  h3{margin:14px 0 8px;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:#8E8E93}
+  .phone{border:1px solid #E5E5EA;border-radius:18px;padding:12px;background:#fff}
+  .row{display:flex;gap:10px;align-items:center}.meta{flex:1;min-width:0;display:flex;flex-direction:column}.meta b{font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.meta b.big{font-size:19px}
+  .meta span{color:#6E6E73;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.meta i{font-style:normal;color:#8E8E93;font-size:11px;letter-spacing:1px}
+  .icon{width:52px;height:52px;border-radius:12px;flex:none;object-fit:cover;border:1px solid rgba(0,0,0,.06)}.icon.big{width:78px;height:78px;border-radius:18px}
+  .icon.ph{display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#0A84FF,#5E5CE6);color:#fff;font-weight:800;font-size:22px}
+  .get{background:#EEF0F4;color:#0A84FF;font-weight:700;border-radius:999px;padding:5px 16px;font-size:14px;align-self:center;flex:none}.pp .get{align-self:flex-start;margin-top:8px}
+  .shots{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:10px}.shots img{width:100%;border-radius:8px;display:block;border:1px solid rgba(0,0,0,.05)}
+  .shots.land{grid-template-columns:1fr}
+  .strip{display:flex;gap:8px;overflow:hidden;margin-top:12px}.strip img{height:300px;border-radius:12px;flex:none;border:1px solid rgba(0,0,0,.05)}.strip.land img{height:150px}
+  </style></head><body><header><h1>${esc(L.title)}</h1><p>${esc(L.intro)}</p></header><div class="grid">${cols.join('\n')}</div></body></html>`;
+  await writeText(r.storePreview.html, html);
+  const page = await browser.newPage({ viewport: { width: 1200, height: 800 }, deviceScaleFactor: 1 });
+  await page.goto(pathToFileURL(r.storePreview.html).href, { waitUntil: 'load' });
+  await page.evaluate(async () => {
+    await Promise.all([...document.images].map((img) => (img.complete ? null : new Promise((res) => (img.onload = img.onerror = res)))));
+  });
+  const box = await page.evaluate(() => ({ width: Math.ceil(document.documentElement.scrollWidth), height: Math.ceil(document.documentElement.scrollHeight) }));
+  await page.setViewportSize(box);
+  await page.screenshot({ path: r.storePreview.png, type: 'png', fullPage: true });
+  await page.close();
 }
 
 /** Side-by-side sheet of the samples, rendered from HTML. */

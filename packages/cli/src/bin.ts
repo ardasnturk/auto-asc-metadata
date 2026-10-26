@@ -119,7 +119,7 @@ program
   .command('design')
   .description('renders badged screenshots and creatives from HTML templates')
   .option('--only <ids>', 'only these shot ids (01,02)')
-  .option('--samples', 'render the first two shots in several style presets plus a contact sheet (comparison only, nothing uploaded)')
+  .option('--samples', 'render the first three shots in several style presets, a contact sheet and an App Store–like preview page (comparison only, nothing uploaded)')
   .option('--count <n>', 'number of sample designs', '4')
   .option('--styles <presets>', 'comma-separated preset ids to sample')
   .option('--locale <locale>', 'locale of the samples (default: English when the app has it, else the primary locale)')

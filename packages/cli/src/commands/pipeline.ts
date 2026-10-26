@@ -11,6 +11,8 @@ import { dirname, join, relative } from 'node:path';
 import pc from 'picocolors';
 import { designBrief, metadataBrief, profileBrief, screensBrief, videoBrief } from '../briefs.js';
 import { renderHtmlScreens, type ScreenFamily } from '../html-screens.js';
+import { exportProjectMetadata } from '../finalize.js';
+import { loadUiText } from '../i18n.js';
 import { EXIT, loadProfile, NeedsInput, stage, type Ctx } from '../context.js';
 import { AndroidDevice, androidLocaleTag, androidTools, ensureAvd, launchArgsToExtras, serialFor, startEmulator } from '../android.js';
 import { appIdentity, buildApp } from '../build.js';
@@ -115,6 +117,10 @@ export async function writeCommand(ctx: Ctx): Promise<number> {
   const written = await exportFastlaneMetadata(ctx.paths, ctx.config, app, metadata);
   await ctx.state.mark('write', hashValue({ metadata, app, urls: ctx.config.urls }), written.map((w) => relative(ctx.root, w)));
   log.ok(`Wrote .vitrin/store/metadata (${written.length} files)`);
+  // The finished text, readable in the project: metadata/app-store/<platform>/<locale>/*.txt (+ google-play).
+  const project = await exportProjectMetadata(ctx);
+  if (project.skipped) log.warn(`${project.skipped}; the metadata text stays in .vitrin/store/metadata.`);
+  else log.ok(`Metadata in the project: metadata/ (${project.files.length} files)`);
   for (const m of metadata) {
     const kw = Buffer.byteLength(m.keywords, 'utf8');
     log.dim(`  ${m.locale}: name “${m.name}”, subtitle “${m.subtitle}”, keywords ${kw}/100 bytes`);
@@ -468,7 +474,7 @@ async function captureAndroid(ctx: Ctx, f: CaptureFamily, apk: string, appId: st
 // ---------------------------------------------------------------- design
 export interface DesignOptions {
   only?: string[];
-  /** Comparison render: the first two shots in N presets plus a contact sheet (nothing is uploaded). */
+  /** Comparison render: the first three shots in N presets, a contact sheet and a store preview (nothing is uploaded). */
   samples?: boolean;
   /** Number of sample designs (default 4). */
   count?: number;
@@ -513,11 +519,11 @@ export async function designCommand(ctx: Ctx, opts: DesignOptions = {}): Promise
   return report.ok ? EXIT.OK : EXIT.FAIL;
 }
 
-/** `vitrin design --samples`: N clearly different designs of the first two shots for the user to pick from. */
+/** `vitrin design --samples`: N clearly different designs of the first shots for the user to pick from. */
 async function designSamples(ctx: Ctx, profile: AppProfile, opts: DesignOptions): Promise<number> {
   if (!existsSync(ctx.paths.shots)) {
     const brief = await designBrief(ctx, profile);
-    throw new NeedsInput('Claude input needed: the first two shots in shots.json (hero + second shot) before sampling designs.', [`Brief: ${relative(ctx.root, brief)}`]);
+    throw new NeedsInput('Claude input needed: the first three shots in shots.json (what the search result shows) before sampling designs.', [`Brief: ${relative(ctx.root, brief)}`]);
   }
   const shots = await readJson(ctx.paths.shots, ShotList);
   const ad = existsSync(ctx.paths.artDirection) ? await readJson(ctx.paths.artDirection, ArtDirection) : undefined;
@@ -531,7 +537,11 @@ async function designSamples(ctx: Ctx, profile: AppProfile, opts: DesignOptions)
   const missingCopy = shots.shots.slice(0, 2).filter((s) => !s.copy[locale]);
   if (missingCopy.length) log.warn(`shots ${missingCopy.map((s) => s.id).join(', ')} have no ${locale} copy; the samples use another locale's text.`);
   const appIcon = profile.brand.appIcon ? join(profile.project.root, profile.brand.appIcon) : undefined;
+  const ui = (await loadUiText(ctx)).text;
+  const meta = existsSync(ctx.paths.metadataFile(locale)) ? await readJson(ctx.paths.metadataFile(locale), LocaleMetadata).catch(() => undefined) : undefined;
   const res = await renderDesignSamples({
+    subtitle: meta?.subtitle,
+    labels: { title: ui.samplesTitle, intro: ui.samplesIntro, option: ui.samplesOption, searchResult: ui.searchResult, productPage: ui.productPage, get: ui.get },
     paths: ctx.paths,
     primaryLocale: locale,
     target,
@@ -543,7 +553,7 @@ async function designSamples(ctx: Ctx, profile: AppProfile, opts: DesignOptions)
     appIcon,
     appName: profile.app.displayName,
   });
-  const out = { contactSheet: res.contactSheet, target: target.id, locale, samples: res.samples.map((s) => ({ letter: s.letter, preset: s.style, name: s.name, files: s.files })), warnings: res.warnings };
+  const out = { storePreview: res.storePreview, contactSheet: res.contactSheet, target: target.id, locale, samples: res.samples.map((s) => ({ letter: s.letter, preset: s.style, name: s.name, files: s.files })), warnings: res.warnings };
   if (ctx.json) {
     process.stdout.write(JSON.stringify(out, null, 2) + '\n');
     return EXIT.OK;
@@ -551,7 +561,8 @@ async function designSamples(ctx: Ctx, profile: AppProfile, opts: DesignOptions)
   for (const w of res.warnings) log.warn(w);
   for (const s of res.samples) log.ok(`${s.letter}  ${s.name} (${s.style}) — ${s.files.map((f) => relative(ctx.root, f)).join(', ')}`);
   log.ok(`Contact sheet: ${relative(ctx.root, res.contactSheet)}`);
-  log.info(`Samples: ${locale}, ${target.id}. Show the contact sheet and ask which design (A/B/C/D) to use; set its preset in art-direction.json (options[].preset + selected). Then ask which store languages and formats to produce (vitrin select --locales … --targets …) before \`vitrin design\`.`);
+  log.ok(`Store preview (A/B/C/D as they would look in the App Store): ${relative(ctx.root, res.storePreview.html)} · ${relative(ctx.root, res.storePreview.png)}`);
+  log.info(`Samples: ${locale}, ${target.id}. Show the store preview (store-preview.html / .png) and ask which design (A/B/C/D) to use; set its preset in art-direction.json (options[].preset + selected). Then ask which store languages and formats to produce (vitrin select --locales … --targets …) before \`vitrin design\`.`);
   return EXIT.OK;
 }
 

@@ -80,9 +80,9 @@ The skill first asks which language to talk in (English by default). On a new re
 | `vitrin select --platforms … --assets … --targets … --locales … --language … --uploader … --capture …` | Stores the user's choices in `vitrin.config.yaml`: platforms, content kinds (`metadata`, `screenshots`, `previews`, `creatives`, `events`), formats (target ids), store locales, the conversation language and the App Store uploader |
 | `vitrin uploader [--json]` | Whether the asc CLI and fastlane are installed, for the uploader question |
 | `vitrin research` | `.vitrin/competitors.json`, `.vitrin/keywords/<locale>.json` — iTunes Search/Lookup, RSS, reviews, OCR, palettes, competition/popularity |
-| `vitrin write` | Validates Claude's metadata (App Store and Google Play) → `.vitrin/store/metadata/` |
+| `vitrin write` | Validates Claude's metadata (App Store and Google Play) → `.vitrin/store/metadata/`, and the finished text, readable, in `metadata/<store>/<platform>/<locale>/*.txt` |
 | `vitrin capture` | Raw screens → `.vitrin/raw/<locale>/<family>/`: Claude's HTML screens from `.vitrin/screens/` (default, no build) or simulators, Mac window, Android emulator (`capture.mode: launch-args`) |
-| `vitrin design --samples [--locale …]` | The first two shots in four style presets, in one language and the main iPhone format, plus a labelled contact sheet → `.vitrin/design-samples/` (comparison only) |
+| `vitrin design --samples [--locale …]` | The first three shots in four style presets, in one language and the main iPhone format, a labelled contact sheet and `store-preview.html`: each option as an App Store search result and product page → `.vitrin/design-samples/` (comparison only) |
 | `vitrin design` | HTML → Playwright → `.vitrin/store/screenshots/<locale>/NN_<slug>_<target>.png`, `.vitrin/creative/`, quality gate |
 | `vitrin video [--styles all]` | Remotion → `.vitrin/store/app-previews/<locale>/…mp4`, header/search loops |
 | `vitrin validate` | `.vitrin/validation.json` (exit code 1 on errors) |

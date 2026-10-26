@@ -52,6 +52,11 @@ export interface PageInput {
   /** Cross-canvas moment with the next / previous shot. */
   bridgeOut?: boolean;
   bridgeIn?: boolean;
+  /**
+   * The previous shot is a bridged `panoramic` one: its device continues into this canvas. The screen it shows;
+   * this page draws the part of that device that crossed the edge (same geometry, shifted by one canvas width).
+   */
+  spanIn?: ScreenImage;
   appName?: string;
   /** feature-wall lines. */
   wall?: string[];
@@ -139,7 +144,7 @@ export interface PortraitPlan {
   visible: number;
   /** Gap between the device's anchored edge and the canvas edge (Japandi's shelf), 0 when it bleeds. */
   edgeGap?: number;
-  rule: 'phone' | 'contained' | 'none';
+  rule: 'phone' | 'contained' | 'span' | 'none';
   gap: number;
 }
 
@@ -220,7 +225,21 @@ export function scaledDevices(plan: PortraitPlan, k = stageScale(plan)): DeviceP
 }
 
 /** Pure geometry for portrait canvases. */
-export function planPortrait(o: { W: number; H: number; t: StyleTokens; family: DeviceFamily; framing: Framing; archetype: Shot['archetype']; screens: Array<Pick<ScreenImage, 'aspect'>>; index: number; variant?: FrameVariant }): PortraitPlan {
+/**
+ * The device of a bridged `panoramic` shot: large and tilted, its centre near the right edge, so its right part
+ * continues in the next screenshot. Both pages call this with the same canvas, so the halves meet exactly.
+ */
+export function spanDevice(W: number, H: number, family: DeviceFamily, aspect: number, variant?: FrameVariant): DevicePlacement {
+  let h = H * 0.86;
+  let w = widthForHeight(family, h, aspect, variant);
+  if (w > W * 0.8) {
+    w = W * 0.8;
+    h = deviceGeometry(family, w, aspect, variant).height;
+  }
+  return { screen: 0, family, x: W * 0.9 - w / 2, y: H - h * 0.9, w, h, rot: 9, z: 2 };
+}
+
+export function planPortrait(o: { W: number; H: number; t: StyleTokens; family: DeviceFamily; framing: Framing; archetype: Shot['archetype']; screens: Array<Pick<ScreenImage, 'aspect'>>; index: number; variant?: FrameVariant; span?: { out?: boolean; inAspect?: number } }): PortraitPlan {
   const { W, H, t, family, framing } = o;
   const gap = H * 0.022;
   const mT = topMargin(t, H);
@@ -228,7 +247,8 @@ export function planPortrait(o: { W: number; H: number; t: StyleTokens; family: 
   const captionSide: 'top' | 'bottom' = framing === 'bleed-top' ? 'bottom' : 'top';
   const tablet = isTabletFamily(family);
   const pad = W * (t.type.align === 'start' ? 0.075 : 0.07);
-  const alignStart = t.type.align === 'start' || framing === 'offset';
+  // A device cut by the side edge leaves room for a start-aligned caption; a centred one keeps the preset's.
+  const alignStart = t.type.align === 'start' || (framing === 'offset' && (o.archetype === 'panoramic' || HARD_CROP.has(t.background)));
   const capW = t.background === 'washi' ? W * 0.68 : W - pad * 2;
   const devices: DevicePlacement[] = [];
   const aspect = o.screens[0]?.aspect ?? 2.17;
@@ -254,6 +274,18 @@ export function planPortrait(o: { W: number; H: number; t: StyleTokens; family: 
     const y = H - mB - h;
     devices.push({ screen: 0, family, x: (W - w) / 2, y, w, h, rot: 0, z: 2 });
     return { W, H, framing: 'contained', captionSide: 'top', caption: { x: pad, y: mT, w: capW, h: Math.max(H * 0.14, y - gap - mT) }, align: 'center', devices, visible: h, rule: 'contained', gap };
+  }
+
+  // Panoramic pair: the device crosses into the next screenshot (out), or this page shows its other half (in).
+  if (o.span?.out && !tablet) {
+    const d = spanDevice(W, H, family, aspect, o.variant);
+    devices.push(d);
+    const cap: Box = { x: pad, y: mT, w: capW, h: Math.max(H * 0.14, d.y - gap - mT - H * 0.02) };
+    return { W, H, framing: 'offset', captionSide: 'top', caption: cap, align: 'start', devices, visible: H - d.y, rule: 'span', gap };
+  }
+  if (o.span?.inAspect && !tablet) {
+    const other = spanDevice(W, H, family, o.span.inAspect, o.variant);
+    devices.push({ ...other, x: other.x - W, screen: o.screens.length, z: 1 });
   }
 
   const vis = standing ? H * DEVICE_TARGET - (H - shelf) : H * DEVICE_TARGET;
@@ -323,12 +355,14 @@ export function planPortrait(o: { W: number; H: number; t: StyleTokens; family: 
     }
     case 'offset': {
       const big = o.archetype === 'panoramic';
-      const { w, h } = sized(vis, big ? W * 0.98 : maxW * 0.96);
-      // Bold presets hard-crop the device at the side edge; calmer ones only shift it off-centre.
+      // Next to the other half of a panoramic device, this page's own device stands on the right.
+      const beside = devices.length > 0;
+      const { w, h } = sized(beside ? vis * 0.92 : vis, beside ? W * 0.6 : big ? W * 0.98 : maxW * 0.96);
+      // Bold presets hard-crop the device at the side edge. Calm presets keep it centred: a device merely
+      // pushed towards one edge reads as a layout mistake, not as a choice.
       const side = big ? 0.3 : HARD_CROP.has(t.background) ? 0.08 : 0;
-      const margin = side ? 0 : W * 0.035;
-      const x = flip ? margin - w * side : W - margin - w * (1 - side);
-      devices.push({ screen: 0, family, x, y: place(w, h, vis), w, h, rot: 0, z: 2 });
+      const x = beside ? W * 0.97 - w : side ? (flip ? -w * side : W - w * (1 - side)) : (W - w) / 2;
+      devices.push({ screen: 0, family, x, y: place(w, h, beside ? vis * 0.92 : vis), w, h, rot: 0, z: 2 });
       visible = shown(h, vis);
       break;
     }
@@ -515,7 +549,12 @@ function portraitLayout(p: PageInput & { index: number; total: number; callouts:
   // captionPosition: bottom keeps working: the device then bleeds off the top edge.
   const framing = p.captionPosition === 'bottom' && planned === 'bleed-bottom' ? 'bleed-top' : planned;
   const usesScreens = !['statement', 'testimonial', 'feature-wall'].includes(a);
-  const plan = planPortrait({ W, H, t, family, framing: usesScreens ? (a === 'mosaic' ? 'no-device' : framing) : 'no-device', archetype: a, screens: usesScreens ? p.screens : [], index: p.index, variant });
+  // Panoramic pair: a bridged panoramic shot's device crosses the edge; the next page draws its other half.
+  const spanOut = Boolean(p.bridgeOut && a === 'panoramic' && usesScreens && p.screens.length && (p.index ?? 0) < (p.total ?? 1) - 1);
+  const spanIn = usesScreens && a !== 'mosaic' && p.spanIn ? p.spanIn : undefined;
+  if (spanIn) p = { ...p, screens: [...p.screens, spanIn] };
+  const deviceFraming = spanIn && framing !== 'no-device' ? 'offset' : framing;
+  const plan = planPortrait({ W, H, t, family, framing: usesScreens ? (a === 'mosaic' ? 'no-device' : deviceFraming) : 'no-device', archetype: a, screens: usesScreens ? (spanIn ? p.screens.slice(0, -1) : p.screens) : [], index: p.index, variant, span: { out: spanOut, inAspect: spanIn?.aspect } });
   const hs = headlineSizeFor(t, W, H, false);
   const statement = a === 'statement';
   const headlineSize = Math.round(hs * (statement ? 1.18 : 1));
@@ -580,7 +619,8 @@ function portraitLayout(p: PageInput & { index: number; total: number; callouts:
     if (a === 'stat' && t.background === 'neon') void 0;
     stage.push(stageFront(ctx));
   }
-  const fixed = Boolean(p.bridgeOut && a === 'panoramic');
+  // Both halves of a panoramic pair must keep their exact geometry, so their stage is never re-scaled.
+  const fixed = Boolean(p.bridgeOut && a === 'panoramic') || Boolean(spanIn);
   const origin = plan.captionSide === 'top' ? `${W / 2}px ${H}px` : `${W / 2}px 0px`;
   const edge = plan.edgeGap ?? 0;
   const span = Math.max(1, plan.visible + edge);
