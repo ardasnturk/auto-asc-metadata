@@ -73,6 +73,8 @@ if (strays.length) {
 //    - video bundles <dist>/../src/remotion/index.ts; research runs <dist>/../scripts/ocr.swift.
 const copy = (from, to) => cpSync(join(ROOT, from), join(STAGE, to), { recursive: true });
 for (const f of readdirSync(join(ROOT, 'data')).filter((f) => f.endsWith('.json'))) copy(join('data', f), join('data', f));
+// The native UI kit Claude's HTML screens link to (copied into metadata/screens/kit/ by `vitrin capture`).
+for (const f of readdirSync(join(ROOT, 'data', 'screen-kit'))) copy(join('data', 'screen-kit', f), join('data', 'screen-kit', f));
 copy('fastlane/Fastfile', 'fastlane/Fastfile');
 copy('fastlane/Gemfile', 'fastlane/Gemfile');
 copy('packages/video/src/remotion', 'src/remotion');

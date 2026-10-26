@@ -77,19 +77,31 @@ ${screens}
 Device families in this run: ${families.join(', ') || 'iphone'}. Locales: ${ctx.config.app.locales.join(', ')}.
 
 ## Files to write
-- \`metadata/screens/<id>.html\` — one complete page per screen (\`<!doctype html>\`, inline \`<style>\` or a shared \`metadata/screens/app.css\` linked relatively; images/icons next to it, relative paths). It is rendered in a viewport of the device's screen in CSS points (iPhone 440×956, iPad 1032×1376, Mac 1440×900, Watch 211×257, TV/Vision 1920×1080, Android phone 360×640, tablet 800×1280) and must fill it exactly, without scrolling.
-- Optional \`metadata/screens/<id>.<family>.html\` when a family has its own layout (e.g. \`home.ipad.html\` with a sidebar, \`home.watch.html\`); otherwise the generic file is used with \`html[data-family="ipad"]\` CSS.
+- \`metadata/screens/<id>.html\` — one complete page per screen (\`<!doctype html>\`, inline \`<style>\` or a shared \`metadata/screens/app.css\` linked relatively; images/icons next to it, relative paths). It is rendered in a viewport of the device's screen in CSS points (iPhone 440×956, iPad 1032×1376, iPhone Duo inner 669×951, Mac 1440×900, Watch 211×257, TV/Vision 1920×1080, Android phone 360×640, tablet 800×1280) and must fill it exactly, without scrolling.
+- Optional \`metadata/screens/<id>.<family>.html\` when a family has its own layout (e.g. \`home.ipad.html\` with a sidebar, \`home.watch.html\`, \`home.android-phone.html\` for a Material UI); otherwise the generic file is used with \`html[data-family="ipad"]\` CSS.
 - \`metadata/screens/strings/<locale>.json\` — \`{ "key": "text" }\` for every \`{{key}}\` placeholder used in the HTML, for each locale. Take the texts from the app's own localization (String Catalog / Localizable.strings / strings.xml / ARB / i18n JSON); never invent UI text the app does not have.
 
-## Fidelity rules (App Review 2.3: screenshots must show the app in use)
-- Recreate what the code renders: layout, hierarchy, components, spacing, corner radii, colors (asset catalog / theme${colors ? `: ${colors}` : ''}), typography (\`-apple-system\`/SF Pro on Apple platforms, Roboto on Android), light/dark appearance as \`capture.appearance\` (${ctx.config.capture.appearance}).
-- System chrome: Vitrin draws a 9:41 status bar with full battery on iPhone, iPad and Android; keep \`var(--safe-top)\` free at the top and \`var(--safe-bottom)\` at the bottom. On a dark top area set \`<html data-status-bar="light">\`; \`none\` hides it. Draw the app's own navigation bars, tab bars, lists and sheets yourself (native look: large titles, SF-like icons as inline SVG, system blue \`#007AFF\` only if the app uses the default tint).
+## Native UI kit
+\`metadata/screens/kit/\` holds Vitrin's kit: \`ios.css\` (iOS/iPadOS metrics, text styles, inset-grouped lists, toggles, segmented controls, tab bar, sheets, split view), \`material.css\` (Material 3: app bars, lists, cards, buttons, chips, switches, FAB, navigation bar), \`watchos.css\` and \`macos.css\`. Link the one the platform uses (\`<link rel="stylesheet" href="kit/ios.css">\`) and override its \`:root\` tokens with the app's own colors and fonts — the kit is a starting point for exact system metrics, not a look. \`html[data-appearance]\` is set from \`capture.appearance\`. Never edit the kit files (Vitrin rewrites them); put overrides in the screen or \`app.css\`.
+
+## 1:1 fidelity — whatever the app is written in
+The goal is a screen a user of the app would take for a real screenshot. Read the code that draws the screen, not just its name (references/screen-recreation.md has the full mapping):
+- **SwiftUI / UIKit**: \`VStack/HStack/ZStack\` → flex columns/rows/stacked absolute layers, \`.padding()\` = 16 pt, \`List\` = inset grouped, \`NavigationStack\` + \`.navigationTitle\` = large title, \`TabView\` = tab bar, \`.font(.title2)\` etc. = the kit's text styles, \`Color("BrandMint")\` = the asset catalog color (light *and* dark values in its Contents.json), SF Symbols → equivalent inline SVG at the same weight and size.
+- **Jetpack Compose / Android XML**: \`Column/Row/Box\` → flex/absolute, \`dp\` = CSS px, \`sp\` = CSS px, \`Scaffold\` + \`TopAppBar\`/\`NavigationBar\`/\`FloatingActionButton\` = the Material kit parts, \`MaterialTheme.colorScheme\` / \`colors.xml\` / \`themes.xml\` = the tokens, Material Symbols as inline SVG.
+- **Flutter**: \`Column/Row/Stack/Padding/SizedBox\` → the same CSS, logical pixels = CSS px, \`ThemeData\`/\`ColorScheme.fromSeed\` = the tokens, \`CupertinoPageScaffold\` → ios.css, \`Scaffold\`/\`AppBar\`/\`NavigationBar\` → material.css, fonts from \`pubspec.yaml\`.
+- **React Native / Expo**: \`View\` = \`display:flex;flex-direction:column\`, style objects map almost 1:1 to CSS (numbers = px), \`StyleSheet\` colors and fonts as written, React Navigation headers/tabs → the platform kit.
+- Measure, do not guess: spacing, corner radii, font sizes and weights, icon sizes, colors (exact hex), shadows, list row heights, image aspect ratios. Custom components (charts, rings, calendars, cards) are recreated with HTML/CSS/SVG to the same geometry the code computes.
+- Use the app's own assets when they exist (images in the asset catalog / \`res/drawable\` / \`assets/\`, bundled fonts): copy them next to the screen and link them relatively.
+
+## Rules (App Review 2.3: screenshots must show the app in use)
+- Recreate what the code renders: layout, hierarchy, components, spacing, corner radii, colors (asset catalog / theme${colors ? `: ${colors}` : ''}), typography (\`-apple-system\`/SF Pro on Apple platforms, Roboto on Android, or the app's bundled fonts), light/dark appearance as \`capture.appearance\` (${ctx.config.capture.appearance}).
+- System chrome: Vitrin draws a 9:41 status bar with full battery on iPhone, iPad and Android; keep \`var(--safe-top)\` free at the top and \`var(--safe-bottom)\` at the bottom. On a dark top area set \`<html data-status-bar="light">\`; \`none\` hides it. Draw the app's own navigation bars, tab bars, lists and sheets yourself.
 - Content: realistic demo data that matches the app's features (no user data, no lorem ipsum, no placeholder brands); numbers and charts consistent between screens.
 - Only features with evidence in app_profile.json; nothing the app cannot show.
 - No external network resources (fonts, images, scripts from the web); everything local.
 
 ## Check
-Run \`vitrin capture --locale ${sampleLocale(ctx.config)}\` and open two of the PNGs with Read: compare them against the code (and against a real screenshot if the user has one). Fix the HTML until it matches; then the other locales only need their strings files.
+Run \`vitrin capture --locale ${sampleLocale(ctx.config)}\` and open the PNGs with Read: compare each one against the code, view by view (and against a real screenshot if the user has one). Fix the HTML until it matches; then the other locales only need their strings files. \`vitrin mockups --screens\` shows them inside the device mockups.
 `,
   );
 }

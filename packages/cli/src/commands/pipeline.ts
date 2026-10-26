@@ -10,7 +10,7 @@ import { readFile } from 'node:fs/promises';
 import { dirname, join, relative } from 'node:path';
 import pc from 'picocolors';
 import { designBrief, metadataBrief, profileBrief, screensBrief, videoBrief } from '../briefs.js';
-import { renderHtmlScreens, type ScreenFamily } from '../html-screens.js';
+import { installScreenKit, renderHtmlScreens, type ScreenFamily } from '../html-screens.js';
 import { exportProjectMetadata } from '../finalize.js';
 import { loadUiText } from '../i18n.js';
 import { EXIT, loadProfile, NeedsInput, stage, type Ctx } from '../context.js';
@@ -328,6 +328,7 @@ async function captureHtml(ctx: Ctx, profile: AppProfile, families: CaptureFamil
     const res = await renderHtmlScreens(ctx, jobs, sampleLocale(ctx.config));
     missing = { files: res.missingFiles, strings: res.missingStrings };
     if (res.missingFiles.length) {
+      await installScreenKit(ctx.paths.screens);
       const brief = await screensBrief(ctx, profile);
       throw new NeedsInput('Claude input needed: HTML recreations of the app screens.', [...res.missingFiles.slice(0, 12), `Brief: ${relative(ctx.root, brief)}`]);
     }

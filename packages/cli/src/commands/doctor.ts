@@ -76,13 +76,15 @@ export interface UploaderTools {
   fastlane: string | null;
   ruby: string | null;
   bundler: string | null;
+  /** Homebrew, which installs the asc CLI (`brew install asc`). */
+  brew?: string | null;
 }
 
 export async function detectUploaderTools(root: string): Promise<UploaderTools> {
-  const [asc, ruby, bundler] = await Promise.all([ascVersion(), versionOf('ruby', ['--version'], /ruby (\d+\.\d+\.\d+)/), versionOf('bundle', ['--version'], /(\d+\.\d+\.\d+)/)]);
+  const [asc, ruby, bundler, brew] = await Promise.all([ascVersion(), versionOf('ruby', ['--version'], /ruby (\d+\.\d+\.\d+)/), versionOf('bundle', ['--version'], /(\d+\.\d+\.\d+)/), versionOf('brew', ['--version'], /Homebrew (\d+\.\d+\.\d+)/)]);
   let fastlane = bundler && existsSync(join(root, 'Gemfile')) ? await versionOf('bundle', ['exec', 'fastlane', '--version'], /fastlane (\d+\.\d+\.\d+)/, root) : null;
   fastlane ??= await versionOf('fastlane', ['--version'], /fastlane (\d+\.\d+\.\d+)/);
-  return { asc, fastlane, ruby, bundler };
+  return { asc, fastlane, ruby, bundler, brew };
 }
 
 /**

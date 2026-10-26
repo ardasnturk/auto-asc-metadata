@@ -1,0 +1,23 @@
+/*
+ * Vitrin screen kit — macOS 15+ app window content (SwiftUI / AppKit). <link rel="stylesheet" href="kit/macos.css">.
+ * The viewport is the window's content at 1440×900 pt; Vitrin's Mac frame draws the window chrome around it.
+ */
+:root { --tint: #007AFF; --label: rgba(0,0,0,.85); --label2: rgba(0,0,0,.5); --bg: #fff; --sidebar: rgba(234,234,236,.85); --separator: rgba(0,0,0,.1); --selection: rgba(0,0,0,.08); --font: -apple-system, 'SF Pro Text', system-ui, 'Helvetica Neue', sans-serif; }
+html[data-appearance="dark"], .dark { --label: rgba(255,255,255,.85); --label2: rgba(255,255,255,.55); --bg: #1E1E1E; --sidebar: rgba(40,40,42,.9); --separator: rgba(255,255,255,.1); --selection: rgba(255,255,255,.1); }
+html, body { background: var(--bg); color: var(--label); font: 400 13px/16px var(--font); }
+* { box-sizing: border-box; }
+.window { position: absolute; inset: 0; display: flex; }
+.sidebar { width: 240px; flex: none; background: var(--sidebar); padding: 52px 10px 10px; border-right: 1px solid var(--separator); }
+.sidebar .group { font: 600 11px var(--font); color: var(--label2); padding: 14px 8px 4px; }
+.sidebar .item { height: 28px; border-radius: 6px; display: flex; align-items: center; gap: 8px; padding: 0 8px; }
+.sidebar .item.on { background: var(--selection); } .sidebar svg { width: 16px; height: 16px; color: var(--tint); }
+.main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.toolbar { height: 52px; flex: none; display: flex; align-items: center; gap: 12px; padding: 0 16px; border-bottom: 1px solid var(--separator); }
+.toolbar .title { font: 700 15px var(--font); flex: 1; }
+.toolbar .tool { width: 28px; height: 24px; border-radius: 6px; display: flex; align-items: center; justify-content: center; color: var(--label2); }
+.table { width: 100%; border-collapse: collapse; } .table th { text-align: left; font: 600 11px var(--font); color: var(--label2); padding: 6px 12px; border-bottom: 1px solid var(--separator); }
+.table td { padding: 6px 12px; height: 24px; } .table tr:nth-child(even) td { background: rgba(0,0,0,.03); }
+.inspector { width: 280px; flex: none; border-left: 1px solid var(--separator); padding: 16px; }
+.btn { height: 22px; border-radius: 5px; padding: 0 10px; display: inline-flex; align-items: center; background: #fff; box-shadow: 0 0 0 .5px rgba(0,0,0,.2), 0 1px 1px rgba(0,0,0,.08); font: 400 13px var(--font); }
+.btn.default { background: var(--tint); color: #fff; box-shadow: none; }
+.card { border-radius: 10px; background: rgba(0,0,0,.04); padding: 14px; }

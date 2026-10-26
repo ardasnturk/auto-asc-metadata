@@ -427,5 +427,9 @@ describe('vitrin platforms / select', () => {
     expect(fl.options.map((o) => [o.uploader, o.installed])).toEqual([['asc', false], ['deliver', true]]);
     // An outdated fastlane does not count as installed.
     expect(uploaderReport(configWith(), { ...none, fastlane: '2.200.0' }, ['ios']).options[1]!.installed).toBe(false);
+    // A tool that is not installed comes with the warning that it will be installed first (only after a yes).
+    expect(uploaderReport(configWith(), { ...none, brew: '4.4.0' }, ['ios']).options[0]!.warning).toMatch(/installed first with `brew install asc`/);
+    expect(uploaderReport(configWith(), { ...none, brew: null }, ['ios']).options[0]!.warning).toMatch(/Homebrew/);
+    expect(uploaderReport(configWith(), { ...none, asc: '1.4.0' }, ['ios']).options[0]!.warning).toBeUndefined();
   });
 });

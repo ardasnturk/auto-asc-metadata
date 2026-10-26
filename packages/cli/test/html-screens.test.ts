@@ -84,6 +84,16 @@ describe('HTML screens (capture.mode: html)', () => {
         expect([meta.width, meta.height]).toEqual([w, h]);
       }
     }
+    // The native UI kit is installed next to the screens and loads through the relative link.
+    expect(existsSync(join(root, 'metadata', 'screens', 'kit', 'ios.css'))).toBe(true);
+    expect(existsSync(join(root, 'metadata', 'screens', 'kit', 'material.css'))).toBe(true);
+    write(join(root, 'metadata', 'screens', 'home.html'), '<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="kit/ios.css"></head><body><div class="screen"><h1 class="large-title">{{title}}</h1></div><div class="toggle on" style="position:absolute;left:100px;top:500px;transform:scale(4);transform-origin:0 0"></div></body></html>');
+    res = await vitrin(root, 'capture', '--force', '--locale', 'en-US', '--family', 'iphone');
+    expect(res.code, res.out).toBe(0);
+    const { data, info } = await sharp(join(root, 'metadata', 'raw', 'en-US', 'iphone', 'home.png')).raw().toBuffer({ resolveWithObject: true });
+    const at = (x: number, y: number) => { const i = (y * info.width + x) * info.channels; return [data[i], data[i + 1], data[i + 2]]; };
+    expect(at(1320 / 2, 2868 - 40)).toEqual([0xf2, 0xf2, 0xf7]); // --bg of ios.css
+    expect(at((100 + 8) * 3, (500 + 60) * 3)).toEqual([0x34, 0xc7, 0x59]); // .toggle.on green
     // Nothing was built and nothing appeared outside metadata/.
     expect(existsSync(join(root, 'fastlane'))).toBe(false);
     expect(existsSync(join(root, '.env.example'))).toBe(false);
