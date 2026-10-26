@@ -1,6 +1,6 @@
 {
-  "updatedAt": "2026-10-24",
-  "notes": "Price terms and unproven superlatives are errors in metadata and warnings in the description. Competitor brand names are added at runtime from competitors.json. cta: calls to action are forbidden in screenshot captions; otherPlatforms: names of other platforms are forbidden.",
+  "updatedAt": "2026-10-26",
+  "notes": "Price terms and unproven superlatives are errors in metadata and warnings in the description. Competitor brand names are added at runtime from competitors.json. cta: calls to action are forbidden in screenshot captions; otherPlatforms: names of other platforms are forbidden. appleAwards: Apple-designated recognitions may not appear in metadata or assets (App Store asset best practices). kidsReserved: “For Kids”/“For Children” are reserved for the Kids Category (App Review 2.3.8, 5.1.4). genericWhatsNew: generic release notes are only acceptable for bug-fix releases (2.3.12).",
   "price": {
     "*": [
       "$",
@@ -221,5 +221,82 @@
     "Huawei",
     "Windows",
     "Galaxy Store"
-  ]
+  ],
+  "appleAwards": [
+    "Editor's Choice",
+    "Editors' Choice",
+    "Editors’ Choice",
+    "Editor’s Choice",
+    "App of the Day",
+    "Game of the Day",
+    "App of the Year",
+    "Game of the Year",
+    "Apple Design Award",
+    "Apple Design Awards",
+    "Editörün Seçimi",
+    "Günün Uygulaması",
+    "Günün Oyunu",
+    "Yılın Uygulaması",
+    "Apple Tasarım Ödülü"
+  ],
+  "kidsReserved": {
+    "en": [
+      "for kids",
+      "for children"
+    ],
+    "tr": [
+      "çocuklar için"
+    ],
+    "de": [
+      "für kinder"
+    ],
+    "fr": [
+      "pour enfants",
+      "pour les enfants"
+    ],
+    "es": [
+      "para niños"
+    ],
+    "it": [
+      "per bambini"
+    ],
+    "pt": [
+      "para crianças"
+    ],
+    "nl": [
+      "voor kinderen"
+    ]
+  },
+  "genericWhatsNew": {
+    "en": [
+      "bug fixes",
+      "bug fixes and improvements",
+      "bug fixes and performance improvements",
+      "performance improvements",
+      "minor improvements",
+      "minor bug fixes",
+      "stability improvements",
+      "various improvements"
+    ],
+    "tr": [
+      "hata düzeltmeleri",
+      "hata düzeltmeleri ve iyileştirmeler",
+      "performans iyileştirmeleri",
+      "küçük iyileştirmeler",
+      "çeşitli iyileştirmeler"
+    ],
+    "de": [
+      "fehlerbehebungen",
+      "fehlerbehebungen und verbesserungen",
+      "leistungsverbesserungen"
+    ],
+    "fr": [
+      "corrections de bugs",
+      "améliorations des performances"
+    ],
+    "es": [
+      "corrección de errores",
+      "mejoras de rendimiento"
+    ]
+  }
 }

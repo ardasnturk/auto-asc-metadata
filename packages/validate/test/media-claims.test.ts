@@ -117,6 +117,13 @@ describe('screenshot best practices', () => {
     expect(c).toContain('shot.other-platform');
   });
 
+  it('keeps prices, URLs, symbols, Apple recognitions and placeholders off screenshots', () => {
+    const c = codes({ shots: [shot('01', { copy: { tr: { headline: '%50 indirim', kicker: 'Günün Uygulaması', subheadline: 'ritim.app © 2026 TODO' } } })] });
+    for (const code of ['shot.price', 'shot.url', 'shot.copyright', 'shot.apple-award', 'shot.placeholder']) expect(c).toContain(code);
+    const clean = codes({ shots: [shot('01', { copy: { tr: { headline: 'Reklamsız alışkanlık takibi' } } })] });
+    expect(clean.filter((x) => ['shot.price', 'shot.url', 'shot.copyright'].includes(x))).toEqual([]);
+  });
+
   it('requires real UI in the first three and checks the 60/40 ratio', () => {
     const statement = (id: string) => shot(id, { archetype: 'statement', screens: [] });
     const c = codes({ shots: [statement('01'), statement('02'), statement('03'), shot('04', {})] });

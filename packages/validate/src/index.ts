@@ -23,6 +23,7 @@ export * from './issues.js';
 export * from './text.js';
 export * from './claims.js';
 export * from './media.js';
+export * from './apple-rules.js';
 
 export interface ValidateScope {
   text?: boolean;

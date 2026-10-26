@@ -20,10 +20,19 @@
 ## What's New (≤ 4000)
 
 - From `app_profile.docs.commitsSinceTag` and the CHANGELOG, **in the user's language**: "The calendar view now shows 12 weeks." No technical internals (refactors, CI). Leave it empty for the first version.
+- App Review 2.3.12: significant changes must be listed specifically. "Bug fixes and performance improvements" is acceptable only when the release really is just fixes; validate warns (`whatsnew.generic`) when the commits add features.
 
 ## Review notes (≤ 4000 bytes)
 
 - Demo account (from `.env` REVIEW_DEMO_* if present — never write it to a file), test steps, special hardware/permission requirements. Customers never see this.
+- App Review 2.3.1(a): describe every new feature and product change **specifically** and say where to find it ("Widgets: long-press the Home Screen → + → Ritim"); generic notes are rejected. Explain non-obvious features and in-app purchases. If the app has a login, provide a demo account or a fully featured demo mode (2.1(a)).
+- No placeholder text anywhere (Lorem ipsum, TODO, TBD, FIXME): over 40% of unresolved review issues are guideline 2.1, App Completeness.
+
+## Words Apple does not allow in metadata
+
+- No Apple-designated recognitions (Editor's Choice, App of the Day, Game of the Day, Apple Design Award) and no awards the app has not received.
+- "For Kids" / "For Children" (and their translations) are reserved for the Kids Category (2.3.8, 5.1.4).
+- No trademarked terms, popular app names, prices or phrases unrelated to the field (2.3.7); no other platforms or marketplaces (2.3.10).
 
 ## Screenshot headlines
 

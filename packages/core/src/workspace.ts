@@ -132,6 +132,12 @@ export interface ForbiddenTerms {
   keywordNoise: string[];
   cta: Record<string, string[]>;
   otherPlatforms: string[];
+  /** Apple-designated recognitions (Editor's Choice, App of the Day, …): never in metadata or assets. */
+  appleAwards: string[];
+  /** Wording reserved for the Kids Category, per language. */
+  kidsReserved: Record<string, string[]>;
+  /** Generic release-note phrases, per language. */
+  genericWhatsNew: Record<string, string[]>;
 }
 
 export function loadForbiddenTerms(): ForbiddenTerms {

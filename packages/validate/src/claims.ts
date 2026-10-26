@@ -1,7 +1,8 @@
 import { baseLanguage, existsSync, graphemeLength, loadForbiddenTerms, wordCount } from '@vitrin/core';
 import { IDEAL_HEADLINE_WORDS, MAX_HEADLINE_WORDS, MIN_REAL_UI_RATIO, NON_UI_ARCHETYPES, type AppProfile, type Badge, type Competitors, type ShotList, type VideoPlan, type VitrinConfig } from '@vitrin/schemas';
 import { join } from 'node:path';
-import { IssueList } from './issues.js';
+import { findAppleAward, findKidsTerm, findPlaceholder, URL_ON_ASSET_RE } from './apple-rules.js';
+import { containsTerm, IssueList } from './issues.js';
 
 /**
  * Claim ↔ evidence checks (App Review 2.3): every headline, badge and video caption must point to a feature
@@ -131,6 +132,19 @@ export function validateClaims(opts: {
         for (const t of forbidden.otherPlatforms) {
           if (new RegExp(`\\b${t}\\b`, 'i').test(texts)) issues.error('shot.other-platform', `${where} (${locale}): other platform names (“${t}”) are not allowed.`, { locale });
         }
+        // Apple asset best practices: no pricing or discounts, website URLs, copyright symbols or Apple recognitions;
+        // Kids Category wording is reserved (2.3.8); placeholders never ship (2.1).
+        const base = baseLanguage(locale);
+        const price = [...new Set([...(forbidden.price['*'] ?? []), ...(forbidden.price[base] ?? [])])].find((t) => containsTerm(texts, t, locale));
+        if (price) issues.error('shot.price', `${where} (${locale}): pricing or discount wording (“${price}”) is not allowed on screenshots.`, { locale });
+        if (URL_ON_ASSET_RE.test(texts)) issues.error('shot.url', `${where} (${locale}): website addresses are not allowed on screenshots.`, { locale });
+        if (/[©®]/.test(texts)) issues.error('shot.copyright', `${where} (${locale}): copyright or registered symbols are not allowed on screenshots.`, { locale });
+        const award = findAppleAward(texts, forbidden, locale);
+        if (award) issues.error('shot.apple-award', `${where} (${locale}): Apple-designated recognitions (“${award}”) are not allowed on assets.`, { locale });
+        const kids = findKidsTerm(texts, forbidden, locale);
+        if (kids) issues.warn('shot.kids-reserved', `${where} (${locale}): “${kids}” is reserved for apps in the Kids Category (App Review 2.3.8, 5.1.4).`, { locale });
+        const ph = findPlaceholder(texts);
+        if (ph) issues.error('shot.placeholder', `${where} (${locale}): template text (“${ph}”) in the screenshot copy.`, { locale });
         if (/^(ja|zh|ko)/.test(locale) && graphemeLength(copy.headline) > 16) issues.warn('shot.headline-long', `${where} (${locale}): headline exceeds 16 characters.`, { locale });
         for (const b of s.badges) if (!b.label[locale]) issues.error('badge.missing-label', `${where}: badge label missing for ${locale}.`, { locale });
       }

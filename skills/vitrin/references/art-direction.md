@@ -90,6 +90,16 @@ At least 60 % of shots show real UI and one of the first three must.
 
 Badges render in the preset's material (glass, dark glass, mono label, tile, sticker, paper). At most 2 on the hero, 3 elsewhere. Lucide icon names only.
 
+## What Apple does not allow on screenshots and creatives
+
+From Apple's asset best practices and the App Review Guidelines (validate enforces the checkable ones):
+
+- No specific pricing or discounts (`shot.price`), website URLs (`shot.url`), copyright symbols (`shot.copyright`), logos or names of other platforms and marketplaces (`shot.other-platform`), calls to action (`shot.cta`).
+- No Apple-designated recognitions — Editor's Choice, App of the Day, Game of the Day, Apple Design Award (`shot.apple-award`) — and no awards or claims that cannot be verified.
+- Screenshots show the app in use, not only title art, a login page or a splash screen (2.3.3); text and image overlays are allowed. Text is a short phrase that enhances the visual rather than describes it, localized for every language.
+- Everything must fit a 4+ age rating even if the app is rated higher (2.3.8); use fictional account data, never a real person's (2.3.9 — that is what demo mode is for). "For Kids" wording only in the Kids Category.
+- Up to 10 screenshots per device size; up to three appear in search results depending on orientation. Keep focal points away from the edges of creatives so cropping never cuts them.
+
 ## Density
 
 Dense inside the device, sparse outside: one headline, one optional sub-line, one optional badge row. Decorations follow the preset's density (minimal 0–2, editorial 2–5, maximal 8–14) and never touch the type.

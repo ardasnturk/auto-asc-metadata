@@ -5,6 +5,10 @@ Vitrin renders videos with Remotion. You write `.vitrin/video-plan.json`; the CL
 ## Rules (Apple)
 
 - 15–30 s, 30 fps, 886×1920 (iPhone, including Duo) / 1200×1600 (iPad) / 1920×1080 landscape (Mac: `device: "mac"`, target `preview-mac`; Apple TV: `device: "tv"`, target `preview-tv` — both off by default, enable them in `targets.enable`); at most 3 per locale and device.
+- App Review 2.3.4: previews may only use **video screen captures of the app itself**; narration and video or text overlays may explain what is not clear. Keep the device frame and 3D motion subtle, never show footage that is not from the app, and prefer the `classic` style for a cautious first submission.
+- Up to 3 previews per device size and language; they always appear **before** the screenshots on iPhone, iPad, Mac and Apple TV, so the first preview takes the place of the first screenshot in search results.
+- Audio is muted by default: the video must work silently. Prefer a short, clean music loop over heavy effects and sudden loud moments; the loop must not jump. Make the first seconds strong and avoid quick cuts.
+- Vision Pro previews are 3840×2160 landscape (target `preview-vision`); Mac and Apple TV previews are landscape only. Processing in App Store Connect can take up to 24 hours.
 - **Real app footage must dominate.** Text cards are short (≤ 1.5 s) and few (≤ 2 explicit `text` beats); no hands, people or footage outside the device.
 - It must make sense without sound (it plays muted in search). The poster frame is at 5 seconds: put a legible UI scene there.
 - The first ~1.5 s of a recording is the app launch: `from` ≥ 1.5 (for the hook, `hookFrom`, default 1.5).

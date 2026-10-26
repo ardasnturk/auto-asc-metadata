@@ -15,6 +15,7 @@ import {
 } from '@vitrin/schemas';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { findAppleAward, findKidsTerm, findPlaceholder, isGenericWhatsNew } from './apple-rules.js';
 import { containsTerm, IssueList } from './issues.js';
 
 export interface TextValidationInput {
@@ -74,6 +75,7 @@ export function validateText(input: TextValidationInput): { issues: IssueList; m
   const issues = new IssueList();
   const measurements: Measurements = {};
   const forbidden = loadForbiddenTerms();
+  const featureCommits = (profile?.docs?.commitsSinceTag ?? []).map((c) => c.subject).filter((x) => /^(feat|add|new|introduce|support|implement)\b/i.test(x));
   const developer = config.copyrightHolder ?? '';
   const seeds = Array.isArray(config.research.seeds) ? config.research.seeds : Object.values(config.research.seeds).flat();
   const brands = competitorBrands(competitors, [profile?.app.displayName ?? '', developer], seeds);
@@ -202,6 +204,20 @@ export function validateText(input: TextValidationInput): { issues: IssueList; m
       }
     }
 
+    // ---- App Review: placeholders, Apple recognitions, Kids Category wording, What's New ----
+    const kidsApp = isKidsCategory(appMetadata);
+    for (const [field, text] of [...strictFields, ['description', m.description] as [string, string], ['whatsNew', m.whatsNew] as [string, string]]) {
+      const ph = findPlaceholder(text);
+      if (ph) issues.error('text.placeholder', `${field} contains template text (“${ph}”); App Review rejects placeholder content (2.1).`, at(field));
+      const award = findAppleAward(text, forbidden, locale);
+      if (award) issues.error('text.apple-award', `${field} mentions an Apple-designated recognition (“${award}”); these may not be used in metadata.`, at(field));
+      const kids = findKidsTerm(text, forbidden, locale);
+      if (kids && !kidsApp) issues.error('text.kids-reserved', `${field} contains “${kids}”, which is reserved for apps in the Kids Category (App Review 2.3.8, 5.1.4).`, { ...at(field), fix: 'Describe the audience without it, or set the Kids age band in app.json ageRatingDraft.answers.kidsAgeBand if the app is in the Kids Category.' });
+    }
+    if (isGenericWhatsNew(m.whatsNew, forbidden, locale) && featureCommits.length) {
+      issues.warn('whatsnew.generic', `What's New is generic, but this release adds features (${featureCommits.slice(0, 3).map((c) => `“${c}”`).join(', ')}); App Review 2.3.12 requires significant changes to be listed.`, at('whatsNew'));
+    }
+
     // ---- description quality ----
     const firstLines = m.description.split('\n').filter((l) => l.trim()).slice(0, 3).join(' ');
     if (graphemeLength(firstLines) < 40) issues.warn('description.hook', 'The first 3 lines of the description are visible before “more”; write a strong hook.', at('description'));
@@ -266,6 +282,11 @@ export function validateText(input: TextValidationInput): { issues: IssueList; m
   if (appMetadata) {
     if (!/^\d{4}\s+\S/.test(appMetadata.copyright)) {
       issues.error('copyright.format', `Copyright must be in the form “2026 Company Name”: “${appMetadata.copyright}”.`, { field: 'copyright', file: '.vitrin/metadata/app.json' });
+    }
+    if (appMetadata.reviewNotes.trim().length < 40) {
+      issues.warn('review.notes-short', 'Review notes are empty or very short; describe new features specifically, how to reach them and any demo account or demo mode (App Review 2.1, 2.3.1).', { field: 'reviewNotes', file: '.vitrin/metadata/app.json' });
+    } else if (findPlaceholder(appMetadata.reviewNotes)) {
+      issues.error('text.placeholder', 'Review notes contain template text; App Review rejects placeholder content (2.1).', { field: 'reviewNotes', file: '.vitrin/metadata/app.json' });
     }
     if (appMetadata.copyright.includes('©')) issues.warn('copyright.symbol', 'Do not include the © symbol; the App Store adds it.', { field: 'copyright' });
     const notesBytes = byteLength(appMetadata.reviewNotes);
@@ -506,4 +527,10 @@ export function validatePlayText(input: PlayTextValidationInput): { issues: Issu
     issues.warn('play.changelog.no-version-code', 'A changelog is set but .vitrin/metadata/play/app.json has no versionCode; the release notes are not uploaded.', { file: '.vitrin/metadata/play/app.json', field: 'versionCode' });
   }
   return { issues, measurements };
+}
+
+/** Apps in the Kids Category declare a kids age band; only they may use "for kids" wording. */
+function isKidsCategory(app?: AppMetadata): boolean {
+  const answers = (app?.ageRatingDraft?.answers ?? {}) as Record<string, unknown>;
+  return Boolean(answers.kidsAgeBand ?? answers.madeForKids);
 }
