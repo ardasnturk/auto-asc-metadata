@@ -7,6 +7,7 @@ import { createContext, EXIT, NeedsInput, type GlobalOptions } from './context.j
 import { runDoctor } from './commands/doctor.js';
 import { initCommand } from './commands/init.js';
 import { analyzeCommand, captureCommand, designCommand, researchCommand, validateCommand, videoCommand, writeCommand } from './commands/pipeline.js';
+import { platformsCommand, selectCommand } from './commands/select.js';
 import { submitCommand, uploadCommand } from './commands/upload.js';
 import { finalizeCommand } from './finalize.js';
 import { reviewCommand } from './review-server.js';
@@ -80,9 +81,22 @@ program
 program.command('write').description('validates the metadata Claude wrote and exports it to fastlane/metadata').action(action(async () => writeCommand(await createContext(globals()))));
 
 program
+  .command('platforms')
+  .description('lists detected platforms with evidence and the targets each would produce')
+  .option('--json', 'machine-readable output for the platform multi-select')
+  .action(action(async (o: { json?: boolean }) => platformsCommand(await createContext(globals()), { json: o.json || globals().json })));
+
+program
+  .command('select')
+  .description('stores the platforms and asset kinds to produce in vitrin.config.yaml (selection)')
+  .option('--platforms <platforms>', 'ios,macos,watchos,tvos,visionos,android or "all"')
+  .option('--assets <assets>', 'metadata,screenshots,previews,creatives,events or "all"')
+  .action(action(async (o: { platforms?: string; assets?: string }) => selectCommand(await createContext(globals()), { platforms: o.platforms, assets: o.assets })));
+
+program
   .command('capture')
-  .description('raw screenshots and recordings in the simulator → .vitrin/raw')
-  .option('--family <families>', 'iphone,ipad,duo')
+  .description('raw screenshots and recordings (simulators, Mac window, Android emulator) → .vitrin/raw')
+  .option('--family <families>', 'iphone,ipad,duo,mac,watch,tv,vision,android-phone,android-tablet')
   .option('--locale <locales>', 'comma-separated locales')
   .action(action(async (o: { family?: string; locale?: string }) => captureCommand(await createContext(globals()), { families: o.family?.split(','), locales: o.locale?.split(',') })));
 

@@ -47,11 +47,11 @@ export function validateClaims(opts: {
         const p = b.platform;
         const ok =
           (p === 'ipad' && profile.app.supportsIPad) ||
-          (p === 'apple-watch' && profile.project.targets.some((t) => t.kind === 'watch')) ||
+          (p === 'apple-watch' && (profile.app.platforms.includes('watchos') || profile.project.targets.some((t) => t.kind === 'watch'))) ||
           (p === 'widgets' && profile.project.targets.some((t) => t.kind === 'widget')) ||
           (p === 'iphone-duo' && opts.enabledTargets.some((t) => t.startsWith('duo-'))) ||
-          (p === 'mac' && profile.project.targets.some((t) => t.devices.includes('mac'))) ||
-          (p === 'vision' && profile.project.targets.some((t) => t.devices.includes('vision')));
+          (p === 'mac' && (profile.app.platforms.includes('macos') || profile.project.targets.some((t) => t.devices.includes('mac')))) ||
+          (p === 'vision' && (profile.app.platforms.includes('visionos') || profile.project.targets.some((t) => t.devices.includes('vision'))));
         if (!p) issues.error('badge.platform-missing', `${where}: platform badge has no platform field.`);
         else if (!ok) issues.error('badge.platform-unsupported', `${where}: the project does not support “${p}” for this badge.`);
         break;
