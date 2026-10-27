@@ -260,23 +260,28 @@ export async function videoBrief(ctx: Ctx): Promise<string> {
     'video',
     `# Brief: video plan
 
-Write \`metadata/video-plan.json\` (details: the /vitrin skill’s references/video.md). App Preview: 886×1920 (iPhone), 1200×1600 (iPad), 1920×1080 landscape for \`"device": "mac"\` / \`"tv"\` (targets preview-mac / preview-tv); 30 fps, 15–30 s (target 20–25).
+Write \`metadata/video-plan.json\` (details: the /vitrin skill’s references/video.md). App Preview: 886×1920 (iPhone), 1200×1600 (iPad), 1920×1080 landscape for \`"device": "mac"\` / \`"tv"\` (targets preview-mac / preview-tv); 30 fps, 15–30 s (target 18–24).
 The preview uses the art direction's preset colors and fonts and the same device frames as the screenshots, so keep the hook line consistent with the hero screenshot.
-Real app footage should dominate; keep text cards short. The first ~1.5 s of each recording is the app launch: \`from\` ≥ 1.5.
+Real app footage should dominate: at most 2 text cards in all (\`text\` beats plus the kinetic style's cards). The first ~1.5 s of each recording is the app launch: \`from\` ≥ 1.5.
 Sources: recordings (${recs.join(', ') || 'capture.recordings is empty'}) or screen ids (${ctx.config.capture.screens.map((s) => s.id).join(', ')}).
 
-Style: \`classic\` | \`showcase\` (3D device, camera push, light leaks) | \`kinetic\` (word-by-word text cards) | \`energetic\` (tilted device, banner headline, fast transitions).
+Structure: hook (the outcome, 2.2 s) → demo: 1–2 \`flow\` beats doing the core task with taps → breadth: a \`flow\` of \`cut\` steps or \`badges\`/\`split\` → proof: \`stat\`/\`zoom\` → optional \`outro\` line over the outcome screen (no icon or logo card). Beats 1.5–2.5 s, flows ≈ 1.2 s per step; vary scene types. Up to 3 previews with different hooks (outcome, demo, proof).
+A \`flow\` shows the app in use: \`steps\` of screens, a \`tap\` {x,y} (fractions of the capture, on the real control) before each change, \`change\` = push (navigation) | sheet (modal) | fade (state change) | scroll (same screen further down) | cut (montage).${ctx.config.capture.mode === 'html' ? ' With HTML screens there are no recordings, so flows carry the motion: write the state after each tap as its own screen (e.g. `home-done`, `stats-more`) and add it to capture.screens.' : ''}
+
+Style: \`classic\` | \`showcase\` (3D device, camera push, light leaks) | \`kinetic\` (word-by-word captions, up to two text cards) | \`energetic\` (tilted device, banner headline, fast transitions).
 If unsure, first render all four with \`vitrin video --styles all\` and show them to the user.
-Scenes: device, zoom (\`zoom\` rectangle), split (\`secondSource\`), stat (\`stat\`), badges (\`badges\`), text. \`*accent*\` is supported.
+Scenes: device, flow (\`steps\`), zoom (\`zoom\` rectangle), split (\`secondSource\`), stat (\`stat\`), badges (\`badges\`), text. \`*accent*\` is supported.
 
 \`\`\`json
 { "previews": [{ "id": "01", "device": "iphone", "style": "showcase", "transition": "auto",
-    "hookSource": "home-flow", "hookFrom": 1.5, "hook": { "en-US": "One tap, *every day*", "tr": "Günde *tek dokunuş*" },
+    "hookSource": "stats", "hookFrom": 1.5, "hook": { "en-US": "Your week, *at a glance*", "tr": "Haftan *tek bakışta*" },
     "beats": [
-      { "scene": "device", "source": "home-flow", "from": 1.5, "to": 5, "caption": { "en-US": "…", "tr": "…" }, "featureIds": ["…"] },
-      { "scene": "zoom", "source": "detail", "from": 0, "to": 4, "zoom": { "x": 0.04, "y": 0.47, "w": 0.92, "h": 0.3 }, "caption": { … }, "featureIds": ["…"] },
-      { "scene": "stat", "source": "stats-flow", "from": 1.5, "to": 5, "stat": { "value": 12, "suffix": { "en-US": "weeks" }, "label": { "en-US": "…" }, "featureId": "…" }, "caption": { … }, "featureIds": ["…"] },
-      { "scene": "badges", "source": "stats-flow", "from": 2, "to": 5.5, "badges": [{ "icon": "bell", "label": { … }, "featureId": "…" }], "caption": { … }, "featureIds": ["…"] }
+      { "scene": "flow", "from": 0, "to": 3.6, "caption": { "en-US": "One tap, *done*", "tr": "Tek dokunuş, *tamam*" }, "featureIds": ["…"],
+        "steps": [{ "source": "home", "tap": { "x": 0.86, "y": 0.31 } }, { "source": "home-done", "change": "fade", "tap": { "x": 0.5, "y": 0.31 } }, { "source": "detail", "change": "push" }] },
+      { "scene": "zoom", "source": "detail", "from": 0, "to": 2.2, "zoom": { "x": 0.04, "y": 0.47, "w": 0.92, "h": 0.3 }, "caption": { … }, "featureIds": ["…"] },
+      { "scene": "flow", "from": 0, "to": 3, "caption": { … }, "featureIds": ["…"],
+        "steps": [{ "source": "stats" }, { "source": "reminders", "change": "cut" }, { "source": "add", "change": "cut" }, { "source": "stats-more", "change": "cut" }] },
+      { "scene": "stat", "source": "stats-flow", "from": 1.5, "to": 3.5, "stat": { "value": 12, "suffix": { "en-US": "weeks" }, "label": { "en-US": "…" }, "featureId": "…" }, "caption": { … }, "featureIds": ["…"] }
     ],
     "outro": { "title": { "en-US": "…", "tr": "…" }, "subtitle": { "en-US": "…", "tr": "…" } } }],
   "loops": { "header": { "durationSec": 12, "fps": 30, "copy": { … }, "sources": ["home","stats","detail"], "featureIds": ["…"] },

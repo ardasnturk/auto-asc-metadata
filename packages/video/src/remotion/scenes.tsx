@@ -1,30 +1,34 @@
 import React from 'react';
-import { AbsoluteFill, Easing, Img, interpolate, staticFile, useCurrentFrame, useVideoConfig } from 'remotion';
-import { isLandscape, type AppPreviewProps, type Look, type MediaRef, type PreviewStyle, type Scene } from '../types.js';
+import { AbsoluteFill, Easing, interpolate, useCurrentFrame, useVideoConfig } from 'remotion';
+import { isLandscape, type AppPreviewProps, type Look, type MediaRef, type PreviewFamily, type PreviewStyle, type Scene } from '../types.js';
 import { fontStack } from './fonts.js';
-import { ChipView, Counter, Device, DeviceEntrance, deviceHeight, KineticText, screenRect } from './kit.js';
+import { ChipView, Counter, Device, DeviceEntrance, deviceHeight, FlowScreens, KineticText, screenRect } from './kit.js';
 
 const clamp = { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' } as const;
 const outExpo = Easing.bezier(0.16, 1, 0.3, 1);
 
 type SceneProps<K extends Scene['kind']> = { scene: Extract<Scene, { kind: K }>; look: Look; style: PreviewStyle };
 
-/** Caption block at the top of a scene. Energetic puts it on an accent banner. */
+/** Fraction of a capture the status bar takes (it stays put while a flow scrolls); 0 where there is none. */
+const STATUS_BAR: Partial<Record<PreviewFamily, number>> = { iphone: 0.062, ipad: 0.018 };
+
+/** Caption block at the top of a scene. Energetic puts it on an accent banner; kinetic and energetic words pop in. */
 const Caption: React.FC<{ look: Look; style: PreviewStyle; text: string; big?: boolean }> = ({ look, style, text, big }) => {
   const { width, height } = useVideoConfig();
   const wide = isLandscape(look.deviceFamily);
   // Landscape (Mac, TV): the caption is a column on the left, the device fills the right.
   const size = Math.round(wide ? height * (big ? 0.12 : 0.1) : width * (big ? 0.105 : 0.085));
   const box: React.CSSProperties = wide ? { top: 0, bottom: 0, left: width * 0.06, width: width * 0.36, alignItems: 'center' } : { top: height * 0.065, left: width * 0.07, right: width * 0.07 };
+  const pop = style === 'kinetic' || style === 'energetic';
   return (
     <div style={{ position: 'absolute', ...box, display: 'flex', justifyContent: wide ? 'flex-start' : 'center' }}>
       {style === 'energetic' ? (
         <Banner look={look}>
           {/* On the accent banner the accent colour would vanish: accent words switch to the dark badge colour. */}
-          <KineticText look={look} text={text} size={size} color="#FFFFFF" accentColor={look.badgeText} underlineColor="#FFFFFF" align={wide ? 'start' : 'center'} />
+          <KineticText look={look} text={text} size={size} color="#FFFFFF" accentColor={look.badgeText} underlineColor="#FFFFFF" align={wide ? 'start' : 'center'} big={pop} />
         </Banner>
       ) : (
-        <KineticText look={look} text={text} size={size} align={wide ? 'start' : 'center'} />
+        <KineticText look={look} text={text} size={size} align={wide ? 'start' : 'center'} big={pop} />
       )}
     </div>
   );
@@ -49,8 +53,8 @@ const Banner: React.FC<{ look: Look; children: React.ReactNode }> = ({ look, chi
   );
 };
 
-/** Device sized to the area under the caption; it may bleed off the bottom a little. */
-function useDeviceBox(media: MediaRef, look: Look, widthRatio = 0.8) {
+/** Device sized to the area under the caption (portrait: from `topRatio` of the height); it may bleed off the bottom a little. */
+function useDeviceBox(media: MediaRef, look: Look, widthRatio = 0.8, topRatio = 0.25) {
   const { width, height } = useVideoConfig();
   if (isLandscape(look.deviceFamily)) {
     const areaW = width * 0.52;
@@ -59,17 +63,17 @@ function useDeviceBox(media: MediaRef, look: Look, widthRatio = 0.8) {
     const h = deviceHeight(w, look, media.aspect);
     return { top: (height - h) / 2, w, left: width * 0.44 + (areaW - w) / 2, h };
   }
-  const top = height * 0.25;
+  const top = height * topRatio;
   const w = Math.min(width * widthRatio, (height - top + height * 0.06) / media.aspect);
   return { top, w, left: (width - w) / 2, h: deviceHeight(w, look, media.aspect) };
 }
 
-const DeviceAt: React.FC<{ look: Look; style: PreviewStyle; media: MediaRef; frames: number; widthRatio?: number; tilt?: number; children?: React.ReactNode }> = ({ look, style, media, frames, widthRatio, tilt, children }) => {
-  const box = useDeviceBox(media, look, widthRatio);
+const DeviceAt: React.FC<{ look: Look; style: PreviewStyle; media: MediaRef; frames: number; widthRatio?: number; topRatio?: number; tilt?: number; screen?: React.ReactNode; children?: React.ReactNode }> = ({ look, style, media, frames, widthRatio, topRatio, tilt, screen, children }) => {
+  const box = useDeviceBox(media, look, widthRatio, topRatio);
   return (
     <div style={{ position: 'absolute', left: box.left, top: box.top }}>
       <DeviceEntrance style={style} durationInFrames={frames} tilt={tilt}>
-        <Device look={look} media={{ ...media, aspect: media.aspect }} width={box.w} />
+        <Device look={look} media={{ ...media, aspect: media.aspect }} width={box.w} screen={screen} />
         {children}
       </DeviceEntrance>
     </div>
@@ -89,6 +93,26 @@ export const DeviceScene: React.FC<SceneProps<'device'>> = ({ scene, look, style
     <DeviceAt look={look} style={style} media={scene.media} frames={scene.frames} tilt={style === 'energetic' ? 5 : 0} />
   </AbsoluteFill>
 );
+
+/** The app in use: screens follow each other in one device, a finger taps before each change. */
+export const FlowScene: React.FC<SceneProps<'flow'>> = ({ scene, look, style }) => {
+  const first = scene.steps[0]!.media;
+  const box = useDeviceBox(first, look);
+  const sr = screenRect(look, box.w, first.aspect);
+  return (
+    <AbsoluteFill>
+      <Caption look={look} style={style} text={scene.caption} />
+      <DeviceAt
+        look={look}
+        style={style}
+        media={first}
+        frames={scene.frames}
+        tilt={style === 'energetic' ? -4 : 0}
+        screen={<FlowScreens steps={scene.steps} frames={scene.frames} w={sr.w} h={sr.h} dir={look.dir} statusBar={STATUS_BAR[look.deviceFamily] ?? 0} />}
+      />
+    </AbsoluteFill>
+  );
+};
 
 /** Camera flies into a region of the real UI and a ring marks it. */
 export const ZoomScene: React.FC<SceneProps<'zoom'>> = ({ scene, look, style }) => {
@@ -147,13 +171,15 @@ export const SplitScene: React.FC<SceneProps<'split'>> = ({ scene, look, style }
   const w = wide ? width * 0.3 : Math.min(width * 0.47, (height * 0.7) / scene.media.aspect);
   const enter = (delay: number, from: number) =>
     interpolate(frame, [delay, delay + 0.7 * fps], [from, 0], { ...clamp, easing: style === 'energetic' ? Easing.spring({ damping: 12 }) : outExpo });
+  // After they landed, the two devices drift apart vertically (parallax) for the rest of the beat.
+  const drift = interpolate(frame, [0.7 * fps, Math.max(scene.frames, fps)], [0, height * 0.025], clamp);
   return (
     <AbsoluteFill>
       <Caption look={look} style={style} text={scene.caption} />
-      <div style={{ position: 'absolute', top: wide ? height * 0.16 : height * 0.27, left: wide ? width * 0.42 : width / 2 - w * 0.96, rotate: wide ? '0deg' : '-4deg', translate: `${enter(0, -width)}px 0px` }}>
+      <div style={{ position: 'absolute', top: wide ? height * 0.16 : height * 0.27, left: wide ? width * 0.42 : width / 2 - w * 0.96, rotate: wide ? '0deg' : '-4deg', translate: `${enter(0, -width)}px ${-drift}px` }}>
         <Device look={look} media={scene.media} width={w} />
       </div>
-      <div style={{ position: 'absolute', top: wide ? height * 0.34 : height * 0.31, left: wide ? width * 0.66 : width / 2 - w * 0.04, rotate: wide ? '0deg' : '4deg', translate: `${enter(0.15 * fps, width)}px 0px` }}>
+      <div style={{ position: 'absolute', top: wide ? height * 0.34 : height * 0.31, left: wide ? width * 0.66 : width / 2 - w * 0.04, rotate: wide ? '0deg' : '4deg', translate: `${enter(0.15 * fps, width)}px ${drift}px` }}>
         <Device look={look} media={scene.media2} width={w} />
       </div>
     </AbsoluteFill>
@@ -234,68 +260,53 @@ export const BadgesScene: React.FC<SceneProps<'badges'>> = ({ scene, look, style
   );
 };
 
-export const OutroScene: React.FC<SceneProps<'outro'> & { icon?: string }> = ({ scene, look, icon }) => {
+/**
+ * Closing line over the outcome screen: the device settles under the promise. No icon or logo card — App Review
+ * wants previews made of app footage, and the preview should end on what the user gets.
+ */
+export const OutroScene: React.FC<SceneProps<'outro'>> = ({ scene, look, style }) => {
   const frame = useCurrentFrame();
   const { fps, width, height } = useVideoConfig();
-  const iconSize = width * 0.28;
+  const wide = isLandscape(look.deviceFamily);
+  const size = Math.round(wide ? height * 0.11 : width * 0.095);
+  const box: React.CSSProperties = wide
+    ? { top: 0, bottom: 0, left: width * 0.06, width: width * 0.36, justifyContent: 'center', alignItems: 'flex-start' }
+    : { top: height * 0.055, left: width * 0.07, right: width * 0.07, alignItems: 'center' };
   return (
-    <AbsoluteFill style={{ alignItems: 'center', justifyContent: 'center', gap: height * 0.025 }}>
-      {icon ? (
-        <div style={{ position: 'relative', width: iconSize, height: iconSize }}>
-          {/* Expanding ring pulse behind the icon */}
+    <AbsoluteFill>
+      <div style={{ position: 'absolute', ...box, display: 'flex', flexDirection: 'column', gap: size * 0.3 }}>
+        <KineticText look={look} text={scene.title} size={size} align={wide ? 'start' : 'center'} big />
+        {scene.subtitle ? (
           <div
+            dir={look.dir}
             style={{
-              position: 'absolute',
-              inset: 0,
-              borderRadius: iconSize * 0.3,
-              border: `${iconSize * 0.03}px solid ${look.accent}`,
-              scale: interpolate(frame, [0.3 * fps, 1.3 * fps], [1, 1.8], { ...clamp, easing: Easing.out(Easing.cubic) }),
-              opacity: interpolate(frame, [0.3 * fps, 1.3 * fps], [0.8, 0], clamp),
+              fontFamily: fontStack(look.bodyFont),
+              fontSize: wide ? height * 0.05 : width * 0.048,
+              fontWeight: 500,
+              color: look.textMuted,
+              textAlign: wide ? 'start' : 'center',
+              opacity: interpolate(frame, [0.6 * fps, 1 * fps], [0, 1], clamp),
+              translate: interpolate(frame, [0.6 * fps, 1 * fps], ['0px 16px', '0px 0px'], { ...clamp, easing: outExpo }),
             }}
-          />
-          <Img
-            src={staticFile(icon)}
-            style={{
-              width: iconSize,
-              height: iconSize,
-              borderRadius: iconSize * 0.225,
-              boxShadow: '0 20px 60px rgba(0,0,0,.45)',
-              scale: interpolate(frame, [0, 0.6 * fps], [0.3, 1], { ...clamp, easing: Easing.spring({ damping: 10 }), output: 'perceptual-scale' }),
-              rotate: interpolate(frame, [0, 0.6 * fps], ['-20deg', '0deg'], { ...clamp, easing: outExpo }),
-            }}
-          />
-        </div>
-      ) : null}
-      <div style={{ padding: `0 ${width * 0.08}px` }}>
-        <KineticText look={look} text={scene.title} size={Math.round(width * 0.12)} delay={0.35 * fps} big />
+          >
+            {scene.subtitle}
+          </div>
+        ) : null}
       </div>
-      {scene.subtitle ? (
-        <div
-          style={{
-            fontFamily: fontStack(look.bodyFont),
-            fontSize: width * 0.05,
-            fontWeight: 500,
-            color: look.textMuted,
-            textAlign: 'center',
-            padding: `0 ${width * 0.1}px`,
-            opacity: interpolate(frame, [0.8 * fps, 1.2 * fps], [0, 1], clamp),
-            translate: interpolate(frame, [0.8 * fps, 1.2 * fps], ['0px 20px', '0px 0px'], { ...clamp, easing: outExpo }),
-          }}
-        >
-          {scene.subtitle}
-        </div>
-      ) : null}
+      <DeviceAt look={look} style={style} media={scene.media} frames={scene.frames} topRatio={scene.subtitle ? 0.3 : 0.25} />
     </AbsoluteFill>
   );
 };
 
-export function renderScene(scene: Scene, p: Pick<AppPreviewProps, 'look' | 'style' | 'icon'>): React.ReactNode {
+export function renderScene(scene: Scene, p: Pick<AppPreviewProps, 'look' | 'style'>): React.ReactNode {
   const common = { look: p.look, style: p.style };
   switch (scene.kind) {
     case 'hook':
       return <HookScene scene={scene} {...common} />;
     case 'device':
       return <DeviceScene scene={scene} {...common} />;
+    case 'flow':
+      return <FlowScene scene={scene} {...common} />;
     case 'zoom':
       return <ZoomScene scene={scene} {...common} />;
     case 'split':
@@ -307,6 +318,6 @@ export function renderScene(scene: Scene, p: Pick<AppPreviewProps, 'look' | 'sty
     case 'badges':
       return <BadgesScene scene={scene} {...common} />;
     case 'outro':
-      return <OutroScene scene={scene} {...common} icon={p.icon} />;
+      return <OutroScene scene={scene} {...common} />;
   }
 }

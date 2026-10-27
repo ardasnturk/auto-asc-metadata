@@ -15,7 +15,7 @@
           "scene": "device",
           "source": "home-flow",
           "from": 1.5,
-          "to": 5.0,
+          "to": 4.0,
           "featureIds": [
             "habit-tracking"
           ],
@@ -25,10 +25,36 @@
           }
         },
         {
+          "scene": "flow",
+          "from": 0,
+          "to": 2.6,
+          "featureIds": [
+            "custom-habits",
+            "reminders"
+          ],
+          "caption": {
+            "en-US": "Make it *yours*",
+            "tr": "Sana göre *ayarla*"
+          },
+          "steps": [
+            {
+              "source": "home",
+              "tap": {
+                "x": 0.9,
+                "y": 0.096
+              }
+            },
+            {
+              "source": "add",
+              "change": "sheet"
+            }
+          ]
+        },
+        {
           "scene": "zoom",
           "source": "detail",
           "from": 0,
-          "to": 4,
+          "to": 2.4,
           "featureIds": [
             "calendar-heatmap",
             "streaks"
@@ -48,7 +74,7 @@
           "scene": "stat",
           "source": "stats-flow",
           "from": 1.5,
-          "to": 5.0,
+          "to": 3.7,
           "featureIds": [
             "calendar-heatmap"
           ],
@@ -70,25 +96,41 @@
           }
         },
         {
-          "scene": "split",
-          "source": "add",
-          "secondSource": "reminders",
+          "scene": "flow",
           "from": 0,
-          "to": 3.5,
+          "to": 3.2,
           "featureIds": [
-            "custom-habits",
-            "reminders"
+            "calendar-heatmap",
+            "reminders",
+            "streaks"
           ],
           "caption": {
-            "en-US": "Make it *yours*",
-            "tr": "Sana göre *ayarla*"
-          }
+            "en-US": "Everything in *rhythm*",
+            "tr": "Her şey *ritminde*"
+          },
+          "steps": [
+            {
+              "source": "stats"
+            },
+            {
+              "source": "reminders",
+              "change": "cut"
+            },
+            {
+              "source": "detail",
+              "change": "cut"
+            },
+            {
+              "source": "home",
+              "change": "cut"
+            }
+          ]
         },
         {
           "scene": "badges",
           "source": "stats-flow",
           "from": 2,
-          "to": 5.5,
+          "to": 4.4,
           "featureIds": [
             "reminders",
             "export",

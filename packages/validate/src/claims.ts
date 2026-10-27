@@ -185,7 +185,12 @@ export function validateClaims(opts: {
       if (textBeats.length > 2) issues.warn('video.text-heavy', `Video ${p.id}: ${textBeats.length} text cards; a preview should mostly show app footage (at most 2).`);
       p.beats.forEach((b, i) => {
         const where = `Video ${p.id} beat ${i + 1} (${b.scene})`;
-        if (b.scene !== 'text' && !b.source) issues.error('video.beat-source', `${where}: source is required.`);
+        if (b.scene !== 'text' && b.scene !== 'flow' && !b.source) issues.error('video.beat-source', `${where}: source is required.`);
+        if (b.scene === 'flow') {
+          if (b.steps.length < 2) issues.error('video.beat-flow', `${where}: a flow needs at least 2 steps (screens).`);
+          // Each screen should be on screen long enough to read before the next one arrives.
+          else if ((b.to - b.from) / b.steps.length < 0.6) issues.warn('video.flow-fast', `${where}: ${b.steps.length} screens in ${(b.to - b.from).toFixed(1)} s; give each at least 0.6 s.`);
+        }
         if (b.scene === 'text' && b.to - b.from > 1.5) issues.warn('video.text-long', `${where}: text card is longer than 1.5 s.`);
         if (b.scene === 'zoom' && !b.zoom) issues.error('video.beat-zoom', `${where}: a zoom rectangle is required.`);
         if (b.scene === 'split' && !b.secondSource) issues.error('video.beat-split', `${where}: secondSource is required.`);
@@ -202,7 +207,8 @@ export function validateClaims(opts: {
       });
       for (const locale of config.app.locales) {
         if (!p.hook[locale]) issues.error('video.missing-copy', `Video ${p.id}: no hook text for ${locale}.`, { locale });
-        for (const b of p.beats) if (!b.caption[locale] && b.scene !== 'device') issues.error('video.missing-copy', `Video ${p.id}: no beat caption for ${locale}.`, { locale });
+        for (const b of p.beats) if (!b.caption[locale] && b.scene !== 'device' && b.scene !== 'flow') issues.error('video.missing-copy', `Video ${p.id}: no beat caption for ${locale}.`, { locale });
+        if (p.outro && !p.outro.title[locale]) issues.error('video.missing-copy', `Video ${p.id}: no closing line for ${locale}.`, { locale });
       }
     }
     for (const [name, loop] of Object.entries(videoPlan.loops)) {

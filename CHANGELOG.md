@@ -2,6 +2,18 @@
 
 All notable changes to this project are documented in this file. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## Unreleased
+
+### Added — App Previews that move
+- **`flow` scene, the app in use:** 2–5 screens in one device (`beats[].steps`). A touch indicator taps (`tap {x,y}`) and the next screen arrives the way the app shows it: `push` (navigation), `sheet` (modal sheet), `fade` (state change), `scroll` (the same screen further down, the status bar stays put) or `cut` (quick montage). With HTML screens, the state after each tap is its own screen (e.g. `home-done`).
+- **The camera keeps moving:** after the device has landed it keeps pushing in and drifting in every style (showcase orbits slightly, energetic sways and bobs, split devices drift apart), and the backdrop shifts on every cut, so a preview reads as one moving shot instead of a slide show.
+
+### Changed
+- **Shorter, punchier timing:** hook 2.2 s, closing line 2.4 s, shorter cut transitions; the brief and `references/video.md` ask for 1.5–2.5 s beats in a hook → demo → breadth → proof structure and up to three previews with different hooks. Beats are stretched or shrunk only as far as Apple's 15–30 s needs (to 16 s or 28 s), not to a fixed 24 s.
+- **No icon card at the end:** `outro` is optional and its line now runs over the outcome screen (`outro.source`, default the last beat's screen); without `outro` the preview ends on the last beat. App Review wants previews made of app footage.
+- **Kinetic style:** typography cards go before at most two beats (the first and the middle one), counted together with the plan's `text` beats; the other captions pop in word by word over the UI. Energetic captions pop in as well.
+- Screenshots in previews push in faster (5 % over 3 s instead of 6 % over 6 s).
+
 ## 0.8.0 — 2026-10-26
 
 ### Added — Designed for each app, shown in the store you ship to

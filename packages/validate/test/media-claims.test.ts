@@ -1,5 +1,5 @@
 import { loadTargets } from '@vitrin/core';
-import { ShotList, VitrinConfig, type AppProfile } from '@vitrin/schemas';
+import { ShotList, VideoPlan, VitrinConfig, type AppProfile } from '@vitrin/schemas';
 import { mkdtempSync, mkdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -96,6 +96,17 @@ describe('claim ↔ evidence', () => {
     const shots = ShotList.parse({ shots: [{ id: '01', slug: 'a', archetype: 'hero', screens: ['home'], featureIds: ['streaks'], copy: { tr: { headline: 'bir iki üç dört beş altı yedi sekiz' } } }] });
     const c = validateClaims({ config, profile, shots, enabledTargets: [] }).items.map((i) => i.code);
     expect(c).toContain('shot.headline-words');
+  });
+
+  it('checks flow beats and the optional closing line of a video plan', () => {
+    const preview = (beats: unknown[], outro?: unknown) => VideoPlan.parse({ previews: [{ id: '01', device: 'iphone', hook: { tr: 'Serini *koru*' }, hookSource: 'home', beats, outro }] });
+    const codes = (plan: VideoPlan) => validateClaims({ config, profile, videoPlan: plan, enabledTargets: [] }).items.map((i) => i.code);
+    const flow = { scene: 'flow', to: 3, caption: {}, featureIds: ['streaks'], steps: [{ source: 'home', tap: { x: 0.5, y: 0.5 } }, { source: 'home-done', change: 'fade' }] };
+    // A flow needs no beat-level source or caption, and the closing line is optional.
+    expect(codes(preview([flow])).filter((c) => c.startsWith('video.'))).toEqual([]);
+    expect(codes(preview([{ ...flow, steps: flow.steps.slice(0, 1) }]))).toContain('video.beat-flow');
+    expect(codes(preview([{ ...flow, to: 1, steps: [...flow.steps, { source: 'stats' }] }]))).toContain('video.flow-fast');
+    expect(codes(preview([flow], { title: { en: 'x' } }))).toContain('video.missing-copy');
   });
 });
 

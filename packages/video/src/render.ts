@@ -5,7 +5,7 @@ import { readdir, rm } from 'node:fs/promises';
 import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import sharp from 'sharp';
-import { FPS_PREVIEW, previewDurationSec, STYLE_DEFAULTS, type AppPreviewProps, type Look, type LoopProps, type MediaRef, type PreviewFamily, renderScale, type Scene, type TransitionKind } from './types.js';
+import { FPS_PREVIEW, MAX_TEXT_CARDS, previewDurationSec, STYLE_DEFAULTS, type AppPreviewProps, type Look, type LoopProps, type MediaRef, type PreviewFamily, renderScale, type Scene, type TransitionKind } from './types.js';
 
 const ENTRY = join(dirname(fileURLToPath(import.meta.url)), '..', 'src', 'remotion', 'index.ts');
 
@@ -101,9 +101,10 @@ export function fitDurations(hookSec: number, outroSec: number, beats: number[])
   return beats.map((b) => Math.round(((b / sum) * target) * 10) / 10);
 }
 
-const HOOK_SEC = 2.6;
-const OUTRO_SEC = 2.6;
-const TEXT_CARD_SEC = 1.1;
+// Short, punchy timing: a hook, ≈ 2 s beats, a short closing line (App Store previews autoplay muted in search).
+const HOOK_SEC = 2.2;
+const OUTRO_SEC = 2.4;
+const TEXT_CARD_SEC = 1;
 
 /** Cut transitions for a plan: an explicit kind everywhere, or the style's cycle. */
 export function resolveTransitions(p: Pick<PreviewPlan, 'style' | 'transition' | 'lightLeaks'>, cuts: number): TransitionKind[] {
@@ -122,12 +123,28 @@ export function resolveTransitions(p: Pick<PreviewPlan, 'style' | 'transition' |
 export interface ResolvedBeat {
   media?: MediaRef;
   media2?: MediaRef;
+  /** `flow` beats: one source per step. */
+  steps?: MediaRef[];
+}
+
+/**
+ * Which beats get a kinetic typography card in front of them: together with the plan's own `text` beats at most
+ * MAX_TEXT_CARDS, spread over the video (the first captioned beat, then the middle one). The others keep their
+ * caption on the UI beat.
+ */
+export function kineticCardBeats(plan: Pick<PreviewPlan, 'style' | 'beats'>, locale: string): Set<number> {
+  if (!STYLE_DEFAULTS[plan.style].textCards) return new Set();
+  const room = MAX_TEXT_CARDS - plan.beats.filter((b) => b.scene === 'text').length;
+  const captioned = plan.beats.flatMap((b, i) => (b.scene !== 'text' && b.caption[locale] ? [i] : []));
+  const picks = [captioned[0], captioned[Math.ceil(captioned.length / 2)]].slice(0, Math.max(room, 0));
+  return new Set(picks.filter((i): i is number => i !== undefined));
 }
 
 /**
  * Turns a plan into the scene list the AppPreview composition renders, for one locale.
- * Kinetic style puts each caption on its own typography card before the UI beat.
- * Beat lengths are scaled so the whole preview lands in 15–30 s (target 24 s).
+ * Kinetic style puts a few captions on their own typography card before the UI beat (see kineticCardBeats).
+ * The closing line runs over the outcome screen (`outroMedia`, else the last UI beat). Beat lengths are scaled
+ * only when the preview falls outside 15–30 s, and only as far as needed (to 16 s or 28 s).
  */
 export function buildPreviewProps(opts: {
   plan: PreviewPlan;
@@ -135,26 +152,39 @@ export function buildPreviewProps(opts: {
   look: Look;
   hookMedia: MediaRef;
   beats: ResolvedBeat[];
-  icon?: string;
+  outroMedia?: MediaRef;
 }): AppPreviewProps {
   const { plan, locale } = opts;
   const style = plan.style;
-  const textCards = STYLE_DEFAULTS[style].textCards;
+  const carded = kineticCardBeats(plan, locale);
   const sec = (s: number) => Math.round(s * FPS_PREVIEW);
   const scenes: Scene[] = [{ kind: 'hook', frames: sec(HOOK_SEC), text: plan.hook[locale] ?? '', media: opts.hookMedia }];
   const beatScenes: Scene[] = [];
+  let lastMedia = opts.hookMedia;
   plan.beats.forEach((b, i) => {
     const caption = b.caption[locale] ?? '';
-    const media = opts.beats[i]?.media;
     const len = Math.max(1, b.to - b.from);
     if (b.scene === 'text') {
       beatScenes.push({ kind: 'text', frames: sec(Math.min(len, 1.5)), text: caption });
       return;
     }
-    if (!media) throw new Error(`Video ${plan.id} beat ${i + 1}: source missing (${b.source}).`);
-    if (textCards && caption) beatScenes.push({ kind: 'text', frames: sec(TEXT_CARD_SEC), text: caption });
-    const shown = textCards ? '' : caption;
+    if (carded.has(i)) beatScenes.push({ kind: 'text', frames: sec(TEXT_CARD_SEC), text: caption });
+    const shown = carded.has(i) ? '' : caption;
     const frames = sec(len);
+    if (b.scene === 'flow') {
+      const steps = b.steps.map((s, k) => {
+        const media = opts.beats[i]?.steps?.[k];
+        if (!media) throw new Error(`Video ${plan.id} beat ${i + 1}: source missing (${s.source}).`);
+        return { media, tap: s.tap, change: s.change };
+      });
+      if (steps.length < 2) throw new Error(`Video ${plan.id} beat ${i + 1}: a flow needs at least 2 steps.`);
+      beatScenes.push({ kind: 'flow', frames, caption: shown, steps });
+      lastMedia = steps[steps.length - 1]!.media;
+      return;
+    }
+    const media = opts.beats[i]?.media;
+    if (!media) throw new Error(`Video ${plan.id} beat ${i + 1}: source missing (${b.source}).`);
+    lastMedia = media;
     switch (b.scene) {
       case 'zoom':
         beatScenes.push({ kind: 'zoom', frames, caption: shown, media, rect: b.zoom ?? { x: 0.05, y: 0.3, w: 0.9, h: 0.3 } });
@@ -173,23 +203,48 @@ export function buildPreviewProps(opts: {
     }
   });
   scenes.push(...beatScenes);
-  scenes.push({ kind: 'outro', frames: sec(OUTRO_SEC), title: plan.outro.title[locale] ?? '', subtitle: plan.outro.subtitle[locale] ?? '' });
+  if (plan.outro) scenes.push({ kind: 'outro', frames: sec(OUTRO_SEC), title: plan.outro.title[locale] ?? '', subtitle: plan.outro.subtitle[locale] ?? '', media: opts.outroMedia ?? lastMedia });
 
   const transitions = resolveTransitions(plan, scenes.length - 1);
   const transitionFrames = STYLE_DEFAULTS[style].transitionFrames;
-  const props: AppPreviewProps = { look: opts.look, style, transitions, transitionFrames, lightLeaks: transitions.includes('leak'), scenes, icon: opts.icon };
+  const props: AppPreviewProps = { look: opts.look, style, transitions, transitionFrames, lightLeaks: transitions.includes('leak'), scenes };
 
-  // Fit into Apple's 15–30 s by scaling the UI beats (text cards, hook and outro keep their rhythm).
+  // Fit into Apple's 15–30 s by scaling the UI beats (text cards, hook and closing keep their rhythm), no further than needed.
   const total = previewDurationSec(props);
   if (total < 15 || total > 30) {
     const fixed = scenes.filter((s) => s.kind === 'hook' || s.kind === 'outro' || s.kind === 'text').reduce((a, s) => a + s.frames, 0);
     const flexible = scenes.filter((s) => !['hook', 'outro', 'text'].includes(s.kind));
     const flexFrames = flexible.reduce((a, s) => a + s.frames, 0) || 1;
     const overlaps = total * FPS_PREVIEW - scenes.reduce((a, s) => a + s.frames, 0);
-    const targetFlex = 24 * FPS_PREVIEW - fixed - overlaps;
+    const targetFlex = (total < 15 ? 16 : 28) * FPS_PREVIEW - fixed - overlaps;
     for (const s of flexible) s.frames = Math.max(sec(1.5), Math.round((s.frames / flexFrames) * targetFlex));
   }
   return props;
+}
+
+/** Every source one preview plan uses, resolved for one locale (`family` = the preview's device). */
+async function resolvePlanMedia(paths: AppPaths, locale: string, primary: string, p: PreviewPlan, warnings: string[]): Promise<{ hook: { ref: MediaRef; aspect: number }; beats: ResolvedBeat[]; outro?: MediaRef }> {
+  const family = p.device;
+  const hook = await resolveMedia(paths, locale, primary, family, p.hookSource, p.hookFrom, warnings);
+  const beats: ResolvedBeat[] = [];
+  for (const b of p.beats) {
+    if (b.scene === 'text') {
+      beats.push({});
+      continue;
+    }
+    if (b.scene === 'flow') {
+      const steps: MediaRef[] = [];
+      for (const s of b.steps) steps.push((await resolveMedia(paths, locale, primary, family, s.source, s.from, warnings)).ref);
+      beats.push({ steps });
+      continue;
+    }
+    beats.push({
+      media: (await resolveMedia(paths, locale, primary, family, b.source, b.from, warnings)).ref,
+      media2: b.secondSource ? (await resolveMedia(paths, locale, primary, family, b.secondSource, 0, warnings)).ref : undefined,
+    });
+  }
+  const outro = p.outro?.source ? (await resolveMedia(paths, locale, primary, family, p.outro.source, 0, warnings)).ref : undefined;
+  return { hook, beats, outro };
 }
 
 export async function renderVideos(opts: VideoRenderOptions): Promise<VideoRenderResult> {
@@ -197,18 +252,6 @@ export async function renderVideos(opts: VideoRenderOptions): Promise<VideoRende
   const warnings: string[] = [];
   const videos: RenderManifest['videos'] = [];
   const locales = opts.onlyLocales ?? opts.locales;
-
-  // Brand icon (outro card) goes into the public dir as well.
-  let icon: string | undefined;
-  if (opts.profile.brand.appIcon) {
-    const src = join(opts.profile.project.root, opts.profile.brand.appIcon);
-    if (existsSync(src)) {
-      const dest = join(paths.raw, '_brand', 'icon.png');
-      await ensureDir(dirname(dest));
-      await sharp(src).resize(512, 512).png().toFile(dest);
-      icon = '_brand/icon.png';
-    }
-  }
 
   const { bundle } = await import('@remotion/bundler');
   const { renderMedia, selectComposition } = await import('@remotion/renderer');
@@ -258,17 +301,10 @@ export async function renderVideos(opts: VideoRenderOptions): Promise<VideoRende
     const base = plan.previews[0];
     if (!base) throw new Error('video-plan.json has no previews.');
     for (const locale of locales) {
-      const hook = await resolveMedia(paths, locale, opts.primaryLocale, base.device, base.hookSource, base.hookFrom, warnings);
-      const beats: ResolvedBeat[] = [];
-      for (const b of base.beats) {
-        beats.push({
-          media: b.scene === 'text' ? undefined : (await resolveMedia(paths, locale, opts.primaryLocale, base.device, b.source, b.from, warnings)).ref,
-          media2: b.secondSource ? (await resolveMedia(paths, locale, opts.primaryLocale, base.device, b.secondSource, 0, warnings)).ref : undefined,
-        });
-      }
+      const { hook, beats, outro } = await resolvePlanMedia(paths, locale, opts.primaryLocale, base, warnings);
       for (const style of opts.styleVariants) {
         const p = { ...base, style, transition: 'auto' as const, lightLeaks: undefined };
-        const props = buildPreviewProps({ plan: p, locale, look: lookFrom(ad, locale, base.device, hook.aspect), hookMedia: hook.ref, beats, icon });
+        const props = buildPreviewProps({ plan: p, locale, look: lookFrom(ad, locale, base.device, hook.aspect), hookMedia: hook.ref, beats, outroMedia: outro });
         const out = join(paths.vitrin, 'video-styles', locale, `${base.id}_${style}.mp4`);
         log.step(`Style variant ${style} (${locale}) — ${props.scenes.length} scenes, ${previewDurationSec(props).toFixed(1)} s`);
         await render('AppPreview', props, out, base.device !== 'vision', renderScale(base.device));
@@ -290,15 +326,8 @@ export async function renderVideos(opts: VideoRenderOptions): Promise<VideoRende
           continue;
         }
         const target = getTarget(previewTargetId(family));
-        const hook = await resolveMedia(paths, locale, opts.primaryLocale, family, p.hookSource, p.hookFrom, warnings);
-        const beats: ResolvedBeat[] = [];
-        for (const b of p.beats) {
-          beats.push({
-            media: b.scene === 'text' ? undefined : (await resolveMedia(paths, locale, opts.primaryLocale, family, b.source, b.from, warnings)).ref,
-            media2: b.secondSource ? (await resolveMedia(paths, locale, opts.primaryLocale, family, b.secondSource, 0, warnings)).ref : undefined,
-          });
-        }
-        const props = buildPreviewProps({ plan: p, locale, look: lookFrom(ad, locale, family, hook.aspect), hookMedia: hook.ref, beats, icon });
+        const { hook, beats, outro } = await resolvePlanMedia(paths, locale, opts.primaryLocale, p, warnings);
+        const props = buildPreviewProps({ plan: p, locale, look: lookFrom(ad, locale, family, hook.aspect), hookMedia: hook.ref, beats, outroMedia: outro });
         const total = previewDurationSec(props);
         if (total < 15 || total > 30) throw new Error(`App Preview ${p.id} is ${total.toFixed(1)} s long; it must be 15–30 s (reduce the number of beats).`);
         const out = join(dir, `${p.id}_${DELIVER_PREVIEW_DEVICE[target.id] ?? PREVIEW_DEVICE_FALLBACK[target.id] ?? 'IPHONE_67'}.mp4`);

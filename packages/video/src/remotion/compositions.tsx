@@ -7,7 +7,7 @@ import { slide } from '@remotion/transitions/slide';
 import { wipe } from '@remotion/transitions/wipe';
 import React from 'react';
 import { AbsoluteFill, Easing, useCurrentFrame, useVideoConfig } from 'remotion';
-import type { AppPreviewProps, LoopProps, TransitionKind } from '../types.js';
+import { cutFrames, type AppPreviewProps, type LoopProps, type TransitionKind } from '../types.js';
 import { Backdrop as LoopBackdrop, Device as LoopDevice, Title } from './components.js';
 import { Backdrop, LightLeakOverlay } from './kit.js';
 import { renderScene } from './scenes.js';
@@ -37,8 +37,8 @@ function presentationFor(kind: TransitionKind, index: number, accent: string, wi
 }
 
 /**
- * App Preview: a TransitionSeries of scenes (hook → beats → outro) over an animated backdrop.
- * Cuts use the style's transitions; `leak` cuts are hard cuts covered by a light-leak overlay.
+ * App Preview: a TransitionSeries of scenes (hook → beats → closing line) over an animated backdrop that moves
+ * with every cut. Cuts use the style's transitions; `leak` cuts are hard cuts covered by a light-leak overlay.
  */
 export const AppPreview: React.FC<AppPreviewProps> = (props) => {
   const { width, height } = useVideoConfig();
@@ -64,7 +64,7 @@ export const AppPreview: React.FC<AppPreviewProps> = (props) => {
   });
   return (
     <AbsoluteFill>
-      <Backdrop look={props.look} style={props.style} />
+      <Backdrop look={props.look} style={props.style} cuts={cutFrames(props)} />
       <TransitionSeries>{children}</TransitionSeries>
     </AbsoluteFill>
   );
