@@ -19,6 +19,8 @@ export function validateClaims(opts: {
   /** metadata/experiments.json */
   experiments?: ExperimentPlan;
   enabledTargets: string[];
+  /** metadata/photos/ (shots[].photo). */
+  photosDir?: string;
 }): IssueList {
   const { config, profile, shots, videoPlan, competitors, cpp, experiments } = opts;
   const playShots = opts.enabledTargets.filter((id) => PLAY_SCREENSHOT.test(id));
@@ -99,6 +101,9 @@ export function validateClaims(opts: {
         issues.error('shot.screens', `${where}: ${s.archetype} needs at least ${need[s.archetype] ?? 1} screens.`);
       }
       if (s.archetype === 'callout' && !s.callouts.length) issues.error('shot.callouts', `${where}: the callout archetype needs at least one callouts entry.`);
+      if (s.photo && opts.photosDir && !existsSync(join(opts.photosDir, s.photo))) {
+        issues.error('shot.photo-missing', `${where}: the photo ${s.photo} is not in metadata/photos/.`, { file: 'metadata/shots.json', fix: 'Add the developer’s photo there or remove `photo`.' });
+      }
       if (s.archetype === 'stat' && !s.stat) issues.error('shot.stat', `${where}: the stat archetype needs stat.value.`);
       if (s.archetype === 'testimonial') {
         for (const locale of config.app.locales) {
@@ -135,7 +140,10 @@ export function validateClaims(opts: {
         else if (!cjk && words > IDEAL_HEADLINE_WORDS) issues.warn('shot.headline-long', `${where} (${locale}): headline is ${words} words; at most ${IDEAL_HEADLINE_WORDS} is recommended so it reads in 2 seconds.`, { locale, fix: 'Cut words or move some into the kicker/subheadline.' });
         if (copy.kicker && wordCount(copy.kicker, locale) > 3) issues.warn('shot.kicker-long', `${where} (${locale}): kicker exceeds 3 words.`, { locale });
         if ((copy.headline.match(/\*/g) ?? []).length % 2) issues.error('shot.accent-markup', `${where} (${locale}): unbalanced *accent* markers.`, { locale });
-        const texts = [copy.kicker, plain, copy.subheadline, ...s.badges.map((b) => b.label[locale] ?? '')].join(' \n ');
+        const bullets = s.bullets.map((b) => b[locale] ?? '');
+        if (bullets.some((b) => !b)) issues.error('shot.bullet-missing', `${where} (${locale}): a bullets line has no ${locale} text.`, { locale });
+        for (const b of bullets) if (graphemeLength(b) > 32) issues.warn('shot.bullet-long', `${where} (${locale}): “${b}” is long for a bullet; keep each line to a few words (≤ 32 characters).`, { locale });
+        const texts = [copy.kicker, plain, copy.subheadline, ...s.badges.map((b) => b.label[locale] ?? ''), ...bullets].join(' \n ');
         for (const t of [...(forbidden.cta[baseLanguage(locale)] ?? []), ...(forbidden.cta.en ?? [])]) {
           if (texts.toLocaleLowerCase(locale).includes(t)) issues.error('shot.cta', `${where} (${locale}): calls to action (“${t}”) are not allowed in screenshots.`, { locale });
         }
@@ -168,6 +176,9 @@ export function validateClaims(opts: {
       const ids = s.id;
       if (shots.shots.filter((x) => x.id === ids).length > 1) issues.error('shot.duplicate-id', `${where}: the same sequence number is used by more than one screenshot.`);
       if (onPlay(s) && s.archetype === 'testimonial') issues.warn('shot.play-testimonial', `${where}: App Store reviews would appear on the Google Play listing; restrict the shot to App Store targets with \`targets\`.`);
+    }
+    if (shots.shots.some((s) => s.photo)) {
+      issues.info('shot.photo-rights', 'Screenshots use developer photos: they must be yours or licensed for App Store marketing, with a model release for every recognisable person.', { file: 'metadata/shots.json' });
     }
     if (shots.shots.length) {
       const ordered = [...shots.shots].sort((a, b) => a.id.localeCompare(b.id));

@@ -106,6 +106,8 @@ export function appPaths(root: string) {
     screens: join(v, 'screens'),
     /** Bespoke screenshot layouts Claude writes for this app (`shots[].template`). */
     designs: join(v, 'designs'),
+    /** Photos the developer supplied for screenshot backgrounds (`shots[].photo`). */
+    photos: join(v, 'photos'),
     /** Device mockups (empty templates and the app's screens placed in them). */
     mockups: join(v, 'mockups'),
   };

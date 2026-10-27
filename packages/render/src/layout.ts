@@ -10,11 +10,11 @@
 import type { ArtDirectionOption, Badge, Callout, Framing, Quote, RenderTarget, Shot } from '@vitrin/schemas';
 import { fontSetup, lucideIcon } from './assets.js';
 import { CaptionBlock, plainWords } from './caption.js';
-import { ensureContrast, mix, withAlpha } from './color.js';
+import { contrastRatio, ensureContrast, inkOn, mix, withAlpha } from './color.js';
 import { Background, BadgeView, CalloutCard, esc, QuoteCard, type PaletteDirection } from './components.js';
 import { backgroundLayer, canvasDecor, ChipView, grainLayer, stageBack, stageFront, topStructure, type Box, type DecorContext } from './decor.js';
 import { CONTAINED_FAMILIES, DeviceFrame, deviceGeometry, widthForHeight, type DeviceFamily, type DeviceFinish, type FrameVariant } from './frames.js';
-import { resolveDirection, surfaceFor, type BrandTint, type ResolvedDirection, type StyleTokens, type Surface } from './styles.js';
+import { PLATED_EMPHASIS, resolveDirection, surfaceFor, type BrandTint, type ResolvedDirection, type StyleTokens, type Surface } from './styles.js';
 
 export interface ScreenImage {
   /** file:// URL */
@@ -62,6 +62,13 @@ export interface PageInput {
   appName?: string;
   /** feature-wall lines. */
   wall?: string[];
+  /** Short benefit lines under the caption, and how they are drawn. */
+  bullets?: string[];
+  bulletStyle?: 'check' | 'chips';
+  /** App icon and name above the headline. */
+  brandMark?: boolean;
+  /** file:// URL of a developer photo drawn full-bleed behind everything (with a scrim under the caption). */
+  photo?: string;
   /** Profile brand, used to tint presets when the direction has no `brand`. */
   brand?: BrandTint;
 }
@@ -180,7 +187,7 @@ export function largestEmptyBand(intervals: Array<[number, number]>, H: number):
 
 const DEVICE_MIN = 0.68;
 /** Presets whose offset framing crops the device at the side edge. */
-const HARD_CROP = new Set(['swiss', 'neon', 'candy', 'paper']);
+const HARD_CROP = new Set(['swiss', 'neon', 'candy', 'paper', 'poster']);
 const DEVICE_TARGET = 0.73;
 
 /** Top margin per preset (index rows, mastheads and tags sit above the caption). */
@@ -193,6 +200,8 @@ function topMargin(t: StyleTokens, H: number): number {
     case 'candy':
       return H * 0.088;
     case 'doodle':
+    case 'poster':
+    case 'gilded':
       return H * 0.075;
     default:
       return H * 0.055;
@@ -445,8 +454,8 @@ ${fonts.links}
   body { position:relative; font-family:var(--body); }
   .icon { flex:none; }
   .safe-guide { position:absolute; inset:${safe}px; pointer-events:none; }
-  .vq-hide .w { -webkit-text-fill-color:transparent !important; color:transparent !important; background-image:none !important; }
-  .vq-mask .w { -webkit-text-fill-color:#FF00FF !important; color:#FF00FF !important; background-image:none !important; }
+  .vq-hide .w { -webkit-text-fill-color:transparent !important; color:transparent !important; background-image:none !important; -webkit-text-stroke-color:transparent !important; }
+  .vq-mask .w { -webkit-text-fill-color:#FF00FF !important; color:#FF00FF !important; background-image:none !important; -webkit-text-stroke-color:#FF00FF !important; }
 </style>
 </head>
 <body data-layout="${layout}" data-preset="${t.id}" data-gap="${Math.round(H * 0.022)}">
@@ -467,7 +476,8 @@ function decorContext(p: PageInput & { index: number; total: number }, t: StyleT
     total: p.total,
     appName: p.appName ?? '',
     icon: p.icon,
-    kicker: p.kicker ?? '',
+    // A tag kicker sits in the caption; index rows and mastheads leave it out.
+    kicker: t.kicker === 'tag' ? '' : (p.kicker ?? ''),
     locale: p.locale,
     archetype: p.archetype,
     bridgeOut: Boolean(p.bridgeOut),
@@ -479,9 +489,69 @@ function decorContext(p: PageInput & { index: number; total: number }, t: StyleT
 }
 
 function background(ad: ResolvedDirection, ctx: DecorContext, p: PageInput): string {
+  if (p.photo) return photoLayer(p.photo, ctx);
   // Old art directions keep their own background recipes (solid, linear, mesh, grid, dots, panoramic).
   if (ad.legacy && ctx.surfaceIndex === 0) return Background({ palette: { ...ad.palette }, background: ad.background }, ctx.W, ctx.H, ad.background.style === 'panoramic' ? p.panorama : undefined);
   return backgroundLayer(ctx);
+}
+
+/**
+ * A developer photo, cover-fitted, under a scrim in the surface's own tone: strong where the caption sits and
+ * fading out towards the device, plus a light overall veil so the type never meets a busy highlight.
+ */
+function photoLayer(src: string, ctx: DecorContext): string {
+  const { sf, W, H } = ctx;
+  const tone = sf.dark ? '0,0,0' : '255,255,255';
+  const cap = ctx.caption;
+  // Landscape canvases keep the caption in a left column; portrait ones above or below the device.
+  const span = ctx.landscape ? W : H;
+  const near = ctx.landscape ? cap.x + cap.w : ctx.captionSide === 'top' ? cap.y + cap.h : H - cap.y;
+  const reach = Math.min(1, (near + span * 0.12) / span);
+  const dir = ctx.landscape ? '90deg' : ctx.captionSide === 'top' ? '180deg' : '0deg';
+  const scrim = `linear-gradient(${dir},rgba(${tone},.84) 0%,rgba(${tone},.7) ${((near / span) * 75).toFixed(1)}%,rgba(${tone},0) ${(reach * 100).toFixed(1)}%)`;
+  return `<div class="bg" data-content style="position:absolute;inset:0;overflow:hidden;background:${sf.bg[0]}"><img src="${src}" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover"><div style="position:absolute;inset:0;background:rgba(${tone},.14)"></div><div style="position:absolute;inset:0;background:${scrim}"></div></div>`;
+}
+
+/** App icon and name side by side (or stacked), the lockup a hero or closer opens with. */
+function brandLockup(p: PageInput, t: StyleTokens, sf: Surface, W: number, H: number, align: 'center' | 'start'): string {
+  const name = p.appName ?? '';
+  if (!name && !p.icon) return '';
+  const size = Math.round(Math.min(W, H / 1.9) * 0.12);
+  const icon = p.icon ? `<img src="${p.icon}" style="width:${size}px;height:${size}px;border-radius:${Math.round(size * 0.225)}px;box-shadow:0 ${(size * 0.08).toFixed(1)}px ${(size * 0.22).toFixed(1)}px ${sf.shadow}">` : '';
+  const label = name ? `<span style="font-family:var(--headline);font-weight:${Math.min(800, t.type.weight)};font-size:${Math.round(size * 0.44)}px;letter-spacing:-0.02em;line-height:1;color:${sf.text}">${plainWords(name, sf.text)}</span>` : '';
+  return `<div class="brand-mark" data-content style="display:flex;align-items:center;justify-content:${align === 'center' ? 'center' : 'flex-start'};gap:${Math.round(size * 0.3)}px">${icon}${label}</div>`;
+}
+
+/** Benefit lines: a ticked list (one per line) or a wrapped row of chips. */
+function bulletList(lines: string[], style: 'check' | 'chips', sf: Surface, size: number, align: 'center' | 'start'): string {
+  if (!lines.length) return '';
+  if (style === 'chips') {
+    const fill = sf.dark ? withAlpha('#FFFFFF', 0.14) : withAlpha(sf.text, 0.07);
+    // inline-block, not inline-flex: a flex container drops the spaces between the measured word spans.
+    const items = lines.map((l) => `<span style="display:inline-block;padding:.5em .95em;border-radius:999px;background:${fill};box-shadow:inset 0 0 0 ${Math.max(1, size * 0.06).toFixed(1)}px ${withAlpha(sf.text, 0.16)};font-family:var(--body);font-weight:600;font-size:${size}px;line-height:1.1;color:${sf.text};white-space:nowrap">${plainWords(l, sf.text)}</span>`);
+    return `<div class="bullets" data-content style="display:flex;flex-wrap:wrap;gap:${(size * 0.5).toFixed(1)}px;justify-content:${align === 'center' ? 'center' : 'flex-start'};margin-top:${(size * 0.25).toFixed(1)}px">${items.join('')}</div>`;
+  }
+  const tick = sf.accent;
+  const tickInk = inkOn(tick);
+  const rows = lines.map((l) => `<div style="display:flex;align-items:center;gap:${(size * 0.55).toFixed(1)}px"><span style="flex:none;display:inline-flex;align-items:center;justify-content:center;width:${(size * 1.3).toFixed(1)}px;height:${(size * 1.3).toFixed(1)}px;border-radius:50%;background:${tick}">${lucideIcon('check', Math.round(size * 0.85), tickInk)}</span><span style="font-family:var(--body);font-weight:600;font-size:${size}px;line-height:1.2;color:${sf.text};text-align:start">${plainWords(l, sf.text)}</span></div>`);
+  return `<div class="bullets" data-content style="display:inline-flex;flex-direction:column;align-items:flex-start;gap:${(size * 0.5).toFixed(1)}px;margin-top:${(size * 0.25).toFixed(1)}px">${rows.join('')}</div>`;
+}
+
+/** The ticked list as one card overlapping the device's side edge, low on the visible part of the device. */
+function bulletCard(lines: string[], sf: Surface, d: DevicePlacement, W: number, H: number, size: number, side: 'top' | 'bottom'): string {
+  const own = sf.chipBg.startsWith('#');
+  const card = own ? sf.chipBg : sf.dark ? '#16131F' : '#FFFFFF';
+  const ink = own ? sf.chipText : inkOn(card);
+  const tick = contrastRatio(sf.accent, card) >= 3 ? sf.accent : ink;
+  const tickInk = inkOn(tick);
+  const top = Math.max(d.y, 0);
+  const bottom = Math.min(d.y + d.h, H);
+  const y = top + (bottom - top) * (side === 'top' ? 0.56 : 0.14);
+  // A device left of centre gets the card on its right, and the other way round.
+  const onRight = d.x + d.w / 2 <= W / 2;
+  const x = onRight ? `right:${Math.max(W * 0.04, W - d.x - d.w - d.w * 0.1).toFixed(1)}px;` : `left:${Math.max(W * 0.04, d.x - d.w * 0.1).toFixed(1)}px;`;
+  const rows = lines.map((l) => `<div style="display:flex;align-items:center;gap:${(size * 0.55).toFixed(1)}px"><span style="flex:none;display:inline-flex;align-items:center;justify-content:center;width:${(size * 1.3).toFixed(1)}px;height:${(size * 1.3).toFixed(1)}px;border-radius:50%;background:${tick}">${lucideIcon('check', Math.round(size * 0.85), tickInk)}</span><span style="font-family:var(--body);font-weight:600;font-size:${size}px;line-height:1.2;color:${ink};white-space:nowrap">${plainWords(l, ink)}</span></div>`);
+  return `<div class="bullets bullet-card" data-layer="accent" data-content style="position:absolute;${x}top:${y.toFixed(1)}px;z-index:7;display:flex;flex-direction:column;gap:${(size * 0.6).toFixed(1)}px;padding:${(size * 0.95).toFixed(1)}px ${(size * 1.15).toFixed(1)}px;border-radius:${(size * 0.9).toFixed(1)}px;background:${card};box-shadow:0 ${(size * 0.7).toFixed(1)}px ${(size * 2.2).toFixed(1)}px rgba(0,0,0,.28),0 ${(size * 0.15).toFixed(1)}px ${(size * 0.4).toFixed(1)}px rgba(0,0,0,.12)">${rows.join('')}</div>`;
 }
 
 function union(ds: DevicePlacement[]): Box | undefined {
@@ -573,22 +643,32 @@ function portraitLayout(p: PageInput & { index: number; total: number; callouts:
     const proof = p.badges.find((b) => b.type === 'proof');
     if (proof) above = BadgeView({ badge: { ...proof, style: proof.style === 'pill' ? 'laurel' : proof.style }, locale: p.locale, ad: paletteFor(sf, ad), fontSize: Math.round(badgeSize * 1.25) });
   }
-  if (statement && p.icon) {
+  if (statement && p.icon && !p.photo) {
     const size = Math.round(Math.min(W, H / 1.9) * 0.26);
     above = `<img data-content src="${p.icon}" style="width:${size}px;height:${size}px;border-radius:${Math.round(size * 0.225)}px;box-shadow:0 ${size * 0.1}px ${size * 0.3}px ${sf.shadow}">`;
   }
+  if (p.brandMark && !(statement && p.icon && !p.photo)) above = brandLockup(p, t, sf, W, H, align) + above;
   // Maximalist presets wear their badges as stickers on the device, which also keeps their huge type roomy.
   const floatBadges = plan.devices.length > 0 && (a === 'feature' || a === 'tilted' || framing === 'offset' || framing === 'tilted' || t.density === 'maximal');
   const proofElsewhere = (b: Badge) => !((a === 'social-proof' || a === 'testimonial') && b.type === 'proof');
   let below = floatBadges ? '' : badgesRow(p, t, sf, statement ? Math.round(badgeSize * 1.25) : badgeSize, align, proofElsewhere);
   if (t.badge === 'tile' && !floatBadges && (p.badges.length || p.stat)) below = bentoTiles(p, t, sf, W, H, badgeSize);
+  // A ticked list next to a device floats as one card over its side edge (the caption keeps its room and the
+  // device its height); chips, and lists on slides without a device, sit under the caption.
+  const bulletSize = Math.round(subSize * (statement ? 1.05 : 0.92));
+  const floatBullets = Boolean(p.bullets?.length && plan.devices.length && (p.bulletStyle ?? 'check') === 'check');
+  if (p.bullets?.length && !floatBullets) below = bulletList(p.bullets, p.bulletStyle ?? 'check', sf, bulletSize, align) + below;
 
   // ---- no-device bodies
   const items: string[] = [];
   let captionBox = plan.caption;
   let justify: string | undefined;
   if (plan.framing === 'no-device') {
-    if (statement) {
+    if (statement && p.photo) {
+      // A lifestyle slide: the photo carries the top, the line sits low on the scrim.
+      justify = 'flex-end';
+      captionBox = { x: plan.caption.x, y: H * 0.46, w: plan.caption.w, h: H * 0.48 };
+    } else if (statement) {
       justify = 'space-evenly';
       captionBox = { x: plan.caption.x, y: H * 0.07, w: plan.caption.w, h: H * 0.86 };
     } else if (a === 'mosaic') {
@@ -603,12 +683,13 @@ function portraitLayout(p: PageInput & { index: number; total: number; callouts:
     }
   }
 
-  const ctx = decorContext(p, t, sf, surfaceIndex, W, H, { caption: captionBox, captionSide: plan.captionSide, device: union(plan.devices), framing: plan.framing, landscape: false });
+  const ctx = decorContext(p, t, sf, surfaceIndex, W, H, { caption: captionBox, captionSide: statement && p.photo ? 'bottom' : plan.captionSide, device: union(plan.devices), framing: plan.framing, landscape: false });
 
   // ---- stage: devices + decorations that scale with them
   const stage: string[] = [];
   if (plan.devices.length) {
-    stage.push(stageBack(ctx));
+    // A photo is the scene: the preset's own props stay out of it.
+    if (!p.photo) stage.push(stageBack(ctx));
     for (const d of [...plan.devices].sort((x, y) => x.z - y.z)) stage.push(deviceHtml(p, ad, sf, d, variant));
     const main = plan.devices.find((d) => d.z === Math.max(...plan.devices.map((x) => x.z)))!;
     if (a === 'callout') stage.push(...callouts(p, main, W));
@@ -618,8 +699,8 @@ function portraitLayout(p: PageInput & { index: number; total: number; callouts:
       stage.push(`<div data-layer="accent" style="position:absolute;left:${(W / 2 - arrow / 2).toFixed(1)}px;top:${ay.toFixed(1)}px;width:${arrow}px;height:${arrow}px;border-radius:50%;background:${sf.accent};display:flex;align-items:center;justify-content:center;box-shadow:0 8px 24px rgba(0,0,0,.25);z-index:5">${lucideIcon('arrow-right', Math.round(arrow * 0.55), sf.dark ? '#0B0B0F' : '#FFFFFF')}</div>`);
     }
     if (floatBadges) stage.push(...floatingBadges(p, t, sf, main, W, H, badgeSize, plan.captionSide));
-    if (a === 'stat' && t.background === 'neon') void 0;
-    stage.push(stageFront(ctx));
+    if (floatBullets) stage.push(bulletCard(p.bullets!, sf, main, W, H, bulletSize, plan.captionSide));
+    if (!p.photo) stage.push(stageFront(ctx));
   }
   // Both halves of a panoramic pair must keep their exact geometry, so their stage is never re-scaled.
   const fixed = Boolean(p.bridgeOut && a === 'panoramic') || Boolean(spanIn);
@@ -649,13 +730,13 @@ function portraitLayout(p: PageInput & { index: number; total: number; callouts:
     canvasWidth: W,
     align: plan.framing === 'no-device' && !['feature-wall', 'testimonial', 'mosaic'].includes(a) ? (t.type.align === 'start' ? 'start' : 'center') : align,
     box: captionBox,
-    bottom: plan.captionSide === 'bottom',
+    bottom: plan.captionSide === 'bottom' || Boolean(statement && p.photo),
     above,
     below: watch ? '' : below,
     justify,
   });
 
-  return [background(ad, ctx, p), canvasDecor(ctx), ...items, stageHtml, grainLayer(t.grain, t.background === 'paper' ? 'multiply' : 'overlay'), topStructure(ctx), caption].join('\n');
+  return [background(ad, ctx, p), p.photo ? '' : canvasDecor(ctx), ...items, stageHtml, grainLayer(t.grain, t.background === 'paper' ? 'multiply' : 'overlay'), topStructure(ctx), caption].join('\n');
 }
 
 function callouts(p: PageInput & { callouts: Callout[] }, d: DevicePlacement, W: number): string[] {
@@ -716,7 +797,7 @@ function featureWall(p: PageInput, t: StyleTokens, sf: Surface, W: number, H: nu
     .map((l, i) => {
       const em = i % 2 === 1;
       const kind = sf.emphasisKind ?? t.emphasis;
-      const plated = em && (kind === 'pill' || kind === 'block') && sf.plate;
+      const plated = em && PLATED_EMPHASIS.has(kind) && sf.plate;
       // Wall lines run down the whole canvas: on light surfaces the emphasis must clear every stop and bloom.
       const color = plated ? (sf.plateText ?? sf.text) : em ? (sf.dark ? sf.emphasis[0]! : ensureContrast(sf.emphasis[0]!, [...sf.bg, ...sf.extras.filter((c) => c.startsWith('#')).slice(0, 4)], 4.6)) : sf.text;
       const style = plated
@@ -1009,10 +1090,15 @@ export const MEASURE_SCRIPT = `(() => {
   const hasText = Boolean(headline && headline.textContent.trim());
   const layers = 1 + (devices.length ? 1 : 0) + (hasText ? 1 : 0) + (accents > 2 ? 1 : 0);
   const words = [];
-  for (const [sel, role] of [['.headline .w', 'headline'], ['.stat .w', 'headline'], ['.wall-line .w', 'headline'], ['.kicker .w', 'support'], ['.subheadline .w', 'support']]) {
+  for (const [sel, role] of [['.headline .w', 'headline'], ['.stat .w', 'headline'], ['.wall-line .w', 'headline'], ['.kicker .w', 'support'], ['.subheadline .w', 'support'], ['.bullets .w', 'support'], ['.brand-mark .w', 'support']]) {
     for (const w of document.querySelectorAll(sel)) {
       const r = w.getBoundingClientRect();
-      if (r.width > 0 && r.height > 0) words.push({ x: r.left, y: r.top, w: r.width, h: r.height, colors: (w.dataset.colors || '').split(',').filter(Boolean), role });
+      if (!(r.width > 0 && r.height > 0)) continue;
+      // An inline box is centred on its content area; faces with tall metrics (Anton) set tighter than that
+      // would otherwise sample the lines above and below (a boxed word next to a plain one).
+      const lh = parseFloat(getComputedStyle(w).lineHeight);
+      const h = lh > 0 && r.height > lh ? lh : r.height;
+      words.push({ x: r.left, y: r.top + (r.height - h) / 2, w: r.width, h, colors: (w.dataset.colors || '').split(',').filter(Boolean), role });
     }
   }
   const guide = document.querySelector('.safe-guide');

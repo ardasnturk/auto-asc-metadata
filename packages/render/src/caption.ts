@@ -2,6 +2,7 @@
  * Headline, kicker and subheadline markup. Every word is wrapped in `.w` with the colors its glyphs are filled
  * with (`data-colors`), so the quality gate can measure the worst background pixel under each word.
  */
+import { contrastRatio, inkOn } from './color.js';
 import { esc } from './components.js';
 import { squiggle } from './decor.js';
 import type { EmphasisKind, StyleTokens, Surface } from './styles.js';
@@ -57,8 +58,20 @@ function emphasis(text: string, kind: EmphasisKind, t: StyleTokens, sf: Surface)
   const e = sf.emphasis;
   const scale = t.type.emphasisScale;
   switch (kind) {
-    case 'gradient':
-      return `<span class="em em-gradient">${join((w) => wordSpan(w, e, grad(e)))}</span>`;
+    case 'gradient': {
+      // A gradient needs two stops; a one-color emphasis (an override on a flat preset) runs into the text color.
+      const stops = e.length > 1 ? e : [e[0]!, e[0]!];
+      return `<span class="em em-gradient">${join((w) => wordSpan(w, stops, grad(stops)))}</span>`;
+    }
+    case 'box': {
+      // A label stuck on the line: an inline block sized from the leading, not from the font's content area
+      // (condensed faces like Anton have tall ascenders, and an inline background would cover the lines around it).
+      const ink = sf.plateText ?? inkOn(sf.plate ?? e[0]!);
+      const lead = t.type.leading;
+      return `<span class="em em-box" style="display:inline-block;line-height:${(lead * 0.86).toFixed(3)};padding:${(lead * 0.05).toFixed(3)}em .14em ${(lead * 0.05).toFixed(3)}em;margin:0 .02em;border-radius:.08em;background:${sf.plate ?? e[0]};white-space:nowrap">${join((w) => wordSpan(w, [ink], `color:${ink}`))}</span>`;
+    }
+    case 'outline':
+      return `<span class="em em-outline">${join((w) => wordSpan(w, [e[0]!], `color:transparent;-webkit-text-fill-color:transparent;-webkit-text-stroke:max(2px,.035em) ${e[0]};paint-order:stroke fill`))}</span>`;
     case 'block':
       // The block covers the phrase's x-height-to-descender band only, so it never runs into the line above.
       return `<span class="em em-block" style="background-image:linear-gradient(${sf.plate},${sf.plate});background-repeat:no-repeat;background-size:100% 86%;background-position:0 78%;-webkit-box-decoration-break:clone;box-decoration-break:clone;padding:0 .1em .02em;margin:0 -.02em">${join((w) => wordSpan(w, [sf.plateText ?? sf.text], `color:${sf.plateText ?? sf.text}`))}</span>`;
@@ -111,6 +124,14 @@ export interface CaptionBlockOptions {
   justify?: string;
 }
 
+/** The kicker as a category chip: accent fill, ink that reads on it, the preset's label face. */
+export function kickerTag(text: string, t: StyleTokens, sf: Surface, size: number): string {
+  const fill = contrastRatio(sf.accent, sf.bg[0]!) >= 1.6 ? sf.accent : sf.text;
+  const ink = inkOn(fill);
+  const labelCase = t.type.labelCase === 'upper' ? 'text-transform:uppercase;letter-spacing:.06em;' : 'letter-spacing:.01em;';
+  return `<div class="kicker kicker-tag" style="display:inline-block;align-self:${t.type.align === 'center' ? 'center' : 'flex-start'};font-family:var(--label);font-weight:700;font-size:${(size * 0.82).toFixed(1)}px;line-height:1.1;${labelCase}padding:.5em .95em .52em;border-radius:999px;background:${fill};color:${ink}">${plainWords(text, ink)}</div>`;
+}
+
 /** The caption block: kicker → headline → subheadline, laid out as a flex column the fitter can shrink. */
 export function CaptionBlock(o: CaptionBlockOptions): string {
   const { t, sf } = o;
@@ -120,7 +141,9 @@ export function CaptionBlock(o: CaptionBlockOptions): string {
   const kickerSize = Math.max(o.headlineSize * 0.3, o.canvasWidth * 0.032);
   const labelCase = ty.labelCase === 'upper' ? 'text-transform:uppercase;' : '';
   let kicker = '';
-  if (o.kicker) {
+  if (o.kicker && t.kicker === 'tag') {
+    kicker = kickerTag(o.kicker, t, sf, kickerSize);
+  } else if (o.kicker) {
     if (t.background === 'neon') {
       kicker = `<div class="kicker" style="font-family:var(--label);font-weight:700;font-style:italic;font-size:${kickerSize}px;letter-spacing:${ty.labelTracking}em;text-transform:uppercase;line-height:1.1;color:${sf.muted}"><span class="w" data-colors="${sf.emphasis[0]}" style="color:${sf.emphasis[0]}">${esc(o.appName)}</span> / ${plainWords(o.kicker, sf.muted)}</div>`;
     } else if (t.background === 'paper') {

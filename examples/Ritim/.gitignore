@@ -15,6 +15,7 @@ secrets/
 !/metadata/experiments.json
 !/metadata/screens/
 !/metadata/designs/
+!/metadata/photos/
 !/metadata/rankings/
 !/metadata/research/
 /metadata/research/*

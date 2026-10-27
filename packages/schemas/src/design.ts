@@ -50,8 +50,19 @@ export const StylePreset = z.enum([
   'neon-athletic-night',
   'paper-sticker-skeuomorphic',
   'hand-drawn-editorial',
+  'clean-studio-light',
+  'bold-poster-type',
+  'color-block-sequence',
+  'noir-gold-luxe',
 ]);
 export type StylePreset = z.infer<typeof StylePreset>;
+
+/**
+ * How the one `*emphasised*` phrase of a headline is drawn. Every preset has its own; an art-direction option can
+ * pick another (`emphasis`). `box` is a solid highlight box behind the phrase, `outline` hollow stroked letters.
+ */
+export const EmphasisStyle = z.enum(['color', 'gradient', 'block', 'box', 'pill', 'italic', 'script', 'kenten', 'underline', 'outline']);
+export type EmphasisStyle = z.infer<typeof EmphasisStyle>;
 
 /** How the device sits on the canvas. `auto` picks a framing per archetype and varies it across the set. */
 export const Framing = z.enum(['auto', 'bleed-bottom', 'bleed-top', 'offset', 'tilted', 'two-devices', 'no-device', 'contained']);
@@ -118,6 +129,15 @@ export const ArtDirectionOption = z
         tilt: z.number().min(-12).max(12).default(0),
       })
       .optional(),
+    /** Emphasis treatment instead of the preset's (references/art-direction.md → Pattern library). */
+    emphasis: EmphasisStyle.optional(),
+    /** `tag`: the kicker sits in a small accent chip above the headline (a category label); `plain`: the preset's own kicker. */
+    kicker: z.enum(['plain', 'tag']).optional(),
+    /**
+     * Color-blocked set: every screenshot takes the next of these background colors (2–6, in order), with black or
+     * white type, whichever reads better on it. Overrides the preset's surfaces and rhythm.
+     */
+    cycle: z.array(HexColor).min(2).max(6).optional(),
   })
   .superRefine((o, ctx) => {
     if (!o.preset && !o.palette) ctx.addIssue({ code: 'custom', path: ['palette'], message: 'Either `preset` or `palette` is required.' });
@@ -230,6 +250,22 @@ export const Shot = z.object({
   template: z.string().regex(/^[\w.-]+\.html$/).optional(),
   /** feature-wall: one short line per real feature (each backed by `featureIds`), localized. */
   wall: z.array(Localized).max(8).default([]),
+  /** Up to four short benefit lines under the caption (each backed by `featureIds`), localized. */
+  bullets: z.array(Localized).max(4).default([]),
+  /** `check`: a ticked list; `chips`: the lines as a row of small chips. */
+  bulletStyle: z.enum(['check', 'chips']).default('check'),
+  /** The app icon and name above the headline (a brand lockup for the hero or the closer). */
+  brandMark: z.boolean().default(false),
+  /**
+   * A photo the developer supplied (path under metadata/photos/) as the full-bleed background, with a scrim under
+   * the caption. With a device it is the scene the phone sits in; on a `statement` it is a lifestyle slide (not
+   * real UI). The developer must own the rights to it.
+   */
+  photo: z
+    .string()
+    .regex(/^[\w./-]+\.(jpe?g|png|webp)$/i)
+    .refine((f) => !f.split('/').includes('..'), 'The photo must be inside metadata/photos/.')
+    .optional(),
 });
 export type Shot = z.infer<typeof Shot>;
 

@@ -2,6 +2,17 @@
 
 All notable changes to this project are documented in this file. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## 0.9.0 — 2026-10-27
+
+### Added — more screenshot designs, from what popular apps do
+- **Four new style presets** (16 in all), Vitrin's own, distilled from looks that recur across the store galleries of popular apps: `clean-studio-light` (a light product-shot sweep, one brand color, the kicker as a category tag), `bold-poster-type` (condensed caps with boxed words, ink / paper / signal slides in turn, a trim line and halftone), `color-block-sequence` (a new flat color on every screenshot, an inverse box on the emphasis) and `noir-gold-luxe` (black lacquer, serif type, a gold gradient, guilloche and a gilt border). The samples suggest them by category.
+- **Presets combine:** an art-direction option can set `emphasis` (two new treatments: `box`, a solid label behind the phrase, and `outline`, hollow letters), `kicker: "tag"` (the kicker as an accent chip) and `cycle` (2–6 colors, one per screenshot, with black or white type).
+- **Shot extras:** `bullets` (≤ 4 benefit lines; a ticked list that floats as one card beside the device, or `bulletStyle: "chips"` under the caption), `brandMark` (icon and app name above the headline) and `photo` (the developer's own photo from `metadata/photos/` behind the shot under a scrim; on a `statement` it becomes a lifestyle slide). Bullets go through the same copy checks as headlines; a missing photo is an error and photo use reminds of the rights. Bespoke templates get `{{bullets}}`, `{{photo}}`, `--plate` and `--plate-text`.
+- **Pattern library** in `references/art-direction.md`: what top apps' screenshots do (tagged headlines, boxed words, color-blocked sets, checklists, lifestyle photos, brand lockups…) and the Vitrin setting for each, plus what Vitrin deliberately leaves out (hand-held phones, mascots, press and partner logos).
+
+### Fixed
+- The contrast gate measured each word over its font's whole content area, so with tight leading (Anton, Barlow) it also sampled the lines above and below; a boxed word next to a plain one read as 1:1. Words are now measured inside their own line box, and the search-thumbnail test compares each headline word with its own ground instead of one median over the whole headline.
+
 ## 0.8.0 — 2026-10-27
 
 ### Added — Product Page Optimization tests

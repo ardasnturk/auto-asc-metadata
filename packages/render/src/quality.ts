@@ -142,19 +142,32 @@ export async function measureGlyphContrast(page: Page, words: WordBox[], scale: 
       .extractChannel(0)
       .raw()
       .toBuffer({ resolveWithObject: true });
-    const ink: number[] = [];
-    const ground: number[] = [];
-    for (let p = 0; p < tw * th; p++) {
-      const i = p * img.info.channels;
-      const l = luminanceRgb(img.data[i]!, img.data[i + 1]!, img.data[i + 2]!);
-      const a = m.data[p * m.info.channels]!;
-      if (a >= 170) ink.push(l);
-      else if (a <= 8) ground.push(l);
-    }
-    if (ink.length >= 3 && ground.length >= 3) {
-      const med = (v: number[]) => [...v].sort((a, b) => a - b)[Math.floor(v.length / 2)]!;
-      thumbContrast = ratioFromLuminance(med(ink), med(ground));
-    }
+    const med = (v: number[]) => [...v].sort((a, b) => a - b)[Math.floor(v.length / 2)]!;
+    // Ink against the ground around it, word by word: a boxed or highlighted word has its own ground, and one
+    // median over the whole headline would mix the plate with the page.
+    const sample = (bx: { x0: number; y0: number; x1: number; y1: number }) => {
+      const ink: number[] = [];
+      const ground: number[] = [];
+      for (let y = Math.max(0, bx.y0); y < Math.min(th, bx.y1); y++) {
+        for (let x = Math.max(0, bx.x0); x < Math.min(tw, bx.x1); x++) {
+          const p = y * tw + x;
+          const i = p * img.info.channels;
+          const l = luminanceRgb(img.data[i]!, img.data[i + 1]!, img.data[i + 2]!);
+          const a = m.data[p * m.info.channels]!;
+          if (a >= 170) ink.push(l);
+          else if (a <= 8) ground.push(l);
+        }
+      }
+      return ink.length >= 3 && ground.length >= 3 ? ratioFromLuminance(med(ink), med(ground)) : undefined;
+    };
+    const k = tw / bg.width;
+    const perWordThumb = words
+      .filter((w) => w.role === 'headline')
+      .map((w) => sample({ x0: Math.floor((w.x - x0) * scale * k) - 1, y0: Math.floor((w.y - y0) * scale * k) - 1, x1: Math.ceil((w.x + w.w - x0) * scale * k) + 1, y1: Math.ceil((w.y + w.h - y0) * scale * k) + 1 }))
+      .filter((r): r is number => r !== undefined);
+    const whole = sample({ x0: 0, y0: 0, x1: tw, y1: th });
+    if (perWordThumb.length) thumbContrast = Math.min(...perWordThumb);
+    else if (whole !== undefined) thumbContrast = whole;
   }
   const headline = byRole.headline.length ? Math.min(...byRole.headline) : 21;
   return {

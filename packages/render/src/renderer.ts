@@ -191,6 +191,23 @@ export function templateFile(designsDir: string, template: string, family: Devic
   throw new Error(`shots.json: template ${template} not found in metadata/designs/.`);
 }
 
+/** The per-locale extras of a shot: wall lines, benefit lines, brand lockup and the developer's photo. */
+export function shotExtras(paths: AppPaths, shot: Shot, locale: string): Pick<PageInput, 'wall' | 'bullets' | 'bulletStyle' | 'brandMark' | 'photo'> {
+  let photo: string | undefined;
+  if (shot.photo) {
+    const file = join(paths.photos, shot.photo);
+    if (!existsSync(file)) throw new Error(`shots.json: ${shot.id} uses the photo ${shot.photo}, but metadata/photos/${shot.photo} does not exist.`);
+    photo = pathToFileURL(file).href;
+  }
+  return {
+    wall: (shot.wall ?? []).map((l) => l[locale] ?? '').filter(Boolean),
+    bullets: (shot.bullets ?? []).map((l) => l[locale] ?? '').filter(Boolean),
+    bulletStyle: shot.bulletStyle,
+    brandMark: shot.brandMark,
+    photo,
+  };
+}
+
 /** The page of one shot: its bespoke template when it has one, else the archetype layout. */
 async function shotPage(paths: AppPaths, shot: Shot, input: PageInput, family: DeviceFamily): Promise<string> {
   if (!shot.template) return buildPage(input);
@@ -287,7 +304,7 @@ export async function renderDesign(opts: RenderOptions): Promise<RenderResult> {
             bridgeIn: idx > 0 && Boolean(ordered[idx - 1]!.bridge),
             spanIn,
             appName,
-            wall: (shot.wall ?? []).map((l) => l[locale] ?? '').filter(Boolean),
+            ...shotExtras(paths, shot, locale),
           };
           const name = `${shot.id}_${shot.slug}_${target.id}.png`;
           const out = join(outDir, name);
@@ -381,27 +398,28 @@ async function writeThumbnails(paths: AppPaths, images: RenderManifest['images']
 
 /** Preset suggestions by App Store category (first pick, then alternates), from the reference style index. */
 const CATEGORY_STYLES: Record<string, StylePreset[]> = {
-  PRODUCTIVITY: ['hand-drawn-editorial', 'liquid-glass-aurora', 'quiet-japandi', 'bento-keynote-grid'],
-  FINANCE: ['swiss-grid-bold', 'bento-keynote-grid', 'midnight-glow-pro'],
-  BUSINESS: ['swiss-grid-bold', 'bento-keynote-grid', 'midnight-glow-pro'],
+  PRODUCTIVITY: ['hand-drawn-editorial', 'clean-studio-light', 'liquid-glass-aurora', 'quiet-japandi', 'bento-keynote-grid'],
+  FINANCE: ['swiss-grid-bold', 'clean-studio-light', 'bento-keynote-grid', 'midnight-glow-pro', 'noir-gold-luxe'],
+  BUSINESS: ['swiss-grid-bold', 'clean-studio-light', 'bento-keynote-grid', 'midnight-glow-pro'],
   DEVELOPER_TOOLS: ['midnight-glow-pro', 'swiss-grid-bold', 'liquid-glass-aurora'],
-  UTILITIES: ['bento-keynote-grid', 'liquid-glass-aurora', 'midnight-glow-pro'],
-  HEALTH_AND_FITNESS: ['neon-athletic-night', 'soft-clay-wellness', 'liquid-glass-aurora', 'swiss-grid-bold'],
-  SPORTS: ['neon-athletic-night', 'swiss-grid-bold'],
-  LIFESTYLE: ['magazine-cover-editorial', 'soft-clay-wellness', 'quiet-japandi'],
-  FOOD_AND_DRINK: ['magazine-cover-editorial', 'quiet-japandi'],
-  BOOKS: ['magazine-cover-editorial', 'quiet-japandi'],
-  SOCIAL_NETWORKING: ['candy-pop-social', 'paper-sticker-skeuomorphic'],
-  EDUCATION: ['paper-sticker-skeuomorphic', 'candy-pop-social', 'bento-keynote-grid'],
-  MEDICAL: ['soft-clay-wellness', 'liquid-glass-aurora'],
-  ENTERTAINMENT: ['candy-pop-social', 'neon-athletic-night'],
-  MUSIC: ['candy-pop-social', 'neon-athletic-night', 'midnight-glow-pro'],
-  TRAVEL: ['magazine-cover-editorial', 'liquid-glass-aurora'],
+  UTILITIES: ['bento-keynote-grid', 'clean-studio-light', 'liquid-glass-aurora', 'midnight-glow-pro'],
+  HEALTH_AND_FITNESS: ['neon-athletic-night', 'bold-poster-type', 'soft-clay-wellness', 'liquid-glass-aurora', 'swiss-grid-bold'],
+  SPORTS: ['neon-athletic-night', 'bold-poster-type', 'swiss-grid-bold'],
+  LIFESTYLE: ['magazine-cover-editorial', 'soft-clay-wellness', 'noir-gold-luxe', 'quiet-japandi'],
+  FOOD_AND_DRINK: ['magazine-cover-editorial', 'quiet-japandi', 'color-block-sequence'],
+  BOOKS: ['magazine-cover-editorial', 'quiet-japandi', 'noir-gold-luxe'],
+  SHOPPING: ['clean-studio-light', 'noir-gold-luxe', 'color-block-sequence'],
+  SOCIAL_NETWORKING: ['candy-pop-social', 'color-block-sequence', 'paper-sticker-skeuomorphic'],
+  EDUCATION: ['color-block-sequence', 'paper-sticker-skeuomorphic', 'candy-pop-social', 'bento-keynote-grid'],
+  MEDICAL: ['soft-clay-wellness', 'clean-studio-light', 'liquid-glass-aurora'],
+  ENTERTAINMENT: ['candy-pop-social', 'bold-poster-type', 'neon-athletic-night'],
+  MUSIC: ['bold-poster-type', 'candy-pop-social', 'neon-athletic-night', 'midnight-glow-pro'],
+  TRAVEL: ['magazine-cover-editorial', 'liquid-glass-aurora', 'noir-gold-luxe'],
 };
 
 /** Clearly different presets: category picks first, then the most contrasting looks (light/dark, sans/serif). */
 export function suggestStyles(count: number, category?: string): StylePreset[] {
-  const diverse: StylePreset[] = ['liquid-glass-aurora', 'midnight-glow-pro', 'swiss-grid-bold', 'candy-pop-social', 'soft-clay-wellness', 'neon-athletic-night', 'magazine-cover-editorial', 'bento-keynote-grid', 'hand-drawn-editorial', 'quiet-japandi', 'paper-sticker-skeuomorphic', 'vitrin-classic'];
+  const diverse: StylePreset[] = ['liquid-glass-aurora', 'midnight-glow-pro', 'clean-studio-light', 'swiss-grid-bold', 'candy-pop-social', 'bold-poster-type', 'soft-clay-wellness', 'neon-athletic-night', 'color-block-sequence', 'magazine-cover-editorial', 'noir-gold-luxe', 'bento-keynote-grid', 'hand-drawn-editorial', 'quiet-japandi', 'paper-sticker-skeuomorphic', 'vitrin-classic'];
   const picks = [...(category ? (CATEGORY_STYLES[category] ?? []) : []), ...diverse];
   const out: StylePreset[] = [];
   const darkness = (s: StylePreset) => PRESETS[s].surfaces[0]!.dark;
@@ -550,7 +568,7 @@ export async function renderDesignSamples(opts: SampleOptions): Promise<SampleRe
           const screens = await Promise.all(shot.screens.map((id) => raw.get(locale, family, id)));
           const prev = idx > 0 ? ordered[idx - 1] : undefined;
           const spanIn = prev?.archetype === 'panoramic' && prev.bridge && prev.screens[0] && picked.includes(prev) ? await raw.get(locale, family, prev.screens[0]) : undefined;
-          const input: PageInput = { target, locale, ad, archetype: shot.archetype, headline: copy.headline, subheadline: copy.subheadline, kicker: copy.kicker, badges: shot.badges, stat: shot.stat?.value, callouts: shot.callouts, quotes: shot.quotes[locale] ?? [], icon, screens, index: idx, total: ordered.length, framing: framings[idx], inverted: shot.inverted, appName, bridgeOut: shot.bridge && picked.includes(ordered[idx + 1]!), bridgeIn: Boolean(prev?.bridge && picked.includes(prev)), spanIn };
+          const input: PageInput = { target, locale, ad, archetype: shot.archetype, headline: copy.headline, subheadline: copy.subheadline, kicker: copy.kicker, badges: shot.badges, stat: shot.stat?.value, callouts: shot.callouts, quotes: shot.quotes[locale] ?? [], icon, screens, index: idx, total: ordered.length, framing: framings[idx], inverted: shot.inverted, appName, bridgeOut: shot.bridge && picked.includes(ordered[idx + 1]!), bridgeIn: Boolean(prev?.bridge && picked.includes(prev)), spanIn, ...shotExtras(opts.paths, shot, locale) };
           const dir = main ? join(outRoot, c.id) : join(outRoot, c.id, target.id);
           const out = join(dir, `${shot.id}_${shot.slug}.png`);
           await renderOne(page, await shotPage(opts.paths, shot, input, family), join(dir, `${shot.id}.html`), out, target, { preset: c.id, framing: shot.template ? 'custom' : (framings[idx] ?? 'auto'), family, hasDevice: screens.length > 0 });

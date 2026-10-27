@@ -100,7 +100,7 @@ export async function validateAll(paths: AppPaths, config: VitrinConfig, scope: 
   }
 
   if (scope.claims !== false && profile) {
-    issues.push(...validateClaims({ config, profile, shots, videoPlan, competitors, cpp, experiments, enabledTargets: targets.map((t) => t.id) }).items);
+    issues.push(...validateClaims({ config, profile, shots, videoPlan, competitors, cpp, experiments, enabledTargets: targets.map((t) => t.id), photosDir: paths.photos }).items);
   }
 
   if (scope.images !== false) {

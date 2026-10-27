@@ -4,7 +4,7 @@
  * plugins/vitrin/skills/vitrin/references/styles/.
  */
 import type { ArtDirectionOption, Framing, Palette, StylePreset, Typography } from '@vitrin/schemas';
-import { contrastRatio, ensureContrast, hueOf, inkOn, luminance, mix, shiftHue } from './color.js';
+import { contrastRatio, ensureContrast, hueOf, inkOn, luminance, mix, shiftHue, withAlpha } from './color.js';
 
 /** How the one emphasised phrase of a headline is drawn. */
 export type EmphasisKind =
@@ -23,9 +23,16 @@ export type EmphasisKind =
   /** Japanese kenten dots under each letter. */
   | 'kenten'
   /** Marker headline: highlighter band and squiggle under the phrase. */
-  | 'underline';
+  | 'underline'
+  /** Solid highlight box behind the whole phrase, upright (a label stuck on the line). */
+  | 'box'
+  /** Hollow letters: the phrase stroked in the emphasis color. Big, heavy type only. */
+  | 'outline';
 
-export type BackgroundRecipe = 'classic' | 'aurora' | 'swiss' | 'beam' | 'clay' | 'washi' | 'bento' | 'magazine' | 'candy' | 'neon' | 'paper' | 'doodle';
+/** Emphasis kinds drawn on a plate (`plate`/`plateText`) rather than in the emphasis color. */
+export const PLATED_EMPHASIS: ReadonlySet<EmphasisKind> = new Set(['block', 'pill', 'box']);
+
+export type BackgroundRecipe = 'classic' | 'aurora' | 'swiss' | 'beam' | 'clay' | 'washi' | 'bento' | 'magazine' | 'candy' | 'neon' | 'paper' | 'doodle' | 'studio' | 'poster' | 'block' | 'gilded';
 
 /** One slide palette. A preset has one or more; inverted slides and cycling rhythms pick another. */
 export interface Surface {
@@ -89,6 +96,8 @@ export interface StyleTokens {
     subWeight: number;
   };
   emphasis: EmphasisKind;
+  /** `tag` sets the kicker in a small accent chip (a category label) instead of the preset's plain label. */
+  kicker?: 'plain' | 'tag';
   background: BackgroundRecipe;
   density: 'minimal' | 'editorial' | 'maximal';
   device: {
@@ -109,9 +118,10 @@ export interface StyleTokens {
   /**
    * How the app's brand tints the preset: `full` rotates background and decoration hues toward the brand,
    * `accent` only recolors the emphasis (the preset's materials stay), `signal` swaps the single accent only when
-   * the brand clears the preset's contrast pairs.
+   * the brand clears the preset's contrast pairs, `swap` replaces the signal color everywhere it appears (backgrounds
+   * included) when the brand is as bright, `fixed` keeps the preset's own colors.
    */
-  tint: 'full' | 'accent' | 'signal' | 'mono';
+  tint: 'full' | 'accent' | 'signal' | 'mono' | 'swap' | 'fixed';
 }
 
 const s = (o: Partial<Surface> & Pick<Surface, 'bg' | 'text' | 'muted' | 'emphasis' | 'accent'>): Surface => ({
@@ -359,6 +369,88 @@ export const PRESETS: Record<StylePreset, StyleTokens> = {
     grain: 0.03,
     tint: 'accent',
   },
+  'clean-studio-light': {
+    id: 'clean-studio-light',
+    name: 'Clean Studio Light',
+    surfaces: [
+      s({ bg: ['#F7F8FA', '#ECEEF3'], text: '#101218', muted: '#525868', emphasis: ['#2D5BFF'], plate: '#2D5BFF', plateText: '#FFFFFF', accent: '#2D5BFF', extras: ['#FFFFFF', '#DCE3FF', '#E6E9F0'], chipBg: '#101218', chipText: '#FFFFFF', shadow: 'rgba(16,18,24,.24)', rule: 'rgba(16,18,24,.10)' }),
+      s({ bg: ['#2D5BFF', '#2148E0'], text: '#FFFFFF', muted: '#E1E7FF', emphasis: ['#FFFFFF'], plate: '#FFFFFF', plateText: '#1D3FC4', accent: '#FFFFFF', extras: ['#5C80FF', '#1D3FC4', '#FFFFFF'], chipBg: '#FFFFFF', chipText: '#1D3FC4', shadow: 'rgba(10,20,90,.42)', rule: 'rgba(255,255,255,.16)', emphasisKind: 'box' }),
+    ],
+    rhythm: 'single',
+    invert: 1,
+    fonts: { headline: 'Plus Jakarta Sans', body: 'Inter', label: 'Inter' },
+    type: { ...baseType, weight: 800, size: 0.122, tracking: -0.035, leading: 1.0, align: 'start', subWeight: 500 },
+    emphasis: 'color',
+    kicker: 'tag',
+    background: 'studio',
+    density: 'minimal',
+    // No bleed-top: on the light sweep the device's shadow would fall on a caption set under it.
+    device: { tilt: 0, finish: 'black', shadow: 'soft', rhythm: ['bleed-bottom', 'offset', 'bleed-bottom', 'two-devices', 'offset'], bleed: 0.08 },
+    badge: 'pill',
+    grain: 0,
+    tint: 'full',
+  },
+  'bold-poster-type': {
+    id: 'bold-poster-type',
+    name: 'Bold Poster Type',
+    surfaces: [
+      s({ bg: ['#121212'], text: '#F4EFE6', muted: '#BDB6AA', emphasis: ['#121212'], plate: '#C6F432', plateText: '#121212', accent: '#C6F432', extras: ['#F4EFE6', '#2A2A2A', '#C6F432'], chipBg: '#F4EFE6', chipText: '#121212', shadow: 'rgba(0,0,0,.6)', rule: 'rgba(244,239,230,.22)' }),
+      s({ bg: ['#F4EFE6'], text: '#121212', muted: '#4B4741', emphasis: ['#F4EFE6'], plate: '#121212', plateText: '#F4EFE6', accent: '#121212', extras: ['#121212', '#E4DCCD', '#C6F432'], chipBg: '#121212', chipText: '#F4EFE6', shadow: 'rgba(18,18,18,.28)', rule: 'rgba(18,18,18,.22)' }),
+      s({ bg: ['#C6F432'], text: '#121212', muted: '#2C360B', emphasis: ['#C6F432'], plate: '#121212', plateText: '#C6F432', accent: '#121212', extras: ['#121212', '#A9D41C', '#F4EFE6'], chipBg: '#121212', chipText: '#C6F432', shadow: 'rgba(40,52,0,.4)', rule: 'rgba(18,18,18,.22)' }),
+    ],
+    rhythm: 'cycle',
+    invert: 2,
+    fonts: { headline: 'Anton', body: 'Inter Tight', label: 'Barlow Condensed' },
+    type: { ...baseType, weight: 400, case: 'upper', size: 0.168, tracking: 0.005, leading: 0.98, align: 'start', maxLines: 3, labelCase: 'upper', labelTracking: 0.12, subWeight: 600 },
+    emphasis: 'box',
+    background: 'poster',
+    density: 'editorial',
+    device: { tilt: 0, finish: 'black', shadow: 'crisp', rhythm: ['bleed-bottom', 'offset', 'bleed-top', 'bleed-bottom', 'two-devices'], bleed: 0.1 },
+    badge: 'mono',
+    grain: 0.04,
+    tint: 'swap',
+  },
+  'color-block-sequence': {
+    id: 'color-block-sequence',
+    name: 'Color Block Sequence',
+    surfaces: [
+      s({ bg: ['#3D5AFE'], text: '#FFFFFF', muted: '#E3E8FF', emphasis: ['#2F47D9'], plate: '#FFFFFF', plateText: '#2F47D9', accent: '#FFFFFF', extras: ['#5B74FF', '#2F47D9', '#FFFFFF'], chipBg: '#FFFFFF', chipText: '#2F47D9', shadow: 'rgba(16,24,110,.38)', rule: 'rgba(255,255,255,.18)' }),
+      s({ bg: ['#FF6A3D'], text: '#1A1410', muted: '#33200F', emphasis: ['#FF6A3D'], plate: '#1A1410', plateText: '#FF6A3D', accent: '#1A1410', extras: ['#FF8A66', '#E0522A', '#1A1410'], chipBg: '#1A1410', chipText: '#FFFFFF', shadow: 'rgba(120,40,10,.35)', rule: 'rgba(26,20,16,.16)' }),
+      s({ bg: ['#0B7A5E'], text: '#FFFFFF', muted: '#D4F2E8', emphasis: ['#0B7A5E'], plate: '#FFFFFF', plateText: '#0B7A5E', accent: '#FFFFFF', extras: ['#1F9677', '#08624B', '#FFFFFF'], chipBg: '#FFFFFF', chipText: '#0B7A5E', shadow: 'rgba(0,50,36,.4)', rule: 'rgba(255,255,255,.18)' }),
+      s({ bg: ['#FFC23D'], text: '#1A1410', muted: '#3D2E0A', emphasis: ['#FFC23D'], plate: '#1A1410', plateText: '#FFC23D', accent: '#1A1410', extras: ['#FFD36E', '#E6A817', '#1A1410'], chipBg: '#1A1410', chipText: '#FFC23D', shadow: 'rgba(120,80,0,.35)', rule: 'rgba(26,20,16,.16)' }),
+      s({ bg: ['#7B3FE4'], text: '#FFFFFF', muted: '#EEE5FF', emphasis: ['#6A2FD3'], plate: '#FFFFFF', plateText: '#6A2FD3', accent: '#FFFFFF', extras: ['#9462F0', '#6A2FD3', '#FFFFFF'], chipBg: '#FFFFFF', chipText: '#6A2FD3', shadow: 'rgba(50,10,120,.4)', rule: 'rgba(255,255,255,.18)' }),
+    ],
+    rhythm: 'cycle',
+    invert: 1,
+    fonts: { headline: 'Rubik', body: 'DM Sans', label: 'DM Sans' },
+    type: { ...baseType, weight: 800, size: 0.13, tracking: -0.025, leading: 1.02, subWeight: 500 },
+    emphasis: 'box',
+    background: 'block',
+    density: 'editorial',
+    device: { tilt: 0, finish: 'black', shadow: 'soft', rhythm: ['bleed-bottom', 'offset', 'bleed-bottom', 'two-devices', 'bleed-top'], bleed: 0.07 },
+    badge: 'pill',
+    grain: 0.02,
+    tint: 'accent',
+  },
+  'noir-gold-luxe': {
+    id: 'noir-gold-luxe',
+    name: 'Noir Gold Luxe',
+    surfaces: [
+      s({ bg: ['#0E0B08', '#16110C', '#1F1811'], text: '#F6EEDD', muted: '#C8BBA2', emphasis: ['#F8E2A8', '#EAC77E', '#D9AE5E'], accent: '#D8AE5E', extras: ['#8C6A2E', '#3A2C1A', '#F6DC9A'], chipBg: 'rgba(20,16,11,.86)', chipText: '#F6EEDD', shadow: 'rgba(0,0,0,.8)', rule: 'rgba(216,174,94,.28)' }),
+      s({ bg: ['#F4ECDD', '#EADFCB'], text: '#1A140D', muted: '#54493A', emphasis: ['#8A5F1C', '#7A5216'], accent: '#B8893A', extras: ['#D8AE5E', '#E3D3B4', '#1A140D'], chipBg: '#1A140D', chipText: '#F4ECDD', shadow: 'rgba(60,40,10,.30)', rule: 'rgba(26,20,13,.18)' }),
+    ],
+    rhythm: 'single',
+    invert: 1,
+    fonts: { headline: 'Playfair Display', body: 'Inter', label: 'Inter' },
+    type: { ...baseType, weight: 600, size: 0.122, tracking: -0.015, leading: 1.04, labelCase: 'upper', labelTracking: 0.28, subWeight: 400 },
+    emphasis: 'gradient',
+    background: 'gilded',
+    density: 'editorial',
+    device: { tilt: 0, finish: 'titanium', shadow: 'glow', rim: '#E9C77B', rhythm: ['bleed-bottom', 'offset', 'bleed-bottom', 'two-devices', 'offset'], bleed: 0.05 },
+    badge: 'darkglass',
+    grain: 0.04,
+    tint: 'fixed',
+  },
 };
 
 /** Fully resolved direction: every legacy field present (video and older consumers read these) plus the tokens. */
@@ -384,6 +476,14 @@ export interface BrandTint {
  * clear WCAG AA on that surface), and chromatic background stops rotate toward the brand hue by `strength`.
  */
 export function tintTokens(t: StyleTokens, brand: BrandTint): StyleTokens {
+  if (t.tint === 'fixed') return t;
+  if (t.tint === 'swap') {
+    // The signal carries ink type and sits next to ink, so only an equally bright brand color may take its place.
+    const signal = t.surfaces[0]!.plate ?? t.surfaces[0]!.accent;
+    if (contrastRatio(t.surfaces[0]!.bg[0]!, brand.primary) < 7) return t;
+    const sw = (c: string) => (c.toUpperCase() === signal.toUpperCase() ? brand.primary : c);
+    return { ...t, surfaces: t.surfaces.map((sf) => ({ ...sf, bg: sf.bg.map(sw), plate: sf.plate && sw(sf.plate), plateText: sf.plateText && sw(sf.plateText), accent: sw(sf.accent), emphasis: sf.emphasis.map(sw), chipText: sw(sf.chipText), extras: sf.extras.map(sw) })) };
+  }
   const hue = hueOf(brand.primary);
   const strength = t.tint === 'full' ? (brand.strength ?? 0.35) : 0;
   const second = brand.secondary ?? shiftHue(brand.primary, hue + 40, 1);
@@ -408,9 +508,10 @@ export function tintTokens(t: StyleTokens, brand: BrandTint): StyleTokens {
     let emphasis = sf.emphasis;
     let plate = sf.plate;
     let plateText = sf.plateText;
-    if (kind === 'block' || kind === 'pill') {
-      // Cycling palettes keep their plates (each slide pairs a plate with its background).
-      if (t.rhythm !== 'cycle') {
+    if (PLATED_EMPHASIS.has(kind)) {
+      // Cycling palettes keep their plates (each slide pairs a plate with its background), and so do neutral
+      // plates (a white box on a brand-colored slide).
+      if (t.rhythm !== 'cycle' && !isNeutral(plate ?? sf.accent)) {
         const ink = plateText ?? inkOn(brand.primary);
         if (contrastRatio(ink, brand.primary) >= 4.5) plate = brand.primary;
         else if (contrastRatio(inkOn(brand.primary), brand.primary) >= 4.5) {
@@ -439,8 +540,15 @@ export function sanitizeTokens(t: StyleTokens): StyleTokens {
     surfaces: t.surfaces.map((sf) => {
       const under = sf.dark ? sf.bg.slice(0, Math.min(2, sf.bg.length)) : sf.bg;
       const kind = sf.emphasisKind ?? t.emphasis;
-      const emphasis = kind === 'block' || kind === 'pill' ? sf.emphasis : sf.emphasis.map((c) => ensureContrast(c, under, 4.5));
-      return { ...sf, text: ensureContrast(sf.text, under, 4.5), muted: ensureContrast(sf.muted, under, 4.5), emphasis };
+      const emphasis = PLATED_EMPHASIS.has(kind) ? sf.emphasis : sf.emphasis.map((c) => ensureContrast(c, under, 4.5));
+      // A plate must stand off its background, and its ink must read on it.
+      let plate = sf.plate;
+      let plateText = sf.plateText;
+      if (PLATED_EMPHASIS.has(kind)) {
+        if (!plate || contrastRatio(plate, sf.bg[0]!) < 1.6) plate = contrastRatio(sf.accent, sf.bg[0]!) >= 1.6 ? sf.accent : sf.text;
+        if (!plateText || contrastRatio(plateText, plate) < 4.5) plateText = inkOn(plate);
+      }
+      return { ...sf, text: ensureContrast(sf.text, under, 4.5), muted: ensureContrast(sf.muted, under, 4.5), emphasis, plate, plateText };
     }),
   };
 }
@@ -463,16 +571,17 @@ export function resolveDirection(opt: ArtDirectionOption, profileBrand?: BrandTi
   if (opt.palette) {
     const p = opt.palette;
     const [first, ...rest] = tokens.surfaces;
-    const kind = first!.emphasisKind ?? tokens.emphasis;
+    const kind = opt.emphasis ?? first!.emphasisKind ?? tokens.emphasis;
+    const plated = PLATED_EMPHASIS.has(kind);
     const own: Surface = {
       ...first!,
       bg: p.background,
       text: p.text,
       textGradient: undefined,
       muted: p.textMuted,
-      emphasis: kind === 'block' || kind === 'pill' ? first!.emphasis : [p.accent],
-      plate: kind === 'block' || kind === 'pill' ? p.accent : first!.plate,
-      plateText: kind === 'block' || kind === 'pill' ? inkOn(p.accent) : first!.plateText,
+      emphasis: plated ? first!.emphasis : [p.accent],
+      plate: plated ? p.accent : first!.plate,
+      plateText: plated ? inkOn(p.accent) : first!.plateText,
       accent: p.accent,
       extras: [p.primary, p.background[1] ?? p.primary, p.background[2] ?? p.accent, ...first!.extras.slice(3)],
       chipBg: p.badgeBackground,
@@ -487,6 +596,12 @@ export function resolveDirection(opt: ArtDirectionOption, profileBrand?: BrandTi
   if (opt.device) {
     tokens = { ...tokens, device: { ...tokens.device, tilt: opt.device.tilt ? Math.abs(opt.device.tilt) : tokens.device.tilt } };
   }
+  if (opt.cycle) tokens = { ...tokens, surfaces: opt.cycle.map((c, i) => blockSurface(c, tokens.surfaces[0]!, opt.cycle!, i)), rhythm: 'cycle', invert: 1 };
+  if (opt.emphasis) {
+    const kind = opt.emphasis;
+    tokens = { ...tokens, emphasis: kind, surfaces: tokens.surfaces.map((sf) => ({ ...sf, emphasisKind: undefined, textGradient: kind === 'gradient' ? sf.textGradient : undefined })) };
+  }
+  if (opt.kicker) tokens = { ...tokens, kicker: opt.kicker };
   tokens = sanitizeTokens(tokens);
   const sf = tokens.surfaces[0]!;
   const palette: Palette = opt.palette ?? {
@@ -509,6 +624,42 @@ export function resolveDirection(opt: ArtDirectionOption, profileBrand?: BrandTi
     device: opt.device ?? { frame: 'realistic', shadow: true, tilt: 0 },
     tokens,
     legacy: !opt.preset,
+  };
+}
+
+/** True for greys, white and black (no hue worth tinting). */
+function isNeutral(hex: string): boolean {
+  if (!/^#[0-9a-f]{6}$/i.test(hex)) return false;
+  const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
+  return Math.max(r!, g!, b!) - Math.min(r!, g!, b!) < 24;
+}
+
+/**
+ * One slide of a color-blocked set: a solid background with black or white type, an inverse box for the
+ * emphasis (type color plate, background color ink) and a highlight from the other colors for color emphasis.
+ */
+function blockSurface(c: string, base: Surface, all: string[], i: number): Surface {
+  const ink = inkOn(c);
+  const others = [...all.slice(i + 1), ...all.slice(0, i), '#FFE23D', '#FFFFFF', '#16121F'];
+  const highlight = others.find((o) => contrastRatio(o, c) >= 4.5 && o.toUpperCase() !== ink.toUpperCase()) ?? ensureContrast(mix(c, ink, 0.6), [c], 4.5);
+  const dark = luminance(c) < 0.2 || ink === '#FFFFFF';
+  return {
+    ...base,
+    bg: [c],
+    text: ink,
+    textGradient: undefined,
+    muted: ensureContrast(mix(ink, c, 0.18), [c], 4.5),
+    emphasis: [highlight],
+    plate: ink,
+    plateText: contrastRatio(c, ink) >= 4.5 ? c : inkOn(ink),
+    emphasisKind: undefined,
+    accent: ink,
+    extras: [mix(c, '#FFFFFF', 0.2), mix(c, '#000000', 0.18), ink],
+    chipBg: ink,
+    chipText: contrastRatio(c, ink) >= 4.5 ? c : inkOn(ink),
+    shadow: withAlpha(mix(c, '#000000', 0.6), 0.4),
+    rule: withAlpha(ink, 0.16),
+    dark,
   };
 }
 

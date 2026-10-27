@@ -239,6 +239,18 @@ describe('screenshot best practices', () => {
     expect(clean.filter((x) => ['shot.price', 'shot.url', 'shot.copyright'].includes(x))).toEqual([]);
   });
 
+  it('checks bullet lines like copy and needs the photo in metadata/photos', () => {
+    const c = codes({ shots: [shot('01', { bullets: [{ tr: 'Hemen indir' }, { tr: 'Her alışkanlık için ayrı hatırlatıcı ve seri' }, { en: 'x' }] })] });
+    expect(c).toContain('shot.cta');
+    expect(c).toContain('shot.bullet-long');
+    expect(c).toContain('shot.bullet-missing');
+    const dir = mkdtempSync(join(tmpdir(), 'vitrin-photos-'));
+    const photo = (file: string) => validateClaims({ config, profile, shots: ShotList.parse({ shots: [shot('01', { photo: file })] }), enabledTargets: [], photosDir: dir }).items.map((i) => i.code);
+    expect(photo('hero.jpg')).toContain('shot.photo-missing');
+    expect(photo('hero.jpg')).toContain('shot.photo-rights');
+    expect(() => ShotList.parse({ shots: [shot('01', { photo: '../secret.jpg' })] })).toThrow();
+  });
+
   it('requires real UI in the first three and checks the 60/40 ratio', () => {
     const statement = (id: string) => shot(id, { archetype: 'statement', screens: [] });
     const c = codes({ shots: [statement('01'), statement('02'), statement('03'), shot('04', {})] });

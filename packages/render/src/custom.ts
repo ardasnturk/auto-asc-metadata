@@ -14,12 +14,14 @@ import { resolveDirection, surfaceFor, type ResolvedDirection } from './styles.j
  * - `{{headline}}`, `{{subheadline}}`, `{{kicker}}` — the shot's localized copy as measured words (`*accent*`
  *   works); put them in `<h1 class="headline fit" data-min="…">`, `<p class="subheadline fit">`, `<p class="kicker">`
  *   inside a `<div class="caption">` so overflow, contrast and thumbnail checks see them.
- * - `{{badges}}`, `{{appName}}`, `{{icon}}` (image URL), `{{width}}`, `{{height}}`, `{{index}}`, `{{total}}`, `{{locale}}`.
+ * - `{{badges}}`, `{{appName}}`, `{{icon}}` (image URL), `{{width}}`, `{{height}}`, `{{index}}`, `{{total}}`, `{{locale}}`,
+ *   `{{bullets}}` (the shot's benefit lines as `<li>` items) and `{{photo}}` (URL of the shot's photo).
  * - `<vitrin-device screen="home" x="120" y="640" width="900" tilt="-4" finish="titanium" variant="inner" frameless>`
  *   — a device mockup with that rendered screen (`screen` = a screen id of the shot, or its 0-based position).
  *   `x`/`y`/`width` are CSS px of the canvas; `family` overrides the format's device family.
  * - CSS variables of the selected art direction: `--bg`, `--bg2`, `--text`, `--muted`, `--accent`, `--emphasis`,
- *   `--chip-bg`, `--chip-text`, `--headline` and `--body` (font stacks of the bundled families), `--w`, `--h`.
+ *   `--chip-bg`, `--chip-text`, `--plate`, `--plate-text`, `--headline` and `--body` (font stacks of the bundled
+ *   families), `--w`, `--h`.
  */
 
 export interface CustomPageInput extends PageInput {
@@ -86,6 +88,8 @@ export function buildCustomPage(template: string, p: CustomPageInput, family: De
     badges: p.badges.map((b) => BadgeView({ badge: b, locale: p.locale, ad: pal, fontSize: badgeSize })).join(''),
     appName: esc(p.appName ?? ''),
     icon: p.icon ?? '',
+    bullets: (p.bullets ?? []).map((l) => `<li>${plainWords(l, sf.text)}</li>`).join(''),
+    photo: p.photo ?? '',
     width: String(W),
     height: String(H),
     index: String((p.index ?? 0) + 1),
@@ -98,12 +102,12 @@ export function buildCustomPage(template: string, p: CustomPageInput, family: De
   if (missing.length) throw new Error(`Template uses screen(s) ${missing.join(', ')} that the shot does not list in "screens".`);
   const safe = Math.round(Math.min(W, H) * 0.035);
   const head = `<meta charset="utf-8">${fonts.links}<style>
-  :root { --w:${W}px; --h:${H}px; --bg:${sf.bg[0]}; --bg2:${sf.bg[1] ?? sf.bg[0]}; --text:${sf.text}; --muted:${sf.muted}; --accent:${sf.accent}; --emphasis:${sf.emphasis[0] ?? sf.accent}; --chip-bg:${sf.chipBg}; --chip-text:${sf.chipText}; --headline:${fonts.headlineStack}; --body:${fonts.bodyStack}; }
+  :root { --w:${W}px; --h:${H}px; --bg:${sf.bg[0]}; --bg2:${sf.bg[1] ?? sf.bg[0]}; --text:${sf.text}; --muted:${sf.muted}; --accent:${sf.accent}; --emphasis:${sf.emphasis[0] ?? sf.accent}; --chip-bg:${sf.chipBg}; --chip-text:${sf.chipText}; --plate:${sf.plate ?? sf.accent}; --plate-text:${sf.plateText ?? sf.text}; --headline:${fonts.headlineStack}; --body:${fonts.bodyStack}; }
   html, body { margin:0; padding:0; width:${W}px; height:${H}px; overflow:hidden; -webkit-font-smoothing:antialiased; }
   body { position:relative; background:var(--bg); color:var(--text); font-family:var(--body); }
   .headline { font-family:var(--headline); }
-  .vq-hide .w { -webkit-text-fill-color:transparent !important; color:transparent !important; background-image:none !important; }
-  .vq-mask .w { -webkit-text-fill-color:#FF00FF !important; color:#FF00FF !important; background-image:none !important; }
+  .vq-hide .w { -webkit-text-fill-color:transparent !important; color:transparent !important; background-image:none !important; -webkit-text-stroke-color:transparent !important; }
+  .vq-mask .w { -webkit-text-fill-color:#FF00FF !important; color:#FF00FF !important; background-image:none !important; -webkit-text-stroke-color:#FF00FF !important; }
 </style>`;
   const guide = `<div class="safe-guide" data-inset="${safe}" style="position:absolute;inset:${safe}px;pointer-events:none"></div>`;
   if (/<html[\s>]/i.test(body)) {

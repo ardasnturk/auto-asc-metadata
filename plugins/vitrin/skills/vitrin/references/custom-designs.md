@@ -64,6 +64,8 @@ The canvas is the format's logical size (iPhone 6.9": 440×956, iPad 13": 1032×
 | `{{headline}}`, `{{subheadline}}`, `{{kicker}}` | The shot's copy for the locale being rendered, as measured words; `*word*` gets the design's emphasis |
 | `{{badges}}` | The shot's badges as chips |
 | `{{appName}}`, `{{icon}}` | App name, app icon URL (`<img src="{{icon}}">`) |
+| `{{bullets}}` | The shot's `bullets` as `<li>` items (wrap them in a `<ul class="bullets">`) |
+| `{{photo}}` | URL of the shot's `photo` from metadata/photos/ (empty without one) |
 | `{{width}}`, `{{height}}`, `{{index}}`, `{{total}}`, `{{locale}}` | Canvas size, position in the set, locale |
 
 ### `<vitrin-device>`
@@ -80,7 +82,7 @@ The canvas is the format's logical size (iPhone 6.9": 440×956, iPad 13": 1032×
 The frames are the same mockups as `vitrin mockups` and the preset layouts.
 
 ### CSS variables (from the selected or sampled design)
-`--bg`, `--bg2`, `--text`, `--muted`, `--accent`, `--emphasis`, `--chip-bg`, `--chip-text`, `--headline`, `--body`. Using them makes one template work in every sampled design; hard-coded colors pin it to one look.
+`--bg`, `--bg2`, `--text`, `--muted`, `--accent`, `--emphasis`, `--chip-bg`, `--chip-text`, `--plate`, `--plate-text` (fill and ink of a boxed emphasis), `--headline`, `--body`. Using them makes one template work in every sampled design; hard-coded colors pin it to one look.
 
 ### Rules that still apply
 - Put the copy in `.caption` → `.headline.fit` / `.subheadline.fit` / `.kicker` so the quality gate can measure overflow, contrast and the thumbnail; `data-min` is the smallest font size the auto-fit may shrink to.

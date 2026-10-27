@@ -224,6 +224,42 @@ export function backgroundLayer(ctx: DecorContext): string {
       css = `background:${c0};`;
       if (sf.dark) inner = `<div style="position:absolute;inset:0;background:radial-gradient(circle at 50% 60%,transparent 60%,rgba(0,0,0,.12) 100%)"></div>`;
       break;
+    case 'studio':
+      // A product-shot sweep: a soft top light falling off into the floor tone.
+      css = `background:linear-gradient(${sf.dark ? 165 : 180}deg,${c0} 0%,${c1} 100%);`;
+      inner = `<div style="position:absolute;left:${px(-W * 0.25)};top:${px(-H * 0.2)};width:${px(W * 1.5)};height:${px(H * 0.62)};border-radius:50%;background:radial-gradient(closest-side,${withAlpha('#FFFFFF', sf.dark ? 0.16 : 0.85)},transparent)"></div>`;
+      break;
+    case 'poster': {
+      // A printed poster: flat stock, a trim line inset from the edge and a halftone patch in the device's corner.
+      css = `background:${c0};`;
+      const m = W * 0.034;
+      const lw = Math.max(1, W * 0.0026);
+      const right = ctx.index % 2 === 0;
+      const low = ctx.captionSide === 'top';
+      const patch = W * 0.5;
+      inner = `<div style="position:absolute;inset:${px(m)};border:${px(lw)} solid ${sf.rule};border-radius:${px(W * 0.018)}"></div>
+        <div style="position:absolute;${right ? 'right' : 'left'}:${px(-patch * 0.2)};${low ? 'bottom' : 'top'}:${px(-patch * 0.2)};width:${px(patch)};height:${px(patch)};background-image:radial-gradient(${withAlpha(sf.text, sf.dark ? 0.2 : 0.16)} ${px(W * 0.0055)},transparent ${px(W * 0.006)});background-size:${px(W * 0.022)} ${px(W * 0.022)};-webkit-mask-image:radial-gradient(circle at ${right ? '70%' : '30%'} ${low ? '70%' : '30%'},#000 0%,transparent 68%)"></div>`;
+      break;
+    }
+    case 'block':
+      css = `background:${c0};`;
+      break;
+    case 'gilded': {
+      // Black lacquer with a warm glow where the device stands, fine guilloche rings around it and a double gilt
+      // rule inset like a certificate's border.
+      // The glow sits on the device (sized by the short side, so wide canvases do not flood the caption with it).
+      const dv = ctx.device;
+      const glowX = dv ? dv.x + dv.w / 2 : W / 2;
+      const glowY = dv ? (ctx.captionSide === 'top' ? Math.max(dv.y, 0) + Math.min(dv.h, H) * 0.45 : Math.min(dv.y + dv.h, H) - Math.min(dv.h, H) * 0.45) : H * 0.62;
+      const gr = Math.min(W, H) * 0.56;
+      const lw = Math.max(1, W * 0.0022);
+      css = sf.dark ? `background:radial-gradient(120% 80% at ${((glowX / W) * 100).toFixed(0)}% ${((glowY / H) * 100).toFixed(0)}%,${c2} 0%,${c1} 45%,${c0} 100%);` : `background:linear-gradient(180deg,${c0} 0%,${c1} 100%);`;
+      inner = `<div style="position:absolute;left:${px(glowX - gr)};top:${px(glowY - gr)};width:${px(gr * 2)};height:${px(gr * 2)};border-radius:50%;background:radial-gradient(closest-side,${withAlpha(sf.accent, sf.dark ? 0.26 : 0.18)},transparent)"></div>
+        <div style="position:absolute;left:${px(glowX - gr * 0.9)};top:${px(glowY - gr * 0.9)};width:${px(gr * 1.8)};height:${px(gr * 1.8)};border-radius:50%;background:repeating-radial-gradient(circle,${withAlpha(sf.accent, sf.dark ? 0.12 : 0.14)} 0 ${px(lw)},transparent ${px(lw)} ${px(W * 0.024)});-webkit-mask-image:radial-gradient(closest-side,#000 35%,transparent 100%)"></div>
+        <div style="position:absolute;inset:${px(W * 0.03)};border:${px(lw)} solid ${withAlpha(sf.accent, 0.55)}"></div>
+        <div style="position:absolute;inset:${px(W * 0.042)};border:${px(lw * 0.6)} solid ${withAlpha(sf.accent, 0.28)}"></div>`;
+      break;
+    }
   }
   return `<div class="bg" style="position:absolute;inset:0;overflow:hidden;${css}">${inner}</div>`;
 }
@@ -294,6 +330,30 @@ export function canvasDecor(ctx: DecorContext): string {
     case 'magazine':
       if (noDevice && ctx.archetype === 'statement') out.push(`<div data-content style="position:absolute;left:0;right:0;bottom:0;height:${px(H * 0.12)};background:linear-gradient(180deg,${sf.accent},${mix(sf.accent, '#000000', 0.25)})"></div>`);
       break;
+    case 'poster':
+      // A statement slide's number fills the lower corner in outline, like a poster's issue number.
+      if (noDevice && !ctx.landscape && ctx.archetype === 'statement') out.push(`<div data-content aria-hidden="true" style="position:absolute;right:${px(W * 0.06)};bottom:${px(H * 0.035)};font-family:var(--headline);font-size:${px(W * 0.5)};line-height:.8;color:transparent;-webkit-text-stroke:${px(Math.max(1.5, W * 0.004))} ${withAlpha(sf.text, 0.3)}">${String(ctx.index + 1).padStart(2, '0')}</div>`);
+      break;
+    case 'studio':
+      // Without a device: two soft tinted spheres, top corner and bottom, so the type is not alone on the sweep.
+      if (noDevice && !ctx.landscape) {
+        const tint = sf.extras[1] ?? '#DCE3FF';
+        out.push(`<div data-content style="position:absolute;left:${px(W * 0.68)};top:${px(-W * 0.12)};width:${px(W * 0.44)};height:${px(W * 0.44)};border-radius:50%;background:radial-gradient(circle at 35% 30%,#FFFFFF,${tint} 70%);opacity:${sf.dark ? 0.25 : 0.9}"></div>`);
+        out.push(`<div data-content style="position:absolute;left:${px(-W * 0.14)};top:${px(H * 0.84)};width:${px(W * 0.6)};height:${px(W * 0.6)};border-radius:50%;background:radial-gradient(circle at 40% 30%,#FFFFFF,${tint} 70%);opacity:${sf.dark ? 0.25 : 0.9}"></div>`);
+      }
+      break;
+    case 'block':
+      if (noDevice && !ctx.landscape) {
+        out.push(`<div data-content style="position:absolute;left:${px(W * 0.62)};top:${px(H * 0.8)};width:${px(W * 0.7)};height:${px(W * 0.7)};border-radius:50%;background:${withAlpha(sf.text, 0.1)}"></div>`);
+        out.push(`<div data-content style="position:absolute;left:${px(-W * 0.12)};top:${px(H * 0.88)};width:${px(W * 0.36)};height:${px(W * 0.36)};border-radius:50%;border:${px(Math.max(1.5, W * 0.006))} solid ${withAlpha(sf.text, 0.22)}"></div>`);
+      }
+      break;
+    case 'gilded':
+      if (noDevice && !ctx.landscape) {
+        // A gilt sunburst rising from the bottom edge.
+        out.push(`<div data-content style="position:absolute;left:${px(W * 0.5 - W * 0.55)};top:${px(H * 0.86)};width:${px(W * 1.1)};height:${px(W * 1.1)};border-radius:50%;background:repeating-conic-gradient(from 0deg,${withAlpha(sf.accent, 0.22)} 0deg 2deg,transparent 2deg 9deg);-webkit-mask-image:radial-gradient(closest-side,#000 20%,transparent 100%)"></div>`);
+      }
+      break;
   }
   if (ctx.bridgeOut) out.push(bridge(ctx, 'out'));
   if (ctx.bridgeIn) out.push(bridge(ctx, 'in'));
@@ -319,6 +379,16 @@ function bridge(ctx: DecorContext, side: 'out' | 'in'): string {
       return `<div style="position:absolute;left:${px(cx - W * 0.32)};top:${px(y)};">${squiggle(W * 0.64, H * 0.05, t.background === 'candy' ? sf.text : sf.accent, W * 0.012, 11)}</div>`;
     case 'beam':
       return `<div style="position:absolute;left:${px(cx - W * 0.4)};top:${px(y)};width:${px(W * 0.8)};height:${px(Math.max(1, W * 0.0025))};background:linear-gradient(90deg,transparent,${withAlpha(sf.accent, 0.6)} 40%,${withAlpha('#E6E4FF', 0.9)} 50%,${withAlpha(sf.accent, 0.6)} 60%,transparent)"></div>`;
+    case 'poster': {
+      // Hazard tape in ink and signal: it reads on every surface of the cycle.
+      const ink = t.surfaces[0]!.bg[0]!;
+      const signal = t.surfaces[0]!.plate ?? sf.accent;
+      return `<div style="position:absolute;left:${px(cx - W * 0.45)};top:${px(y)};width:${px(W * 0.9)};height:${px(H * 0.03)};background:repeating-linear-gradient(-45deg,${ink} 0 ${px(W * 0.03)},${signal} ${px(W * 0.03)} ${px(W * 0.06)})"></div>`;
+    }
+    case 'block':
+      return `<div style="position:absolute;left:${px(cx - W * 0.32)};top:${px(y - W * 0.32)};width:${px(W * 0.64)};height:${px(W * 0.64)};border-radius:50%;background:rgba(255,255,255,.2)"></div>`;
+    case 'gilded':
+      return `<div style="position:absolute;left:${px(cx - W * 0.45)};top:${px(y)};width:${px(W * 0.9)};height:${px(W * 0.012)};border-top:${px(Math.max(1, W * 0.0022))} solid ${withAlpha(sf.accent, 0.7)};border-bottom:${px(Math.max(1, W * 0.0014))} solid ${withAlpha(sf.accent, 0.45)}"></div>`;
     case 'clay':
       return `<div style="position:absolute;left:${px(cx - W * 0.45)};top:${px(y - H * 0.1)};width:${px(W * 0.9)};height:${px(H * 0.2)};border-radius:50%;filter:blur(${px(W * 0.01)});background:radial-gradient(70% 60% at 36% 8%,${mix(sf.extras[0] ?? '#A9B79C', '#FFFFFF', 0.3)},${sf.extras[0] ?? '#A9B79C'} 42%,${mix(sf.extras[0] ?? '#A9B79C', '#000000', 0.25)})"></div>`;
     default:
@@ -397,6 +467,26 @@ export function stageBack(ctx: DecorContext): string {
       break;
     case 'aurora':
       out.push(blob(d.x + d.w * 0.5, d.y + d.h * 0.3, d.w * 0.9, sf.extras[1] ?? '#AFD5FF', 0.55, W * 0.1));
+      break;
+    case 'studio':
+      // A soft tinted halo behind the phone, the way product shots separate the device from the sweep.
+      // Near-white light, so an accent word next to it keeps the contrast it has on the sweep.
+      out.push(blob(d.x + d.w * 0.5, d.y + d.h * 0.5, d.w * 1.15, sf.dark ? (sf.extras[1] ?? '#DCE3FF') : mix(sf.extras[1] ?? '#DCE3FF', '#FFFFFF', 0.55), sf.dark ? 0.3 : 0.85, W * 0.07));
+      break;
+    case 'block': {
+      // One big circle behind the device, a shade off the background, and a thin ring offset from it.
+      // The circle rises only a little past the device's edge, so the caption never sits on its lighter tone.
+      const r = Math.min(W * 0.5, H * 0.3, d.w * 0.8);
+      const cx = d.x + d.w * (ctx.index % 2 ? 0.2 : 0.8);
+      const cy = ctx.captionSide === 'top' ? Math.max(0, d.y) + r * 0.95 : Math.min(H, d.y + d.h) - r * 0.95;
+      out.push(`<div style="position:absolute;left:${px(cx - r)};top:${px(cy - r)};width:${px(r * 2)};height:${px(r * 2)};border-radius:50%;background:${withAlpha(sf.text, 0.12)}"></div>`);
+      // The ring stays within the devices' own span, so in a landscape creative it never reaches the caption column.
+      const ringX = d.x + d.w * (ctx.index % 2 ? 0.82 : 0.18);
+      out.push(`<div style="position:absolute;left:${px(ringX - r * 0.45)};top:${px(cy + r * 0.25)};width:${px(r * 0.9)};height:${px(r * 0.9)};border-radius:50%;border:${px(Math.max(1.5, W * 0.006))} solid ${withAlpha(sf.text, 0.22)}"></div>`);
+      break;
+    }
+    case 'gilded':
+      out.push(blob(d.x + d.w * 0.5, d.y + d.h * (ctx.captionSide === 'top' ? 0.42 : 0.58), d.w * 1.05, sf.accent, sf.dark ? 0.22 : 0.16, W * 0.09));
       break;
   }
   return out.join('\n');
@@ -589,6 +679,20 @@ export function topStructure(ctx: DecorContext): string {
       const s = Math.min(W, H / 1.9) * 0.04;
       const icon = ctx.icon ? `<img src="${ctx.icon}" style="width:${px(s * 1.5)};height:${px(s * 1.5)};border-radius:${px(s * 0.36)}">` : '';
       out.push(`<div data-content style="position:absolute;left:${px(W * 0.064)};top:${px(H * 0.03)};display:inline-flex;align-items:center;gap:${px(s * 0.4)};padding:${px(s * 0.25)} ${px(s * 0.6)} ${px(s * 0.25)} ${px(s * 0.25)};border-radius:999px;background:#FFFFFF;border:${px(W * 0.004)} solid #16121F;box-shadow:${px(W * 0.006)} ${px(W * 0.007)} 0 #16121F;transform:rotate(-2deg);font-family:var(--body);font-weight:800;font-size:${px(s)};color:#16121F;text-transform:lowercase">${icon}${esc(ctx.appName)}</div>`);
+      break;
+    }
+    case 'poster': {
+      // Inside the trim: the app name and the slide number, set in the condensed label face. A device bleeding off
+      // the top edge would cut the row, so that slide goes without.
+      if (ctx.device && ctx.captionSide === 'bottom') break;
+      const m = W * 0.065;
+      const size = W * 0.028;
+      out.push(`<div data-content class="index-row" style="position:absolute;left:${px(m)};right:${px(m)};top:${px(H * 0.032)};display:flex;justify-content:space-between;align-items:center">${label(ctx.appName, size, sf.text, 'font-weight:700')}<span style="flex:1;height:${px(Math.max(1, W * 0.0026))};background:${sf.rule};margin:0 ${px(W * 0.03)}"></span>${label(`Nº ${String(ctx.index + 1).padStart(2, '0')}`, size, sf.text, 'font-weight:700')}</div>`);
+      break;
+    }
+    case 'gilded': {
+      const size = W * 0.024;
+      out.push(`<div data-content style="position:absolute;left:0;right:0;top:${px(H * 0.036)};display:flex;justify-content:center;align-items:center;gap:${px(W * 0.025)}"><span style="width:${px(W * 0.07)};height:${px(Math.max(1, W * 0.0022))};background:${withAlpha(sf.accent, 0.7)}"></span>${label(ctx.appName, size, sf.dark ? sf.accent : sf.muted, 'letter-spacing:.34em')}<span style="width:${px(W * 0.07)};height:${px(Math.max(1, W * 0.0022))};background:${withAlpha(sf.accent, 0.7)}"></span></div>`);
       break;
     }
     case 'washi': {

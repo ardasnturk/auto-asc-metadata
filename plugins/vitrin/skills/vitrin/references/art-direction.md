@@ -23,6 +23,7 @@
 - **`preset`** supplies palette, type pairing (bundled OFL fonts), background recipe, decoration recipe and device treatment. Pick it from [`styles/README.md`](styles/README.md) by category and by what stands apart from the competitors (`competitors.analysis.paletteUsage`).
 - **`brand`** tints the preset with the app's colors (app_profile.brand): the emphasis takes the brand hue, darkened or lightened until it clears WCAG AA on that background; `strength` (0–1) rotates the background hues of "full"-tint presets toward the brand. Without `brand`, the profile's brand colors are used. One-accent presets (Swiss, Neon) only swap their signal color if the brand passes the same contrast pairs.
 - Optional overrides: `palette`, `typography`, `background`, `device` (the pre-preset fields). An explicit `palette` is used as is. Old files without `preset` still work: they render with their own palette and background style on the `vitrin-classic` composition.
+- **Combining presets:** `emphasis` picks another treatment for the emphasised phrase (`color`, `gradient`, `block`, `box`, `pill`, `italic`, `script`, `kenten`, `underline`, `outline`); `kicker: "tag"` sets the kicker as an accent chip above the headline (a category label); `cycle: ["#…", "#…", …]` gives each screenshot the next of 2–6 background colors with black or white type (an inverse box for `box` emphasis). Any preset takes them, so `{ "preset": "neon-athletic-night", "emphasis": "outline" }` is a direction of its own.
 
 ## Iron rules (copy)
 
@@ -51,8 +52,8 @@
 - `auto` follows the archetype and the preset's rhythm and **never repeats the previous shot's framing**. Hero is always `bleed-bottom`.
 - The device is **anchored to an edge** (bleeding off the bottom, off the top under a bottom caption, or standing on a shelf) and covers **68–82 % of the canvas height**. Never a centred phone with empty bands above and below.
 - Mix at least two framings across the set; every 2–3 slides break the phone parade (`two-devices`, `mosaic`, `feature-wall`, `statement`).
-- Upright presets (Liquid Glass, Swiss, Midnight, Japandi, Bento, Magazine) never tilt; tilted presets alternate direction. iPhone Duo is always straight on.
-- `inverted: true` switches to the preset's contrast surface (Swiss ink, Clay dusk, Neon volt). Use 1–2 per set; cycling presets (Candy, Paper, Hand-Drawn) change surface on every slide by themselves.
+- Upright presets (Liquid Glass, Swiss, Midnight, Japandi, Bento, Magazine, Studio, Poster, Color Block, Noir Gold) never tilt; tilted presets alternate direction. iPhone Duo is always straight on.
+- `inverted: true` switches to the preset's contrast surface (Swiss ink, Clay dusk, Neon volt, Studio accent, Noir cream). Use 1–2 per set; cycling presets (Candy, Paper, Hand-Drawn, Poster, Color Block, any `cycle`) change surface on every slide by themselves.
 - Watch, Apple TV, Mac and Vision Pro frames are always **contained** (a cropped TV reads as a mistake); their slides alternate caption-left and caption-top.
 
 ## Archetypes
@@ -75,6 +76,40 @@
 | mosaic | Closer: three real screens as frameless tiles | 2–3 |
 
 At least 60 % of shots show real UI and one of the first three must.
+
+## Shot extras
+
+| Field | What it draws | Rules |
+|---|---|---|
+| `bullets` + `bulletStyle` | Up to four short benefit lines. `check` (default): a ticked list; next to a device it floats as one card over the device's side edge (the caption keeps its room, the device its height); on slides without a device it sits under the caption. `chips`: a wrapped row of small chips under the caption. | Every line is a real feature in `featureIds`, ≤ 32 characters, localized. With three chips drop the subheadline. Validated like headlines (no prices, CTAs, other platforms). |
+| `brandMark: true` | The app icon and name above the kicker — the lockup a hero or a closer opens with. | Once or twice per set. |
+| `photo: "hero.jpg"` | A photo from `metadata/photos/` full-bleed behind the shot, under a scrim in the slide's tone where the caption sits. With a device the phone stands in that scene; on a `statement` it is a lifestyle slide with the line set low. The preset's props stay out of photo slides. | **Only a photo the developer gave you** (ask; never generate, download or use stock). They must own the rights, with a model release for any recognisable person. A photo `statement` is not real UI. |
+
+## Pattern library
+
+What the store galleries of popular apps do, and how to get it in Vitrin. Use it to propose directions, not to copy any app.
+
+| Pattern seen | Vitrin |
+|---|---|
+| Light canvas, dark phone, big flush-left headline with one colored word, category tag above | `clean-studio-light` (or any preset + `kicker: "tag"`) |
+| Giant condensed caps, words in solid boxes, dark / cream / signal slides in turn | `bold-poster-type`; `emphasis: "box"` on another preset |
+| Every screenshot its own saturated color | `color-block-sequence`, or `cycle` with the brand's colors |
+| Black and gold, serif, laurels | `noir-gold-luxe` + a verified `proof` badge with `style: "laurel"` |
+| Phrase in a white pill/box on a colored slide ("Learn *40 plus* languages") | `emphasis: "box"` |
+| Hollow outlined word in a heavy headline | `emphasis: "outline"` (heavy or condensed faces only) |
+| Hero with a ticked list of benefits | `bullets` (check) on the hero |
+| Chips listing what the app covers ("Budgets · Bills · Goals") | `bullets` + `bulletStyle: "chips"` |
+| UI card popping out of the phone | `callout` archetype |
+| Phone crossing from one screenshot into the next | `panoramic` + `bridge` |
+| Lifestyle photo first, phone later / phone in a real scene | `photo` (developer's own) on a `statement` or a device shot |
+| Logo and app name at the top of the hero | `brandMark: true` |
+| "#1", "1M+ users", rating laurels | `social-proof` / `proof` badge — only with Lookup data or a documented award |
+| One-word headlines ("Block", "Switch", "Guard") | copy: one verb per shot, `bold-poster-type` or `swiss-grid-bold` |
+| Caption under the phone on some slides | `captionPosition: "bottom"` (avoid on light presets: the device's shadow falls on the type) |
+| Two or three phones fanned out | `collage` (3 screens) or `split` |
+| Wall of feature names to close | `feature-wall` |
+
+Not available, and why: hand-held phones and mascots need artwork the app does not have (give a bespoke `template` the developer's own asset if they supply one); press logos and "As seen in" rows need permission and proof; integration logos of other companies are trademarks.
 
 ## Cross-canvas moment
 

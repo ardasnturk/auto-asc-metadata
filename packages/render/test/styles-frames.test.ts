@@ -3,6 +3,8 @@ import { describe, expect, it } from 'vitest';
 import {
   buildPage,
   contrastRatio,
+  headlineHtml,
+  PLATED_EMPHASIS,
   deviceGeometry,
   deviceHeightRatio,
   DeviceFrame,
@@ -68,7 +70,7 @@ describe('style presets', () => {
         const under = sf.bg.slice(0, 2);
         for (const b of under) expect(contrastRatio(sf.text, b), `${id} text`).toBeGreaterThanOrEqual(4.5);
         const kind = sf.emphasisKind ?? r.tokens.emphasis;
-        if (kind === 'block' || kind === 'pill') expect(contrastRatio(sf.plateText ?? sf.text, sf.plate!), `${id} plate`).toBeGreaterThanOrEqual(4.5);
+        if (PLATED_EMPHASIS.has(kind)) expect(contrastRatio(sf.plateText ?? sf.text, sf.plate!), `${id} plate`).toBeGreaterThanOrEqual(4.5);
         else for (const e of sf.emphasis) for (const b of under) expect(contrastRatio(e, b), `${id} emphasis ${e} on ${b}`).toBeGreaterThanOrEqual(4.5);
       }
     }
@@ -113,6 +115,53 @@ describe('style presets', () => {
     expect(surfaceFor(PRESETS['liquid-glass-aurora'], 3).index).toBe(0);
     expect(surfaceFor(PRESETS['candy-pop-social'], 2).index).toBe(2);
     expect(surfaceFor(PRESETS['soft-clay-wellness'], 0, true).index).toBe(2);
+  });
+
+  it('combines presets with another emphasis, a tag kicker and a color cycle', () => {
+    const base = { id: 'x', name: 'x', rationale: '', differentiation: '' };
+    const boxed = resolveDirection({ ...base, preset: 'vitrin-classic', emphasis: 'box' });
+    expect(boxed.tokens.emphasis).toBe('box');
+    for (const sf of boxed.tokens.surfaces) {
+      expect(sf.emphasisKind).toBeUndefined();
+      // The plate stands off its background and its ink reads on it.
+      expect(contrastRatio(sf.plate!, sf.bg[0]!)).toBeGreaterThanOrEqual(1.6);
+      expect(contrastRatio(sf.plateText!, sf.plate!)).toBeGreaterThanOrEqual(4.5);
+    }
+    expect(resolveDirection({ ...base, preset: 'vitrin-classic', kicker: 'tag' }).tokens.kicker).toBe('tag');
+    const cycle = ['#4B3BD6', '#E2557A', '#0E7C66', '#FFC23D'];
+    const blocks = resolveDirection({ ...base, preset: 'clean-studio-light', cycle });
+    expect(blocks.tokens.rhythm).toBe('cycle');
+    expect(blocks.tokens.surfaces.map((sf) => sf.bg[0])).toEqual(cycle);
+    for (const sf of blocks.tokens.surfaces) {
+      expect(contrastRatio(sf.text, sf.bg[0]!)).toBeGreaterThanOrEqual(4.5);
+      expect(contrastRatio(sf.muted, sf.bg[0]!)).toBeGreaterThanOrEqual(4.5);
+      expect(contrastRatio(sf.emphasis[0]!, sf.bg[0]!)).toBeGreaterThanOrEqual(4.5);
+      expect(contrastRatio(sf.plateText!, sf.plate!)).toBeGreaterThanOrEqual(4.5);
+    }
+    expect(surfaceFor(blocks.tokens, 5).surface.bg[0]).toBe('#E2557A');
+    expect(() => ArtDirectionOption.parse({ ...base, preset: 'vitrin-classic', cycle: ['#000000'] })).toThrow();
+  });
+
+  it('swaps the poster signal only for an equally bright brand and keeps the gold fixed', () => {
+    const bright = tintTokens(PRESETS['bold-poster-type'], { primary: '#FFD23F' });
+    expect(bright.surfaces[0]!.plate).toBe('#FFD23F');
+    expect(bright.surfaces[2]!.bg[0]).toBe('#FFD23F');
+    expect(bright.surfaces[1]!.plate).toBe('#121212');
+    expect(tintTokens(PRESETS['bold-poster-type'], { primary: '#1A1A80' })).toBe(PRESETS['bold-poster-type']);
+    expect(tintTokens(PRESETS['noir-gold-luxe'], { primary: '#00A86B' })).toBe(PRESETS['noir-gold-luxe']);
+  });
+
+  it('draws box and outline emphasis, and a gradient with one color as two stops', () => {
+    const t = PRESETS['bold-poster-type'];
+    const box = headlineHtml('Build *habits*', t, t.surfaces[0]!);
+    expect(box).toContain('em-box');
+    expect(box).toContain('display:inline-block');
+    expect(box).toContain('background:#C6F432');
+    const outline = headlineHtml('Build *habits*', { ...t, emphasis: 'outline' }, { ...t.surfaces[1]!, emphasisKind: undefined });
+    expect(outline).toContain('-webkit-text-stroke');
+    const flat = PRESETS['vitrin-classic'];
+    const grad = headlineHtml('Build *habits*', { ...flat, emphasis: 'gradient' }, flat.surfaces[0]!);
+    expect(grad).toMatch(/linear-gradient\(100deg,#FF8A6B 0%,#FF8A6B 100%\)/);
   });
 
   it('darkens a pale brand color until it reaches AA', () => {
@@ -298,6 +347,24 @@ describe('layout math', () => {
     expect((wall.match(/class="wall-line"/g) ?? []).length).toBe(3);
     const mosaic = buildPage({ target: t, locale: 'en', ad, archetype: 'mosaic', headline: 'All of it', subheadline: '', badges: [], screens: [screen, screen, screen] });
     expect((mosaic.match(/mosaic-card/g) ?? []).length).toBe(3);
+    // Shot extras: a tag kicker, the brand lockup, benefit lines (a card beside a device, a list or chips in the
+    // caption) and a developer photo behind everything.
+    const studio = { id: 'x', name: 'x', rationale: '', differentiation: '', preset: 'clean-studio-light' as const };
+    const hero = buildPage({ target: t, locale: 'en', ad: studio, archetype: 'hero', headline: 'Keep your *streak*', subheadline: '', kicker: 'Habit tracker', badges: [], screens: [screen], appName: 'Ritim', icon: 'file:///icon.png', brandMark: true, bullets: ['One tap check-ins', 'Daily reminders'] });
+    expect(hero).toContain('kicker-tag');
+    expect(hero).toContain('class="brand-mark"');
+    expect(hero).toContain('bullet-card');
+    expect(hero).toMatch(/>Habit<\/span> <span/);
+    const chips = buildPage({ target: t, locale: 'en', ad: studio, archetype: 'hero', headline: 'x', subheadline: '', badges: [], screens: [screen], bullets: ['Heatmap', 'Streaks'], bulletStyle: 'chips' });
+    expect(chips).toContain('class="bullets"');
+    expect(chips).not.toContain('bullet-card');
+    const list = buildPage({ target: t, locale: 'en', ad: studio, archetype: 'statement', headline: 'x', subheadline: '', badges: [], screens: [], bullets: ['Heatmap', 'Streaks'] });
+    expect(list).toContain('class="bullets"');
+    expect(list).not.toContain('bullet-card');
+    const photo = buildPage({ target: t, locale: 'en', ad: studio, archetype: 'statement', headline: 'Find your *rhythm*', subheadline: '', badges: [], screens: [], photo: 'file:///photo.jpg', icon: 'file:///icon.png' });
+    expect(photo).toContain('src="file:///photo.jpg"');
+    expect(photo).toContain('object-fit:cover');
+    expect(photo).toContain('data-bottom="1"');
     const out = buildPage({ target: t, locale: 'en', ad, archetype: 'hero', headline: 'x', subheadline: '', badges: [], screens: [screen], bridgeOut: true });
     const plain = buildPage({ target: t, locale: 'en', ad, archetype: 'hero', headline: 'x', subheadline: '', badges: [], screens: [screen] });
     expect(out.length).toBeGreaterThan(plain.length);

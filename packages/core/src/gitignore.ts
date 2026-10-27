@@ -7,7 +7,7 @@ export const GITIGNORE_BEGIN = '# >>> vitrin (managed block, edits inside are ov
 export const GITIGNORE_END = '# <<< vitrin';
 
 /** Files under `metadata/` that are source (written by Claude or the analyzer) and meant to be committed. */
-export const VITRIN_COMMITTED = ['.vitrin-workspace', 'app_profile.json', 'listing/', 'art-direction.json', 'shots.json', 'video-plan.json', 'cpp-suggestions.json', 'experiments.json', 'screens/', 'designs/', 'rankings/'];
+export const VITRIN_COMMITTED = ['.vitrin-workspace', 'app_profile.json', 'listing/', 'art-direction.json', 'shots.json', 'video-plan.json', 'cpp-suggestions.json', 'experiments.json', 'screens/', 'designs/', 'photos/', 'rankings/'];
 
 /** Readable outputs under `metadata/` that are committed only with `retention.commit: true`. */
 export const VITRIN_OUTPUTS = ['app-store/', 'google-play/', 'manifest.json', 'store/', 'creative/', 'mockups/'];
