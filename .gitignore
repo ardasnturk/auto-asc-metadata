@@ -13,6 +13,8 @@ coverage/
 
 # Local editor/agent settings
 .claude/
+.agents/
+skills-lock.json
 
 # Release tarballs (pnpm pack:release)
 release/
