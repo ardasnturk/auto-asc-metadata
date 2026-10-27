@@ -2,7 +2,7 @@ import { analyzeProject } from '@vitrin/analyzer';
 import { enabledTargets, exec, existsSync, getTarget, hashPaths, hashValue, log, readJson, readJsonIfExists, run, storefrontForLocale, which, writeJson } from '@vitrin/core';
 import { renderDesign, renderDesignSamples, selectedOption } from '@vitrin/render';
 import { runResearch, totalScore } from '@vitrin/research';
-import { AppMetadata, AppProfile, ArtDirection, CppSuggestions, KeywordPlan, LocaleMetadata, ShotList, StylePreset, VideoPlan, type CustomProductPage, type Issue, type Platform, type TargetFamily, type ValidationReport } from '@vitrin/schemas';
+import { AppMetadata, AppProfile, ArtDirection, CppSuggestions, ExperimentPlan, KeywordPlan, LocaleMetadata, ShotList, StylePreset, VideoPlan, type CustomProductPage, type Experiment, type ExperimentTreatment, type Issue, type Platform, type TargetFamily, type ValidationReport } from '@vitrin/schemas';
 import { validateAll } from '@vitrin/validate';
 import { previewPropsFor, remotionCliPath, renderVideos, VIDEO_DIR } from '@vitrin/video';
 import { exportFastlaneMetadata } from '@vitrin/upload';
@@ -531,7 +531,8 @@ export async function designCommand(ctx: Ctx, opts: DesignOptions = {}): Promise
   const rawHash = await hashPaths([ctx.paths.raw], ctx.root);
   const cpp = existsSync(ctx.paths.cpp) ? await readJson(ctx.paths.cpp, CppSuggestions) : undefined;
   const cppPages = (cpp?.pages ?? []).filter((page) => page.shots.length);
-  await stage(ctx, 'design', { ad, shots, targets: targets.map((t) => t.id), rawHash, locales: ctx.config.app.locales, only: opts.only, cppPages }, async () => {
+  const experiments = existsSync(ctx.paths.experiments) ? await readJson(ctx.paths.experiments, ExperimentPlan) : undefined;
+  await stage(ctx, 'design', { ad, shots, targets: targets.map((t) => t.id), rawHash, locales: ctx.config.app.locales, only: opts.only, cppPages, tests: screenshotTreatments(experiments) }, async () => {
     log.step(`Render: ${shots.shots.length} shots × ${targets.filter((t) => t.kind === 'screenshot').length} sizes × ${ctx.config.app.locales.length} locales`);
     const appIcon = profile.brand.appIcon ? join(profile.project.root, profile.brand.appIcon) : undefined;
     const common = { locales: ctx.config.app.locales, primaryLocale: ctx.config.app.primaryLocale, artDirection: ad, appIcon, appName: profile.app.displayName };
@@ -544,10 +545,19 @@ export async function designCommand(ctx: Ctx, opts: DesignOptions = {}): Promise
     if (!opts.only && cppTargets.length) {
       await rm(ctx.paths.cppScreenshots, { recursive: true, force: true });
       for (const page of cppPages) {
-        const pageShots = cppShotList(shots, page);
+        const pageShots = shotListFor(shots, page);
         const pagePaths = { ...ctx.paths, screenshots: join(ctx.paths.cppScreenshots, page.id), renderManifest: join(ctx.paths.cache, 'cpp', `${page.id}.json`) };
         const out = await renderDesign({ ...common, paths: pagePaths, targets: cppTargets, shots: pageShots });
         log.ok(`Custom Product Page “${page.name}”: ${pageShots.shots.length} shots → metadata/store/cpp/${page.id}`);
+        files.push(...out.manifest.images.map((i) => i.file));
+      }
+      // Product Page Optimization: every treatment that changes the screenshots gets its own set.
+      await rm(ctx.paths.experimentScreenshots, { recursive: true, force: true });
+      for (const { experiment, treatment } of screenshotTreatments(experiments)) {
+        const set = shotListFor(shots, treatment);
+        const dir = join(ctx.paths.experimentScreenshots, experiment.id, treatment.id);
+        const out = await renderDesign({ ...common, locales: experiment.locales ?? common.locales, paths: { ...ctx.paths, screenshots: dir, renderManifest: join(ctx.paths.cache, 'experiments', `${experiment.id}-${treatment.id}.json`) }, targets: cppTargets, shots: set });
+        log.ok(`Test “${experiment.name}”, treatment “${treatment.name}”: ${set.shots.length} shots → ${relative(ctx.root, dir)}`);
         files.push(...out.manifest.images.map((i) => i.file));
       }
     }
@@ -559,13 +569,15 @@ export async function designCommand(ctx: Ctx, opts: DesignOptions = {}): Promise
 }
 
 /**
- * A Custom Product Page's shot list: its shots in its order (renumbered 01, 02 … so the files sort that way), with
- * the page's copy overrides. A bridge only survives when the next shot of the page is the one it was made for.
+ * The shot list of a Custom Product Page or a test treatment: its shots in its order (renumbered 01, 02 … so the
+ * files sort that way; no `shots` = the original order), with its copy overrides. A bridge only survives when the
+ * next shot is the one it was made for.
  */
-export function cppShotList(shots: ShotList, page: CustomProductPage): ShotList {
+export function shotListFor(shots: ShotList, variant: Pick<CustomProductPage, 'shots' | 'copy'>): ShotList {
   const byId = new Map(shots.shots.map((s) => [s.id, s]));
-  const picked = page.shots.map((id) => byId.get(id)).filter((s): s is NonNullable<typeof s> => Boolean(s));
   const ids = shots.shots.map((s) => s.id).sort();
+  const order = variant.shots.length ? variant.shots : ids;
+  const picked = order.map((id) => byId.get(id)).filter((s): s is NonNullable<typeof s> => Boolean(s));
   return {
     ...shots,
     shots: picked.map((s, i) => {
@@ -573,11 +585,18 @@ export function cppShotList(shots: ShotList, page: CustomProductPage): ShotList 
       return {
         ...s,
         id: String(i + 1).padStart(2, '0'),
-        copy: { ...s.copy, ...page.copy[s.id] },
+        copy: { ...s.copy, ...variant.copy[s.id] },
         bridge: s.bridge && picked[i + 1]?.id === nextInSet,
       };
     }),
   };
+}
+
+/** Treatments of open tests (no result yet) that change the screenshots, i.e. need a set of their own. */
+export function screenshotTreatments(plan: ExperimentPlan | undefined): Array<{ experiment: Experiment; treatment: ExperimentTreatment }> {
+  return (plan?.experiments ?? [])
+    .filter((e) => !e.result)
+    .flatMap((experiment) => experiment.treatments.filter((t) => t.shots.length || Object.keys(t.copy).length).map((treatment) => ({ experiment, treatment })));
 }
 
 /** `vitrin design --samples`: N clearly different designs of the first shots for the user to pick from. */

@@ -5,11 +5,14 @@ import {
   AppProfile,
   Competitors,
   EVENT_LIMITS,
+  experimentDays,
   PlatformEnum,
   RenderManifest,
   TEXT_LIMITS,
   ValidationReport,
   type CustomProductPage,
+  type Experiment,
+  type ExperimentTreatment,
   type InAppEventSpec,
   type Issue,
   type LocaleMetadata,
@@ -273,6 +276,25 @@ export async function buildReport(ctx: Ctx, opts: { inventory?: Inventory; text?
   <div class="muted small">${own.length ? `Its own screenshot set (${esc(primary)} shown; every locale is uploaded). ` : page.shots.length ? 'Run <code>vitrin design</code> to render its own set. ' : 'No own screenshots: the page would only change promotional text. '}Created only with <code>vitrin upload --cpp</code>; Apple reviews each page.</div>${issueList(issuesFor.get(it.id) ?? [])}${rejectControl(it)}</div>`;
   };
 
+  const experimentCard = (it: InventoryItem): string => {
+    const e = it.data as Experiment;
+    const primary = ctx.config.app.primaryLocale;
+    const days = experimentDays(e);
+    const thumbs = (t: ExperimentTreatment) =>
+      inv.items
+        .filter((i) => i.kind === 'experiment' && i.abs && i.locale === primary && (i.target === 'iphone-6.9' || i.target === 'iphone-6.3') && i.id.includes(`/experiments/${e.id}/${t.id}/`))
+        .sort((a, b) => natural(a.id, b.id))
+        .map((i) => `<img src="${rel(i.abs!)}" loading="lazy" alt="">`)
+        .join('');
+    const rows = e.treatments
+      .map((t) => `<tr><th>${esc(t.name)}</th><td>${esc(t.change)}${t.appIconName ? `<br><b>Icon:</b> <code>${esc(t.appIconName)}</code>` : ''}${thumbs(t) ? `<div class="sheet-row">${thumbs(t)}</div>` : ''}</td></tr>`)
+      .join('');
+    return `<div class="meta card-wide" data-item="${esc(it.id)}"><h4>${esc(e.name)} <span class="pill small">${esc(e.element)}</span></h4>
+  <p><b>Hypothesis:</b> ${esc(e.hypothesis)}<br><b>Metric:</b> ${esc(e.metric)} · <b>MDE:</b> +${Math.round(e.minimumDetectableEffect * 100)} % · <b>Traffic in the test:</b> ${e.trafficProportion} %${days ? ` · <b>Estimated:</b> ~${days} days` : ''}</p>
+  <table class="fields">${rows}</table>
+  <div class="muted small">Created as a draft only with <code>vitrin upload --experiment ${esc(e.id)}</code>; App Review checks the treatments, then the test is started in App Store Connect (one test at a time, 7–90 days).</div>${issueList(issuesFor.get(it.id) ?? [])}${rejectControl(it)}</div>`;
+  };
+
   // ---------------------------------------------------------------- group store → platform → locale → target
   type Group = { store: string; platform: string; locale?: string; items: InventoryItem[] };
   const groups = new Map<string, Group>();
@@ -314,6 +336,8 @@ export async function buildReport(ctx: Ctx, opts: { inventory?: Inventory; text?
     for (const it of g.items.filter((i) => i.kind === 'event' && !i.abs)) parts.push(eventCard(it));
     const cpps = g.items.filter((i) => i.kind === 'cpp' && !i.abs);
     if (cpps.length) parts.push(`<h3>${esc(T.cppSuggestions)}</h3>${cpps.map(cppCard).join('')}`);
+    const tests = g.items.filter((i) => i.kind === 'experiment' && !i.abs);
+    if (tests.length) parts.push(`<h3>${esc(T.experiments)}</h3>${tests.map(experimentCard).join('')}`);
     sections.push(`<section class="locale" id="${anchor}" dir="ltr"><h2><span class="crumb">${esc(STORE_LABEL[g.store] ?? g.store)} › ${esc(PLATFORM_LABEL[g.platform] ?? g.platform)} ›</span> ${localeName}</h2>${parts.join('\n')}</section>`);
   }
 
@@ -332,9 +356,11 @@ export async function buildReport(ctx: Ctx, opts: { inventory?: Inventory; text?
         ? 'App Asset Library · only with --creatives'
         : kind === 'cpp'
           ? 'Custom Product Pages · only with --cpp'
-          : kind === 'event'
-            ? 'In-App Events (draft) · only with --events'
-            : `App Store Connect · ${uploader}`;
+          : kind === 'experiment'
+            ? 'Product Page Optimization · only with --experiment'
+            : kind === 'event'
+              ? 'In-App Events (draft) · only with --events'
+              : `App Store Connect · ${uploader}`;
   const sumRows: string[] = [];
   for (const g of ordered) {
     const byKind = new Map<string, InventoryItem[]>();

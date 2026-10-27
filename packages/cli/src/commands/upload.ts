@@ -1,9 +1,10 @@
 import { existsSync, log, readJson, readJsonIfExists, selectedPlatforms, writeJson } from '@vitrin/core';
-import { AppMetadata, CppSuggestions, ShotList, uploaderOf } from '@vitrin/schemas';
+import { AppMetadata, CppSuggestions, ExperimentPlan, ShotList, uploaderOf, type Experiment } from '@vitrin/schemas';
 import {
   AscClient,
   buildPlan,
   createCustomProductPage,
+  createExperiment,
   createInAppEvent,
   credentialsFromEnv,
   exportFastlaneMetadata,
@@ -37,7 +38,19 @@ export interface UploadOptions {
   creatives?: boolean;
   cpp?: boolean;
   events?: boolean;
+  /** Create a Product Page Optimization test: its id, or true for the first one without a result. */
+  experiment?: string | boolean;
   skipScreenshots?: boolean;
+}
+
+/** The test `--experiment` means: the named one, or the first one without a result. */
+async function pickExperiment(ctx: Ctx, which: string | boolean): Promise<Experiment> {
+  if (!existsSync(ctx.paths.experiments)) throw new NeedsInput('No metadata/experiments.json yet; plan a test first (references/experiments.md).');
+  const plan = await readJson(ctx.paths.experiments, ExperimentPlan);
+  const e = typeof which === 'string' ? plan.experiments.find((x) => x.id === which) : plan.experiments.find((x) => !x.result);
+  if (!e) throw new NeedsInput(typeof which === 'string' ? `No test “${which}” in metadata/experiments.json.` : 'Every test in metadata/experiments.json already has a result; plan the next one.');
+  if (e.result) throw new NeedsInput(`Test “${e.id}” already ended (${e.result.winner}); plan the next one.`);
+  return e;
 }
 
 async function confirm(question: string): Promise<boolean> {
@@ -116,6 +129,7 @@ export async function uploadCommand(ctx: Ctx, opts: UploadOptions): Promise<numb
 
   const shots = await readJsonIfExists(ctx.paths.shots, ShotList).catch(() => undefined);
   const cpp = await readJsonIfExists(ctx.paths.cpp, CppSuggestions).catch(() => undefined);
+  const experiment = opts.experiment ? await pickExperiment(ctx, opts.experiment) : undefined;
   const plan = await buildPlan({
     paths: ctx.paths,
     config: ctx.config,
@@ -123,6 +137,7 @@ export async function uploadCommand(ctx: Ctx, opts: UploadOptions): Promise<numb
     metadata,
     shots,
     cpp,
+    experiment,
     client,
     include: { creatives: Boolean(opts.creatives), cpp: Boolean(opts.cpp), events: Boolean(opts.events) },
     platforms: stores.platforms,
@@ -217,6 +232,15 @@ export async function uploadCommand(ctx: Ctx, opts: UploadOptions): Promise<numb
       const res = await createInAppEvent(client!, plan.appId!, e, ctx.config.app.primaryLocale, languages);
       const placed = await placeEventMedia(client!, plan.appId!, ctx.paths.creative, e.id, res.localizations);
       log.ok(`Created In-App Event “${e.id}” as a draft (${res.eventId}) with ${placed} card/detail images${e.schedule ? '' : '; set its schedule in App Store Connect'}${e.deepLink ? '' : '; it needs a deep link before review'}.`);
+    }
+  }
+
+  if (experiment && (plan.scope?.assets.includes('screenshots') ?? true)) {
+    const existing = await client!.getAll<{ name?: string }>(`/v1/apps/${plan.appId}/appStoreVersionExperimentsV2?limit=200`).catch(() => []);
+    if (existing.some((x) => x.attributes.name === experiment.name)) log.dim(`Test “${experiment.name}” already exists; skipped.`);
+    else {
+      const res = await createExperiment(client!, plan.appId!, experiment, { locales: languages, dir: join(ctx.paths.experimentScreenshots, experiment.id) });
+      log.ok(`Created test “${experiment.name}” (${res.experimentId}): ${Object.keys(res.treatments).length} treatment(s), ${res.placed} screenshots. It is a draft — App Review checks the treatments, then start it in App Store Connect → Product Page Optimization.`);
     }
   }
 

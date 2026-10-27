@@ -194,6 +194,7 @@ program
   .option('--creatives', 'also upload the product page header and search creatives')
   .option('--cpp', 'create the Custom Product Page suggestions')
   .option('--events', 'create the In-App Event drafts')
+  .option('--experiment [id]', 'create a Product Page Optimization test as a draft (default: the first one without a result)')
   .option('--skip-screenshots', 'skip screenshots and videos')
   .action(action(async (o) => uploadCommand(await createContext(globals()), o)));
 

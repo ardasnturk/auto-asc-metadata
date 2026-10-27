@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { StoreEnum } from './targets.js';
 
 /** What a review item is; drives the gallery section and the summary counts. */
-export const ReviewItemKind = z.enum(['screenshot', 'preview', 'creative', 'event', 'metadata', 'cpp', 'other']);
+export const ReviewItemKind = z.enum(['screenshot', 'preview', 'creative', 'event', 'metadata', 'cpp', 'experiment', 'other']);
 export type ReviewItemKind = z.infer<typeof ReviewItemKind>;
 
 /** One file that would be uploaded (or whose content is uploaded), relative to the app root. */

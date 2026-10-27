@@ -1,5 +1,5 @@
 import { loadTargets } from '@vitrin/core';
-import { CppSuggestions, ShotList, VideoPlan, VitrinConfig, type AppProfile } from '@vitrin/schemas';
+import { CppSuggestions, experimentDays, ExperimentPlan, ShotList, VideoPlan, VitrinConfig, type AppProfile } from '@vitrin/schemas';
 import { mkdtempSync, mkdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -154,6 +154,33 @@ describe('claim ↔ evidence', () => {
     expect(c).toContain('cpp.no-shots');
     expect(c).toContain('cpp.unknown-shot');
     expect(c).toContain('cpp.copy-unused');
+  });
+
+  it('checks Product Page Optimization tests: hypothesis, one change per treatment, shots and duration', () => {
+    const shots = ShotList.parse({ shots: ['01', '02', '03'].map((id) => ({ id, slug: `s${id}`, archetype: 'hero', screens: ['home'], featureIds: ['streaks'], copy: { tr: { headline: 'Serini koru' } } })) });
+    const hypothesis = 'Kahraman sonuç vaat ederse dönüşüm artar, çünkü insanlar sonucu arıyor.';
+    const run = (experiments: unknown[]) => validateClaims({ config, profile, shots, experiments: ExperimentPlan.parse({ experiments }), enabledTargets: [] }).items.map((i) => i.code);
+    const test = (treatments: unknown[], over: Record<string, unknown> = {}) => ({ id: 'hero', name: 'Hero', hypothesis, treatments, ...over });
+    const copy = { '01': { tr: { headline: 'Hiçbir günü kaçırma' } } };
+    expect(run([test([{ id: 'a', name: 'A', change: 'copy', copy }])]).filter((c) => c.startsWith('experiment.') && c !== 'experiment.duration-unknown')).toEqual([]);
+    expect(run([test([{ id: 'a', name: 'A', change: 'nothing' }])])).toContain('experiment.no-change');
+    expect(run([test([{ id: 'a', name: 'A', change: 'same order', shots: ['01', '02', '03'] }])])).toContain('experiment.no-change');
+    expect(run([test([{ id: 'a', name: 'A', change: 'two things', shots: ['02', '01', '03'], copy }])])).toContain('experiment.many-changes');
+    expect(run([test([{ id: 'a', name: 'A', change: 'order', shots: ['09'] }])])).toContain('experiment.unknown-shot');
+    expect(run([test([{ id: 'a', name: 'A', change: 'copy', copy }], { hypothesis: 'Daha iyi' })])).toContain('experiment.hypothesis');
+    expect(run([test([{ id: 'a', name: 'A', change: 'copy', copy }], { element: 'icon' })])).toContain('experiment.element');
+    expect(run([test([{ id: 'a', name: 'A', change: 'copy', copy }]), test([{ id: 'b', name: 'B', change: 'copy', copy }], { id: 'two' })])).toContain('experiment.one-at-a-time');
+    expect(run([test([{ id: 'a', name: 'A', change: 'copy', copy }], { result: { endedAt: '2026-10-01', winner: 'b' } })])).toContain('experiment.result');
+    expect(run([test([{ id: 'a', name: 'A', change: 'copy', copy }], { dailyPageViews: 50, baselineConversion: 0.3 })])).toContain('experiment.too-slow');
+  });
+
+  it('estimates test duration from page views, conversion and the smallest arm', () => {
+    const base = { minimumDetectableEffect: 0.1, trafficProportion: 50, treatments: [{}] as never };
+    expect(experimentDays({ ...base })).toBeUndefined();
+    // 16 · 0.3 · 0.7 / 0.03² ≈ 3734 visitors per arm; 2000 views × 50 % = 1000 a day per arm.
+    expect(experimentDays({ ...base, dailyPageViews: 2000, baselineConversion: 0.3 })).toBe(4);
+    // Two treatments share the test half: 500 a day each.
+    expect(experimentDays({ ...base, treatments: [{}, {}] as never, dailyPageViews: 2000, baselineConversion: 0.3 })).toBe(8);
   });
 
   it('checks shots that reach Google Play and a missing Play icon', () => {

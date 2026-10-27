@@ -69,6 +69,8 @@ export function appPaths(root: string) {
     metadataFile: (locale: string) => join(v, 'listing', `${locale}.json`),
     appMetadata: join(v, 'listing', 'app.json'),
     cpp: join(v, 'cpp-suggestions.json'),
+    /** Product Page Optimization tests Claude plans (and their results). */
+    experiments: join(v, 'experiments.json'),
     artDirection: join(v, 'art-direction.json'),
     shots: join(v, 'shots.json'),
     videoPlan: join(v, 'video-plan.json'),
@@ -96,6 +98,8 @@ export function appPaths(root: string) {
     appPreviews: join(v, 'store', 'app-previews'),
     /** Each Custom Product Page's own screenshot set: cpp/<page id>/<locale>/NN_slug_<target>.png. */
     cppScreenshots: join(v, 'store', 'cpp'),
+    /** Each test treatment's screenshot set: experiments/<test id>/<treatment id>/<locale>/NN_slug_<target>.png. */
+    experimentScreenshots: join(v, 'store', 'experiments'),
     /** Google Play listing in the supply layout. */
     androidMetadata: join(v, 'store', 'metadata', 'android'),
     /** HTML recreations of the app's screens (capture.mode: html), written by Claude from the source code. */

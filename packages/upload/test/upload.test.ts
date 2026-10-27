@@ -6,7 +6,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { decodeJwt, decodeProtectedHeader } from 'jose';
 import { describe, expect, it } from 'vitest';
-import { AscClient, buildPlan, createToken, diffRefData, eventAttributes, exportFastlaneMetadata, fetchLiveListing, formatPlan, isEditableVersion, isPem, screenshotTargetOf } from '../src/index.js';
+import { AscClient, buildPlan, createExperiment, createToken, diffRefData, eventAttributes, experimentCreateBody, exportFastlaneMetadata, fetchLiveListing, formatPlan, isEditableVersion, isPem, screenshotTargetOf, treatmentCreateBody } from '../src/index.js';
 
 const { privateKey } = generateKeyPairSync('ec', { namedCurve: 'prime256v1' });
 const pem = privateKey.export({ type: 'pkcs8', format: 'pem' }).toString();
@@ -122,6 +122,50 @@ describe('Custom Product Page and In-App Event media', () => {
       deepLink: 'ritim://kis',
       territorySchedules: [{ territories: ['TUR'], publishStart: '2026-12-01T09:00:00Z', eventStart: '2026-12-01T09:00:00Z', eventEnd: '2026-12-08T09:00:00Z' }],
     });
+  });
+});
+
+describe('Product Page Optimization', () => {
+  const experiment = {
+    id: 'hero',
+    name: 'Hero: outcome',
+    element: 'screenshots' as const,
+    hypothesis: 'If the hero states the outcome, conversion rises because people search for outcomes.',
+    metric: 'conversion rate',
+    minimumDetectableEffect: 0.1,
+    trafficProportion: 40,
+    treatments: [
+      { id: 'outcome', name: 'Outcome', change: 'hero copy', shots: [], copy: {} },
+      { id: 'icon', name: 'Icon', change: 'orange icon', shots: [], copy: {}, appIconName: 'Orange' },
+    ],
+  };
+
+  it('builds the v2 test and treatment requests', () => {
+    expect(experimentCreateBody(experiment, 'app1', 'IOS')).toEqual({ data: { type: 'appStoreVersionExperiments', attributes: { name: 'Hero: outcome', platform: 'IOS', trafficProportion: 40 }, relationships: { app: { data: { type: 'apps', id: 'app1' } } } } });
+    expect(treatmentCreateBody(experiment.treatments[1]!, 'exp1').data).toMatchObject({ attributes: { name: 'Icon', appIconName: 'Orange' }, relationships: { appStoreVersionExperimentV2: { data: { type: 'appStoreVersionExperiments', id: 'exp1' } } } });
+    expect(treatmentCreateBody(experiment.treatments[0]!, 'exp1').data.attributes).toEqual({ name: 'Outcome' });
+  });
+
+  it('creates the test, a treatment per variant and a localization per locale', async () => {
+    const calls: Array<{ method: string; path: string; body?: { data?: { type?: string; attributes?: Record<string, unknown> } } }> = [];
+    let n = 0;
+    const fetcher = (async (url: string, init?: RequestInit) => {
+      const path = String(url).replace('https://api.appstoreconnect.apple.com', '');
+      calls.push({ method: init?.method ?? 'GET', path, body: init?.body ? JSON.parse(String(init.body)) : undefined });
+      return new Response(JSON.stringify({ data: { type: 'x', id: `id${++n}` } }), { status: 201 });
+    }) as typeof fetch;
+    const res = await createExperiment(new AscClient(creds, fetcher), 'app1', experiment, { locales: ['en-US', 'tr'], dir: join(tmpdir(), 'vitrin-no-sets') });
+    expect(calls.map((c) => `${c.method} ${c.path}`)).toEqual([
+      'POST /v2/appStoreVersionExperiments',
+      'POST /v1/appStoreVersionExperimentTreatments',
+      'POST /v1/appStoreVersionExperimentTreatmentLocalizations',
+      'POST /v1/appStoreVersionExperimentTreatmentLocalizations',
+      'POST /v1/appStoreVersionExperimentTreatments',
+      'POST /v1/appStoreVersionExperimentTreatmentLocalizations',
+      'POST /v1/appStoreVersionExperimentTreatmentLocalizations',
+    ]);
+    expect(calls[2]!.body?.data?.attributes).toEqual({ locale: 'en-US' });
+    expect(res).toMatchObject({ experimentId: 'id1', treatments: { outcome: 'id2', icon: 'id5' }, placed: 0 });
   });
 });
 

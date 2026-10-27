@@ -175,3 +175,27 @@ describe('Custom Product Page screenshot sets', () => {
     expect(html).toContain('store/cpp/students/en-US/01_shot1_iphone-6.3.png');
   });
 });
+
+describe('Product Page Optimization treatment sets', () => {
+  it('are hashed for approval, listed under their test and shown in the report', async () => {
+    const fx = await makeFixture();
+    const ctx = await createContext({ cwd: fx.root });
+    writeFileSync(
+      ctx.paths.experiments,
+      JSON.stringify({ experiments: [{ id: 'hero', name: 'Hero', hypothesis: 'If the hero states the outcome, conversion rises because people search for outcomes.', treatments: [{ id: 'outcome', name: 'Outcome', change: 'hero copy', copy: { '01': { 'en-US': { headline: 'Never miss a day' } } } }] }] }),
+    );
+    const { mkdirSync, copyFileSync } = await import('node:fs');
+    const dir = join(ctx.paths.experimentScreenshots, 'hero', 'outcome', 'en-US');
+    mkdirSync(dir, { recursive: true });
+    copyFileSync(join(ctx.paths.screenshots, 'en-US', '01_shot1_iphone-6.3.png'), join(dir, '01_shot1_iphone-6.3.png'));
+    const inv = await buildInventory(ctx);
+    const id = 'metadata/store/experiments/hero/outcome/en-US/01_shot1_iphone-6.3.png';
+    expect(inv.files.map((f) => f.path)).toContain(id);
+    expect(inv.metadataJson.map((f) => f.path)).toContain('metadata/experiments.json');
+    expect(inv.items.find((i) => i.id === id)).toMatchObject({ kind: 'experiment', locale: 'en-US', target: 'iphone-6.3' });
+    expect(inv.items.find((i) => i.id === 'experiment/hero')?.files).toContain(id);
+    const html = readFileSync(await buildReport(ctx, { inventory: inv }), 'utf8');
+    expect(html).toContain('If the hero states the outcome');
+    expect(html).toContain('vitrin upload --experiment hero');
+  });
+});

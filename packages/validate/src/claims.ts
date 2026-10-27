@@ -1,5 +1,5 @@
 import { baseLanguage, existsSync, graphemeLength, loadForbiddenTerms, wordCount } from '@vitrin/core';
-import { EVENT_LIMITS, IDEAL_HEADLINE_WORDS, MAX_HEADLINE_WORDS, MIN_REAL_UI_RATIO, NON_UI_ARCHETYPES, type AppProfile, type Badge, type Competitors, type CppSuggestions, type ShotList, type VideoPlan, type VitrinConfig } from '@vitrin/schemas';
+import { EVENT_LIMITS, experimentDays, IDEAL_HEADLINE_WORDS, MAX_HEADLINE_WORDS, MIN_REAL_UI_RATIO, NON_UI_ARCHETYPES, type AppProfile, type Badge, type Competitors, type CppSuggestions, type ExperimentPlan, type ShotList, type VideoPlan, type VitrinConfig } from '@vitrin/schemas';
 import { join } from 'node:path';
 import { findAppleAward, findKidsTerm, findPlaceholder, URL_ON_ASSET_RE } from './apple-rules.js';
 import { containsTerm, IssueList } from './issues.js';
@@ -16,9 +16,11 @@ export function validateClaims(opts: {
   competitors?: Competitors;
   /** metadata/cpp-suggestions.json */
   cpp?: CppSuggestions;
+  /** metadata/experiments.json */
+  experiments?: ExperimentPlan;
   enabledTargets: string[];
 }): IssueList {
-  const { config, profile, shots, videoPlan, competitors, cpp } = opts;
+  const { config, profile, shots, videoPlan, competitors, cpp, experiments } = opts;
   const playShots = opts.enabledTargets.filter((id) => PLAY_SCREENSHOT.test(id));
   const onPlay = (s: { targets?: string[] }) => playShots.length > 0 && (!s.targets || s.targets.some((id) => PLAY_SCREENSHOT.test(id)));
   const issues = new IssueList();
@@ -211,6 +213,46 @@ export function validateClaims(opts: {
           if (!/^(ja|zh|ko|th)/.test(locale) && words > MAX_HEADLINE_WORDS) issues.error('shot.headline-words', `${where} shot ${id} (${locale}): headline is ${words} words; maximum ${MAX_HEADLINE_WORDS}.`, { locale, file });
         }
       }
+    }
+  }
+
+  if (experiments) {
+    const file = 'metadata/experiments.json';
+    const original = (shots?.shots ?? []).map((s) => s.id).sort();
+    const open = experiments.experiments.filter((e) => !e.result);
+    if (open.length > 1) issues.warn('experiment.one-at-a-time', `${open.length} tests have no result; App Store Connect runs one test at a time — upload them one after another.`, { file });
+    for (const e of experiments.experiments) {
+      const where = `Test ${e.id}`;
+      if (e.result) {
+        const winners = ['original', 'inconclusive', ...e.treatments.map((t) => t.id)];
+        if (!winners.includes(e.result.winner)) issues.error('experiment.result', `${where}: winner “${e.result.winner}” is not original, inconclusive or one of its treatments.`, { file });
+        continue;
+      }
+      if (e.hypothesis.trim().length < 30) issues.error('experiment.hypothesis', `${where}: write the hypothesis out — “If we <change>, <metric> will <improve> because <reason>.”`, { file });
+      for (const t of e.treatments) {
+        const at = `${where} treatment ${t.id}`;
+        const order = t.shots.length > 0 && t.shots.join() !== original.join();
+        const copy = Object.keys(t.copy).length > 0;
+        const icon = Boolean(t.appIconName);
+        if (!order && !copy && !icon) issues.error('experiment.no-change', `${at}: nothing differs from the original product page.`, { file });
+        // One variable per test, or the result cannot say which change worked.
+        if ([order, copy, icon].filter(Boolean).length > 1) issues.warn('experiment.many-changes', `${at}: changes more than one thing (order, copy, icon); the result could not say which one worked.`, { file });
+        if (e.element === 'icon' && !icon) issues.error('experiment.element', `${at}: an icon test needs \`appIconName\` (an alternate icon in the build).`, { file });
+        if (e.element === 'screenshots' && icon) issues.warn('experiment.element', `${at}: changes the icon in a screenshot test; make it an icon test of its own.`, { file });
+        for (const id of t.shots) if (shots && !original.includes(id)) issues.error('experiment.unknown-shot', `${at}: shot “${id}” is not in shots.json.`, { file });
+        for (const [id, byLocale] of Object.entries(t.copy)) {
+          if (shots && !original.includes(id)) issues.error('experiment.unknown-shot', `${at}: copy for shot “${id}”, which is not in shots.json.`, { file });
+          for (const [locale, c] of Object.entries(byLocale)) {
+            const words = wordCount(c.headline.replace(/\*/g, ''), locale);
+            if (!/^(ja|zh|ko|th)/.test(locale) && words > MAX_HEADLINE_WORDS) issues.error('shot.headline-words', `${at} shot ${id} (${locale}): headline is ${words} words; maximum ${MAX_HEADLINE_WORDS}.`, { locale, file });
+          }
+        }
+      }
+      const days = experimentDays(e);
+      const lift = Math.round(e.minimumDetectableEffect * 100);
+      if (days === undefined) issues.info('experiment.duration-unknown', `${where}: add dailyPageViews and baselineConversion (App Store Connect → Analytics) to estimate how long it runs.`, { file });
+      else if (days > 90) issues.warn('experiment.too-slow', `${where}: needs about ${days} days to see +${lift} %; a test runs at most 90 — test a bolder change (a higher minimumDetectableEffect) or fewer treatments.`, { file });
+      else issues.info('experiment.duration', `${where}: about ${Math.max(days, 7)} days to see +${lift} % (Apple needs at least 7 and 90 % confidence).`, { file });
     }
   }
 

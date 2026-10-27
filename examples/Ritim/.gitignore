@@ -34,6 +34,7 @@ secrets/
 !/metadata/shots.json
 !/metadata/video-plan.json
 !/metadata/cpp-suggestions.json
+!/metadata/experiments.json
 !/metadata/screens/
 !/metadata/designs/
 !/metadata/rankings/

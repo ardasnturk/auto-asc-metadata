@@ -4,6 +4,7 @@ import {
   AppProfile,
   ApprovalManifest,
   CppSuggestions,
+  ExperimentPlan,
   RenderManifest,
   ReviewFeedback,
   ReviewSnapshot,
@@ -110,15 +111,17 @@ export function overallHash(files: HashedFile[], metadataJson: HashedFile[]): st
 export async function uploadFiles(ctx: Ctx): Promise<string[]> {
   const p = ctx.paths;
   const creative = (await walk(p.creative)).filter((f) => MEDIA_RE.test(f) && !basename(f).includes('.remotion.'));
-  const cpp = (await walk(p.cppScreenshots)).filter((f) => /\.(png|jpe?g)$/i.test(f));
-  return [...(await walk(p.fastlaneMetadata)), ...(await walk(p.screenshots)), ...(await walk(p.appPreviews)), ...creative, ...cpp];
+  const image = (f: string) => /\.(png|jpe?g)$/i.test(f);
+  const cpp = (await walk(p.cppScreenshots)).filter(image);
+  const tests = (await walk(p.experimentScreenshots)).filter(image);
+  return [...(await walk(p.fastlaneMetadata)), ...(await walk(p.screenshots)), ...(await walk(p.appPreviews)), ...creative, ...cpp, ...tests];
 }
 
 /** Absolute paths of the JSON the upload reads text from (metadata, CPP pages, In-App Event copy). */
 export async function metadataJsonFiles(ctx: Ctx): Promise<string[]> {
   const p = ctx.paths;
   const json = (await walk(p.metadataDir)).filter((f) => f.endsWith('.json'));
-  for (const f of [p.cpp, p.shots]) if (existsSync(f)) json.push(f);
+  for (const f of [p.cpp, p.shots, p.experiments]) if (existsSync(f)) json.push(f);
   return json;
 }
 
@@ -277,6 +280,20 @@ export async function buildInventory(ctx: Ctx): Promise<Inventory> {
   for (const page of cpp?.pages ?? []) {
     items.push({ id: `cpp/${page.id}`, kind: 'cpp', store: 'app-store', platform: ascPlatform, label: `Custom Product Page · ${page.name}`, files: [rel(p.cpp), ...(cppImages.get(page.id) ?? [])], data: page });
   }
+  // Product Page Optimization tests: each treatment's own set, experiments/<test>/<treatment>/<locale>/…
+  const tests = await readJsonIfExists(p.experiments, ExperimentPlan).catch(() => undefined);
+  const testImages = new Map<string, string[]>();
+  for (const f of await walk(p.experimentScreenshots)) {
+    if (!/\.(png|jpe?g)$/i.test(f)) continue;
+    const [testId, treatmentId, locale] = under(p.experimentScreenshots, f);
+    const item = mediaItem(f, 'experiment', 'app-store', locale, targetFromName(f, targets), ascPlatform);
+    item.label = `Test ${testId} · ${treatmentId} · ${item.label}`;
+    items.push(item);
+    testImages.set(testId!, [...(testImages.get(testId!) ?? []), item.id]);
+  }
+  for (const e of (tests?.experiments ?? []).filter((x) => !x.result)) {
+    items.push({ id: `experiment/${e.id}`, kind: 'experiment', store: 'app-store', platform: ascPlatform, label: `Product Page Optimization · ${e.name}`, files: [rel(p.experiments), ...(testImages.get(e.id) ?? [])], data: e });
+  }
   const shots = await readJsonIfExists(p.shots, ShotList).catch(() => undefined);
   for (const e of shots?.creatives.events ?? []) {
     const cards = items.filter((i) => i.kind === 'event' && i.abs && basename(i.abs).includes(`event-${e.id}-`)).map((i) => i.id);
@@ -291,7 +308,7 @@ export async function buildInventory(ctx: Ctx): Promise<Inventory> {
   const selFiles = files.filter((f) => referenced.has(f.path));
   // Source JSON is hashed even before its export exists, unless the selection excludes what it feeds.
   const sel = ctx.config.selection?.assets;
-  const feeds = (path: string): AssetKind[] => (path === rel(p.shots) ? ['screenshots', 'creatives', 'events'] : ['metadata']);
+  const feeds = (path: string): AssetKind[] => (path === rel(p.shots) ? ['screenshots', 'creatives', 'events'] : path === rel(p.experiments) ? ['screenshots'] : ['metadata']);
   const selJson = metadataJson.filter((f) => referenced.has(f.path) || !sel || feeds(f.path).some((k) => sel.includes(k)));
 
   // Upload order within each locale × target group.
@@ -307,7 +324,7 @@ export async function buildInventory(ctx: Ctx): Promise<Inventory> {
 }
 
 /** Review item kind → `config.selection.assets` kind. CPP pages are listing text, so they follow metadata. */
-const ASSET_OF: Record<ReviewItemKind, AssetKind> = { screenshot: 'screenshots', preview: 'previews', creative: 'creatives', event: 'events', metadata: 'metadata', cpp: 'metadata', other: 'screenshots' };
+const ASSET_OF: Record<ReviewItemKind, AssetKind> = { screenshot: 'screenshots', preview: 'previews', creative: 'creatives', event: 'events', metadata: 'metadata', cpp: 'metadata', experiment: 'screenshots', other: 'screenshots' };
 
 /** Whether an item is part of this run's selection (unset selection = everything). */
 export function isSelected(ctx: Pick<Ctx, 'config'>, item: Pick<ReviewItem, 'kind' | 'platform'> & { target?: string }): boolean {
@@ -512,7 +529,7 @@ ${rows}`,
   );
 }
 
-const KIND_LABEL: Record<ReviewItemKind, string> = { screenshot: 'screenshots', preview: 'App Previews', creative: 'creatives', event: 'event items', metadata: 'metadata sets', cpp: 'Custom Product Pages', other: 'other' };
+const KIND_LABEL: Record<ReviewItemKind, string> = { screenshot: 'screenshots', preview: 'App Previews', creative: 'creatives', event: 'event items', metadata: 'metadata sets', cpp: 'Custom Product Pages', experiment: 'test items', other: 'other' };
 
 /** Counts per store → platform → locale → kind; the textual summary `vitrin approve` prints. */
 export function summarize(inv: Inventory): { lines: string[]; counts: Record<string, Record<string, number>> } {

@@ -4,6 +4,12 @@ All notable changes to this project are documented in this file. The format is b
 
 ## Unreleased
 
+### Added — Product Page Optimization tests
+- **`metadata/experiments.json`:** an A/B test of the product page — hypothesis, metric, minimum detectable effect, traffic share, and up to three treatments that each change one thing (headline copy per shot and locale, the screenshot order, or an alternate icon from the binary). With the app's daily page views and conversion, validate estimates how many days the test needs and warns past Apple's 90.
+- **Treatment sets:** `vitrin design` renders every treatment that changes the screenshots to `metadata/store/experiments/<test>/<treatment>/<locale>/`; the review gallery shows a test card with the hypothesis, the estimate and each treatment's set, and approval hashes them.
+- **`vitrin upload --experiment [id]`:** creates the test in App Store Connect as a draft (v2 experiment, treatments, one localization per locale) and places each treatment's set through the App Asset Library. App Review checks it; the user starts it and reads the result in App Store Connect.
+- Checks: a written hypothesis, a treatment that changes nothing (error) or more than one thing (warning), icon tests without an alternate icon, unknown shots, one open test at a time, and a recorded `result` whose winner is the original, a treatment or inconclusive. `references/experiments.md` gives the order to test in (first screenshot → icon → order → style) and how a result becomes the next test.
+
 ### Added — Google Play images that fit Play, and an icon check
 - **Google Play gets Play-safe images:** App Store ratings and Apple platform badges are left off Play images; ranking words (“#1”, “best”) and Apple names on a shot that reaches Play are errors (`shot.play-superlative`, `shot.play-apple-term`), a testimonial (App Store reviews) on Play is a warning, and Play needs at least 2 screenshots (`image.too-few`).
 - **Borrowed captures are caught:** the render manifest records which device family and locale each screen came from; iOS UI on a Google Play screenshot (`image.ios-ui-on-play`) and another language's UI in one of the first three shots (`image.language-mismatch`) are errors instead of a log line.
