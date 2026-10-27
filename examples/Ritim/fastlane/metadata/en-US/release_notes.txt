@@ -1,7 +1,0 @@
-• New Statistics tab: weekly completion chart, 30-day trend and current streaks for every habit.
-• A 12-week calendar heatmap on each habit's detail screen.
-• Export all check-ins as CSV and share a progress summary.
-• Search your habit list.
-• Better iPad layout with an adaptive sidebar.
-• Larger text support and VoiceOver labels for check-in rings and pickers.
-• Fixed: streaks no longer reset in the morning before your first check-in.

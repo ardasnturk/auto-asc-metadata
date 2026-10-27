@@ -221,7 +221,7 @@ export async function ffprobe(file: string): Promise<ProbeResult> {
     height: Number(v.height ?? 0),
     fps: den ? num! / den : 0,
     videoCodec: String(v.codec_name ?? ''),
-    profile: v.profile ? String(v.profile) : undefined,
+    profile: v.profile ? h264ProfileName(String(v.profile)) : undefined,
     level: v.level !== undefined ? Number(v.level) : undefined,
     bitrate: v.bit_rate ? Number(v.bit_rate) : json.format.bit_rate ? Number(json.format.bit_rate) : undefined,
     audioCodec: a ? String(a.codec_name) : undefined,
@@ -230,6 +230,12 @@ export async function ffprobe(file: string): Promise<ProbeResult> {
     audioBitrate: a?.bit_rate ? Number(a.bit_rate) : undefined,
     sizeBytes: Number(json.format.size ?? (await stat(file)).size),
   };
+}
+
+/** ffprobe builds without codec descriptors report the profile as its numeric id (66, 77, 100) instead of a name. */
+const H264_PROFILE_IDS: Record<string, string> = { '66': 'Baseline', '77': 'Main', '88': 'Extended', '100': 'High', '110': 'High 10', '122': 'High 4:2:2', '244': 'High 4:4:4 Predictive' };
+export function h264ProfileName(profile: string): string {
+  return H264_PROFILE_IDS[profile.trim()] ?? profile;
 }
 
 /** App Preview / creative video rules. Returns issues for one file. */

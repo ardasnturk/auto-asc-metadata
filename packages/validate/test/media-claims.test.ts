@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import sharp from 'sharp';
 import { describe, expect, it } from 'vitest';
-import { checkVideo, sizeAccepted, validateClaims, validateScreenshots } from '../src/index.js';
+import { checkVideo, h264ProfileName, sizeAccepted, validateClaims, validateScreenshots } from '../src/index.js';
 
 const targets = loadTargets();
 const t = (id: string) => targets.find((x) => x.id === id)!;
@@ -83,6 +83,12 @@ describe('video rules', () => {
     expect(c({ audioChannels: 1 })).toContain('video.audio-channels');
     expect(c({ level: 51 })).toContain('video.level');
     expect(c({ width: 1080 })).toContain('video.size');
+  });
+  it('reads numeric H.264 profile ids as names', () => {
+    expect(h264ProfileName('100')).toBe('High');
+    expect(h264ProfileName('77')).toBe('Main');
+    expect(h264ProfileName('High')).toBe('High');
+    expect(checkVideo({ ...base, profile: h264ProfileName('110') }, t('preview-iphone'), 'x').items.map((i) => i.code)).toContain('video.profile');
   });
   it('allows 60 fps and 5 s for creative loops', () => {
     expect(checkVideo({ ...base, width: 3840, height: 1646, fps: 60, durationSec: 6, audioCodec: undefined }, t('header'), 'x').errors).toEqual([]);

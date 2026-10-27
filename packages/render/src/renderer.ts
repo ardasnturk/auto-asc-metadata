@@ -1,8 +1,8 @@
 import { ensureDir, existsSync, log, writeJson, writeText, type AppPaths } from '@vitrin/core';
 import { QUALITY_BAR, type ArtDirection, type ArtDirectionOption, type Badge, type CreativeSpec, type ImageQuality, type RenderManifest, type RenderTarget, type Shot, type ShotList, type StylePreset } from '@vitrin/schemas';
-import { readdir, readFile, rm } from 'node:fs/promises';
-import { dirname, join, relative, sep } from 'node:path';
-import { pathToFileURL } from 'node:url';
+import { copyFile, readdir, readFile, rm } from 'node:fs/promises';
+import { dirname, extname, join, relative, sep } from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { chromium, type Browser, type Page } from 'playwright';
 import sharp from 'sharp';
 import { contrastRatio } from './color.js';
@@ -593,8 +593,16 @@ async function renderStorePreview(browser: Browser, r: SampleResult, o: { appNam
   const L = o.labels;
   const rel = (f: string) => relative(dirname(r.storePreview.html), f).split(sep).map(encodeURIComponent).join('/');
   const stores = previewStores(o.targets);
+  // The icon goes next to the page like the screenshots, so the page also opens on another machine.
+  let icon = '';
+  if (o.icon) {
+    const src = o.icon.startsWith('file:') ? fileURLToPath(o.icon) : o.icon;
+    const dest = join(dirname(r.storePreview.html), `app-icon${extname(src) || '.png'}`);
+    await copyFile(src, dest);
+    icon = rel(dest);
+  }
   const data = {
-    app: { name: o.appName || 'App', subtitle: o.subtitle ?? '', icon: o.icon ?? '' },
+    app: { name: o.appName || 'App', subtitle: o.subtitle ?? '', icon },
     labels: L,
     stores,
     samples: r.samples.map((s) => ({ letter: s.letter, name: s.name, bespoke: s.bespoke, shots: Object.fromEntries(Object.entries(s.byTarget).map(([t, files]) => [t, files.map(rel)])) })),

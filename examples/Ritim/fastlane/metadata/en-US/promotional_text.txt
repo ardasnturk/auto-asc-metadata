@@ -1,1 +1,0 @@
-New in 1.2: a statistics tab with weekly charts and a 12-week calendar for every habit. See your rhythm at a glance.
