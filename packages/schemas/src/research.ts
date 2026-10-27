@@ -66,11 +66,18 @@ export const KeywordCandidate = z.object({
   competition: z.object({
     resultCount: z.number(),
     top10MedianRatings: z.number(),
+    /** Share of the top 10 results that carry the term in their name (apps that target it directly). */
+    titleShare: z.number().min(0).max(1).optional(),
     score: z.number().min(0).max(1),
   }),
   popularity: z.object({ score: z.number().min(0).max(1), source: PopularitySource }),
-  /** relevance × popularity × (1 − competition); null while relevance is missing. */
+  /**
+   * relevance × (0.35 + 0.65 × popularity) × (1 − 0.7 × competition); null while relevance is missing.
+   * `vitrin write` recomputes it after Claude scored relevance.
+   */
   total: z.number().nullable().default(null),
+  /** 1-based rank of the app itself for this term on research day; null when it is not live or not in the results. */
+  ownRank: z.number().int().positive().nullable().default(null),
 });
 export type KeywordCandidate = z.infer<typeof KeywordCandidate>;
 
@@ -89,3 +96,39 @@ export const KeywordPlan = z.object({
     .optional(),
 });
 export type KeywordPlan = z.infer<typeof KeywordPlan>;
+
+/** What the app's listing says today, per locale (App Store Connect when keys exist, else the public App Store lookup). */
+export const LiveListing = z.object({
+  generatedAt: Timestamp,
+  source: z.enum(['asc', 'lookup']),
+  /** Version the version-level text was read from (asc only). */
+  version: z.string().optional(),
+  locales: z.record(
+    z.string(),
+    z.object({
+      name: z.string().optional(),
+      subtitle: z.string().optional(),
+      keywords: z.string().optional(),
+      promotionalText: z.string().optional(),
+      description: z.string().optional(),
+    }),
+  ),
+});
+export type LiveListing = z.infer<typeof LiveListing>;
+
+/** `metadata/rankings/<date>.json` — the app's own search rank per term, kept across runs (outside research/). */
+export const RankSnapshot = z.object({
+  date: z.string(),
+  bundleId: z.string(),
+  entries: z.array(
+    z.object({
+      locale: z.string(),
+      storefront: z.string(),
+      term: z.string(),
+      /** 1-based; null = not in the first `limit` results. */
+      rank: z.number().int().positive().nullable(),
+      limit: z.number().int().positive(),
+    }),
+  ),
+});
+export type RankSnapshot = z.infer<typeof RankSnapshot>;

@@ -4,6 +4,17 @@ All notable changes to this project are documented in this file. The format is b
 
 ## Unreleased
 
+### Added — Keyword research that reaches the listing, and a way to measure it
+- **The fields are checked against the keyword plan:** `vitrin write` recomputes every candidate's total after Claude set relevance, then warns about unscored candidates, a missing `selected`, selected terms that are not in their field (`keywords.plan-mismatch`), terms the app already ranks top 10 for that the new copy drops (`keywords.drops-ranked-term`) and the best-scored candidates left out.
+- **What the store shows today:** `vitrin research` writes `metadata/research/live-listing.json` — name, subtitle, keywords, promotional text and description from App Store Connect when the key is set, otherwise the public lookup. The write brief shows it next to the app's own rank per candidate (`ownRank`), and validate lists what changed against the live keyword field.
+- **`vitrin rank`:** the app's own search rank for its selected and best-scored terms, saved to `metadata/rankings/<date>.json` (committed, kept by finalize) and compared with the previous snapshot. Run it before a change and one to two weeks after.
+- **Storefront-aware cross-locale checks:** locales indexed in the same storefront (e.g. en-US and es-MX in the US) are compared with each other — every shared keyword and every keyword that repeats the other locale's name/subtitle words is flagged. Before, only locales with the same base language were compared (en-US vs en-GB, which never share a storefront). The write brief lists indexing slots the app does not use yet.
+- Warnings for an empty or short subtitle, a brand-only name and a keyword field under 90 bytes.
+
+### Changed
+- Keyword competition is now the share of the top 10 that carry the term in their name plus how entrenched they are; the result count (always the full page for real terms) no longer counts. The docs state the formula the CLI actually uses, and the write brief sorts candidates by their total.
+- What's New is written in each store locale's own language, not the chat language; the write brief adds the review complaint/praise clusters and asks for a secondary category.
+
 ### Added — App Previews that move
 - **`flow` scene, the app in use:** 2–5 screens in one device (`beats[].steps`). A touch indicator taps (`tap {x,y}`) and the next screen arrives the way the app shows it: `push` (navigation), `sheet` (modal sheet), `fade` (state change), `scroll` (the same screen further down, the status bar stays put) or `cut` (quick montage). With HTML screens, the state after each tap is its own screen (e.g. `home-done`).
 - **The camera keeps moving:** after the device has landed it keeps pushing in and drifting in every style (showcase orbits slightly, energetic sways and bobs, split devices drift apart), and the backdrop shifts on every cut, so a preview reads as one moving shot instead of a slide show.

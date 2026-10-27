@@ -3,7 +3,7 @@ import { Competitors as CompetitorsSchema, KeywordPlan, type AppProfile, type Co
 import { writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { GENRE_IDS, ItunesClient, toCompetitor, type ItunesSoftware } from './itunes.js';
-import { competitionScore, estimatePopularity, nameTermFrequency, stopwordsFor, totalScore } from './keywords.js';
+import { competitionScore, estimatePopularity, nameTermFrequency, stopwordsFor, titleShare, totalScore } from './keywords.js';
 import { ocrBinary, ocrImages, visionLanguage } from './ocr.js';
 import { extractPalette } from './palette.js';
 import { appleAdsAvailable, appTweakProvider, type PopularityProvider } from './popularity.js';
@@ -190,14 +190,16 @@ export async function runResearch(opts: ResearchOptions): Promise<ResearchResult
       }
       const top10 = results.slice(0, 10).map((r) => r.userRatingCount ?? 0);
       const prev = previousPlan?.candidates.find((c) => c.term === term);
+      const own = bundleId ? results.findIndex((r) => r.bundleId === bundleId) : -1;
       const c: KeywordCandidate = {
         term,
         relevance: prev?.relevance ?? null,
-        competition: competitionScore(results.length, top10, config.research.limit),
+        competition: competitionScore(results.length, top10, titleShare(term, results, locale)),
         popularity: pop.has(term)
           ? { score: pop.get(term)!, source: provider!.source }
           : { score: estimatePopularity(term, results, locale), source: 'estimate' },
         total: null,
+        ownRank: own >= 0 ? own + 1 : null,
       };
       c.total = totalScore(c);
       candidates.push(c);

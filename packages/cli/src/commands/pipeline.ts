@@ -1,8 +1,8 @@
 import { analyzeProject } from '@vitrin/analyzer';
 import { enabledTargets, exec, existsSync, getTarget, hashPaths, hashValue, log, readJson, readJsonIfExists, run, storefrontForLocale, which, writeJson } from '@vitrin/core';
 import { renderDesign, renderDesignSamples, selectedOption } from '@vitrin/render';
-import { runResearch } from '@vitrin/research';
-import { AppMetadata, AppProfile, ArtDirection, CppSuggestions, LocaleMetadata, ShotList, StylePreset, VideoPlan, type Issue, type Platform, type TargetFamily, type ValidationReport } from '@vitrin/schemas';
+import { runResearch, totalScore } from '@vitrin/research';
+import { AppMetadata, AppProfile, ArtDirection, CppSuggestions, KeywordPlan, LocaleMetadata, ShotList, StylePreset, VideoPlan, type Issue, type Platform, type TargetFamily, type ValidationReport } from '@vitrin/schemas';
 import { validateAll } from '@vitrin/validate';
 import { renderVideos } from '@vitrin/video';
 import { exportFastlaneMetadata } from '@vitrin/upload';
@@ -12,6 +12,7 @@ import pc from 'picocolors';
 import { designBrief, metadataBrief, profileBrief, screensBrief, videoBrief } from '../briefs.js';
 import { installScreenKit, renderHtmlScreens, type ScreenFamily } from '../html-screens.js';
 import { exportProjectMetadata } from '../finalize.js';
+import { refreshLiveListing } from '../live-listing.js';
 import { loadUiText } from '../i18n.js';
 import { EXIT, loadProfile, NeedsInput, stage, type Ctx } from '../context.js';
 import { AndroidDevice, androidLocaleTag, androidTools, ensureAvd, launchArgsToExtras, serialFor, startEmulator } from '../android.js';
@@ -86,7 +87,9 @@ export async function researchCommand(ctx: Ctx, opts: { skipImages?: boolean } =
     const res = await runResearch({ paths: ctx.paths, config: ctx.config, profile, env: ctx.env, skipImages: opts.skipImages });
     log.ok(`${res.competitors.apps.length} competitors, keyword candidates for ${res.keywordFiles.length} locales`);
     if (res.competitors.self) log.ok(`App is on the App Store: ${res.competitors.self.averageUserRating?.toFixed(1) ?? '–'}★ (${res.competitors.self.userRatingCount ?? 0} ratings)`);
-    return [ctx.paths.competitors, ...res.keywordFiles];
+    const live = await refreshLiveListing(ctx, profile, res.competitors);
+    if (live) log.ok(`Live listing (${live.source === 'asc' ? 'App Store Connect' : 'App Store lookup'}): ${Object.keys(live.locales).join(', ')} → metadata/research/live-listing.json`);
+    return [ctx.paths.competitors, ...res.keywordFiles, ...(live ? [ctx.paths.liveListing] : [])];
   });
   return EXIT.OK;
 }
@@ -98,6 +101,24 @@ export async function loadLocaleMetadata(ctx: Ctx): Promise<LocaleMetadata[]> {
   return out;
 }
 
+/** Claude scores relevance after research ran: bring every candidate's total up to date before the fields are checked against the plan. */
+export async function refreshKeywordTotals(ctx: Ctx): Promise<void> {
+  for (const locale of ctx.config.app.locales) {
+    const file = ctx.paths.keywordFile(locale);
+    const plan = await readJsonIfExists(file, KeywordPlan).catch(() => undefined);
+    if (!plan) continue;
+    let changed = false;
+    for (const c of plan.candidates) {
+      const total = totalScore(c);
+      if (total !== c.total) {
+        c.total = total;
+        changed = true;
+      }
+    }
+    if (changed) await writeJson(file, plan);
+  }
+}
+
 export async function writeCommand(ctx: Ctx): Promise<number> {
   const profile = await loadProfile(ctx);
   const missing = ctx.config.app.locales.filter((l) => !existsSync(ctx.paths.metadataFile(l)));
@@ -105,6 +126,7 @@ export async function writeCommand(ctx: Ctx): Promise<number> {
     const brief = await metadataBrief(ctx, profile);
     throw new NeedsInput(`Claude input needed: metadata must be written by Claude (missing: ${[...missing.map((m) => `${m}.json`), ...(existsSync(ctx.paths.appMetadata) ? [] : ['app.json'])].join(', ')}).`, [`Brief: ${relative(ctx.root, brief)}`]);
   }
+  await refreshKeywordTotals(ctx);
   const report = await validateAll(ctx.paths, ctx.config, { text: true, claims: true, images: false, videos: false });
   const issues = report.issues.filter((i) => !i.code.startsWith('shot.') && !i.code.startsWith('badge.') && !i.code.startsWith('video.'));
   printIssues(issues);

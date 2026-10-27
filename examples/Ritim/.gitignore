@@ -36,6 +36,7 @@ secrets/
 !/metadata/cpp-suggestions.json
 !/metadata/screens/
 !/metadata/designs/
+!/metadata/rankings/
 !/metadata/research/
 /metadata/research/*
 !/metadata/research/keywords/

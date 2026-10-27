@@ -6,7 +6,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { decodeJwt, decodeProtectedHeader } from 'jose';
 import { describe, expect, it } from 'vitest';
-import { AscClient, buildPlan, createToken, diffRefData, exportFastlaneMetadata, formatPlan, isEditableVersion, isPem } from '../src/index.js';
+import { AscClient, buildPlan, createToken, diffRefData, exportFastlaneMetadata, fetchLiveListing, formatPlan, isEditableVersion, isPem } from '../src/index.js';
 
 const { privateKey } = generateKeyPairSync('ec', { namedCurve: 'prime256v1' });
 const pem = privateKey.export({ type: 'pkcs8', format: 'pem' }).toString();
@@ -76,6 +76,28 @@ describe('upload plan', () => {
     expect(plan.version?.versionString).toBe('1.2.0');
     expect(byField).toMatchObject({ name: 'unchanged', subtitle: 'update', description: 'update', keywords: 'unchanged' });
     expect(formatPlan(plan)).toContain('“Eski” → “Yeni”');
+  });
+
+  it('reads the live listing from the live version and app info, not the draft', async () => {
+    const client = new AscClient(
+      creds,
+      fakeFetch({
+        '/v1/apps?filter': { data: [{ type: 'apps', id: '1', attributes: { bundleId: 'com.x', name: 'X' } }] },
+        '/v1/apps/1/appStoreVersions': {
+          data: [
+            { type: 'appStoreVersions', id: 'v2', attributes: { versionString: '1.3.0', appVersionState: 'PREPARE_FOR_SUBMISSION' } },
+            { type: 'appStoreVersions', id: 'v1', attributes: { versionString: '1.2.0', appVersionState: 'READY_FOR_DISTRIBUTION' } },
+          ],
+        },
+        '/v1/appStoreVersions/v1/appStoreVersionLocalizations': { data: [{ type: 'appStoreVersionLocalizations', id: 'l1', attributes: { locale: 'tr', description: 'Canlı', keywords: 'hedef,su', promotionalText: null } }] },
+        '/v1/apps/1/appInfos': { data: [{ type: 'appInfos', id: 'i2', attributes: { state: 'PREPARE_FOR_SUBMISSION' } }, { type: 'appInfos', id: 'i1', attributes: { state: 'READY_FOR_DISTRIBUTION' } }] },
+        '/v1/appInfos/i1/appInfoLocalizations': { data: [{ type: 'appInfoLocalizations', id: 'il1', attributes: { locale: 'tr', name: 'Ritim: Alışkanlık', subtitle: 'Günlük rutin' } }] },
+      }),
+    );
+    const live = await fetchLiveListing(client, 'com.x');
+    expect(live).toMatchObject({ source: 'asc', version: '1.2.0', locales: { tr: { name: 'Ritim: Alışkanlık', subtitle: 'Günlük rutin', keywords: 'hedef,su', description: 'Canlı' } } });
+    expect(live!.locales.tr!.promotionalText).toBeUndefined();
+    expect(await fetchLiveListing(new AscClient(creds, fakeFetch({ '/v1/apps?filter': { data: [] } })), 'com.none')).toBeNull();
   });
 
   it('reports a blocker when the app record does not exist', async () => {

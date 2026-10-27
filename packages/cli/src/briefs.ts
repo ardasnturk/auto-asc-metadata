@@ -1,5 +1,5 @@
 import { enabledTargets, existsSync, localeInfo, readJsonIfExists, storefrontForLocale, storefrontInfo, writeText } from '@vitrin/core';
-import { Competitors, KeywordPlan, StylePreset, type AppProfile } from '@vitrin/schemas';
+import { Competitors, KeywordPlan, LiveListing, StylePreset, type AppProfile, type KeywordCandidate } from '@vitrin/schemas';
 import { PRESETS, suggestStyles } from '@vitrin/render';
 import { join } from 'node:path';
 import type { Ctx } from './context.js';
@@ -108,21 +108,35 @@ Run \`vitrin capture --locale ${sampleLocale(ctx.config)}\` and open the PNGs wi
 
 export async function metadataBrief(ctx: Ctx, profile: AppProfile): Promise<string> {
   const competitors = await readJsonIfExists(ctx.paths.competitors, Competitors).catch(() => undefined);
+  const live = await readJsonIfExists(ctx.paths.liveListing, LiveListing).catch(() => undefined);
   const sections: string[] = [];
   for (const locale of ctx.config.app.locales) {
     const kw = await readJsonIfExists(ctx.paths.keywordFile(locale), KeywordPlan).catch(() => undefined);
     const sf = storefrontInfo(storefrontForLocale(locale));
+    // Scored candidates first (by total), the rest by popularity × (1 − competition) until relevance is set.
+    const key = (c: KeywordCandidate) => c.total ?? c.popularity.score * (1 - c.competition.score) - 1;
     const top = (kw?.candidates ?? [])
       .slice()
-      .sort((a, b) => b.popularity.score * (1 - b.competition.score) - a.popularity.score * (1 - a.competition.score))
+      .sort((a, b) => key(b) - key(a))
       .slice(0, 30)
-      .map((c) => `${c.term} (pop ${c.popularity.score}${c.popularity.source === 'estimate' ? '~' : ''}, comp ${c.competition.score}${c.relevance !== null ? `, rel ${c.relevance}` : ''})`)
+      .map((c) => `${c.term} (pop ${c.popularity.score}${c.popularity.source === 'estimate' ? '~' : ''}, comp ${c.competition.score}${c.relevance !== null ? `, rel ${c.relevance}` : ''}${c.total !== null ? `, total ${c.total}` : ''}${c.ownRank !== null ? `, **you #${c.ownRank}**` : ''})`)
       .join('; ');
+    const ranked = (kw?.candidates ?? []).filter((c) => c.ownRank !== null).sort((a, b) => a.ownRank! - b.ownRank!);
+    const now = live?.locales[locale];
     sections.push(`### ${locale} — ${localeInfo(locale)?.name ?? locale}
 - Storefront: ${sf ? `${sf.country} (default ${sf.default}; additional: ${sf.additional.join(', ') || 'none'})` : '?'}
-- Candidate keywords (~ = estimated popularity): ${top || '(research has not run)'}
-- Files: \`metadata/listing/${locale}.json\`; also fill in each candidate's \`relevance\` (0–1) in \`metadata/research/keywords/${locale}.json\` and write \`selected\`.`);
+- Candidate keywords (~ = estimated popularity): ${top || '(research has not run)'}${ranked.length ? `
+- The app already ranks for: ${ranked.slice(0, 12).map((c) => `${c.term} #${c.ownRank}`).join(', ')} — keep these terms unless something clearly better replaces them (validate warns when a top-10 term is dropped).` : ''}${now ? `
+- Live today (${live!.source === 'asc' ? 'App Store Connect' : 'App Store lookup'}): name “${now.name ?? '?'}”${now.subtitle !== undefined ? `, subtitle “${now.subtitle}”` : ''}${now.keywords !== undefined ? `, keywords \`${now.keywords}\`` : ''}. Change it deliberately: a new listing starts collecting rank again.` : ''}
+- Files: \`metadata/listing/${locale}.json\`; also fill in each candidate's \`relevance\` (0–1) in \`metadata/research/keywords/${locale}.json\` and write \`selected\` (validate checks that the selected terms really are in the fields).`);
   }
+  // Languages a storefront indexes that the app does not have yet: each one is another name, subtitle and keyword field there.
+  const slots = ctx.config.storefronts
+    .map((code) => storefrontInfo(code))
+    .filter((sf): sf is NonNullable<typeof sf> => Boolean(sf))
+    .map((sf) => ({ sf, open: [sf.default, ...sf.additional].filter((l) => !ctx.config.app.locales.includes(l)) }))
+    .filter((x) => x.open.length);
+  const clusters = competitors?.analysis.reviewClusters;
   const rivals = (competitors?.apps ?? [])
     .slice(0, 12)
     .map((a) => `- ${a.name} — ${a.averageUserRating?.toFixed(1) ?? '?'}★ (${a.userRatingCount ?? 0}), ${a.storefront}`)
@@ -139,11 +153,12 @@ Developer: ${ctx.config.copyrightHolder ?? '?'} — this name does not go in the
 - Name 2–30 characters = brand + primary keyword. Subtitle ≤ 30 = benefit + secondary keyword; do not repeat words from the name.
 - Keywords ≤ **100 bytes** (UTF-8; accented Latin letters such as ç ş ğ ö ü are 2 bytes, CJK 3 bytes), comma-separated with no spaces, singular, each term > 2 characters, no words repeated from the name/subtitle, no competitor/company names, Apple trademarks or prices.
 - Description ≤ 4000, plain text; the first 3 lines are the hook. No keyword stuffing. No unproven or price claims such as “#1 / best / free”.
-- Promotional text ≤ 170 (changes without review). What’s New ≤ 4000, written from git log in user language (leave empty on the first release).
+- Promotional text ≤ 170 (changes without review). What’s New ≤ 4000, written from git log in **each store locale's own language** (not the chat language; leave empty on the first release).
 - What’s New lists significant changes specifically (App Review 2.3.12); a generic “bug fixes and improvements” is only for bug-fix releases.
 - Review notes (app.json) describe every new feature specifically and where to find it, non-obvious features and in-app purchases, and the demo account or demo mode (2.1, 2.3.1). No placeholder text (Lorem ipsum, TODO, TBD).
 - Never use Apple recognitions (Editor’s Choice, App of the Day, Apple Design Award), other platforms or marketplaces, or “for kids / for children” wording unless the app is in the Kids Category.
-- Every locale is a **local rewrite**, not a translation. Write different keywords for additional locales that count toward the same storefront.
+- Every locale is a **local rewrite**, not a translation. Locales indexed in the same storefront (e.g. en-US and es-MX in the US) form one index: give them different keywords and do not repeat the other locale's name/subtitle words.
+- Use the space: the subtitle close to 30 characters, the keyword field at 90–100 bytes. Set a secondary category as well.
 - Every claim is linked in \`claims\` to a feature in app_profile.
 - en-US copy should use the target concepts clearly for App Store tags (tags are assigned only in the US, from en-US).
 
@@ -167,10 +182,15 @@ For the age rating questionnaire and accessibility, see app_profile.signals (age
 
 ## Locales
 ${sections.join('\n\n')}
-
+${slots.length ? `
+## Unused indexing slots
+${slots.map(({ sf, open }) => `- ${sf.country}: ${open.join(', ')} — adding the locale gives another name, subtitle and 100-byte keyword field there; only with a real localization (users of that language see it).`).join('\n')}
+Mention these to the user as an option; do not add locales on your own.
+` : ''}
 ## Competitors (analysis only; never copy their copy or branding)
 ${rivals || '- (none)'}
-Gaps: ${(competitors?.analysis.gaps ?? []).join('; ') || '(write them yourself in competitors.json analysis.gaps)'}
+Gaps: ${(competitors?.analysis.gaps ?? []).join('; ') || '(write them yourself in competitors.json analysis.gaps)'}${clusters ? `
+Review complaints: ${clusters.complaints.map((c) => `${c.label} (${c.count})`).join(', ') || '—'}. Praise: ${clusters.praises.map((c) => `${c.label} (${c.count})`).join(', ') || '—'}. Lead with what competitors are criticised for and the app solves.` : ''}
 
 When done: \`vitrin write\` (validates and exports to metadata/store/metadata).
 `,

@@ -3,6 +3,8 @@ import {
   AppMetadata,
   AppProfile,
   Competitors,
+  KeywordPlan,
+  LiveListing,
   LocaleMetadata,
   PlayAppMetadata,
   PlayListing,
@@ -69,7 +71,13 @@ export async function validateAll(paths: AppPaths, config: VitrinConfig, scope: 
       // `android/` is supply's Google Play folder; deliver runs get per-platform copies without it.
       if (!['default', 'android'].includes(extra)) issues.error('metadata.stray-locale', `metadata/store/metadata/${extra} is a locale not in the config; deliver will upload it too.`);
     }
-    const text = validateText({ config, profile, competitors, appMetadata, locales });
+    const keywordPlans = new Map<string, KeywordPlan>();
+    for (const locale of config.app.locales) {
+      const plan = await load(paths.keywordFile(locale), KeywordPlan);
+      if (plan) keywordPlans.set(locale, plan);
+    }
+    const live = await load(paths.liveListing, LiveListing);
+    const text = validateText({ config, profile, competitors, appMetadata, locales, keywordPlans, live });
     issues.push(...text.issues.items);
     measurements = text.measurements;
     if (profile?.app.platforms.includes('android')) {

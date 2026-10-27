@@ -8,6 +8,7 @@ import { runDoctor } from './commands/doctor.js';
 import { initCommand } from './commands/init.js';
 import { mockupsCommand } from './commands/mockups.js';
 import { analyzeCommand, captureCommand, designCommand, researchCommand, validateCommand, videoCommand, writeCommand } from './commands/pipeline.js';
+import { rankCommand } from './commands/rank.js';
 import { platformsCommand, selectCommand, uploaderCommand, type SelectOptions } from './commands/select.js';
 import { submitCommand, uploadCommand } from './commands/upload.js';
 import { finalizeCommand } from './finalize.js';
@@ -84,6 +85,11 @@ program
   .action(action(async (o: { images: boolean }) => researchCommand(await createContext(globals()), { skipImages: !o.images })));
 
 program.command('write').description('validates the metadata Claude wrote and exports it to metadata/store/metadata').action(action(async () => writeCommand(await createContext(globals()))));
+
+program
+  .command('rank')
+  .description("the app's own search rank for its chosen terms → metadata/rankings/<date>.json, compared with the previous snapshot")
+  .action(action(async () => rankCommand(await createContext(globals()))));
 
 program
   .command('platforms')
