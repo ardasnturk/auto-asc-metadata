@@ -1,0 +1,38 @@
+<!doctype html>
+<html data-status-bar="dark">
+<head>
+<meta charset="utf-8">
+<!-- RemindersView.swift: inset-grouped List — notification status, one ReminderRow per habit, Ritim Plus upsell. -->
+<link rel="stylesheet" href="kit/ios.css">
+<link rel="stylesheet" href="icons.css">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<div class="screen">
+  <div class="toolbar"><div></div><div class="toptabs glass"><div><i class="i i-sidebar"></i></div><div>{{tab_today}}</div><div>{{tab_stats}}</div><div class="on">{{tab_reminders}}</div></div><div></div></div>
+  <div class="large-title">{{reminders}}</div>
+  <div class="content forms">
+    <div class="list"><div class="row" style="padding:14px 16px"><div class="tile c-brand" style="width:40px;height:40px"><i class="i i-bell-badge"></i></div><div class="grow"><div class="hl">{{notifications}}</div><div class="sub">{{notif_allowed}}</div></div></div></div>
+    <div><div class="sec">{{daily_reminders}}</div>
+    <div class="list" style="--inset:62px">
+      <div class="row rem c-blue"><div class="tile" style="width:34px;height:34px"><i class="i i-water"></i></div><div class="grow"><div>{{h_water}}</div><div class="cap">{{every_day}}</div></div><div class="timepill" data-time="9:00"></div><div class="toggle on"></div></div>
+      <div class="row rem c-coral"><div class="tile" style="width:34px;height:34px"><i class="i i-run"></i></div><div class="grow"><div>{{h_run}}</div><div class="cap">{{every_day}}</div></div><div class="timepill" data-time="7:00"></div><div class="toggle on"></div></div>
+      <div class="row rem c-purple"><div class="tile" style="width:34px;height:34px"><i class="i i-book"></i></div><div class="grow"><div>{{h_read}}</div><div class="cap">{{every_day}}</div></div><div class="timepill" data-time="21:30"></div><div class="toggle on"></div></div>
+      <div class="row rem c-mint"><div class="tile" style="width:34px;height:34px"><i class="i i-leaf"></i></div><div class="grow"><div>{{h_meditate}}</div><div class="cap">{{every_day}}</div></div><div class="timepill" data-time="8:00"></div><div class="toggle on"></div></div>
+      <div class="row rem c-orange"><div class="tile" style="width:34px;height:34px"><i class="i i-carrot"></i></div><div class="grow"><div>{{h_sugar}}</div><div class="cap">{{off}}</div></div><div class="toggle"></div></div>
+      <div class="row rem c-teal"><div class="tile" style="width:34px;height:34px"><i class="i i-bubble"></i></div><div class="grow"><div>{{h_spanish}}</div><div class="cap">{{every_day}}</div></div><div class="timepill" data-time="19:00"></div><div class="toggle on"></div></div>
+      <div class="row rem c-indigo"><div class="tile" style="width:34px;height:34px"><i class="i i-moon"></i></div><div class="grow"><div>{{h_lights}}</div><div class="cap">{{every_day}}</div></div><div class="timepill" data-time="22:30"></div><div class="toggle on"></div></div>
+    </div>
+    <div class="foot">{{reminders_footer}}</div></div>
+    <div class="list"><div class="row" style="padding:14px 16px"><div class="tile c-brand-end" style="width:40px;height:40px"><i class="i i-crown"></i></div><div class="grow"><div class="hl">{{smart_reminders}}</div><div class="sub">{{smart_sub}}</div></div><i class="i i-chevron" style="color:var(--label3);font-size:14px"></i></div></div>
+  </div>
+  <div class="edge"></div>
+  <div class="tabbar glass">
+    <div><i class="i i-tab-today"></i>{{tab_today}}</div>
+    <div><i class="i i-tab-stats"></i>{{tab_stats}}</div>
+    <div class="on"><i class="i i-tab-bell"></i>{{tab_reminders}}</div>
+  </div>
+</div>
+<script src="screen.js"></script>
+</body>
+</html>

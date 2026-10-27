@@ -1,0 +1,7 @@
+• Yeni İstatistikler sekmesi: haftalık tamamlama grafiği, 30 günlük eğilim ve her alışkanlık için güncel seriler.
+• Alışkanlık ayrıntısında 12 haftalık takvim ısı haritası.
+• Tüm kayıtları CSV olarak dışa aktarma ve ilerleme özetini paylaşma.
+• Alışkanlık listesinde arama.
+• Uyarlanabilir kenar çubuğuyla daha iyi iPad düzeni.
+• İlerleme halkaları ve seçiciler için büyük metin desteği ve VoiceOver etiketleri.
+• Düzeltildi: seriler artık sabah ilk işaretlemeden önce sıfırlanmıyor.

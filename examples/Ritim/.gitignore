@@ -1,25 +1,3 @@
-
-# Vitrin
-.env
-*.p8
-secrets/
-metadata/.cache/
-metadata/raw/
-fastlane/report.xml
-fastlane/README.md
-# Vitrin render çıktıları (büyük; `vitrin design` / `vitrin video` yeniden üretir)
-fastlane/screenshots/
-fastlane/app-previews/
-metadata/creative/
-metadata/report.html
-metadata/render-manifest.json
-metadata/video-styles/
-
-# Vitrin
-metadata/briefs/
-metadata/state.json
-metadata/upload-plan.json
-
 # >>> vitrin (managed block, edits inside are overwritten)
 # secrets
 .env
@@ -41,6 +19,13 @@ secrets/
 !/metadata/research/
 /metadata/research/*
 !/metadata/research/keywords/
+# store outputs (retention.commit: true)
+!/metadata/app-store/
+!/metadata/google-play/
+!/metadata/manifest.json
+!/metadata/store/
+!/metadata/creative/
+!/metadata/mockups/
 # older Vitrin versions
 /.vitrin/
 /fastlane/screenshots/
@@ -49,3 +34,16 @@ secrets/
 /fastlane/report.xml
 /fastlane/README.md
 # <<< vitrin
+
+# Ritim is Vitrin's example: what a /vitrin run produces is committed on purpose — the HTML screens and their
+# renders, the design samples with the store preview, the store set (screenshots, App Previews, text), the
+# creatives and the review gallery. Caches, downloads, run state and files that only hold this machine's paths
+# stay local.
+!/metadata/raw/
+!/metadata/briefs/
+!/metadata/report.html
+!/metadata/design-samples/
+/metadata/design-samples/**/*.html
+!/metadata/design-samples/store-preview.html
+/metadata/design-samples/samples.json
+/metadata/research/icons.png

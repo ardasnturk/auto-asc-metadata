@@ -25,6 +25,11 @@ All notable changes to this project are documented in this file. The format is b
 
 ### Fixed
 - `vitrin upload --cpp` no longer claims that images are placed by the `--creatives` flow; it reports what it placed, or that the page has no screenshots of its own.
+- `store-preview.html` copies the app icon next to itself instead of linking it by an absolute `file://` path, so the page also opens on another machine.
+- Video validation reads numeric H.264 profile ids (ffprobe builds without codec names report `100` for High) instead of rejecting them.
+
+### Example
+- `examples/Ritim` now holds a whole `/vitrin` run in HTML-screen mode: the SwiftUI views recreated in HTML (checked against real simulator captures on iPhone and iPad, in English and Turkish), the keyword research with relevance and selected terms, the store text, the four design samples and the store preview, 15 screenshots and a 17.5 s App Preview per language, the creatives, an In-App Event and the review gallery. Its README walks through each step.
 
 ### Added — Keyword research that reaches the listing, and a way to measure it
 - **The fields are checked against the keyword plan:** `vitrin write` recomputes every candidate's total after Claude set relevance, then warns about unscored candidates, a missing `selected`, selected terms that are not in their field (`keywords.plan-mismatch`), terms the app already ranks top 10 for that the new copy drops (`keywords.drops-ranked-term`) and the best-scored candidates left out.

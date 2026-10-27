@@ -14,26 +14,16 @@
       "copy": {
         "en-US": {
           "kicker": "Habit tracker",
-          "headline": "One tap, *every day*",
-          "subheadline": "Check in and keep your rhythm"
+          "headline": "Build habits that *stick*",
+          "subheadline": "Check in with one tap a day"
         },
         "tr": {
           "kicker": "Alışkanlık takibi",
-          "headline": "Her gün *tek dokunuş*",
-          "subheadline": "İşaretle, ritmini koru"
+          "headline": "Kalıcı *alışkanlıklar* edin",
+          "subheadline": "Günde tek dokunuşla işaretle"
         }
       },
-      "badges": [
-        {
-          "type": "platform",
-          "platform": "ipad",
-          "icon": "tablet",
-          "label": {
-            "en-US": "iPhone & iPad",
-            "tr": "iPhone ve iPad"
-          }
-        }
-      ]
+      "badges": []
     },
     {
       "id": "02",
@@ -50,20 +40,20 @@
         {
           "screen": 0,
           "rect": {
-            "x": 0.035,
-            "y": 0.468,
-            "w": 0.93,
-            "h": 0.3
+            "x": 0.036,
+            "y": 0.47,
+            "w": 0.927,
+            "h": 0.255
           },
           "scale": 1.45,
           "side": "center",
           "at": 0.6,
           "rects": {
             "ipad": {
-              "x": 0.142,
-              "y": 0.305,
-              "w": 0.716,
-              "h": 0.306
+              "x": 0.151,
+              "y": 0.335,
+              "w": 0.698,
+              "h": 0.255
             }
           }
         }
@@ -94,11 +84,11 @@
       ],
       "copy": {
         "en-US": {
-          "headline": "Progress you can *see*",
+          "headline": "See your *progress* grow",
           "subheadline": "Weekly rate and 30-day trend"
         },
         "tr": {
-          "headline": "İlerlemen *grafiklerde*",
+          "headline": "İlerlemeni *gör*",
           "subheadline": "Haftalık oran ve 30 günlük eğilim"
         }
       },
@@ -107,7 +97,7 @@
     {
       "id": "04",
       "slug": "reminders",
-      "archetype": "tilted",
+      "archetype": "feature",
       "screens": [
         "reminders"
       ],
@@ -117,100 +107,135 @@
       "copy": {
         "en-US": {
           "kicker": "Daily reminders",
-          "headline": "On *your* schedule",
-          "subheadline": ""
+          "headline": "Nudges on *your* time",
+          "subheadline": "One reminder per habit, at the hour you pick"
         },
         "tr": {
-          "kicker": "Günlük hatırlatıcı",
-          "headline": "*Senin* saatinde",
-          "subheadline": ""
+          "kicker": "Günlük hatırlatıcılar",
+          "headline": "Hatırlatıcı *senin* saatinde",
+          "subheadline": "Her alışkanlığa seçtiğin saatte bir hatırlatma"
         }
       },
-      "badges": [
-        {
-          "type": "new",
-          "style": "sticker",
-          "icon": "sparkles",
-          "featureId": "charts",
-          "label": {
-            "en-US": "New stats in 1.2",
-            "tr": "1.2’de yeni grafikler"
-          }
-        }
-      ]
+      "badges": []
     },
     {
       "id": "05",
       "slug": "custom",
-      "archetype": "split",
+      "archetype": "feature",
       "screens": [
-        "add",
-        "home"
+        "add"
       ],
       "featureIds": [
         "custom-habits"
       ],
+      "targets": [
+        "iphone-6.3"
+      ],
       "copy": {
         "en-US": {
-          "headline": "Make it *yours*",
-          "subheadline": "Icon, colour and a daily goal"
+          "headline": "Make every habit *yours*",
+          "subheadline": "Icon, color and a daily goal"
         },
         "tr": {
-          "headline": "Sana göre *ayarla*",
-          "subheadline": "İkon, renk ve günlük hedef"
+          "headline": "Her alışkanlık *sana göre*",
+          "subheadline": "Simge, renk ve günlük hedef"
         }
       },
       "badges": []
     },
     {
       "id": "06",
-      "slug": "everywhere",
-      "archetype": "statement",
-      "screens": [],
+      "slug": "day",
+      "archetype": "feature",
+      "screens": [
+        "home-done"
+      ],
       "featureIds": [
-        "ipad",
-        "localization",
-        "dark-mode"
+        "daily-summary",
+        "habit-tracking"
       ],
       "copy": {
         "en-US": {
-          "headline": "Your rhythm, *everywhere*",
-          "subheadline": "On iPhone and iPad, light or dark"
+          "headline": "Your day *at a glance*",
+          "subheadline": "See what's done and what's next"
         },
         "tr": {
-          "headline": "Ritmin *her yerde*",
-          "subheadline": "iPhone ve iPad’de, açık ya da koyu"
+          "headline": "Günün *bir bakışta*",
+          "subheadline": "Neyin bittiğini ve sırada ne olduğunu gör"
         }
       },
-      "badges": [
-        {
-          "type": "platform",
-          "platform": "ipad",
-          "icon": "tablet",
-          "label": {
-            "en-US": "iPad",
-            "tr": "iPad"
-          }
+      "badges": []
+    },
+    {
+      "id": "07",
+      "slug": "more",
+      "archetype": "feature-wall",
+      "screens": [],
+      "featureIds": [
+        "search",
+        "export",
+        "sharing",
+        "dark-mode",
+        "ipad",
+        "localization"
+      ],
+      "copy": {
+        "en-US": {
+          "headline": "And so much *more*"
         },
-        {
-          "type": "feature",
-          "icon": "moon",
-          "featureId": "dark-mode",
-          "label": {
-            "en-US": "Dark mode",
-            "tr": "Koyu mod"
-          }
-        },
-        {
-          "type": "feature",
-          "icon": "languages",
-          "featureId": "localization",
-          "label": {
-            "en-US": "2 languages",
-            "tr": "2 dil"
-          }
+        "tr": {
+          "headline": "Ve *daha fazlası*"
         }
-      ]
+      },
+      "wall": [
+        {
+          "en-US": "Search your habits",
+          "tr": "Alışkanlık arama"
+        },
+        {
+          "en-US": "CSV export",
+          "tr": "CSV dışa aktarma"
+        },
+        {
+          "en-US": "Share your progress",
+          "tr": "İlerlemeyi paylaş"
+        },
+        {
+          "en-US": "Light and dark mode",
+          "tr": "Açık ve koyu mod"
+        },
+        {
+          "en-US": "iPhone and iPad",
+          "tr": "iPhone ve iPad"
+        },
+        {
+          "en-US": "English and Turkish",
+          "tr": "İngilizce ve Türkçe"
+        }
+      ],
+      "badges": []
+    },
+    {
+      "id": "08",
+      "slug": "rhythm",
+      "archetype": "statement",
+      "screens": [],
+      "featureIds": [
+        "habit-tracking",
+        "streaks"
+      ],
+      "copy": {
+        "en-US": {
+          "headline": "Find your rhythm",
+          "subheadline": "Small habits, every day"
+        },
+        "tr": {
+          "headline": "Ritmini bul",
+          "subheadline": "Küçük alışkanlıklar, her gün"
+        }
+      },
+      "badges": [],
+      "inverted": true
     }
   ],
   "creatives": {
@@ -218,24 +243,25 @@
       "copy": {
         "en-US": {
           "kicker": "Habit tracker",
-          "headline": "Find your *daily rhythm*",
-          "subheadline": "Habits, streaks and charts in one calm app"
+          "headline": "Build habits that *stick*",
+          "subheadline": "Streaks, charts and reminders in one calm app"
         },
         "tr": {
           "kicker": "Alışkanlık takibi",
-          "headline": "Günlük *ritmini* bul",
-          "subheadline": "Alışkanlık, seri ve grafikler tek uygulamada"
+          "headline": "Kalıcı *alışkanlıklar* edin",
+          "subheadline": "Seri, grafik ve hatırlatıcı tek sakin uygulamada"
         }
       },
       "screens": [
         "home",
-        "stats",
-        "detail"
+        "detail",
+        "stats"
       ],
       "featureIds": [
         "habit-tracking",
+        "streaks",
         "charts",
-        "streaks"
+        "reminders"
       ],
       "badges": []
     },
@@ -262,6 +288,69 @@
       ],
       "badges": []
     },
-    "events": []
+    "events": [
+      {
+        "id": "statistics",
+        "badge": "MAJOR_UPDATE",
+        "name": {
+          "en-US": "New: the Statistics tab",
+          "tr": "Yeni: İstatistikler sekmesi"
+        },
+        "shortDescription": {
+          "en-US": "Weekly charts and a 30-day trend",
+          "tr": "Haftalık grafikler ve 30 günlük eğilim"
+        },
+        "longDescription": {
+          "en-US": "See your weekly completion, a 30-day trend and every habit's current streak in the new Statistics tab.",
+          "tr": "Yeni İstatistikler sekmesinde haftalık tamamlanma oranını, 30 günlük eğilimi ve her alışkanlığın serisini gör."
+        },
+        "purpose": "KEEP_ACTIVE_USERS_INFORMED",
+        "priority": "NORMAL",
+        "schedule": {
+          "territories": [
+            "USA",
+            "TUR"
+          ],
+          "publishStart": "2026-11-09T09:00:00Z",
+          "eventStart": "2026-11-16T09:00:00Z",
+          "eventEnd": "2026-11-30T09:00:00Z"
+        },
+        "card": {
+          "copy": {
+            "en-US": {
+              "headline": "Your *statistics*"
+            },
+            "tr": {
+              "headline": "*İstatistiklerin*"
+            }
+          },
+          "screens": [
+            "stats"
+          ],
+          "featureIds": [
+            "charts"
+          ],
+          "badges": []
+        },
+        "detail": {
+          "copy": {
+            "en-US": {
+              "headline": "Progress you can *see*"
+            },
+            "tr": {
+              "headline": "İlerlemen *grafiklerde*"
+            }
+          },
+          "screens": [
+            "stats"
+          ],
+          "featureIds": [
+            "charts",
+            "streaks"
+          ],
+          "badges": []
+        }
+      }
+    ]
   }
 }

@@ -1,0 +1,37 @@
+<!doctype html>
+<html data-status-bar="dark">
+<head>
+<meta charset="utf-8">
+<!-- StatsView.swift scrolled down: the large title collapsed into the bar; the 30-day trend and the current streaks. -->
+<link rel="stylesheet" href="kit/ios.css">
+<link rel="stylesheet" href="icons.css">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<div class="screen">
+  <div class="toolbar"><div></div><div class="title iphone-only">{{statistics}}</div><div class="toptabs glass"><div><i class="i i-sidebar"></i></div><div>{{tab_today}}</div><div class="on">{{tab_stats}}</div><div>{{tab_reminders}}</div></div><div class="gpill glass"><i class="i i-share"></i><i class="i i-table"></i></div></div>
+  <div class="content" style="gap:16px;padding-top:12px">
+    <div class="cards">
+    <div class="card"><div class="h"><b>{{last_30}}</b><span>{{rolling_avg}}</span></div>
+      <div class="chart trend" style="height:190px">
+        <div class="plot"><i class="gl" style="bottom:0%"><span data-pct="0"></span></i><i class="gl" style="bottom:50%"><span data-pct="0.5"></span></i><i class="gl" style="bottom:100%"><span data-pct="1"></span></i><i class="vl" style="left:0.00%"></i><i class="vl" style="left:24.14%"></i><i class="vl" style="left:48.28%"></i><i class="vl" style="left:72.41%"></i><i class="vl" style="left:96.55%"></i>
+          <svg viewBox="0 0 290 100" preserveAspectRatio="none"><defs><linearGradient id="ta" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5B4BE8" stop-opacity=".35"/><stop offset="1" stop-color="#5B4BE8" stop-opacity=".02"/></linearGradient></defs><path d="M0.0,18.0 C1.7,18.2 6.7,18.5 10.0,19.0 C13.3,19.5 16.7,20.8 20.0,21.0 C23.3,21.2 26.7,20.5 30.0,20.0 C33.3,19.5 36.7,18.7 40.0,18.0 C43.3,17.3 46.7,16.5 50.0,16.0 C53.3,15.5 56.7,15.0 60.0,15.0 C63.3,15.0 66.7,15.7 70.0,16.0 C73.3,16.3 76.7,17.0 80.0,17.0 C83.3,17.0 86.7,16.5 90.0,16.0 C93.3,15.5 96.7,14.3 100.0,14.0 C103.3,13.7 106.7,13.8 110.0,14.0 C113.3,14.2 116.7,14.7 120.0,15.0 C123.3,15.3 126.7,16.2 130.0,16.0 C133.3,15.8 136.7,14.5 140.0,14.0 C143.3,13.5 146.7,13.3 150.0,13.0 C153.3,12.7 156.7,12.0 160.0,12.0 C163.3,12.0 166.7,12.7 170.0,13.0 C173.3,13.3 176.7,14.0 180.0,14.0 C183.3,14.0 186.7,13.5 190.0,13.0 C193.3,12.5 196.7,11.5 200.0,11.0 C203.3,10.5 206.7,10.0 210.0,10.0 C213.3,10.0 216.7,10.7 220.0,11.0 C223.3,11.3 226.7,12.2 230.0,12.0 C233.3,11.8 236.7,10.7 240.0,10.0 C243.3,9.3 246.7,8.5 250.0,8.0 C253.3,7.5 256.7,6.8 260.0,7.0 C263.3,7.2 266.7,9.0 270.0,9.0 C273.3,9.0 276.7,7.7 280.0,7.0 C283.3,6.3 288.3,5.3 290.0,5.0 L290,100 L0,100 Z" fill="url(#ta)"/><path d="M0.0,18.0 C1.7,18.2 6.7,18.5 10.0,19.0 C13.3,19.5 16.7,20.8 20.0,21.0 C23.3,21.2 26.7,20.5 30.0,20.0 C33.3,19.5 36.7,18.7 40.0,18.0 C43.3,17.3 46.7,16.5 50.0,16.0 C53.3,15.5 56.7,15.0 60.0,15.0 C63.3,15.0 66.7,15.7 70.0,16.0 C73.3,16.3 76.7,17.0 80.0,17.0 C83.3,17.0 86.7,16.5 90.0,16.0 C93.3,15.5 96.7,14.3 100.0,14.0 C103.3,13.7 106.7,13.8 110.0,14.0 C113.3,14.2 116.7,14.7 120.0,15.0 C123.3,15.3 126.7,16.2 130.0,16.0 C133.3,15.8 136.7,14.5 140.0,14.0 C143.3,13.5 146.7,13.3 150.0,13.0 C153.3,12.7 156.7,12.0 160.0,12.0 C163.3,12.0 166.7,12.7 170.0,13.0 C173.3,13.3 176.7,14.0 180.0,14.0 C183.3,14.0 186.7,13.5 190.0,13.0 C193.3,12.5 196.7,11.5 200.0,11.0 C203.3,10.5 206.7,10.0 210.0,10.0 C213.3,10.0 216.7,10.7 220.0,11.0 C223.3,11.3 226.7,12.2 230.0,12.0 C233.3,11.8 236.7,10.7 240.0,10.0 C243.3,9.3 246.7,8.5 250.0,8.0 C253.3,7.5 256.7,6.8 260.0,7.0 C263.3,7.2 266.7,9.0 270.0,9.0 C273.3,9.0 276.7,7.7 280.0,7.0 C283.3,6.3 288.3,5.3 290.0,5.0" fill="none" stroke="#5B4BE8" stroke-width="3" stroke-linecap="round" vector-effect="non-scaling-stroke"/></svg>
+        </div>
+        <div class="xlabs dates"><span data-date="-29" data-fmt="monthDay" style="left:0.00%"></span><span data-date="-22" data-fmt="monthDay" style="left:24.14%"></span><span data-date="-15" data-fmt="monthDay" style="left:48.28%"></span><span data-date="-8" data-fmt="monthDay" style="left:72.41%"></span><span data-date="-1" data-fmt="monthDay" style="left:96.55%"></span></div>
+      </div>
+    </div>
+    <div class="card"><div class="h"><b>{{current_streaks}}</b><span>{{days_in_row}}</span></div>
+      <div class="chart streaks"><div class="srow c-mint"><span class="slab">{{h_meditate}}</span><div class="sbar"><i style="width:calc((100% - 32px) * 1.000)"></i><b data-num="42"></b></div></div><div class="srow c-purple"><span class="slab">{{h_read}}</span><div class="sbar"><i style="width:calc((100% - 32px) * 0.571)"></i><b data-num="24"></b></div></div><div class="srow c-blue"><span class="slab">{{h_water}}</span><div class="sbar"><i style="width:calc((100% - 32px) * 0.286)"></i><b data-num="12"></b></div></div><div class="srow c-teal"><span class="slab">{{h_spanish}}</span><div class="sbar"><i style="width:calc((100% - 32px) * 0.214)"></i><b data-num="9"></b></div></div><div class="srow c-indigo"><span class="slab">{{h_lights}}</span><div class="sbar"><i style="width:calc((100% - 32px) * 0.167)"></i><b data-num="7"></b></div></div><div class="srow c-coral"><span class="slab">{{h_run}}</span><div class="sbar"><i style="width:calc((100% - 32px) * 0.143)"></i><b data-num="6"></b></div></div><div class="srow c-orange"><span class="slab">{{h_sugar}}</span><div class="sbar"><i style="width:calc((100% - 32px) * 0.071)"></i><b data-num="3"></b></div></div></div>
+    </div>
+    </div>
+  </div>
+  <div class="edge"></div>
+  <div class="tabbar glass">
+    <div><i class="i i-tab-today"></i>{{tab_today}}</div>
+    <div class="on"><i class="i i-tab-stats"></i>{{tab_stats}}</div>
+    <div><i class="i i-tab-bell"></i>{{tab_reminders}}</div>
+  </div>
+</div>
+<script src="screen.js"></script>
+</body>
+</html>

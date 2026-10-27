@@ -1,0 +1,48 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Choose a design — Ritim</title><style>
+  :root{--page:#F2F2F7;--card:#fff;--ink:#1D1D1F;--muted:#6E6E73;--line:#E5E5EA;--chip:#EEF0F4;--blue:#0A84FF;--play:#01875F}
+  [data-appearance=dark]{--page:#000;--card:#1C1C1E;--ink:#F5F5F7;--muted:#98989D;--line:#38383A;--chip:#2C2C2E;--blue:#0A84FF;--play:#5BD9A6}
+  *{box-sizing:border-box}body{margin:0;background:var(--page);color:var(--ink);font:15px/1.4 -apple-system,BlinkMacSystemFont,'Helvetica Neue',Roboto,Arial,sans-serif;padding:28px 20px 48px}
+  header{max-width:1500px;margin:0 auto 18px}h1{margin:0 0 6px;font-size:28px}header p{margin:0;color:var(--muted);max-width:780px}
+  .menus{display:flex;flex-wrap:wrap;gap:12px 20px;margin-top:16px}.menus label{display:flex;flex-direction:column;gap:4px;font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
+  select{font:inherit;font-size:15px;text-transform:none;letter-spacing:0;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 12px;min-width:220px}
+  .grid{display:flex;flex-wrap:wrap;gap:22px;max-width:1500px;margin:0 auto}
+  .opt{background:var(--card);border-radius:22px;padding:18px;box-shadow:0 1px 3px rgba(0,0,0,.08);width:340px}.single .opt{width:min(760px,100%)}
+  h2{display:flex;gap:12px;align-items:center;margin:0 0 14px;font-size:18px}h2 small{display:block;font-weight:500;color:var(--muted);font-size:13px}
+  .letter{display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:12px;background:var(--blue);color:#fff;font-size:22px;font-weight:800;flex:none}
+  .tag{font-size:11px;font-weight:700;color:var(--blue);border:1px solid var(--blue);border-radius:6px;padding:1px 6px;margin-left:6px;vertical-align:middle}
+  h3{margin:14px 0 8px;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+  .phone{border:1px solid var(--line);border-radius:18px;padding:12px;background:var(--card)}
+  .row{display:flex;gap:10px;align-items:center}.meta{flex:1;min-width:0;display:flex;flex-direction:column}.meta b{font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.meta b.big{font-size:19px}
+  .meta span{color:var(--muted);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.meta i{font-style:normal;color:var(--muted);font-size:11px;letter-spacing:1px}
+  .icon{width:52px;height:52px;border-radius:12px;flex:none;object-fit:cover;border:1px solid rgba(0,0,0,.06)}.icon.big{width:78px;height:78px;border-radius:18px}
+  .icon.ph{display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#0A84FF,#5E5CE6);color:#fff;font-weight:800;font-size:22px}
+  .get{background:var(--chip);color:var(--blue);font-weight:700;border-radius:999px;padding:5px 16px;font-size:14px;align-self:center;flex:none}.pp .get{align-self:flex-start;margin-top:8px}
+  .shots{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:10px}.shots img{width:100%;border-radius:8px;display:block;border:1px solid rgba(0,0,0,.05)}.shots.land{grid-template-columns:1fr}
+  .strip{display:flex;gap:8px;overflow:hidden;margin-top:12px}.strip img{height:300px;border-radius:12px;flex:none;border:1px solid rgba(0,0,0,.05)}.strip.land img{height:150px}.single .strip img{height:520px}.single .strip.land img{height:260px}
+  .gp .icon{border-radius:22%}.gp .dev{color:var(--play);font-size:13px;font-weight:600}  .install{display:block;text-align:center;background:var(--play);color:#fff;font-weight:600;border-radius:10px;padding:9px;margin-top:14px}[data-appearance=dark] .install{color:#00381F}
+  .gp .strip img{border-radius:10px;height:260px}.single .gp .strip img{height:460px}
+  .hint{margin:12px 0 0;color:var(--muted);font-size:13px}
+  </style></head><body data-appearance="light"><header><h1>Choose a design</h1><p>Pick a store and a design from the menus to see your listing as it would look. “All designs” compares them side by side.</p>
+  <div class="menus"><label>Store<select id="store"><option value="iphone-6.3">App Store — iPhone</option><option value="ipad-13">App Store — iPad</option></select></label>
+  <label>Design<select id="theme"><option value="all">All designs (compare)</option><option value="A">A — Night rhythm</option><option value="B">B — Soft Clay Wellness</option><option value="C">C — Liquid Glass Aurora</option><option value="D">D — Midnight Glow Pro</option></select></label>
+  <label>Appearance<select id="appearance"><option value="light">Light</option><option value="dark">Dark</option></select></label></div></header>
+  <main id="view" class="grid"></main>
+<script>
+const D={"app":{"name":"Ritim","subtitle":"Daily routine & streak goals","icon":"app-icon.png"},"labels":{"title":"Choose a design","intro":"Pick a store and a design from the menus to see your listing as it would look. “All designs” compares them side by side.","option":"If you choose {letter}","searchResult":"Search result","productPage":"Product page","get":"GET","store":"Store","theme":"Design","appearance":"Appearance","allThemes":"All designs (compare)","light":"Light","dark":"Dark","install":"Install","choose":"Tell Claude “{letter}” to use this design."},"stores":[{"id":"iphone-6.3","label":"App Store — iPhone","kind":"app-store","target":"iphone-6.3","landscape":false},{"id":"ipad-13","label":"App Store — iPad","kind":"app-store","target":"ipad-13","landscape":false}],"samples":[{"letter":"A","name":"Night rhythm","bespoke":true,"shots":{"iphone-6.3":["night-rhythm/01_today.png","night-rhythm/02_streaks.png","night-rhythm/03_charts.png"],"ipad-13":["night-rhythm/ipad-13/01_today.png","night-rhythm/ipad-13/02_streaks.png","night-rhythm/ipad-13/03_charts.png"]}},{"letter":"B","name":"Soft Clay Wellness","bespoke":false,"shots":{"iphone-6.3":["soft-clay-wellness/01_today.png","soft-clay-wellness/02_streaks.png","soft-clay-wellness/03_charts.png"],"ipad-13":["soft-clay-wellness/ipad-13/01_today.png","soft-clay-wellness/ipad-13/02_streaks.png","soft-clay-wellness/ipad-13/03_charts.png"]}},{"letter":"C","name":"Liquid Glass Aurora","bespoke":false,"shots":{"iphone-6.3":["liquid-glass-aurora/01_today.png","liquid-glass-aurora/02_streaks.png","liquid-glass-aurora/03_charts.png"],"ipad-13":["liquid-glass-aurora/ipad-13/01_today.png","liquid-glass-aurora/ipad-13/02_streaks.png","liquid-glass-aurora/ipad-13/03_charts.png"]}},{"letter":"D","name":"Midnight Glow Pro","bespoke":false,"shots":{"iphone-6.3":["midnight-glow-pro/01_today.png","midnight-glow-pro/02_streaks.png","midnight-glow-pro/03_charts.png"],"ipad-13":["midnight-glow-pro/ipad-13/01_today.png","midnight-glow-pro/ipad-13/02_streaks.png","midnight-glow-pro/ipad-13/03_charts.png"]}}]};
+const L=D.labels;
+const esc=(s)=>String(s).replace(/[&<>"]/g,(c)=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const icon=(big)=>D.app.icon?'<img class="icon'+(big?' big':'')+'" src="'+D.app.icon+'" alt="">':'<div class="icon ph'+(big?' big':'')+'">'+esc(D.app.name.slice(0,1))+'</div>';
+const imgs=(list)=>list.map((f)=>'<img src="'+f+'" alt="">').join('');
+function appStore(s,store){const shots=s.shots[store.target]||[];const land=store.landscape?' land':'';
+  return '<h3>'+esc(L.searchResult)+'</h3><div class="phone"><div class="sr"><div class="row">'+icon(false)+'<div class="meta"><b>'+esc(D.app.name)+'</b>'+(D.app.subtitle?'<span>'+esc(D.app.subtitle)+'</span>':'')+'<i>★★★★★</i></div><span class="get">'+esc(L.get)+'</span></div><div class="shots'+land+'">'+imgs(shots)+'</div></div></div>'
+   +'<h3>'+esc(L.productPage)+'</h3><div class="phone"><div class="pp"><div class="row">'+icon(true)+'<div class="meta"><b class="big">'+esc(D.app.name)+'</b>'+(D.app.subtitle?'<span>'+esc(D.app.subtitle)+'</span>':'')+'<span class="get">'+esc(L.get)+'</span></div></div><div class="strip'+land+'">'+imgs(shots)+'</div></div></div>';}
+function play(s,store){const shots=s.shots[store.target]||[];
+  return '<h3>Google Play</h3><div class="phone gp"><div class="row">'+icon(true)+'<div class="meta"><b class="big">'+esc(D.app.name)+'</b><span class="dev">'+esc(D.app.name)+'</span>'+(D.app.subtitle?'<span>'+esc(D.app.subtitle)+'</span>':'')+'</div></div><span class="install">'+esc(L.install)+'</span><div class="strip'+(store.landscape?' land':'')+'">'+imgs(shots)+'</div></div>';}
+function render(){const store=D.stores.find((s)=>s.id===document.getElementById('store').value)||D.stores[0];const theme=document.getElementById('theme').value;
+  document.body.dataset.appearance=document.getElementById('appearance').value;
+  const list=theme==='all'?D.samples:D.samples.filter((s)=>s.letter===theme);const view=document.getElementById('view');view.className='grid'+(theme==='all'?'':' single');
+  view.innerHTML=list.map((s)=>'<section class="opt"><h2><span class="letter">'+s.letter+'</span><span>'+esc(L.option.replace('{letter}',s.letter))+(s.bespoke?'<span class="tag">✦</span>':'')+'<small>'+esc(s.name)+'</small></span></h2>'+(store.kind==='google-play'?play(s,store):appStore(s,store))+(theme==='all'?'':'<p class="hint">'+esc(L.choose.replace('{letter}',s.letter))+'</p>')+'</section>').join('');}
+for(const id of ['store','theme','appearance'])document.getElementById(id).addEventListener('change',render);
+const q=new URLSearchParams(location.search);for(const id of ['store','theme','appearance'])if(q.get(id))document.getElementById(id).value=q.get(id);
+render();
+</script></body></html>

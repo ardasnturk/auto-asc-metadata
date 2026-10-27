@@ -1,0 +1,26 @@
+<!doctype html>
+<html data-status-bar="dark">
+<head>
+<meta charset="utf-8">
+<!-- AddHabitView.swift presented as a sheet over Today: the demo prefill “Evening walk”, teal, figure.walk, reminder at 19:30. -->
+<link rel="stylesheet" href="kit/ios.css">
+<link rel="stylesheet" href="icons.css">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<div class="screen sheet-behind">
+  <div class="sheet-page c-teal">
+    <div class="toolbar"><div class="gtext glass">{{cancel}}</div><div class="title">{{new_habit}}</div><div class="gtext glass bold">{{save}}</div></div>
+    <div class="content forms" style="padding-top:22px">
+      <div class="list"><div class="row" style="padding:16px"><div class="tile" style="width:52px;height:52px"><i class="i i-walk"></i></div><div class="grow"><div class="hl">{{evening_walk}}</div><div class="sub">{{goal_once}}</div></div></div></div>
+      <div><div class="sec">{{name}}</div><div class="list"><div class="row">{{evening_walk}}</div></div></div>
+      <div><div class="sec">{{icon}}</div><div class="list"><div class="icongrid"><div class="ic"><i class="i i-water"></i></div><div class="ic"><i class="i i-run"></i></div><div class="ic"><i class="i i-book"></i></div><div class="ic"><i class="i i-leaf"></i></div><div class="ic"><i class="i i-carrot"></i></div><div class="ic"><i class="i i-bubble"></i></div><div class="ic"><i class="i i-moon"></i></div><div class="ic on"><i class="i i-walk"></i></div><div class="ic"><i class="i i-dumbbell"></i></div><div class="ic"><i class="i i-bike"></i></div><div class="ic"><i class="i i-pill"></i></div><div class="ic"><i class="i i-heart"></i></div><div class="ic"><i class="i i-music"></i></div><div class="ic"><i class="i i-pencil"></i></div><div class="ic"><i class="i i-sun"></i></div><div class="ic"><i class="i i-coffee"></i></div></div></div></div>
+      <div><div class="sec">{{color}}</div><div class="list"><div class="swatches"><div class="sw c-blue"></div><div class="sw c-coral"></div><div class="sw c-purple"></div><div class="sw c-mint"></div><div class="sw c-orange"></div><div class="sw c-teal"><i class="i i-check"></i></div><div class="sw c-indigo"></div><div class="sw c-pink"></div></div></div></div>
+      <div><div class="sec">{{goal}}</div><div class="list"><div class="row"><div class="grow">{{times_1}}</div><div class="stepper"><i class="i i-minus" style="opacity:.3"></i><span></span><i class="i i-plus"></i></div></div></div></div>
+      <div><div class="sec">{{reminder}}</div><div class="list"><div class="row"><div class="grow">{{daily_reminder}}</div><div class="toggle on"></div></div><div class="row"><div class="grow">{{time}}</div><div class="timepill" data-time="19:30"></div></div></div></div>
+    </div>
+  </div>
+</div>
+<script src="screen.js"></script>
+</body>
+</html>

@@ -166,7 +166,7 @@ plugins/vitrin/     Claude Code plugin: .claude-plugin/plugin.json, bin/vitrin (
 .claude-plugin/     marketplace.json (this repository is the `vitrin` plugin marketplace)
 scripts/            pack.mjs (`pnpm pack:release` → @ardasnturk/vitrin tarball), release-notes.mjs, site-assets.mjs
 docs/               design/master-prompt.md (original design spec)
-examples/Ritim      SwiftUI sample app for end-to-end testing (tr + en)
+examples/Ritim      SwiftUI sample app (tr + en) with the full output of a /vitrin run
 ```
 
 ## Development
@@ -182,7 +182,7 @@ Releases: bump `version` in `package.json` (the single source), `plugins/vitrin/
 
 ## Example app
 
-[`examples/Ritim`](examples/Ritim) is a small SwiftUI habit tracker (Turkish and English) used for end-to-end runs. It includes a `-VitrinDemo` launch-argument demo mode (`examples/Ritim/Ritim/Support/VitrinDemo.swift`) that you can copy into your own app so screenshots show stable, non-personal data.
+[`examples/Ritim`](examples/Ritim) is a small SwiftUI habit tracker (Turkish and English), and the repository holds everything a `/vitrin` run produced for it: the screens recreated in HTML from its SwiftUI views, the keyword research and store text, the four design samples with the store preview, the screenshots for iPhone and iPad, the App Previews, the creatives, an In-App Event and the review gallery — see its [README](examples/Ritim/README.md#what-vitrin-produced). It also includes a `-VitrinDemo` launch-argument demo mode (`examples/Ritim/Ritim/Support/VitrinDemo.swift`) for real simulator captures, which you can copy into your own app so screenshots show stable, non-personal data.
 
 ## Contributing
 

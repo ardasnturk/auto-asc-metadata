@@ -45,39 +45,46 @@ research:
   ocr: true
 targets:
   # Ritim predates the Xcode 27.1 Duo heuristic; keep its Duo sets on for end-to-end runs.
-  enable: [duo-outer, duo-inner]
+  enable: [ duo-outer, duo-inner ]
   disable: []
 capture:
-  mode: launch-args
+  mode: html
   configuration: Debug
   appearance: light
+  # HTML recreations in metadata/screens/ (written from these views); the -done/-more/add states are what the
+  # App Preview flows change to after a tap or a scroll.
   screens:
     - id: home
-      launchArgs: [-VitrinScreen, home]
-      waitMs: 3000
+      source: [ Ritim/Views/HomeView.swift, Ritim/Views/Components/Components.swift, Ritim/App/RitimApp.swift ]
+    - id: home-7
+      source: [ Ritim/Views/HomeView.swift ]
+    - id: home-done
+      source: [ Ritim/Views/HomeView.swift ]
     - id: stats
-      launchArgs: [-VitrinScreen, stats]
-      waitMs: 3000
+      source: [ Ritim/Views/StatsView.swift, Ritim/Views/Components/Components.swift ]
+    - id: stats-more
+      source: [ Ritim/Views/StatsView.swift ]
     - id: detail
-      launchArgs: [-VitrinScreen, detail]
-      waitMs: 3500
+      source: [ Ritim/Views/HabitDetailView.swift, Ritim/Views/Components/Components.swift ]
     - id: reminders
-      launchArgs: [-VitrinScreen, reminders]
-      waitMs: 3000
+      source: [ Ritim/Views/RemindersView.swift ]
     - id: add
-      launchArgs: [-VitrinScreen, add]
-      waitMs: 3500
-  recordings:
-    - id: home-flow
-      launchArgs: [-VitrinScreen, home]
-      durationSec: 8
-    - id: stats-flow
-      launchArgs: [-VitrinScreen, stats]
-      durationSec: 7
+      source: [ Ritim/Views/AddHabitView.swift, Ritim/Models/HabitStyle.swift ]
+  recordings: []
   simulators: {}
 video:
   enabled: true
-  loops: true
+  # Header/search creatives ship as images here; 4K loop videos would add ~100 MB to the example.
+  loops: false
 upload:
   uploader: deliver
   platform: ios
+selection:
+  platforms: [ ios ]
+  assets: [ metadata, screenshots, previews, creatives, events ]
+  targets: [ iphone-6.3, ipad-13, preview-iphone, header, search, event-card, event-detail ]
+ui:
+  language: en
+# Example project: the store outputs in metadata/ are committed so the repository shows a whole run.
+retention:
+  commit: true

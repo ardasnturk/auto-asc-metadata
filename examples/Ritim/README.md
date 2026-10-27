@@ -1,8 +1,8 @@
 # Ritim
 
-Ritim ("rhythm" in Turkish) is a small SwiftUI habit tracker for iPhone and iPad. It is the
-end-to-end test fixture for **Vitrin**, which reads this Xcode project, launches the app in the
-simulator with demo data and captures App Store screenshots.
+Ritim ("rhythm" in Turkish) is a small SwiftUI habit tracker for iPhone and iPad. It is **Vitrin's
+example app**: the repository contains everything a `/vitrin` run produced for it, so you can see the
+result without running anything — see [What Vitrin produced](#what-vitrin-produced).
 
 ## Features
 
@@ -35,7 +35,36 @@ xcodebuild -project Ritim.xcodeproj -scheme Ritim -configuration Debug \
   -derivedDataPath build build CODE_SIGNING_ALLOWED=NO
 ```
 
+## What Vitrin produced
+
+This is a `/vitrin` run as the developer of Ritim would do it: the conversation in English, the App
+Store for iPhone and iPad, the store languages en-US and tr, every kind of content, fastlane as the
+uploader. It stops where the developer's own part begins — approving the review gallery and adding the
+App Store Connect key for the upload. Nothing here was uploaded.
+
+| Step | What to look at |
+| --- | --- |
+| Analysis | [`metadata/app_profile.json`](metadata/app_profile.json) — platforms, locales, 14 features with the code that proves them |
+| Screens, 1:1 from the code (no build) | [`metadata/screens/`](metadata/screens) — the app's views recreated in HTML (`app.css`, `screen.js` for locale-aware dates and the heatmap, `strings/en-US.json`, `strings/tr.json`), rendered per device and language in [`metadata/raw/`](metadata/raw). The `home-7`, `home-done`, `stats-more` and `add` states are what the App Preview changes to after a tap or a scroll. |
+| Research | [`metadata/research/keywords/`](metadata/research/keywords) — keyword candidates with popularity, competition, the relevance Claude gave them and the terms selected for name, subtitle and keyword field |
+| Store text | [`metadata/listing/`](metadata/listing) (what Claude wrote) and [`metadata/app-store/`](metadata/app-store) (the finished text per locale) |
+| Design choice | [`metadata/design-samples/store-preview.html`](metadata/design-samples/store-preview.html) — four designs of the first three screenshots in the App Store search result and product page, with store, design and light/dark menus ([PNG](metadata/design-samples/store-preview.png), [contact sheet](metadata/design-samples/contact-sheet.png)). The developer picked **A · Night rhythm**, the one designed for this app. |
+| Screenshots | [`metadata/store/screenshots/`](metadata/store/screenshots) — 8 iPhone 6.3" and 7 iPad 13" screenshots per language ([`shots.json`](metadata/shots.json), [`art-direction.json`](metadata/art-direction.json)) |
+| App Preview | [`metadata/store/app-previews/`](metadata/store/app-previews) — 17.5 s per language ([`video-plan.json`](metadata/video-plan.json)): taps that check a habit in, a zoom into the heatmap, the statistics scrolling, the "New Habit" sheet, feature chips and a closing line over the finished day |
+| Creatives and event | [`metadata/creative/`](metadata/creative) — product page header and search result images, and the card and detail page of an In-App Event for the 1.2 Statistics update |
+| Review | [`metadata/report.html`](metadata/report.html) — the gallery of everything that would be uploaded, with the validation notes; open it locally in a browser |
+
+Validation passes with warnings that describe the example honestly: the support and privacy URLs
+are `example.com` placeholders, the In-App Event has no deep link (the app has no URL scheme), and
+some creative headlines are below the 4.5:1 contrast Vitrin aims for.
+
+To run it yourself, open Claude Code in this folder and run `/vitrin`. Vitrin skips the stages whose
+inputs did not change; `vitrin <stage> --force` re-runs one.
+
 ## Vitrin launch arguments
+
+With `capture.mode: launch-args` instead of the HTML screens, Vitrin builds the app and captures it in
+the simulator with these arguments:
 
 | Argument | Effect |
 | --- | --- |

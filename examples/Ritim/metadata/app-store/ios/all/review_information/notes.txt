@@ -1,0 +1,1 @@
+Ritim does not require an account. All data is stored on device (SwiftData). The Ritim Plus subscription can be tested in the sandbox from the crown button on the Today tab. Reminders ask for notification permission only when a reminder is enabled.

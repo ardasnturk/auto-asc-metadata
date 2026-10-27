@@ -4,20 +4,80 @@
   "subtitle": "Daily routine & streak goals",
   "promotionalText": "New in 1.2: a statistics tab with weekly charts and a 12-week calendar for every habit. See your rhythm at a glance.",
   "description": "Build habits that stick with one tap a day.\nKeep your streaks alive and watch your progress grow in clear charts.\nSimple, calm and focused on what you do every day.\n\nRitim helps you turn small daily actions into a steady rhythm. Add the habits that matter to you, set a daily goal and check them in with a single tap on the progress ring.\n\nWHAT YOU CAN DO\n• Check in habits with one tap and see today's progress at a glance\n• Keep your streaks alive with current and best streak counts\n• See your progress in clear charts: weekly completion and a 30-day trend\n• Review 12 weeks of history in a calendar heatmap for each habit\n• Get a gentle daily reminder for each habit\n• Search your habit list, share your progress and export check-ins as CSV\n• Personalise every habit with an icon, a colour and a daily goal\n\nMADE FOR IPHONE AND IPAD\nOn iPad, Ritim uses an adaptive sidebar and multi-column layouts. Light and dark mode, larger text and VoiceOver labels are supported.\n\nRITIM PLUS\nRitim Plus is an optional monthly auto-renewing subscription with a one-week free trial. Payment is charged to your Apple Account at confirmation of purchase. The subscription renews automatically unless it is cancelled at least 24 hours before the end of the current period. You can manage or cancel it in your Apple Account settings.\n\nAvailable in English and Turkish.",
-  "keywords": "planner,calendar,reminder,motivation,checklist,progress,heatmap,consistency,focus,morning,todo",
+  "keywords": "calendar,planner,reminder,motivation,progress,checklist,heatmap,consistency,chart,healthy,morning",
   "whatsNew": "• New Statistics tab: weekly completion chart, 30-day trend and current streaks for every habit.\n• A 12-week calendar heatmap on each habit's detail screen.\n• Export all check-ins as CSV and share a progress summary.\n• Search your habit list.\n• Better iPad layout with an adaptive sidebar.\n• Larger text support and VoiceOver labels for check-in rings and pickers.\n• Fixed: streaks no longer reset in the morning before your first check-in.",
   "claims": [
-    { "text": "Build habits that stick with one tap a day", "featureIds": ["habit-tracking"] },
-    { "text": "Keep your streaks alive", "featureIds": ["streaks"] },
-    { "text": "See your progress in clear charts", "featureIds": ["charts"] },
-    { "text": "12 weeks of history in a calendar heatmap", "featureIds": ["calendar-heatmap"] },
-    { "text": "gentle daily reminder", "featureIds": ["reminders"] },
-    { "text": "export check-ins as CSV", "featureIds": ["export"] },
-    { "text": "Search your habit list", "featureIds": ["search"] },
-    { "text": "share your progress", "featureIds": ["sharing"] },
-    { "text": "adaptive sidebar and multi-column layouts", "featureIds": ["ipad"] },
-    { "text": "Light and dark mode", "featureIds": ["dark-mode"] },
-    { "text": "Ritim Plus is an optional monthly auto-renewing subscription", "featureIds": ["premium-subscription"] },
-    { "text": "Available in English and Turkish", "featureIds": ["localization"] }
+    {
+      "text": "Build habits that stick with one tap a day",
+      "featureIds": [
+        "habit-tracking"
+      ]
+    },
+    {
+      "text": "Keep your streaks alive",
+      "featureIds": [
+        "streaks"
+      ]
+    },
+    {
+      "text": "See your progress in clear charts",
+      "featureIds": [
+        "charts"
+      ]
+    },
+    {
+      "text": "12 weeks of history in a calendar heatmap",
+      "featureIds": [
+        "calendar-heatmap"
+      ]
+    },
+    {
+      "text": "gentle daily reminder",
+      "featureIds": [
+        "reminders"
+      ]
+    },
+    {
+      "text": "export check-ins as CSV",
+      "featureIds": [
+        "export"
+      ]
+    },
+    {
+      "text": "Search your habit list",
+      "featureIds": [
+        "search"
+      ]
+    },
+    {
+      "text": "share your progress",
+      "featureIds": [
+        "sharing"
+      ]
+    },
+    {
+      "text": "adaptive sidebar and multi-column layouts",
+      "featureIds": [
+        "ipad"
+      ]
+    },
+    {
+      "text": "Light and dark mode",
+      "featureIds": [
+        "dark-mode"
+      ]
+    },
+    {
+      "text": "Ritim Plus is an optional monthly auto-renewing subscription",
+      "featureIds": [
+        "premium-subscription"
+      ]
+    },
+    {
+      "text": "Available in English and Turkish",
+      "featureIds": [
+        "localization"
+      ]
+    }
   ]
 }

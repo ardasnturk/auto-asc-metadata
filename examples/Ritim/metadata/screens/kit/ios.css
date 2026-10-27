@@ -1,0 +1,88 @@
+/*
+ * Vitrin screen kit — iOS / iPadOS (UIKit + SwiftUI default metrics, iOS 18+).
+ * Link it from a screen: <link rel="stylesheet" href="kit/ios.css">. Override the tokens on :root with the app's
+ * own colors and fonts (asset catalog, AccentColor, theme files); never keep a token the app does not use.
+ */
+:root {
+  --tint: #007AFF; --label: #000; --label2: rgba(60,60,67,.6); --label3: rgba(60,60,67,.3);
+  --bg: #F2F2F7; --bg-elevated: #fff; --fill: rgba(120,120,128,.2); --separator: rgba(60,60,67,.29);
+  --red: #FF3B30; --green: #34C759; --orange: #FF9500; --yellow: #FFCC00; --indigo: #5856D6; --pink: #FF2D55; --teal: #30B0C7;
+  --font: -apple-system, 'SF Pro Text', 'SF Pro', system-ui, 'Helvetica Neue', Arial, sans-serif;
+  --font-display: -apple-system, 'SF Pro Display', 'SF Pro', system-ui, 'Helvetica Neue', Arial, sans-serif;
+  --font-rounded: ui-rounded, 'SF Pro Rounded', -apple-system, system-ui, sans-serif;
+  --radius-card: 10px; --radius-sheet: 38px;
+}
+html[data-appearance="dark"], .dark {
+  --label: #fff; --label2: rgba(235,235,245,.6); --label3: rgba(235,235,245,.3);
+  --bg: #000; --bg-elevated: #1C1C1E; --fill: rgba(120,120,128,.36); --separator: rgba(84,84,88,.6);
+  --red: #FF453A; --green: #30D158; --orange: #FF9F0A; --tint: #0A84FF;
+}
+html, body { background: var(--bg); color: var(--label); font: 17px/22px var(--font); letter-spacing: -0.41px; }
+* { box-sizing: border-box; }
+.screen { position: absolute; inset: 0; display: flex; flex-direction: column; padding-top: var(--safe-top); overflow: hidden; }
+.content { flex: 1; overflow: hidden; padding: 0 16px; }
+
+/* Text styles (Dynamic Type "Large") */
+.large-title { font: 700 34px/41px var(--font-display); letter-spacing: .37px; }
+.title1 { font: 700 28px/34px var(--font-display); letter-spacing: .36px; }
+.title2 { font: 700 22px/28px var(--font-display); letter-spacing: .35px; }
+.title3 { font: 600 20px/25px var(--font-display); letter-spacing: .38px; }
+.headline { font: 600 17px/22px var(--font); }
+.body { font: 400 17px/22px var(--font); }
+.callout { font: 400 16px/21px var(--font); letter-spacing: -.32px; }
+.subhead { font: 400 15px/20px var(--font); letter-spacing: -.24px; }
+.footnote { font: 400 13px/18px var(--font); letter-spacing: -.08px; }
+.caption1 { font: 400 12px/16px var(--font); }
+.caption2 { font: 400 11px/13px var(--font); letter-spacing: .07px; }
+.secondary { color: var(--label2); } .tertiary { color: var(--label3); } .tint { color: var(--tint); }
+.rounded { font-family: var(--font-rounded); } .mono-digits { font-variant-numeric: tabular-nums; }
+
+/* Navigation bar */
+.nav { height: 44px; display: flex; align-items: center; justify-content: space-between; padding: 0 16px; flex: none; }
+.nav .title { font: 600 17px/22px var(--font); position: absolute; left: 50%; transform: translateX(-50%); }
+.nav .item { color: var(--tint); font-size: 17px; display: flex; align-items: center; gap: 4px; }
+.nav-large { padding: 3px 16px 8px; } .nav-large .large-title { margin: 0; }
+.search { height: 36px; border-radius: 10px; background: var(--fill); color: var(--label2); display: flex; align-items: center; gap: 6px; padding: 0 8px; margin: 0 16px 8px; }
+
+/* Lists: inset grouped (default in SwiftUI List on iOS) */
+.section-header { font: 400 13px/18px var(--font); text-transform: uppercase; color: var(--label2); padding: 22px 16px 7px; }
+.section-footer { font: 400 13px/18px var(--font); color: var(--label2); padding: 7px 16px 0; }
+.list { background: var(--bg-elevated); border-radius: var(--radius-card); overflow: hidden; }
+.row { min-height: 44px; display: flex; align-items: center; gap: 12px; padding: 11px 16px; position: relative; }
+.row + .row::before { content: ''; position: absolute; top: 0; right: 0; left: var(--separator-inset, 16px); height: .5px; background: var(--separator); }
+.row .grow { flex: 1; min-width: 0; } .row .detail { color: var(--label2); } .row .chevron { color: var(--label3); font-size: 14px; }
+.icon-tile { width: 29px; height: 29px; border-radius: 7px; display: flex; align-items: center; justify-content: center; color: #fff; flex: none; }
+
+/* Controls */
+.toggle { width: 51px; height: 31px; border-radius: 16px; background: var(--fill); position: relative; flex: none; }
+.toggle::after { content: ''; position: absolute; top: 2px; left: 2px; width: 27px; height: 27px; border-radius: 50%; background: #fff; box-shadow: 0 3px 8px rgba(0,0,0,.15), 0 3px 1px rgba(0,0,0,.06); }
+.toggle.on { background: var(--green); } .toggle.on::after { left: 22px; }
+.segmented { display: flex; background: var(--fill); border-radius: 9px; padding: 2px; height: 32px; }
+.segmented > * { flex: 1; display: flex; align-items: center; justify-content: center; font: 500 13px var(--font); border-radius: 7px; }
+.segmented > .on { background: var(--bg-elevated); box-shadow: 0 3px 8px rgba(0,0,0,.12), 0 3px 1px rgba(0,0,0,.04); font-weight: 600; }
+.btn { height: 50px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font: 600 17px var(--font); background: var(--tint); color: #fff; }
+.btn.bordered { background: color-mix(in srgb, var(--tint) 15%, transparent); color: var(--tint); }
+.btn.capsule { border-radius: 999px; } .btn.small { height: 34px; font-size: 15px; padding: 0 14px; }
+.progress { height: 4px; border-radius: 2px; background: var(--fill); overflow: hidden; } .progress > i { display: block; height: 100%; background: var(--tint); border-radius: inherit; }
+.ring { --p: 60; --c: var(--tint); width: 48px; height: 48px; border-radius: 50%; background: conic-gradient(var(--c) calc(var(--p) * 1%), var(--fill) 0); -webkit-mask: radial-gradient(circle, transparent 58%, #000 59%); mask: radial-gradient(circle, transparent 58%, #000 59%); }
+.badge-count { min-width: 18px; height: 18px; border-radius: 9px; background: var(--red); color: #fff; font: 600 12px/18px var(--font); text-align: center; padding: 0 5px; }
+
+/* Cards, sheets, materials */
+.card { background: var(--bg-elevated); border-radius: 16px; padding: 16px; }
+.sheet { position: absolute; left: 0; right: 0; bottom: 0; background: var(--bg-elevated); border-radius: var(--radius-sheet) var(--radius-sheet) 0 0; padding: 8px 16px var(--safe-bottom); box-shadow: 0 -1px 0 var(--separator); }
+.sheet::before { content: ''; display: block; width: 36px; height: 5px; border-radius: 3px; background: var(--label3); margin: 0 auto 12px; }
+.material { background: rgba(249,249,249,.78); -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px); }
+html[data-appearance="dark"] .material { background: rgba(29,29,31,.72); }
+
+/* Tab bar (iOS 18: 49pt + home indicator area) */
+.tabbar { flex: none; display: flex; justify-content: space-around; padding: 7px 0 var(--safe-bottom); border-top: .5px solid var(--separator); }
+.tabbar > * { display: flex; flex-direction: column; align-items: center; gap: 2px; font: 500 10px var(--font); color: #999; min-width: 60px; }
+.tabbar > .on { color: var(--tint); } .tabbar svg { width: 26px; height: 26px; }
+/* iOS 26 floating tab bar (Liquid Glass) — use only when the app targets it */
+.tabbar-floating { position: absolute; left: 20px; right: 20px; bottom: calc(var(--safe-bottom) + 4px); height: 62px; border-radius: 31px; display: flex; justify-content: space-around; align-items: center; background: rgba(255,255,255,.7); -webkit-backdrop-filter: blur(24px) saturate(180%); backdrop-filter: blur(24px) saturate(180%); box-shadow: 0 8px 30px rgba(0,0,0,.12), inset 0 0 0 .5px rgba(255,255,255,.6); }
+
+/* iPad: sidebar + detail (NavigationSplitView) */
+.split { position: absolute; inset: 0; display: flex; padding-top: var(--safe-top); }
+.split .sidebar { width: 320px; flex: none; background: var(--bg); border-right: .5px solid var(--separator); padding: 0 12px; }
+.split .sidebar .row { border-radius: 10px; } .split .sidebar .row.on { background: var(--tint); color: #fff; }
+.split .detail-pane { flex: 1; overflow: hidden; }

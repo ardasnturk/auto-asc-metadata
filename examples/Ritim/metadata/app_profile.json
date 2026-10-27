@@ -1,8 +1,11 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-10-24T08:38:39.674Z",
+  "generatedAt": "2026-10-27T08:45:00.236Z",
   "project": {
     "root": ".",
+    "kind": "native",
+    "iosDir": ".",
+    "needsPrebuild": false,
     "xcodeproj": "Ritim.xcodeproj",
     "scheme": "Ritim",
     "targets": [
@@ -15,7 +18,11 @@
         "devices": [
           "iphone",
           "ipad"
-        ]
+        ],
+        "platforms": [
+          "ios"
+        ],
+        "macCatalyst": false
       }
     ]
   },
@@ -27,6 +34,19 @@
     "deploymentTarget": "18.0",
     "supportsIPhone": true,
     "supportsIPad": true,
+    "supportsDuo": false,
+    "platforms": [
+      "ios"
+    ],
+    "platformEvidence": {
+      "ios": [
+        {
+          "path": "Ritim.xcodeproj/project.pbxproj",
+          "note": "Ritim: SDKROOT=iphoneos, TARGETED_DEVICE_FAMILY=1,2"
+        }
+      ]
+    },
+    "supportsAndroidTablet": false,
     "developmentRegion": "en",
     "knownRegions": [
       "Base",
@@ -49,9 +69,9 @@
       "confidence": "high",
       "source": "analyzer",
       "id": "ipad",
-      "title": "iPad desteği",
+      "title": "iPad support",
       "kind": "platform",
-      "description": "iPad için uyarlanmış arayüz.",
+      "description": "Interface adapted for iPad.",
       "evidence": [
         {
           "path": "Ritim.xcodeproj/project.pbxproj",
@@ -63,9 +83,9 @@
       "confidence": "high",
       "source": "analyzer",
       "id": "export",
-      "title": "Dışa aktarma",
+      "title": "Export",
       "kind": "core",
-      "description": "Verileri dosya olarak dışa aktarır.",
+      "description": "Exports data as files.",
       "evidence": [
         {
           "path": "Ritim/Support/CSVExport.swift",
@@ -83,9 +103,9 @@
       "confidence": "high",
       "source": "analyzer",
       "id": "reminders",
-      "title": "Hatırlatıcı bildirimler",
+      "title": "Reminder notifications",
       "kind": "capability",
-      "description": "Yerel bildirimlerle hatırlatma gönderir.",
+      "description": "Sends reminders with local notifications.",
       "evidence": [
         {
           "path": "Ritim/Support/ReminderScheduler.swift",
@@ -98,9 +118,9 @@
       "confidence": "high",
       "source": "analyzer",
       "id": "sharing",
-      "title": "Paylaşma",
+      "title": "Sharing",
       "kind": "core",
-      "description": "İçeriği paylaşma sayfasıyla paylaşır.",
+      "description": "Shares content through the share sheet.",
       "evidence": [
         {
           "path": "Ritim/Views/HabitDetailView.swift",
@@ -118,9 +138,9 @@
       "confidence": "high",
       "source": "analyzer",
       "id": "search",
-      "title": "Arama",
+      "title": "Search",
       "kind": "core",
-      "description": "Uygulama içi arama.",
+      "description": "In-app search.",
       "evidence": [
         {
           "path": "Ritim/Views/HomeView.swift",
@@ -133,9 +153,9 @@
       "confidence": "high",
       "source": "analyzer",
       "id": "charts",
-      "title": "Grafikler",
+      "title": "Charts",
       "kind": "core",
-      "description": "Verileri grafiklerle görselleştirir.",
+      "description": "Visualizes data with charts.",
       "evidence": [
         {
           "path": "Ritim/Views/StatsView.swift",
@@ -148,7 +168,7 @@
       "confidence": "high",
       "source": "analyzer",
       "id": "premium-subscription",
-      "title": "Premium abonelik",
+      "title": "Premium subscription",
       "kind": "monetization",
       "description": "Ritim Plus Monthly",
       "evidence": [
@@ -161,13 +181,13 @@
       "confidence": "high",
       "source": "analyzer",
       "id": "localization",
-      "title": "2 dil desteği",
+      "title": "2 languages",
       "kind": "core",
       "description": "en, tr",
       "evidence": [
         {
           "path": "Ritim/Resources/InfoPlist.xcstrings",
-          "note": "knownRegions / String Catalog"
+          "note": "knownRegions / String Catalog / framework translations"
         }
       ]
     },
@@ -305,10 +325,59 @@
   "docs": {
     "readme": "# Ritim\n\nRitim (\"rhythm\" in Turkish) is a small SwiftUI habit tracker for iPhone and iPad. It is the\nend-to-end test fixture for **Vitrin**, which reads this Xcode project, launches the app in the\nsimulator with demo data and captures App Store screenshots.\n\n## Features\n\n- **Today**: progress summary for the day, one card per habit with a check-in ring, current\n  streak and the last 7 days. Searchable habit list (`.searchable`).\n- **Statistics** (Swift Charts): weekly completion bar chart, 30-day trend (7-day rolling\n  average) and current streaks per habit. Share a progress summary (`ShareLink`) and export all\n  check-ins as CSV (`.fileExporter`).\n- **Habit detail**: 12-week calendar heatmap, current/best streak, 30-day success rate and recent\n  days.\n- **Reminders**: one repeating daily local notification per habit (UserNotifications).\n- **New habit** form: name, SF Symbol icon, color, daily goal and optional reminder.\n- **Ritim Plus** paywall for a monthly auto-renewable subscription (StoreKit 2, minimal purchase\n  code, `Ritim.storekit` configuration attached to the `Ritim` scheme).\n- SwiftData storage, light/dark mode, Dynamic Type (`@ScaledMetric`), VoiceOver labels on custom\n  controls, iPhone and iPad (`sidebarAdaptable` tab view, adaptive grids).\n- Localized in English (development language) and Turkish through `Localizable.xcstrings`;\n  the display name is localized through `InfoPlist.xcstrings`.\n\n## Requirements\n\niOS 18.0+, Swift 6, Xcode 26 or later. The project is generated with\n[XcodeGen](https://github.com/yonaskolb/XcodeGen) from `project.yml`; the generated\n`Ritim.xcodeproj` is committed so tools can parse it directly.\n\n```sh\nxcodegen generate\nxcodebuild -project Ritim.xcodeproj -scheme Ritim -configuration Debug \\\n  -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \\\n  -derivedDataPath build build CODE_SIGNING_ALLOWED=NO\n```\n\n## Vitrin launch arguments\n\n| Argument | Effect |\n| --- | --- |\n| `-VitrinDemo` | In-memory SwiftData store seeded with 7 demo habits and 12 weeks of history. Habit names follow the app language. No permission prompts or StoreKit calls. |\n| `-VitrinScreen <id>` | Opens a screen at launch: `home`, `stats`, `detail`, `reminders`, `add`, `paywall`. |\n| `-AppleLanguages (tr)` `-AppleLocale tr_TR` | Standard language/region override (`en` / `en_US` for English). |\n\n```sh\nxcrun simctl launch --terminate-running-process booted com.jastech.ritim \\\n  -VitrinDemo -VitrinScreen stats -AppleLanguages \"(tr)\" -AppleLocale tr_TR\n```\n\nThe demo-mode code lives in `Ritim/Support/VitrinDemo.swift`.\n\n## Project layout\n\n```\nproject.yml                 XcodeGen spec (bundle id com.jastech.ritim, version 1.2.0 (12))\nRitim.storekit              StoreKit test configuration (Ritim Plus, monthly)\nRitim/App                   App entry point and root tab view\nRitim/Models                SwiftData models and streak/progress logic\nRitim/Views                 Screens and shared components\nRitim/Support               Vitrin demo mode, router, reminders, CSV export, StoreKit\nRitim/Resources             Asset catalog, Localizable.xcstrings, InfoPlist.xcstrings\nscripts/generate_assets.py  Regenerates the color sets and the 1024 px app icon (Pillow)\n```\n",
     "changelog": "# Changelog\n\n## 1.2.0 (12)\n\n### Added\n- Statistics tab with a weekly completion chart, a 30-day trend and current streaks per habit.\n- 12-week calendar heatmap on the habit detail screen.\n- CSV export of all check-ins and sharing a progress summary.\n- Search in the habit list.\n- Ritim Plus monthly subscription with a one-week free trial.\n\n### Improved\n- iPad layout with an adaptive sidebar and multi-column grids.\n- Larger text support and VoiceOver labels for check-in rings, icon and color pickers.\n- Turkish translation reviewed for every screen.\n\n### Fixed\n- Streaks no longer reset in the morning before you have checked in for the day.\n",
+    "lastTag": "v0.7.0",
     "commitsSinceTag": [
       {
-        "hash": "7d2fa81",
-        "subject": "Initial commit"
+        "hash": "9a9289e",
+        "subject": "Ignore locally installed agent skills"
+      },
+      {
+        "hash": "58e2602",
+        "subject": "Product Page Optimization tests: plan, treatment sets, review and draft upload"
+      },
+      {
+        "hash": "6cd7037",
+        "subject": "App Previews: no blank first frame, a settled poster frame, vitrin video --studio"
+      },
+      {
+        "hash": "51aea35",
+        "subject": "Play-safe images, borrowed-capture errors and an icon audit"
+      },
+      {
+        "hash": "b88567f",
+        "subject": "Custom Product Pages with their own screenshots; In-App Events with images and schedule"
+      },
+      {
+        "hash": "01c205a",
+        "subject": "Keyword research that reaches the listing: plan checks, live listing, vitrin rank"
+      },
+      {
+        "hash": "4f54c77",
+        "subject": "App Previews that move: flow scenes with taps, continuous camera, no icon card"
+      },
+      {
+        "hash": "f7c83bb",
+        "subject": "Update the website and README for 0.8.0"
+      },
+      {
+        "hash": "27fb553",
+        "subject": "Vitrin 0.8.0: skill flow for bespoke designs, mockups, metadata/ and approvals"
+      },
+      {
+        "hash": "bb0d064",
+        "subject": "Recreate screens 1:1 from any framework with a native UI kit; ask for the uploader after the design"
+      },
+      {
+        "hash": "b396972",
+        "subject": "Bespoke screenshot designs and a store preview with store, design and appearance menus"
+      },
+      {
+        "hash": "6d897c5",
+        "subject": "Add ready-made device mockups and place the app's screens into them"
+      },
+      {
+        "hash": "c1a8141",
+        "subject": "Keep everything Vitrin generates in the project's metadata/ folder"
       }
     ]
   },
@@ -460,11 +529,12 @@
     ]
   },
   "todo": [
-    "Kategori önerisi zayıf; Claude app_profile.categorySuggestion alanını işleve göre düzeltmeli."
+    "iPhone Duo targets are off: No sign of Xcode 27.1 / the iOS 27.1 SDK in the project. If the app is built with Xcode 27.1+, add duo-outer and duo-inner to targets.enable in vitrin.config.yaml.",
+    "Weak category suggestion; Claude should correct app_profile.categorySuggestion based on what the app does."
   ],
   "positioning": {
-    "audience": "Düzenli rutin oluşturmak isteyen, sade ve reklamsız bir araç arayan iPhone/iPad kullanıcıları",
-    "jobToBeDone": "Her gün küçük alışkanlıkları tek dokunuşla işaretleyip serilerini ve ilerlemesini görerek motivasyonunu korumak",
-    "tone": "Sakin, cesaretlendirici, kısa ve net"
+    "audience": "iPhone and iPad users who want a calm, ad-free way to build a daily routine",
+    "jobToBeDone": "Check in small daily habits with one tap and stay motivated by seeing streaks and progress",
+    "tone": "Calm, encouraging, short and clear"
   }
 }

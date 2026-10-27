@@ -1,175 +1,216 @@
 {
   "locale": "en-US",
   "storefront": "us",
-  "generatedAt": "2026-10-24T08:35:42.288Z",
+  "generatedAt": "2026-10-27T09:06:02.276Z",
   "candidates": [
     {
       "term": "habit tracker",
-      "relevance": null,
+      "relevance": 1,
       "competition": {
         "resultCount": 48,
-        "top10MedianRatings": 13451.5,
-        "score": 0.824
+        "top10MedianRatings": 13468,
+        "titleShare": 0.8,
+        "score": 0.744
       },
       "popularity": {
-        "score": 0.807,
+        "score": 0.821,
         "source": "estimate"
       },
-      "total": null
+      "total": 0.423,
+      "ownRank": null
     },
     {
       "term": "daily habits",
-      "relevance": null,
+      "relevance": 0.9,
       "competition": {
         "resultCount": 48,
-        "top10MedianRatings": 10771.5,
-        "score": 0.816
+        "top10MedianRatings": 10771,
+        "titleShare": 0.3,
+        "score": 0.486
       },
       "popularity": {
-        "score": 0.636,
+        "score": 0.619,
         "source": "estimate"
       },
-      "total": null
+      "total": 0.447,
+      "ownRank": null
     },
     {
       "term": "streak tracker",
-      "relevance": null,
+      "relevance": 1,
       "competition": {
         "resultCount": 45,
-        "top10MedianRatings": 7183,
-        "score": 0.771
+        "top10MedianRatings": 16653,
+        "titleShare": 0,
+        "score": 0.352
       },
       "popularity": {
         "score": 0.536,
         "source": "estimate"
       },
-      "total": null
+      "total": 0.526,
+      "ownRank": null
     },
     {
       "term": "routine planner",
-      "relevance": null,
+      "relevance": 0.6,
       "competition": {
         "resultCount": 47,
-        "top10MedianRatings": 13001.5,
-        "score": 0.813
+        "top10MedianRatings": 16231,
+        "titleShare": 0.2,
+        "score": 0.451
       },
       "popularity": {
         "score": 0.612,
         "source": "estimate"
       },
-      "total": null
+      "total": 0.307,
+      "ownRank": null
     },
     {
       "term": "habit calendar",
-      "relevance": null,
+      "relevance": 0.9,
       "competition": {
         "resultCount": 48,
-        "top10MedianRatings": 25.5,
-        "score": 0.599
+        "top10MedianRatings": 178,
+        "titleShare": 0.2,
+        "score": 0.288
       },
       "popularity": {
-        "score": 0.528,
+        "score": 0.535,
         "source": "estimate"
       },
-      "total": null
+      "total": 0.501,
+      "ownRank": null
     },
     {
       "term": "goal tracker",
-      "relevance": null,
+      "relevance": 0.7,
       "competition": {
-        "resultCount": 46,
-        "top10MedianRatings": 14024.5,
-        "score": 0.806
+        "resultCount": 45,
+        "top10MedianRatings": 17715,
+        "titleShare": 0.2,
+        "score": 0.454
       },
       "popularity": {
         "score": 0.672,
         "source": "estimate"
       },
-      "total": null
+      "total": 0.376,
+      "ownRank": null
     },
     {
       "term": "habit",
-      "relevance": null,
+      "relevance": 1,
       "competition": {
         "resultCount": 46,
-        "top10MedianRatings": 37667,
-        "score": 0.841
+        "top10MedianRatings": 37718,
+        "titleShare": 0.8,
+        "score": 0.781
       },
       "popularity": {
-        "score": 0.854,
+        "score": 0.865,
         "source": "estimate"
       },
-      "total": null
+      "total": 0.414,
+      "ownRank": null
     },
     {
       "term": "tracker",
-      "relevance": null,
+      "relevance": 0.7,
       "competition": {
-        "resultCount": 46,
-        "top10MedianRatings": 112943.5,
-        "score": 0.881
+        "resultCount": 45,
+        "top10MedianRatings": 113126,
+        "titleShare": 0.8,
+        "score": 0.821
       },
       "popularity": {
         "score": 0.916,
         "source": "estimate"
       },
-      "total": null
+      "total": 0.281,
+      "ownRank": null
     },
     {
       "term": "daily",
-      "relevance": null,
+      "relevance": 0.6,
       "competition": {
         "resultCount": 46,
-        "top10MedianRatings": 109558,
-        "score": 0.88
+        "top10MedianRatings": 109599.5,
+        "titleShare": 0.8,
+        "score": 0.82
       },
       "popularity": {
         "score": 0.888,
         "source": "estimate"
       },
-      "total": null
+      "total": 0.237,
+      "ownRank": null
     },
     {
       "term": "daily habit",
-      "relevance": null,
+      "relevance": 0.9,
       "competition": {
         "resultCount": 48,
-        "top10MedianRatings": 17125.5,
-        "score": 0.833
+        "top10MedianRatings": 17147.5,
+        "titleShare": 0.3,
+        "score": 0.503
       },
       "popularity": {
-        "score": 0.659,
+        "score": 0.643,
         "source": "estimate"
       },
-      "total": null
+      "total": 0.448,
+      "ownRank": null
     },
     {
       "term": "planner",
-      "relevance": null,
+      "relevance": 0.4,
       "competition": {
         "resultCount": 48,
-        "top10MedianRatings": 47576,
-        "score": 0.87
+        "top10MedianRatings": 47647,
+        "titleShare": 0.7,
+        "score": 0.74
       },
       "popularity": {
-        "score": 0.823,
+        "score": 0.824,
         "source": "estimate"
       },
-      "total": null
+      "total": 0.171,
+      "ownRank": null
     },
     {
       "term": "routine",
-      "relevance": null,
+      "relevance": 0.8,
       "competition": {
         "resultCount": 48,
-        "top10MedianRatings": 12053,
-        "score": 0.82
+        "top10MedianRatings": 12064.5,
+        "titleShare": 0.7,
+        "score": 0.69
       },
       "popularity": {
-        "score": 0.788,
+        "score": 0.789,
         "source": "estimate"
       },
-      "total": null
+      "total": 0.357,
+      "ownRank": null
     }
-  ]
+  ],
+  "selected": {
+    "name": [
+      "habit tracker"
+    ],
+    "subtitle": [
+      "daily routine",
+      "streak"
+    ],
+    "keywords": [
+      "calendar",
+      "planner",
+      "reminder",
+      "motivation",
+      "progress",
+      "heatmap"
+    ]
+  }
 }

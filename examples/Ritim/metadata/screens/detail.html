@@ -1,0 +1,36 @@
+<!doctype html>
+<html data-status-bar="dark">
+<head>
+<meta charset="utf-8">
+<!-- HabitDetailView.swift for “Meditate”: icon, StatTile row, 12-week HabitHeatmap, RecentDaysList (pushed from Today). -->
+<link rel="stylesheet" href="kit/ios.css">
+<link rel="stylesheet" href="icons.css">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<div class="screen">
+  <div class="toolbar"><div class="gbtn glass"><i class="i i-back"></i></div><div class="title iphone-only">{{h_meditate}}</div><div class="toptabs glass"><div><i class="i i-sidebar"></i></div><div class="on">{{tab_today}}</div><div>{{tab_stats}}</div><div>{{tab_reminders}}</div></div><div class="gbtn glass"><i class="i i-share"></i></div></div>
+  <div class="inline-title ipad-only">{{h_meditate}}</div>
+  <div class="content detail">
+    <div class="hero c-mint"><div class="tile"><i class="i i-leaf"></i></div><div class="hname">{{h_meditate}}</div><div class="goal">{{goal_once}}</div></div>
+    <div class="tiles">
+      <div class="stat"><i class="i i-flame" style="color:var(--flame)"></i><div class="v">{{days_42}}</div><div class="t">{{current_streak}}</div></div>
+      <div class="stat"><i class="i i-trophy" style="color:var(--yellow)"></i><div class="v">{{days_42}}</div><div class="t">{{best_streak}}</div></div>
+      <div class="stat c-mint"><i class="i i-trend"></i><div class="v" data-pct="1"></div><div class="t">{{last_30}}</div></div>
+    </div>
+    <div class="card c-mint"><div class="h"><b>{{last_12_weeks}}</b><span>{{every_square}}</span></div>
+      <div class="heatmap" data-heatmap="11111101100111110111111111101010111010111111111111111111111111111111111111111111" data-start="2026-08-09" data-weeks="12"></div>
+      <div class="legend"><span>{{less}}</span><i class="l0"></i><i class="l1"></i><i class="l2"></i><i class="l3"></i><i class="l4"></i><span>{{more}}</span></div>
+    </div>
+    <div class="card c-mint"><div class="h"><b>{{recent_days}}</b></div><div class="days"><div class="day"><span data-date="0"></span><i class="i i-tab-today"></i></div><div class="day"><span data-date="-1"></span><i class="i i-tab-today"></i></div><div class="day"><span data-date="-2"></span><i class="i i-tab-today"></i></div><div class="day"><span data-date="-3"></span><i class="i i-tab-today"></i></div><div class="day"><span data-date="-4"></span><i class="i i-tab-today"></i></div><div class="day"><span data-date="-5"></span><i class="i i-tab-today"></i></div><div class="day"><span data-date="-6"></span><i class="i i-tab-today"></i></div></div></div>
+  </div>
+  <div class="edge"></div>
+  <div class="tabbar glass">
+    <div class="on"><i class="i i-tab-today"></i>{{tab_today}}</div>
+    <div><i class="i i-tab-stats"></i>{{tab_stats}}</div>
+    <div><i class="i i-tab-bell"></i>{{tab_reminders}}</div>
+  </div>
+</div>
+<script src="screen.js"></script>
+</body>
+</html>
