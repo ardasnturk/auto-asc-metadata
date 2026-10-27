@@ -107,7 +107,7 @@ export class RawLibrary {
           aspect = (m.height ?? 1) / (m.width ?? 1);
           this.aspectCache.set(file, aspect);
         }
-        return { src: pathToFileURL(file).href, aspect, family: fam };
+        return { src: pathToFileURL(file).href, aspect, family: fam, locale: loc };
       }
     }
     throw new Error(`Raw screenshot missing: ${id} (${locale}/${family}). Run \`vitrin capture\` first.`);
@@ -269,7 +269,8 @@ export async function renderDesign(opts: RenderOptions): Promise<RenderResult> {
             archetype: shot.archetype,
             headline: copy.headline,
             subheadline: copy.subheadline,
-            badges: shot.badges,
+            // App Store proof (ratings, awards) and Apple platform badges do not belong on a Google Play image.
+            badges: target.store === 'google-play' ? shot.badges.filter((b) => b.type !== 'proof' && b.type !== 'platform') : shot.badges,
             stat: shot.stat?.value,
             kicker: copy.kicker,
             captionPosition: shot.captionPosition,
@@ -307,6 +308,7 @@ export async function renderDesign(opts: RenderOptions): Promise<RenderResult> {
             // First three shots are what search results show.
             thumbnailLegible: idx < 3 ? m.quality.thumbnail.legible : undefined,
             quality: m.quality,
+            capture: { families: [...new Set(screens.map((s) => s.family))], locales: [...new Set(screens.map((s) => s.locale ?? locale))] },
           });
           log.dim(`  ${locale} ${target.id} ${name}${m.overflow.length ? '  ⚠ overflow' : ''}`);
         }

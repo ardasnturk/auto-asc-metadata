@@ -4,6 +4,14 @@ All notable changes to this project are documented in this file. The format is b
 
 ## Unreleased
 
+### Added — Google Play images that fit Play, and an icon check
+- **Google Play gets Play-safe images:** App Store ratings and Apple platform badges are left off Play images; ranking words (“#1”, “best”) and Apple names on a shot that reaches Play are errors (`shot.play-superlative`, `shot.play-apple-term`), a testimonial (App Store reviews) on Play is a warning, and Play needs at least 2 screenshots (`image.too-few`).
+- **Borrowed captures are caught:** the render manifest records which device family and locale each screen came from; iOS UI on a Google Play screenshot (`image.ios-ui-on-play`) and another language's UI in one of the first three shots (`image.language-mismatch`) are errors instead of a log line.
+- **Icon audit:** `vitrin research` renders `metadata/research/icons.png`, the app's icon outlined among the strongest competitors' icons at search-result size on light and dark; the skill asks Claude to judge it for the user. A missing app icon is an error when the Google Play icon is a target (before, a letter placeholder was rendered and uploaded).
+
+### Changed
+- The design brief asks for 8–10 iPhone shots when the features carry them (at least 5) and localized demo data (names, currency, dates, units) in the strings files, not only translated labels. SKILL.md's “first 3 = hook/proof/trust” now matches the art direction: hero (the only place for proof) → differentiator → core, trust near the end.
+
 ### Added — Custom Product Pages and In-App Events that are complete
 - **Each Custom Product Page gets its own screenshot set:** `shots` (in the page's order) and per-shot `copy` overrides in `cpp-suggestions.json`; `vitrin design` renders them to `metadata/store/cpp/<page id>/<locale>/`, the review gallery shows them on the page card, approval hashes them, and `vitrin upload --cpp` places them on each page localization through the App Asset Library. Validate warns about pages without their own shots and unknown shot ids.
 - **In-App Events are uploaded with their images:** the card and detail images `vitrin design` renders are placed on each event localization (they were rendered but never uploaded). Events take `deepLink`, `purpose`, `purchaseRequirement`, `priority` and a `schedule` (territories, publish start, start, end), sent to App Store Connect when set.

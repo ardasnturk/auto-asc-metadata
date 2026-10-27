@@ -19,7 +19,13 @@ export function validateClaims(opts: {
   enabledTargets: string[];
 }): IssueList {
   const { config, profile, shots, videoPlan, competitors, cpp } = opts;
+  const playShots = opts.enabledTargets.filter((id) => PLAY_SCREENSHOT.test(id));
+  const onPlay = (s: { targets?: string[] }) => playShots.length > 0 && (!s.targets || s.targets.some((id) => PLAY_SCREENSHOT.test(id)));
   const issues = new IssueList();
+  // Google Play needs a real 512 px icon; without the app's own icon Vitrin would render a letter placeholder.
+  if (opts.enabledTargets.includes('play-icon') && !(profile.brand?.appIcon && existsSync(join(profile.project.root, profile.brand.appIcon)))) {
+    issues.error('icon.missing', 'No app icon was found (app_profile.json brand.appIcon); Google Play needs the real 512 px icon, not a generated placeholder.', { file: 'metadata/app_profile.json', fix: 'Point brand.appIcon to the 1024 px icon in the project.' });
+  }
   const features = new Map(profile.features.map((f) => [f.id, f]));
 
   for (const f of profile.features) {
@@ -147,11 +153,19 @@ export function validateClaims(opts: {
         if (kids) issues.warn('shot.kids-reserved', `${where} (${locale}): “${kids}” is reserved for apps in the Kids Category (App Review 2.3.8, 5.1.4).`, { locale });
         const ph = findPlaceholder(texts);
         if (ph) issues.error('shot.placeholder', `${where} (${locale}): template text (“${ph}”) in the screenshot copy.`, { locale });
+        // The same shots become the Google Play set: Play's metadata policy forbids ranking claims and other stores on graphics.
+        if (onPlay(s)) {
+          const superlative = [...new Set([...(forbidden.superlatives['*'] ?? []), ...(forbidden.superlatives[base] ?? [])])].find((t) => containsTerm(texts, t, locale));
+          if (superlative) issues.error('shot.play-superlative', `${where} (${locale}): “${superlative}” on a Google Play screenshot; Play does not allow ranking or performance claims in store graphics.`, { locale, fix: 'Rephrase, or restrict the shot to App Store targets with `targets`.' });
+          const apple = forbidden.appleTrademarks.find((t) => containsTerm(texts, t, locale));
+          if (apple) issues.error('shot.play-apple-term', `${where} (${locale}): “${apple}” on a Google Play screenshot.`, { locale, fix: 'Rephrase, or restrict the shot to App Store targets with `targets`.' });
+        }
         if (/^(ja|zh|ko)/.test(locale) && graphemeLength(copy.headline) > 16) issues.warn('shot.headline-long', `${where} (${locale}): headline exceeds 16 characters.`, { locale });
         for (const b of s.badges) if (!b.label[locale]) issues.error('badge.missing-label', `${where}: badge label missing for ${locale}.`, { locale });
       }
       const ids = s.id;
       if (shots.shots.filter((x) => x.id === ids).length > 1) issues.error('shot.duplicate-id', `${where}: the same sequence number is used by more than one screenshot.`);
+      if (onPlay(s) && s.archetype === 'testimonial') issues.warn('shot.play-testimonial', `${where}: App Store reviews would appear on the Google Play listing; restrict the shot to App Store targets with \`targets\`.`);
     }
     if (shots.shots.length) {
       const ordered = [...shots.shots].sort((a, b) => a.id.localeCompare(b.id));
@@ -242,6 +256,7 @@ export function validateClaims(opts: {
   return issues;
 }
 
+const PLAY_SCREENSHOT = /^play-(phone|tablet)/;
 const MINUTE = 60_000;
 const DAY = 24 * 60 * MINUTE;
 

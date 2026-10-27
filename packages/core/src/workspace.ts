@@ -60,6 +60,8 @@ export function appPaths(root: string) {
     keywordFile: (locale: string) => join(research, 'keywords', `${locale}.json`),
     /** The listing as it is live today (asc or App Store lookup), read during research. */
     liveListing: join(research, 'live-listing.json'),
+    /** The app's icon among competitors' icons at search-result size (icon audit). */
+    iconSheet: join(research, 'icons.png'),
     /** The app's own search ranks, one snapshot per day; outside research/ so they survive its deletion. */
     rankings: join(v, 'rankings'),
     /** The store copy Claude writes (JSON, validated by `vitrin write`). */

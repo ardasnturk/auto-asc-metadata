@@ -99,6 +99,8 @@ export async function validateScreenshots(opts: {
         issues[sev === 'error' ? 'error' : 'warn']('image.missing-target', `${locale}: no screenshots for ${t.label}.`, { locale });
       } else if (n > maxScreenshots(t)) {
         issues.error('image.too-many', `${locale}: ${n} screenshots for ${t.label}; ${storeName(t)} allows at most ${maxScreenshots(t)}.`, { locale });
+      } else if (t.store === 'google-play' && n < 2) {
+        issues.error('image.too-few', `${locale}: ${n} screenshot for ${t.label}; Google Play needs at least 2.`, { locale });
       }
     }
     const values = [...(byLocale?.values() ?? [])];
@@ -110,6 +112,15 @@ export async function validateScreenshots(opts: {
   // Render-time quality measurements
   for (const img of opts.manifest?.images ?? []) {
     const where = `${img.locale}/${basename(img.file)}`;
+    // Screens borrowed from another device family or language: iOS UI on Google Play, or the wrong language.
+    const target = opts.targets.find((t) => t.id === img.target);
+    if (img.capture && target?.store === 'google-play' && img.capture.families.some((f) => !f.startsWith('android'))) {
+      issues.error('image.ios-ui-on-play', `${where}: shows the ${img.capture.families.join('/')} capture on a Google Play screenshot.`, { locale: img.locale, file: img.file, fix: 'Capture or write the Android screens (metadata/screens/<id>.android-phone.html, or an Android emulator capture).' });
+    }
+    if (img.capture?.locales.some((l) => l !== img.locale)) {
+      const early = Number(img.shot) <= 3;
+      issues[early ? 'error' : 'warn']('image.language-mismatch', `${where}: shows the ${img.capture.locales.filter((l) => l !== img.locale).join('/')} UI in a ${img.locale} screenshot.`, { locale: img.locale, file: img.file, fix: `Add ${img.locale} strings for the screen and run vitrin capture again.` });
+    }
     for (const o of img.overflow) issues.error('image.overflow', `${where}: text overflows/is clipped (${o}).`, { locale: img.locale, file: img.file, fix: 'Shorten the headline or remove the subheadline.' });
     if (img.target === 'iphone-6.9' && img.headlinePx !== undefined && img.headlinePx < MIN_HEADLINE_PX_69) {
       issues.error('image.headline-small', `${where}: headline is ${Math.round(img.headlinePx)} px; must be at least ${MIN_HEADLINE_PX_69} px on a 6.9" screenshot.`, { locale: img.locale, file: img.file });

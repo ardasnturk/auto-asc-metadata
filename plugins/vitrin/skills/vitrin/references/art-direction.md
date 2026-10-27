@@ -131,4 +131,5 @@ Shrink the first three screenshots to ~220 px wide (`metadata/.cache/thumbs`). I
 
 - **App Store creatives** (header 21:9, search 3:2): caption left, 1–3 devices right; short brand line, not a screenshot headline.
 - **Google Play feature graphic** (1024×500): no device frame — app icon as the hero object, app name + one short line (taken from `creatives.header`, else the hero copy). **Play icon** (512×512): the app icon full-bleed (Google applies the mask).
-- Android screenshots use the Android frames (punch-hole, flat edge); never Apple hardware on Google Play.
+- Android screenshots use the Android frames (punch-hole, flat edge) and Android captures; never Apple hardware or iOS UI on Google Play (`image.ios-ui-on-play`). App Store ratings and Apple platform badges are dropped from Play images automatically; ranking words (“#1”, “best”) and Apple names on a shot that reaches Play are errors (`shot.play-superlative`, `shot.play-apple-term`) — restrict App Store-only shots with `targets`.
+- Every screenshot shows the UI in its own language: a fallback to the primary locale's capture is an error in the first three shots (`image.language-mismatch`).

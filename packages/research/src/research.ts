@@ -1,10 +1,11 @@
 import { cachedFetch, ensureDir, existsSync, log, readJsonIfExists, storefrontForLocale, storefrontInfo, writeJson, type AppPaths } from '@vitrin/core';
 import { Competitors as CompetitorsSchema, KeywordPlan, type AppProfile, type CompetitorApp, type Competitors, type KeywordCandidate, type VitrinConfig } from '@vitrin/schemas';
-import { writeFile } from 'node:fs/promises';
+import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { GENRE_IDS, ItunesClient, toCompetitor, type ItunesSoftware } from './itunes.js';
 import { competitionScore, estimatePopularity, nameTermFrequency, stopwordsFor, titleShare, totalScore } from './keywords.js';
 import { ocrBinary, ocrImages, visionLanguage } from './ocr.js';
+import { iconSheet } from './icons.js';
 import { extractPalette } from './palette.js';
 import { appleAdsAvailable, appTweakProvider, type PopularityProvider } from './popularity.js';
 
@@ -130,6 +131,14 @@ export async function runResearch(opts: ResearchOptions): Promise<ResearchResult
         app.screenshotText = files.map((f, index) => ({ index, lines: text.get(f) ?? [] }));
       }
     }
+  }
+
+  // Icon audit: the app's icon among the strongest competitors' icons at search-result size (light and dark).
+  if (!opts.skipImages) {
+    const ownIcon = profile.brand.appIcon ? join(profile.project.root, profile.brand.appIcon) : undefined;
+    const own = ownIcon && existsSync(ownIcon) ? await readFile(ownIcon) : undefined;
+    const primary = plan[0]?.storefront;
+    if (await iconSheet({ out: paths.iconSheet, own, apps: kept.filter((a) => a.storefront === primary), cacheDir })) log.dim('  icon comparison → metadata/research/icons.png');
   }
 
   for (const { locale, storefront } of plan) {

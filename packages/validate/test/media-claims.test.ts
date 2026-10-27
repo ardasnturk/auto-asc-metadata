@@ -43,6 +43,33 @@ describe('screenshot files', () => {
   });
 });
 
+describe('borrowed captures and Google Play counts', () => {
+  it('rejects iOS UI on Google Play, a wrong language in the first shots and a single Play screenshot', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'vitrin-play-'));
+    mkdirSync(join(dir, 'tr'));
+    const png = (name: string, w: number, h: number) => sharp({ create: { width: w, height: h, channels: 3, background: '#fff' } }).png().toFile(join(dir, 'tr', name));
+    await png('01_hero_play-phone.png', 1080, 1920);
+    await png('01_hero_iphone-6.3.png', 1206, 2622);
+    await png('05_more_iphone-6.3.png', 1206, 2622);
+    const image = (file: string, target: string, shot: string, capture: { families: string[]; locales: string[] }) => ({ file: join(dir, 'tr', file), target, locale: 'tr', shot, width: 1, height: 1, overflow: [], safeAreaViolations: [], capture });
+    const manifest = {
+      generatedAt: '',
+      artDirection: 'x',
+      videos: [],
+      images: [
+        image('01_hero_play-phone.png', 'play-phone', '01', { families: ['iphone'], locales: ['tr'] }),
+        image('01_hero_iphone-6.3.png', 'iphone-6.3', '01', { families: ['iphone'], locales: ['en-US'] }),
+        image('05_more_iphone-6.3.png', 'iphone-6.3', '05', { families: ['iphone'], locales: ['en-US'] }),
+      ],
+    };
+    const issues = await validateScreenshots({ screenshotsDir: dir, locales: ['tr'], targets: [t('iphone-6.3'), t('play-phone')], manifest });
+    const of = (code: string) => issues.items.filter((i) => i.code === code);
+    expect(of('image.ios-ui-on-play')).toHaveLength(1);
+    expect(of('image.language-mismatch').map((i) => i.severity)).toEqual(['error', 'warning']);
+    expect(of('image.too-few')).toHaveLength(1);
+  });
+});
+
 describe('video rules', () => {
   const base = { durationSec: 22, width: 886, height: 1920, fps: 30, videoCodec: 'h264', profile: 'High', level: 40, bitrate: 11_000_000, audioCodec: 'aac', audioChannels: 2, audioSampleRate: 48000, sizeBytes: 30_000_000 };
   it('accepts a compliant App Preview', () => {
@@ -127,6 +154,19 @@ describe('claim ↔ evidence', () => {
     expect(c).toContain('cpp.no-shots');
     expect(c).toContain('cpp.unknown-shot');
     expect(c).toContain('cpp.copy-unused');
+  });
+
+  it('checks shots that reach Google Play and a missing Play icon', () => {
+    const shot = (over: Record<string, unknown>) => ({ id: '01', slug: 'a', archetype: 'hero', screens: ['home'], featureIds: ['streaks'], copy: { tr: { headline: 'Serini koru' } }, ...over });
+    const run = (shots: unknown[], targets: string[]) => validateClaims({ config, profile, shots: ShotList.parse({ shots }), enabledTargets: targets }).items.map((i) => i.code);
+    const best = shot({ copy: { tr: { headline: 'En iyi alışkanlık uygulaması' } } });
+    expect(run([best], ['iphone-6.9', 'play-phone'])).toContain('shot.play-superlative');
+    // App Store only: the shot does not reach Play, or Play is not enabled.
+    expect(run([{ ...best, targets: ['iphone-6.9'] }], ['iphone-6.9', 'play-phone'])).not.toContain('shot.play-superlative');
+    expect(run([best], ['iphone-6.9'])).not.toContain('shot.play-superlative');
+    expect(run([shot({ copy: { tr: { headline: 'Apple Watch ile seri' } } })], ['play-phone'])).toContain('shot.play-apple-term');
+    expect(run([shot({ archetype: 'testimonial' })], ['play-phone'])).toContain('shot.play-testimonial');
+    expect(run([shot({})], ['play-icon'])).toContain('icon.missing');
   });
 
   it('checks flow beats and the optional closing line of a video plan', () => {
