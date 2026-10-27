@@ -2,7 +2,7 @@
 
 All notable changes to this project are documented in this file. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## Unreleased
+## 0.8.0 — 2026-10-27
 
 ### Added — Product Page Optimization tests
 - **`metadata/experiments.json`:** an A/B test of the product page — hypothesis, metric, minimum detectable effect, traffic share, and up to three treatments that each change one thing (headline copy per shot and locale, the screenshot order, or an alternate icon from the binary). With the app's daily page views and conversion, validate estimates how many days the test needs and warns past Apple's 90.
@@ -53,8 +53,6 @@ All notable changes to this project are documented in this file. The format is b
 - Screenshots in previews push in faster (5 % over 3 s instead of 6 % over 6 s).
 - **No blank first frame, a settled poster frame:** the hook starts 0.6 s into its own entrance, so frame 0 (where autoplay starts) already shows the device and the hook line; the scene before the 5-second poster frame is held a little longer when that frame would land on a cut, an entrance or a text card.
 - **`vitrin video --studio`:** the first preview with the props `vitrin video` would render, in Remotion Studio (development checkouts, where @remotion/cli is installed).
-
-## 0.8.0 — 2026-10-26
 
 ### Added — Designed for each app, shown in the store you ship to
 - **Bespoke designs:** Claude now designs screenshots for the app instead of only picking presets. Art directions without a preset (own palette, typography, background and device treatment) can be sampled next to presets (`vitrin design --samples --styles <preset>,<option-id>`), up to six options per `art-direction.json`. A shot can have its own HTML layout (`"template": "plan.html"` in `metadata/designs/`, per family `plan.ipad.html` …) with `{{headline}}`/`{{subheadline}}`/`{{badges}}` placeholders and `<vitrin-device screen="…">` mockups; it renders through the same size checks, quality gate and review. Guide: `references/custom-designs.md`.
