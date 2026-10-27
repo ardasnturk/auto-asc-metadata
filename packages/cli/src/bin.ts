@@ -13,6 +13,7 @@ import { platformsCommand, selectCommand, uploaderCommand, type SelectOptions } 
 import { submitCommand, uploadCommand } from './commands/upload.js';
 import { finalizeCommand } from './finalize.js';
 import { reviewCommand } from './review-server.js';
+import { studioCommand } from './studio/server.js';
 
 const program = new Command();
 program
@@ -172,6 +173,13 @@ program
   .option('--port <port>', 'port for --serve (0 = any free port)', '4870')
   .option('--print-labels', 'print the gallery words in English as JSON, to translate into metadata/i18n/<language>.json')
   .action(action(async (o: { serve?: boolean; port: string; printLabels?: boolean }) => reviewCommand(await createContext(globals()), { serve: o.serve, port: Number(o.port), printLabels: o.printLabels })));
+
+program
+  .command('studio')
+  .description('Vitrin Studio: the whole flow in a local web UI on 127.0.0.1 (stages, editors, previews, review, upload, a Claude panel)')
+  .option('--port <port>', 'port (0 = any free port)', '4871')
+  .option('--no-open', 'do not open the browser')
+  .action(action(async (o: { port: string; open: boolean }) => studioCommand({ cwd: globals().cwd, port: Number(o.port), open: o.open })));
 
 program
   .command('approve')

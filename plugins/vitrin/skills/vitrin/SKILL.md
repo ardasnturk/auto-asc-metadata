@@ -15,6 +15,8 @@ The app's own screens are HTML too: by default (`capture.mode: html`) you read t
 
 The rendered screens go into ready-made device mockups — iPhone, iPad, iPhone Duo closed, open and as a pair, Apple Watch, Mac (laptop and window), Apple TV, Vision Pro, Android phone and tablet (`vitrin mockups`; templates in `assets/mockups/` of this skill). The screenshot layouts use the very same frames.
 
+**Vitrin Studio** (`vitrin studio`) is the same flow in a local web UI on `127.0.0.1`: the stage board with live logs, editors for the setup, screens, metadata, art direction, shots and the video plan, the samples and store preview, the review gallery with approve/reject, and the upload with its gates — plus a panel that runs Claude Code on a brief. When the user asks for a UI, a dashboard, "the studio", or wants to edit and re-render things themselves, start it in the background (`vitrin studio --no-open`, it runs until stopped), give them the printed URL, and keep working with the same files: the Studio and this skill read and write the same `metadata/` folder, so anything either side changes shows up in the other. Never run a stage in parallel with a Studio job on the same project.
+
 The working directory is the app's repository. Every command uses these exit codes:
 
 | Code | Meaning | What you do |

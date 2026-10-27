@@ -35,7 +35,7 @@
     "url": "https://vitrin.ardasnturk.com/",
     "codeRepository": "https://github.com/ardasnturk/vitrin",
     "license": "https://opensource.org/licenses/MIT",
-    "softwareVersion": "0.9.0",
+    "softwareVersion": "1.0.0",
     "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
   }
   </script>
@@ -55,6 +55,7 @@
           <li><a href="#platforms">Platforms</a></li>
           <li><a href="#design">Design</a></li>
           <li><a href="#review">Review</a></li>
+          <li><a href="#studio">Studio</a></li>
           <li><a href="#start">Install</a></li>
           <li><a href="#faq">FAQ</a></li>
         </ul>
@@ -98,7 +99,7 @@
     <section class="facts" aria-label="At a glance">
       <ul class="wrap facts-list">
         <li><strong>App Store + Play</strong><span>iPhone to Vision Pro</span></li>
-        <li><strong>12</strong><span>style presets + designs made for your app</span></li>
+        <li><strong>16</strong><span>style presets + designs made for your app</span></li>
         <li><strong>4</strong><span>App Preview styles</span></li>
         <li><strong>50</strong><span>App Store locales</span></li>
         <li><strong>0</strong><span>extra LLM API keys</span></li>
@@ -350,6 +351,17 @@
       </div>
     </section>
 
+    <!-- Studio -->
+    <section id="studio" aria-labelledby="studio-title">
+      <div class="wrap">
+        <h2 id="studio-title" class="section-title">Vitrin Studio: the whole flow in your browser</h2>
+        <p class="section-lead"><code>vitrin studio</code> serves a local UI on <code>127.0.0.1</code>: a stage board with the CLI's log streamed live, editors for the setup, the screens, the metadata (App Store Connect counters, validation next to each field), the art direction, the shot list with the rendered set beside it, and the video plan; the design samples and the store preview; the review gallery with approve and reject; and the upload behind its gates — keys by name only, a dry-run plan, your typed confirmation, the read-back, finalize. A Claude panel runs your own Claude Code on any brief and shows every step. The Studio never uploads, approves or submits on its own.</p>
+        <figure class="studio-shot">
+          <img src="assets/studio.webp" alt="Vitrin Studio: the Design page with the rendered screenshot set as the store shows it, the shot list, the shot editor and the shot's render beside it" width="1800" height="1125" loading="lazy">
+        </figure>
+      </div>
+    </section>
+
     <!-- Validation -->
     <section id="rules" aria-labelledby="validate-title">
       <div class="wrap split">
@@ -402,6 +414,10 @@
           <article class="card">
             <h3>Tidy repository</h3>
             <p>Everything Vitrin generates lives in one <code>metadata/</code> folder. A managed <code>.gitignore</code> block keeps generated files out of git. Keys stay in <code>.env</code> and are masked in every log.</p>
+          </article>
+          <article class="card">
+            <h3>Vitrin Studio</h3>
+            <p><code>vitrin studio</code> opens the whole flow in a local web UI: a stage board with live logs, editors for metadata, art direction, shots and the video plan with the renders beside them, the review gallery with approve and reject, the upload behind its gates — and a panel that runs your own Claude Code on any brief, no API key. It never uploads or approves on its own.</p>
           </article>
           <article class="card">
             <h3>Idempotent and resumable</h3>
@@ -492,7 +508,7 @@ claude</code></pre><button class="copy" type="button" data-copy="cd path/to/Your
       <div class="brand">
         <img src="assets/logo.svg" alt="" width="24" height="24">
         <span>Vitrin</span>
-        <a class="version" href="https://github.com/ardasnturk/vitrin/blob/main/CHANGELOG.md">v0.9.0</a>
+        <a class="version" href="https://github.com/ardasnturk/vitrin/blob/main/CHANGELOG.md">v1.0.0</a>
       </div>
       <ul class="footer-links">
         <li><a href="https://github.com/ardasnturk/vitrin">GitHub</a></li>

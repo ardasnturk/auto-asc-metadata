@@ -18,6 +18,7 @@ Requires Node.js 22 or newer.
 ```bash
 npm install -g @ardasnturk/vitrin
 vitrin doctor   # lists missing tools; for Chromium it prints the exact `playwright install chromium` command
+vitrin studio   # Vitrin Studio: the whole flow in a local web UI (127.0.0.1), with a panel that runs your Claude Code
 vitrin --help
 ```
 

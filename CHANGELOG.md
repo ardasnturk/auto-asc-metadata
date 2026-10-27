@@ -2,6 +2,17 @@
 
 All notable changes to this project are documented in this file. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## 1.0.0 — 2026-10-27
+
+### Added — Vitrin Studio
+- **`vitrin studio`:** the whole Vitrin flow in a local web UI on `127.0.0.1` (same security model as the review server: host and origin checks, only `metadata/` and the app icon are served, `.env`, `.p8` and `secrets/` never, secrets masked in every log line). A stage board runs every CLI stage in-process with its log streamed live, shows what ran and what waits for input, and opens the brief a stage left. Editors for the setup (platforms, content, formats, store languages, the language Vitrin talks in, the uploader, how screens are made → `vitrin select`), the HTML screens and strings with their renders per language and device, the metadata per language with App Store Connect grapheme and byte counters and the validation issues next to each field, the app-level fields and the Google Play listing, the art direction (options, presets, brand color, emphasis, kicker, color cycle), the shot list (archetype, framing, screens, copy per language, bullets, brand mark, photo, template; the rendered set as the store shows it, the shot's renders beside the form, one-click re-render of a shot) and the video plan (previews, styles, beats, the four-style comparison, the rendered previews, Remotion Studio from a development checkout). Every JSON editor has a form and a raw JSON view; saves are validated against the schema and refused with the exact issues.
+- **Review and upload in the Studio:** the review gallery with approve and reject (the same contract as `vitrin review --serve`, so the gallery's own buttons work inside the Studio), the upload keys by name only, `doctor`, the dry-run plan, the upload only after the app name is typed as confirmation, the read-back, finalize with the research-data question, and submit only with the bundle id typed. Nothing is uploaded, approved, submitted or finalized without a click that says so.
+- **A Claude panel:** the Studio runs the user's own Claude Code (`claude -p`, stream-json, no API key) on a brief or a free-form instruction, inside the app repository, and shows the text, every tool call and the result live; one conversation per Studio session, cancel at any time. The run is fenced: it may write only what the skill writes and can never run `vitrin upload`, `approve`, `submit`, `finalize` or `init`, nor git. Stages and Claude never run at the same time on one project.
+- The Studio is English and Turkish like the review gallery (`ui.language`), works before `vitrin init` (it offers to create the config), reloads editors when a stage or Claude changed a file on disk, and ships prebuilt in the npm package (`studio/`), built by `pnpm build` from `packages/studio` (React + esbuild, no runtime dependency).
+
+### Changed
+- The logger has listeners (`onLog`): every line it or a streamed subprocess prints is also delivered, masked and without colors, to whoever subscribed. Nothing changes for the terminal.
+
 ## 0.9.0 — 2026-10-27
 
 ### Added — more screenshot designs, from what popular apps do

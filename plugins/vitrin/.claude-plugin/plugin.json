@@ -1,6 +1,6 @@
 {
   "name": "vitrin",
-  "version": "0.9.0",
+  "version": "1.0.0",
   "description": "App Store Connect and Google Play listings from your app repository: ASO metadata, HTML-rendered screenshots, Remotion App Previews, validation, a review gallery and approved upload. Run /vitrin in your app project.",
   "author": {
     "name": "Arda Sentürk",

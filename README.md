@@ -25,6 +25,7 @@ Apple's rules as of October 2026, and the points that could not be verified, are
 - **Quality gate** — every rendered image is measured in the browser: device height ratio, largest empty band, widest headline word, worst-pixel headline contrast, visual layer count and a thumbnail legibility test.
 - **App Previews and creatives** — Remotion compositions in four styles (`classic`, `showcase`, `kinetic`, `energetic`) with seven scene types — including `flow`, the app in use with taps and screen changes — a camera that keeps moving, the same device frames as the screenshots, portrait iPhone/iPad and landscape Mac/Apple TV previews, normalized with ffmpeg to H.264 High@4.0, 30 fps CFR, stereo AAC; header and search loops; In-App Event cards.
 - **Product Page Optimization tests** — `metadata/experiments.json` plans an A/B test of the product page (hypothesis, up to three treatments that each change one thing: headline copy, screenshot order or an alternate icon, a duration estimate from page views and conversion). `vitrin design` renders every treatment's screenshot set, the review shows them, and `vitrin upload --experiment` creates the test as a draft with each treatment's set placed; the result is written back to plan the next test.
+- **Vitrin Studio** — `vitrin studio` opens the whole flow in a local web UI on `127.0.0.1`: a stage board with live logs, editors for the setup, the HTML screens, the metadata (with App Store Connect counters and validation inline), the art direction, the shot list (with the rendered set beside it, one-click re-render of a shot) and the video plan, the design samples and store preview, the review gallery with approve and reject, and the upload with keys (names only), dry-run plan, explicit confirmation, read-back and finalize. A Claude panel runs your own Claude Code (`claude -p`, no API key) on any brief and shows what it does; the Studio never uploads, approves or submits on its own.
 - **Review and approval** — `vitrin review --serve` opens a local gallery of everything that would be uploaded (every image, video and text, per store, platform, locale and target, with validation issues inline). You approve everything or reject single items with a comment; the approval records a hash of every file, and any later change requires approving again.
 - **Upload** — one fastlane `deliver` run per Apple platform for complete sets, `supply` for Google Play; single display types are replaced through the App Store Connect API (one screenshot or preview set per locale, the App Asset Library for iPhone Duo and creatives), plus Custom Product Pages and In-App Events. You choose the App Store uploader: fastlane `deliver` or the [asc CLI](https://github.com/rorkai/App-Store-Connect-CLI) (`brew install asc`, no Ruby needed); `vitrin uploader` shows which is installed. Partial runs ("only watchOS screenshots", "only the App Preview") never delete or overwrite anything you did not select. Always a dry-run plan first, explicit approval, and a read-back after upload. Display types and Asset Library names follow Apple's App Store Connect API 4.5.1 OpenAPI spec.
 - **One folder, tidy repository** — everything Vitrin generates lives in `metadata/` (an older `.vitrin/` folder is moved there automatically); a managed `.gitignore` block keeps generated files out of git while the sources Claude writes stay committable. After a checked upload, `vitrin finalize` asks whether to delete the research data (`metadata/research/`) and deletes nothing else.
@@ -91,6 +92,7 @@ The skill first asks which language to talk in (English by default). On a new re
 | `vitrin video [--styles all] [--studio]` | Remotion → `metadata/store/app-previews/<locale>/…mp4`, header/search loops; `--studio` opens the first preview in Remotion Studio (development checkout) |
 | `vitrin validate` | `metadata/validation.json` (exit code 1 on errors) |
 | `vitrin review [--serve] [--print-labels]` | `metadata/report.html`, the gallery of everything that would be uploaded, in `ui.language`; `--serve` adds approve and reject buttons on `127.0.0.1`; `--print-labels` prints the words to translate into `metadata/i18n/<language>.json` |
+| `vitrin studio [--port 4871] [--no-open]` | Vitrin Studio on `127.0.0.1`: stages, editors, previews, the review gallery, approval, upload and a Claude panel in the browser (runs until Ctrl+C) |
 | `vitrin approve [--expect-hash …] [--reject … --comment …]` | Records the user's approval (or rejections) in `metadata/approval.json` |
 | `vitrin upload [--dry-run] [--creatives] [--cpp] [--events] [--experiment [id]]` | Plan with replaced and untouched sets; after approval: deliver per Apple platform / single display types (ASC API, Asset Library) / asc / supply / CPP / In-App Events / a Product Page Optimization test (draft), then read-back |
 | `vitrin finalize --checked --delete-research \| --keep-research` | After a checked upload: records what was uploaded (`metadata/uploaded.json`) and deletes the research data only when the user said so |
@@ -150,7 +152,9 @@ Only the targets of the platforms you select are produced. Full list, sources an
 ## Repository layout
 
 ```
-packages/cli        commands, state, briefs, HTML screens, build + capture (simulators, Mac, Android), review gallery, approval, finalize
+packages/cli        commands, state, briefs, HTML screens, build + capture (simulators, Mac, Android), review gallery, approval, finalize,
+                    studio/ (the Studio server: jobs, editable files, overview, the Claude runner)
+packages/studio     the Studio UI (React, built with esbuild into dist/ by `pnpm build`; shipped prebuilt as studio/ in the npm package)
 packages/schemas    zod schemas (AppProfile, Competitors, KeywordPlan, Metadata, PlayListing, ArtDirection, ShotList, VideoPlan, Approval, Config)
 packages/core       masking logger, exec, state, config/.env, data files, cached HTTP, enabled targets, .gitignore block
 packages/analyzer   project kind and platform detection; pbxproj / plists / entitlements / catalogs / StoreKit / Flutter / React Native / Gradle / code signals
@@ -176,6 +180,7 @@ pnpm install
 pnpm build
 pnpm test
 node packages/cli/dist/bin.js --cwd examples/Ritim validate
+node packages/cli/dist/bin.js --cwd examples/Ritim studio   # the Studio on the example; `pnpm dev:studio` rebuilds the UI on change
 ```
 
 Releases: bump `version` in `package.json` (the single source), `plugins/vitrin/.claude-plugin/plugin.json`, the `vitrin` entry of `.claude-plugin/marketplace.json` and every `packages/*/package.json` to the same value (a test checks this), add the CHANGELOG section, then push a tag `v<version>`. The release workflow tests, runs `pnpm pack:release` and creates the GitHub Release with `ardasnturk-vitrin-<version>.tgz`, which the plugin's launcher installs; it also publishes to npm when the `NPM_TOKEN` secret is set.

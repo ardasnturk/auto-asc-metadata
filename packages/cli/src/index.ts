@@ -8,3 +8,4 @@ export * from './briefs.js';
 export * from './approval.js';
 export * from './review-server.js';
 export * from './finalize.js';
+export * from './studio/index.js';

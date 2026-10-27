@@ -16,7 +16,8 @@ Requirements: macOS (for simulator capture and Vision OCR; everything else also 
 ```bash
 corepack enable
 pnpm install
-pnpm build          # tsc -b for all packages
+pnpm build          # tsc -b for all packages, then the Studio UI (packages/studio → dist/ via esbuild)
+pnpm dev:studio     # rebuild the Studio UI on change while `vitrin studio` serves it
 pnpm test           # vitest
 pnpm typecheck      # also checks the Remotion (.tsx) sources
 ```

@@ -80,6 +80,12 @@ copy('fastlane/Gemfile', 'fastlane/Gemfile');
 copy('packages/video/src/remotion', 'src/remotion');
 copy('packages/video/src/types.ts', 'src/types.ts');
 copy('packages/research/scripts/ocr.swift', 'scripts/ocr.swift');
+// The Studio UI (`vitrin studio`), prebuilt by packages/studio/build.mjs; the server looks for <pkg>/studio/index.html.
+if (!existsSync(join(ROOT, 'packages', 'studio', 'dist', 'index.html'))) {
+  console.error('packages/studio/dist is missing: run `pnpm build` first (it builds the Studio UI too).');
+  process.exit(1);
+}
+copy('packages/studio/dist', 'studio');
 copy('LICENSE', 'LICENSE');
 copy('scripts/npm-readme.md', 'README.md');
 
@@ -89,7 +95,7 @@ const pkg = {
   description: 'Vitrin CLI: App Store Connect and Google Play metadata, HTML-rendered screenshots and Remotion App Previews, driven by the /vitrin Claude Code skill',
   type: 'module',
   bin: { vitrin: 'dist/bin.js' },
-  files: ['dist', 'data', 'fastlane', 'src', 'scripts'],
+  files: ['dist', 'data', 'fastlane', 'src', 'scripts', 'studio'],
   engines: { node: '>=22' },
   dependencies: sortedDeps,
   keywords: ['app-store', 'app-store-connect', 'google-play', 'aso', 'fastlane', 'screenshots', 'app-preview', 'remotion', 'ios', 'claude-code'],

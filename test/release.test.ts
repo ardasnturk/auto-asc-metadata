@@ -80,7 +80,11 @@ describe.skipIf(!existsSync(CLI))('packed @ardasnturk/vitrin tarball', () => {
       ...readdirSync(join(ROOT, 'data')).filter((f) => f.endsWith('.json')).map((f) => `data/${f}`),
       ...readdirSync(join(ROOT, 'data', 'screen-kit')).map((f) => `data/screen-kit/${f}`),
       ...readdirSync(join(ROOT, 'packages', 'video', 'src', 'remotion')).map((f) => `src/remotion/${f}`),
+      // The Studio UI (`vitrin studio`), prebuilt into packages/studio/dist by `pnpm build`.
+      ...readdirSync(join(ROOT, 'packages', 'studio', 'dist')).map((f) => `studio/${f}`),
     ];
+    expect(files).toContain('studio/index.html');
+    expect(files).toContain('studio/studio.js');
     expect(files.sort()).toEqual([...new Set(expected)].sort());
 
     const pkg = JSON.parse(readFileSync(join(out, 'package', 'package.json'), 'utf8'));

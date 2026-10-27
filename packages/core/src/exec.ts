@@ -1,5 +1,5 @@
 import { spawn } from 'node:child_process';
-import { mask } from './logger.js';
+import { emitRaw, mask } from './logger.js';
 
 export interface ExecResult {
   code: number;
@@ -42,7 +42,7 @@ export function exec(cmd: string, args: string[], opts: ExecOptions = {}): Promi
       const buf = pending[key];
       const cut = final ? buf.length : buf.lastIndexOf('\n') + 1;
       if (cut > 0) {
-        stream.write(mask(buf.slice(0, cut)));
+        emitRaw(stream, buf.slice(0, cut));
         pending[key] = buf.slice(cut);
       }
     };
