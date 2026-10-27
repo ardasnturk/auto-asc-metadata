@@ -1,6 +1,12 @@
+import { existsSync, log } from '@vitrin/core';
 import type { CustomProductPage, InAppEventSpec } from '@vitrin/schemas';
+import { readdir } from 'node:fs/promises';
+import { join } from 'node:path';
 import { z } from 'zod';
 import type { AscClient, JsonApiDocument, JsonApiResource } from './asc-client.js';
+import { AssetLibraryClient } from './asset-library.js';
+import { displayTypesFor } from './display-types.js';
+import type { PollOptions } from './upload-operations.js';
 
 type EventSpec = z.infer<typeof InAppEventSpec>;
 
@@ -61,13 +67,27 @@ export async function createCustomProductPage(asc: AscClient, appId: string, pag
   return { pageId, localizations };
 }
 
-/** In-App Event draft with localizations. Media is attached through Asset Library placements. */
+/** `appEvents` attributes of a spec: schedule and deep link only when the plan has them (a draft can do without). */
+export function eventAttributes(e: EventSpec, primaryLocale: string): Record<string, unknown> {
+  return {
+    referenceName: e.id,
+    badge: e.badge,
+    primaryLocale,
+    purchaseRequirement: e.purchaseRequirement,
+    priority: e.priority,
+    purpose: e.purpose,
+    ...(e.deepLink ? { deepLink: e.deepLink } : {}),
+    ...(e.schedule ? { territorySchedules: [{ territories: e.schedule.territories, publishStart: e.schedule.publishStart ?? e.schedule.eventStart, eventStart: e.schedule.eventStart, eventEnd: e.schedule.eventEnd }] } : {}),
+  };
+}
+
+/** In-App Event draft with localizations. Its card and detail images are placed with placeEventMedia. */
 export async function createInAppEvent(asc: AscClient, appId: string, e: EventSpec, primaryLocale: string, locales: string[]): Promise<{ eventId: string; localizations: Record<string, string> }> {
   const eventId = idOf(
     await asc.request<JsonApiDocument>('POST', '/v1/appEvents', {
       data: {
         type: 'appEvents',
-        attributes: { referenceName: e.id, badge: e.badge, primaryLocale, purchaseRequirement: 'NO_COST_ASSOCIATED', priority: 'NORMAL', purpose: 'APPROPRIATE_FOR_ALL_USERS' },
+        attributes: eventAttributes(e, primaryLocale),
         relationships: { app: { data: { type: 'apps', id: appId } } },
       },
     }),
@@ -85,4 +105,62 @@ export async function createInAppEvent(asc: AscClient, appId: string, e: EventSp
     );
   }
   return { eventId, localizations };
+}
+
+/** Target id of a rendered screenshot (`NN_<slug>_<target>.png`; slugs and target ids never contain `_`). */
+export function screenshotTargetOf(file: string): string | undefined {
+  const m = /^\d{2}_[a-z0-9-]+_([a-z0-9.-]+)\.(png|jpe?g)$/.exec(file);
+  return m?.[1];
+}
+
+/**
+ * A Custom Product Page's own screenshot set (`<dir>/<locale>/NN_slug_<target>.png`, rendered by `vitrin design`)
+ * on each of its localizations: one Asset Library placement group per target, in file order. Returns the count placed.
+ */
+export async function placeCustomProductPageMedia(asc: AscClient, appId: string, dir: string, localizations: Record<string, string>, opts: { uploadFetch?: typeof fetch; poll?: PollOptions } = {}): Promise<number> {
+  if (!existsSync(dir)) return 0;
+  const lib = new AssetLibraryClient(asc, opts);
+  let libraryId: string | undefined;
+  let n = 0;
+  for (const [locale, locId] of Object.entries(localizations)) {
+    const localeDir = join(dir, locale);
+    if (!existsSync(localeDir)) continue;
+    const byTarget = new Map<string, string[]>();
+    for (const f of (await readdir(localeDir)).sort()) {
+      const target = screenshotTargetOf(f);
+      if (target) byTarget.set(target, [...(byTarget.get(target) ?? []), join(localeDir, f)]);
+    }
+    for (const [target, files] of byTarget) {
+      const spec = displayTypesFor(target)?.assetLibrary;
+      if (!spec) {
+        log.warn(`${locale} ${target}: no App Asset Library placement in data/asc-display-types.json; not placed on the page.`);
+        continue;
+      }
+      libraryId ??= await lib.libraryId(appId);
+      const res = await lib.replaceSet(libraryId, { type: 'appCustomProductPageLocalizations', id: locId }, spec, files.map((file) => ({ file, kind: 'image' as const })));
+      n += res.placements.length;
+    }
+  }
+  return n;
+}
+
+/**
+ * An In-App Event's card (16:9) and detail page (9:16) images on each of its localizations, from
+ * `<creativeDir>/<locale>/event-card_event-<id>-card.png` and `event-detail_event-<id>-detail.png`.
+ */
+export async function placeEventMedia(asc: AscClient, appId: string, creativeDir: string, eventKey: string, localizations: Record<string, string>, opts: { uploadFetch?: typeof fetch; poll?: PollOptions } = {}): Promise<number> {
+  const lib = new AssetLibraryClient(asc, opts);
+  let libraryId: string | undefined;
+  let n = 0;
+  for (const [locale, locId] of Object.entries(localizations)) {
+    for (const [target, file] of [['event-card', `event-card_event-${eventKey}-card.png`], ['event-detail', `event-detail_event-${eventKey}-detail.png`]] as const) {
+      const path = join(creativeDir, locale, file);
+      const spec = displayTypesFor(target)?.assetLibrary;
+      if (!existsSync(path) || !spec) continue;
+      libraryId ??= await lib.libraryId(appId);
+      const res = await lib.replaceSet(libraryId, { type: 'appEventLocalizations', id: locId }, spec, [{ file: path, kind: 'image' }]);
+      n += res.placements.length;
+    }
+  }
+  return n;
 }

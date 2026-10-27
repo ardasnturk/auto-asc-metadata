@@ -110,7 +110,8 @@ export function overallHash(files: HashedFile[], metadataJson: HashedFile[]): st
 export async function uploadFiles(ctx: Ctx): Promise<string[]> {
   const p = ctx.paths;
   const creative = (await walk(p.creative)).filter((f) => MEDIA_RE.test(f) && !basename(f).includes('.remotion.'));
-  return [...(await walk(p.fastlaneMetadata)), ...(await walk(p.screenshots)), ...(await walk(p.appPreviews)), ...creative];
+  const cpp = (await walk(p.cppScreenshots)).filter((f) => /\.(png|jpe?g)$/i.test(f));
+  return [...(await walk(p.fastlaneMetadata)), ...(await walk(p.screenshots)), ...(await walk(p.appPreviews)), ...creative, ...cpp];
 }
 
 /** Absolute paths of the JSON the upload reads text from (metadata, CPP pages, In-App Event copy). */
@@ -261,10 +262,20 @@ export async function buildInventory(ctx: Ctx): Promise<Inventory> {
     items.push(await textItem(root, locale ? `metadata/google-play/${locale}` : 'metadata/google-play/app', 'google-play', 'android', locale || undefined, list, join(p.androidMetadata, locale), undefined));
   }
 
-  // Custom Product Pages and In-App Events (text from JSON, uploaded with --cpp / --events).
+  // Custom Product Pages and In-App Events (text from JSON, uploaded with --cpp / --events); each page's own
+  // screenshot set is metadata/store/cpp/<page id>/<locale>/NN_slug_<target>.png.
   const cpp = await readJsonIfExists(p.cpp, CppSuggestions).catch(() => undefined);
+  const cppImages = new Map<string, string[]>();
+  for (const f of await walk(p.cppScreenshots)) {
+    if (!/\.(png|jpe?g)$/i.test(f)) continue;
+    const [pageId, locale] = under(p.cppScreenshots, f);
+    const item = mediaItem(f, 'cpp', 'app-store', locale, targetFromName(f, targets), ascPlatform);
+    item.label = `Custom Product Page ${pageId} · ${item.label}`;
+    items.push(item);
+    cppImages.set(pageId!, [...(cppImages.get(pageId!) ?? []), item.id]);
+  }
   for (const page of cpp?.pages ?? []) {
-    items.push({ id: `cpp/${page.id}`, kind: 'cpp', store: 'app-store', platform: ascPlatform, label: `Custom Product Page · ${page.name}`, files: [rel(p.cpp)], data: page });
+    items.push({ id: `cpp/${page.id}`, kind: 'cpp', store: 'app-store', platform: ascPlatform, label: `Custom Product Page · ${page.name}`, files: [rel(p.cpp), ...(cppImages.get(page.id) ?? [])], data: page });
   }
   const shots = await readJsonIfExists(p.shots, ShotList).catch(() => undefined);
   for (const e of shots?.creatives.events ?? []) {

@@ -1,5 +1,5 @@
 import { baseLanguage, existsSync, graphemeLength, loadForbiddenTerms, wordCount } from '@vitrin/core';
-import { IDEAL_HEADLINE_WORDS, MAX_HEADLINE_WORDS, MIN_REAL_UI_RATIO, NON_UI_ARCHETYPES, type AppProfile, type Badge, type Competitors, type ShotList, type VideoPlan, type VitrinConfig } from '@vitrin/schemas';
+import { EVENT_LIMITS, IDEAL_HEADLINE_WORDS, MAX_HEADLINE_WORDS, MIN_REAL_UI_RATIO, NON_UI_ARCHETYPES, type AppProfile, type Badge, type Competitors, type CppSuggestions, type ShotList, type VideoPlan, type VitrinConfig } from '@vitrin/schemas';
 import { join } from 'node:path';
 import { findAppleAward, findKidsTerm, findPlaceholder, URL_ON_ASSET_RE } from './apple-rules.js';
 import { containsTerm, IssueList } from './issues.js';
@@ -14,9 +14,11 @@ export function validateClaims(opts: {
   shots?: ShotList;
   videoPlan?: VideoPlan;
   competitors?: Competitors;
+  /** metadata/cpp-suggestions.json */
+  cpp?: CppSuggestions;
   enabledTargets: string[];
 }): IssueList {
-  const { config, profile, shots, videoPlan, competitors } = opts;
+  const { config, profile, shots, videoPlan, competitors, cpp } = opts;
   const issues = new IssueList();
   const features = new Map(profile.features.map((f) => [f.id, f]));
 
@@ -174,6 +176,27 @@ export function validateClaims(opts: {
     }
     for (const e of shots.creatives.events) {
       checkIds([...e.card.featureIds, ...e.detail.featureIds], `Event ${e.id}`);
+      checkEvent(e, config.app.locales, issues);
+    }
+  }
+
+  if (cpp) {
+    const shotIds = new Set(shots?.shots.map((s) => s.id) ?? []);
+    for (const page of cpp.pages) {
+      const where = `Custom Product Page ${page.id}`;
+      const file = 'metadata/cpp-suggestions.json';
+      if (page.featureIds.length) checkIds(page.featureIds, where);
+      if (!page.shots.length) {
+        issues.warn('cpp.no-shots', `${where}: no screenshots of its own; a page that only changes the promotional text barely moves conversion — list this audience's shots in \`shots\`, its hero first.`, { file });
+      }
+      for (const id of page.shots) if (shots && !shotIds.has(id)) issues.error('cpp.unknown-shot', `${where}: shot “${id}” is not in shots.json.`, { file });
+      for (const [id, byLocale] of Object.entries(page.copy)) {
+        if (!page.shots.includes(id)) issues.warn('cpp.copy-unused', `${where}: copy for shot “${id}”, which is not in the page's \`shots\`.`, { file });
+        for (const [locale, copy] of Object.entries(byLocale)) {
+          const words = wordCount(copy.headline.replace(/\*/g, ''), locale);
+          if (!/^(ja|zh|ko|th)/.test(locale) && words > MAX_HEADLINE_WORDS) issues.error('shot.headline-words', `${where} shot ${id} (${locale}): headline is ${words} words; maximum ${MAX_HEADLINE_WORDS}.`, { locale, file });
+        }
+      }
     }
   }
 
@@ -217,4 +240,37 @@ export function validateClaims(opts: {
   }
 
   return issues;
+}
+
+const MINUTE = 60_000;
+const DAY = 24 * 60 * MINUTE;
+
+/** In-App Event copy limits, the deep link App Review needs, and Apple's schedule rules (15 min – 31 days, promoted ≤ 14 days ahead). */
+function checkEvent(e: NonNullable<ShotList['creatives']['events']>[number], locales: string[], issues: IssueList): void {
+  const where = `In-App Event ${e.id}`;
+  for (const locale of locales) {
+    for (const field of ['name', 'shortDescription', 'longDescription'] as const) {
+      const v = e[field][locale];
+      const max = EVENT_LIMITS[field];
+      if (!v?.trim()) issues.error('event.missing-copy', `${where}: no ${field} for ${locale}.`, { locale });
+      else if (graphemeLength(v) > max) issues.error('event.too-long', `${where}: ${field} is ${graphemeLength(v)}/${max} characters (${locale}).`, { locale, fix: `Shorten by ${graphemeLength(v) - max}.` });
+    }
+  }
+  if (!e.deepLink) issues.warn('event.deep-link', `${where}: no deepLink; App Review needs one that opens the event in the app.`);
+  if (!e.schedule) {
+    issues.warn('event.no-schedule', `${where}: no schedule; the draft gets one in App Store Connect before it can be submitted.`);
+    return;
+  }
+  const start = Date.parse(e.schedule.eventStart);
+  const end = Date.parse(e.schedule.eventEnd);
+  const publish = e.schedule.publishStart ? Date.parse(e.schedule.publishStart) : start;
+  if ([start, end, publish].some(Number.isNaN)) {
+    issues.error('event.schedule', `${where}: schedule times must be RFC 3339 (2026-11-20T09:00:00Z).`);
+    return;
+  }
+  if (end - start < 15 * MINUTE) issues.error('event.schedule', `${where}: the event must run at least 15 minutes.`);
+  if (end - start > 31 * DAY) issues.error('event.schedule', `${where}: the event runs ${Math.round((end - start) / DAY)} days; at most 31.`);
+  if (publish > start) issues.error('event.schedule', `${where}: publishStart is after eventStart.`);
+  if (start - publish > 14 * DAY) issues.error('event.schedule', `${where}: it is promoted ${Math.round((start - publish) / DAY)} days ahead; at most 14.`);
+  if (start < Date.now()) issues.warn('event.schedule-past', `${where}: the event starts in the past.`);
 }

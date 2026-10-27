@@ -156,3 +156,22 @@ describe('inventory, approval and change detection', () => {
     expect(existsSync(join(ctx.paths.briefs, 'review.md'))).toBe(false);
   });
 });
+
+describe('Custom Product Page screenshot sets', () => {
+  it('are hashed for approval, listed under their page and shown in the report', async () => {
+    const fx = await makeFixture();
+    const ctx = await createContext({ cwd: fx.root });
+    const src = join(ctx.paths.screenshots, 'en-US', '01_shot1_iphone-6.3.png');
+    const dir = join(ctx.paths.cppScreenshots, 'students', 'en-US');
+    const { mkdirSync, copyFileSync } = await import('node:fs');
+    mkdirSync(dir, { recursive: true });
+    copyFileSync(src, join(dir, '01_shot1_iphone-6.3.png'));
+    const inv = await buildInventory(ctx);
+    const id = 'metadata/store/cpp/students/en-US/01_shot1_iphone-6.3.png';
+    expect(inv.files.map((f) => f.path)).toContain(id);
+    expect(inv.items.find((i) => i.id === id)).toMatchObject({ kind: 'cpp', locale: 'en-US', target: 'iphone-6.3' });
+    expect(inv.items.find((i) => i.id === 'cpp/students')?.files).toContain(id);
+    const html = readFileSync(await buildReport(ctx, { inventory: inv }), 'utf8');
+    expect(html).toContain('store/cpp/students/en-US/01_shot1_iphone-6.3.png');
+  });
+});

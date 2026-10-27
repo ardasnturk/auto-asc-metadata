@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { AscLocale, FeatureId } from './common.js';
+import { ShotCopy } from './design.js';
 
 /** A sentence or phrase in the copy that makes a product claim, linked to app_profile features. */
 export const Claim = z.object({
@@ -56,8 +57,13 @@ export const CustomProductPage = z.object({
   deepLink: z.string().optional(),
   keywords: z.array(z.string()).default([]),
   promotionalText: z.record(AscLocale, z.string()).default({}),
-  /** Shot ids from shots.json used on this page (rendered with the page's own copy overrides). */
+  /**
+   * Shot ids from shots.json, in this page's order: `vitrin design` renders them as the page's own screenshot set
+   * (metadata/store/cpp/<page id>/) and `vitrin upload --cpp` places them on the page. Lead with the segment's hero.
+   */
   shots: z.array(z.string()).default([]),
+  /** Per-shot copy for this page's audience: `{ "<shot id>": { "<locale>": { headline, subheadline?, kicker? } } }`. */
+  copy: z.record(z.string(), z.record(AscLocale, ShotCopy)).default({}),
   featureIds: z.array(FeatureId).default([]),
 });
 export type CustomProductPage = z.infer<typeof CustomProductPage>;

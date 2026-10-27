@@ -2,7 +2,7 @@ import { analyzeProject } from '@vitrin/analyzer';
 import { enabledTargets, exec, existsSync, getTarget, hashPaths, hashValue, log, readJson, readJsonIfExists, run, storefrontForLocale, which, writeJson } from '@vitrin/core';
 import { renderDesign, renderDesignSamples, selectedOption } from '@vitrin/render';
 import { runResearch, totalScore } from '@vitrin/research';
-import { AppMetadata, AppProfile, ArtDirection, CppSuggestions, KeywordPlan, LocaleMetadata, ShotList, StylePreset, VideoPlan, type Issue, type Platform, type TargetFamily, type ValidationReport } from '@vitrin/schemas';
+import { AppMetadata, AppProfile, ArtDirection, CppSuggestions, KeywordPlan, LocaleMetadata, ShotList, StylePreset, VideoPlan, type CustomProductPage, type Issue, type Platform, type TargetFamily, type ValidationReport } from '@vitrin/schemas';
 import { validateAll } from '@vitrin/validate';
 import { renderVideos } from '@vitrin/video';
 import { exportFastlaneMetadata } from '@vitrin/upload';
@@ -529,17 +529,55 @@ export async function designCommand(ctx: Ctx, opts: DesignOptions = {}): Promise
     return EXIT.OK;
   }
   const rawHash = await hashPaths([ctx.paths.raw], ctx.root);
-  await stage(ctx, 'design', { ad, shots, targets: targets.map((t) => t.id), rawHash, locales: ctx.config.app.locales, only: opts.only }, async () => {
+  const cpp = existsSync(ctx.paths.cpp) ? await readJson(ctx.paths.cpp, CppSuggestions) : undefined;
+  const cppPages = (cpp?.pages ?? []).filter((page) => page.shots.length);
+  await stage(ctx, 'design', { ad, shots, targets: targets.map((t) => t.id), rawHash, locales: ctx.config.app.locales, only: opts.only, cppPages }, async () => {
     log.step(`Render: ${shots.shots.length} shots × ${targets.filter((t) => t.kind === 'screenshot').length} sizes × ${ctx.config.app.locales.length} locales`);
     const appIcon = profile.brand.appIcon ? join(profile.project.root, profile.brand.appIcon) : undefined;
-    const res = await renderDesign({ paths: ctx.paths, locales: ctx.config.app.locales, primaryLocale: ctx.config.app.primaryLocale, targets, artDirection: ad, shots, onlyShots: opts.only, appIcon, appName: profile.app.displayName });
+    const common = { locales: ctx.config.app.locales, primaryLocale: ctx.config.app.primaryLocale, artDirection: ad, appIcon, appName: profile.app.displayName };
+    const res = await renderDesign({ ...common, paths: ctx.paths, targets, shots, onlyShots: opts.only });
     for (const w of res.warnings) log.warn(w);
     log.ok(`Rendered ${res.manifest.images.length} images → metadata/store/screenshots, metadata/creative`);
-    return res.manifest.images.map((i) => i.file);
+    const files = res.manifest.images.map((i) => i.file);
+    // Custom Product Pages get their own set (their shots, in their order, with their copy) for --cpp to place.
+    const cppTargets = targets.filter((t) => t.kind === 'screenshot' && t.store === 'app-store');
+    if (!opts.only && cppTargets.length) {
+      await rm(ctx.paths.cppScreenshots, { recursive: true, force: true });
+      for (const page of cppPages) {
+        const pageShots = cppShotList(shots, page);
+        const pagePaths = { ...ctx.paths, screenshots: join(ctx.paths.cppScreenshots, page.id), renderManifest: join(ctx.paths.cache, 'cpp', `${page.id}.json`) };
+        const out = await renderDesign({ ...common, paths: pagePaths, targets: cppTargets, shots: pageShots });
+        log.ok(`Custom Product Page “${page.name}”: ${pageShots.shots.length} shots → metadata/store/cpp/${page.id}`);
+        files.push(...out.manifest.images.map((i) => i.file));
+      }
+    }
+    return files;
   });
   const report = await validateAll(ctx.paths, ctx.config, { text: false, claims: true, images: true, videos: false });
   printIssues(report.issues);
   return report.ok ? EXIT.OK : EXIT.FAIL;
+}
+
+/**
+ * A Custom Product Page's shot list: its shots in its order (renumbered 01, 02 … so the files sort that way), with
+ * the page's copy overrides. A bridge only survives when the next shot of the page is the one it was made for.
+ */
+export function cppShotList(shots: ShotList, page: CustomProductPage): ShotList {
+  const byId = new Map(shots.shots.map((s) => [s.id, s]));
+  const picked = page.shots.map((id) => byId.get(id)).filter((s): s is NonNullable<typeof s> => Boolean(s));
+  const ids = shots.shots.map((s) => s.id).sort();
+  return {
+    ...shots,
+    shots: picked.map((s, i) => {
+      const nextInSet = ids[ids.indexOf(s.id) + 1];
+      return {
+        ...s,
+        id: String(i + 1).padStart(2, '0'),
+        copy: { ...s.copy, ...page.copy[s.id] },
+        bridge: s.bridge && picked[i + 1]?.id === nextInSet,
+      };
+    }),
+  };
 }
 
 /** `vitrin design --samples`: N clearly different designs of the first shots for the user to pick from. */

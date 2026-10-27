@@ -3,6 +3,7 @@ import {
   AppMetadata,
   AppProfile,
   Competitors,
+  CppSuggestions,
   KeywordPlan,
   LiveListing,
   LocaleMetadata,
@@ -53,6 +54,7 @@ export async function validateAll(paths: AppPaths, config: VitrinConfig, scope: 
   const competitors = await load(paths.competitors, Competitors);
   const appMetadata = await load(paths.appMetadata, AppMetadata);
   const shots = await load(paths.shots, ShotList);
+  const cpp = await load(paths.cpp, CppSuggestions);
   const videoPlan = await load(paths.videoPlan, VideoPlan);
   const manifest = await load(paths.renderManifest, RenderManifest);
   const targets = enabledTargets(config, profile);
@@ -96,7 +98,7 @@ export async function validateAll(paths: AppPaths, config: VitrinConfig, scope: 
   }
 
   if (scope.claims !== false && profile) {
-    issues.push(...validateClaims({ config, profile, shots, videoPlan, competitors, enabledTargets: targets.map((t) => t.id) }).items);
+    issues.push(...validateClaims({ config, profile, shots, videoPlan, competitors, cpp, enabledTargets: targets.map((t) => t.id) }).items);
   }
 
   if (scope.images !== false) {

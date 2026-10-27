@@ -4,6 +4,14 @@ All notable changes to this project are documented in this file. The format is b
 
 ## Unreleased
 
+### Added — Custom Product Pages and In-App Events that are complete
+- **Each Custom Product Page gets its own screenshot set:** `shots` (in the page's order) and per-shot `copy` overrides in `cpp-suggestions.json`; `vitrin design` renders them to `metadata/store/cpp/<page id>/<locale>/`, the review gallery shows them on the page card, approval hashes them, and `vitrin upload --cpp` places them on each page localization through the App Asset Library. Validate warns about pages without their own shots and unknown shot ids.
+- **In-App Events are uploaded with their images:** the card and detail images `vitrin design` renders are placed on each event localization (they were rendered but never uploaded). Events take `deepLink`, `purpose`, `purchaseRequirement`, `priority` and a `schedule` (territories, publish start, start, end), sent to App Store Connect when set.
+- Event checks: name ≤ 30, short description ≤ 50, long description ≤ 120 characters (errors; before, only counters in the review), a missing deep link, and Apple's schedule rules (15 minutes to 31 days, promoted at most 14 days ahead, publish before start).
+
+### Fixed
+- `vitrin upload --cpp` no longer claims that images are placed by the `--creatives` flow; it reports what it placed, or that the page has no screenshots of its own.
+
 ### Added — Keyword research that reaches the listing, and a way to measure it
 - **The fields are checked against the keyword plan:** `vitrin write` recomputes every candidate's total after Claude set relevance, then warns about unscored candidates, a missing `selected`, selected terms that are not in their field (`keywords.plan-mismatch`), terms the app already ranks top 10 for that the new copy drops (`keywords.drops-ranked-term`) and the best-scored candidates left out.
 - **What the store shows today:** `vitrin research` writes `metadata/research/live-listing.json` — name, subtitle, keywords, promotional text and description from App Store Connect when the key is set, otherwise the public lookup. The write brief shows it next to the app's own rank per candidate (`ownRank`), and validate lists what changed against the live keyword field.

@@ -277,12 +277,12 @@ export async function buildPlan(opts: {
     plan.items.push({ area: 'creatives', change: 'skip', via: 'asset-library', note: '--creatives not passed' });
   }
   if (opts.include.cpp && opts.cpp) {
-    for (const p of opts.cpp.pages) plan.items.push({ area: 'cpp', field: p.name, change: 'create', via: 'asc-api', note: `${p.keywords.length} keywords, ${p.shots.length} images; requires Apple review` });
+    for (const p of opts.cpp.pages) plan.items.push({ area: 'cpp', field: p.name, change: 'create', via: 'asc-api', note: `${p.keywords.length} keywords, ${p.shots.length ? `its own ${p.shots.length}-shot set (metadata/store/cpp/${p.id})` : 'no own screenshots (default set)'}; requires Apple review` });
   }
   if (opts.include.events && !kindSelected('events')) {
     plan.items.push({ area: 'events', change: 'skip', via: 'asc-api', note: 'events not selected: In-App Events stay untouched' });
   } else if (opts.include.events) {
-    for (const e of opts.shots?.creatives.events ?? []) plan.items.push({ area: 'events', field: e.id, change: 'create', via: 'asc-api', note: 'created as a draft' });
+    for (const e of opts.shots?.creatives.events ?? []) plan.items.push({ area: 'events', field: e.id, change: 'create', via: 'asc-api', note: `created as a draft with its card and detail images${e.schedule ? `, ${e.schedule.eventStart} → ${e.schedule.eventEnd}` : ', no schedule yet'}` });
   }
 
   // ---- Google Play ----

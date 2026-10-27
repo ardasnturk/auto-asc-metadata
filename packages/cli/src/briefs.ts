@@ -174,7 +174,7 @@ Developer: ${ctx.config.copyrightHolder ?? '?'} — this name does not go in the
   "reviewNotes": "Demo mode, test steps…", "ageRatingDraft": { "answers": {}, "rationale": "", "needsUserConfirmation": true },
   "accessibilityDraft": [{ "criterion": "VoiceOver", "supported": "partial", "evidence": "…" }] }
 \`\`\`
-Optional \`metadata/cpp-suggestions.json\`: 2–5 Custom Product Page suggestions (segment, rationale, non-overlapping keyword set, shot ids to use).
+Optional \`metadata/cpp-suggestions.json\`: 2–5 Custom Product Page suggestions (segment, rationale, non-overlapping keyword set). Give each page its own screenshots — \`shots\` (ids from shots.json, the segment's hero first) and \`copy\` overrides per shot and locale (\`{ "03": { "en-US": { "headline": "Drink *more* water" } } }\`); \`vitrin design\` renders them to metadata/store/cpp/<page id>/ and \`--cpp\` places them on the page. A page that only changes the promotional text barely moves conversion.
 ${profile.app.platforms.includes('android') ? `
 **Google Play listing** (the app ships on Android). For each locale write \`metadata/listing/play/<locale>.json\`: \`{ "locale", "title" (≤ 30, brand + primary keyword, no emoji/ALL CAPS/#1/best/free/new), "shortDescription" (≤ 80, one benefit sentence with the secondary keyword), "fullDescription" (≤ 4000; indexed, so use the main phrases naturally 2–3 times; no keyword lists; no App Store/iPhone mentions), "changelog" (≤ 500, optional), "video" (optional public YouTube URL), "claims" }\`. Set \`playLocale\` only to override data/play-locales.json. Write \`metadata/listing/play/app.json\` with \`{ "track": "production", "versionCode": <int, only with a changelog> }\`. Google Play has no keyword field; see references/aso-rules.md (Google Play).
 ` : ''}
@@ -266,6 +266,7 @@ Copy for every chosen language (\`app.locales\`: ${ctx.config.app.locales.join('
                  "search": { "copy": {…}, "screens": ["home"], "featureIds": ["…"] }, "events": [] } }
 \`\`\`
 \`creatives.header\` also supplies the Google Play feature graphic line (short brand line, not a screenshot headline).
+In-App Events (\`creatives.events[]\`): \`name\` ≤ 30, \`shortDescription\` ≤ 50, \`longDescription\` ≤ 120 characters per locale; a \`deepLink\` that opens the event; \`schedule\` \`{ "territories": ["USA"], "publishStart", "eventStart", "eventEnd" }\` (RFC 3339; 15 minutes to 31 days, promoted at most 14 days ahead); \`purpose\` (ATTRACT_NEW_USERS, KEEP_ACTIVE_USERS_INFORMED, BRING_BACK_LAPSED_USERS or APPROPRIATE_FOR_ALL_USERS). Show the event's outcome on the card, not a plain screenshot; Apple sets the event name over it.
 
 ## Step 4 — render and check
 Run \`vitrin design\`. Open the first three iPhone PNGs, one iPad and one Android/Duo/Mac/Watch PNG if those targets are enabled, and read the quality issues in \`metadata/validation.json\` (\`image.device-small\`, \`image.empty-band\`, \`image.headline-contrast\`, \`image.thumbnail\` …). Fix copy or framing until the set passes the thumbnail test.

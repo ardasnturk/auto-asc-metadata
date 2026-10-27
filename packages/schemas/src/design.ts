@@ -244,9 +244,25 @@ export type CreativeSpec = z.infer<typeof CreativeSpec>;
 export const InAppEventSpec = z.object({
   id: z.string().regex(/^[a-z0-9-]+$/),
   badge: z.enum(['CHALLENGE', 'COMPETITION', 'LIVE_EVENT', 'MAJOR_UPDATE', 'NEW_SEASON', 'PREMIERE', 'SPECIAL_EVENT']),
+  /** ≤ 30 characters. */
   name: Localized,
+  /** ≤ 50 characters. */
   shortDescription: Localized,
+  /** ≤ 120 characters. */
   longDescription: Localized,
+  /** Opens the event's destination in the app; App Review needs it even though a draft can be created without. */
+  deepLink: z.string().optional(),
+  purpose: z.enum(['APPROPRIATE_FOR_ALL_USERS', 'ATTRACT_NEW_USERS', 'KEEP_ACTIVE_USERS_INFORMED', 'BRING_BACK_LAPSED_USERS']).default('APPROPRIATE_FOR_ALL_USERS'),
+  /** App Store Connect `purchaseRequirement` value. */
+  purchaseRequirement: z.string().default('NO_COST_ASSOCIATED'),
+  priority: z.enum(['HIGH', 'NORMAL']).default('NORMAL'),
+  /**
+   * RFC 3339 times: the event runs 15 minutes to 31 days; it can be promoted from at most 14 days before the start.
+   * `territories` are App Store Connect territory ids (e.g. "USA", "TUR").
+   */
+  schedule: z
+    .object({ territories: z.array(z.string()).min(1), publishStart: z.string().optional(), eventStart: z.string(), eventEnd: z.string() })
+    .optional(),
   card: CreativeSpec,
   detail: CreativeSpec,
 });

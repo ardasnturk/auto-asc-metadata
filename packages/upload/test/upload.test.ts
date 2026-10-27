@@ -6,7 +6,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { decodeJwt, decodeProtectedHeader } from 'jose';
 import { describe, expect, it } from 'vitest';
-import { AscClient, buildPlan, createToken, diffRefData, exportFastlaneMetadata, fetchLiveListing, formatPlan, isEditableVersion, isPem } from '../src/index.js';
+import { AscClient, buildPlan, createToken, diffRefData, eventAttributes, exportFastlaneMetadata, fetchLiveListing, formatPlan, isEditableVersion, isPem, screenshotTargetOf } from '../src/index.js';
 
 const { privateKey } = generateKeyPairSync('ec', { namedCurve: 'prime256v1' });
 const pem = privateKey.export({ type: 'pkcs8', format: 'pem' }).toString();
@@ -104,6 +104,24 @@ describe('upload plan', () => {
     const client = new AscClient(creds, fakeFetch({ '/v1/apps?filter': { data: [] } }));
     const plan = await buildPlan({ paths: appPaths(mkdtempSync(join(tmpdir(), 'v-'))), config: VitrinConfig.parse({ app: {}, urls: {} }), bundleId: 'com.none', metadata: [], client, include: { creatives: false, cpp: false, events: false } });
     expect(plan.blockers[0]).toContain('create it once in App Store Connect');
+  });
+});
+
+describe('Custom Product Page and In-App Event media', () => {
+  it('reads the target from a rendered screenshot name', () => {
+    expect(screenshotTargetOf('01_hero_iphone-6.9.png')).toBe('iphone-6.9');
+    expect(screenshotTargetOf('12_water-intake_ipad-13.png')).toBe('ipad-13');
+    expect(screenshotTargetOf('header_header.png')).toBeUndefined();
+  });
+
+  it('sends the event schedule and deep link only when the plan has them', () => {
+    const creative = { copy: {}, screens: ['home'], featureIds: ['a'], badges: [] };
+    const base = { id: 'kis', badge: 'CHALLENGE' as const, name: {}, shortDescription: {}, longDescription: {}, purpose: 'APPROPRIATE_FOR_ALL_USERS' as const, purchaseRequirement: 'NO_COST_ASSOCIATED', priority: 'NORMAL' as const, card: creative, detail: creative };
+    expect(eventAttributes(base, 'tr')).not.toHaveProperty('territorySchedules');
+    expect(eventAttributes({ ...base, deepLink: 'ritim://kis', schedule: { territories: ['TUR'], eventStart: '2026-12-01T09:00:00Z', eventEnd: '2026-12-08T09:00:00Z' } }, 'tr')).toMatchObject({
+      deepLink: 'ritim://kis',
+      territorySchedules: [{ territories: ['TUR'], publishStart: '2026-12-01T09:00:00Z', eventStart: '2026-12-01T09:00:00Z', eventEnd: '2026-12-08T09:00:00Z' }],
+    });
   });
 });
 

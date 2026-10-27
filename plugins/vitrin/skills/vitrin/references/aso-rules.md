@@ -41,6 +41,7 @@ Run `vitrin rank` before a metadata change and again one to two weeks after it: 
 ## Custom Product Pages
 
 - 2–5 suggestions: derive segments from competitor gaps and review clusters (e.g. "morning routine", "water intake goal"). Give each page a **non-overlapping** keyword set; keywords are assigned from the keyword field of the latest approved version.
+- **Each page needs its own screenshots** — the same set with different promotional text barely moves conversion. Set `shots` (ids from shots.json, the segment's hero first) and per-shot `copy` overrides; `vitrin design` renders the page's set to `metadata/store/cpp/<page id>/<locale>/`, the review shows it, and `vitrin upload --cpp` places it on the page through the App Asset Library (`cpp.no-shots` warns when a page has none).
 
 ## Screenshot headlines
 

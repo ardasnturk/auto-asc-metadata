@@ -9,6 +9,8 @@ import {
   exportFastlaneMetadata,
   formatPlan,
   installFastlaneTemplates,
+  placeCustomProductPageMedia,
+  placeEventMedia,
   prepareStores,
   readBack,
   runDeliverForPlatforms,
@@ -200,7 +202,9 @@ export async function uploadCommand(ctx: Ctx, opts: UploadOptions): Promise<numb
         continue;
       }
       const res = await createCustomProductPage(client!, plan.appId!, page, languages);
-      log.ok(`Created CPP “${page.name}” (${res.pageId}); images are placed by the --creatives flow, Apple approval required.`);
+      const placed = await placeCustomProductPageMedia(client!, plan.appId!, join(ctx.paths.cppScreenshots, page.id), res.localizations);
+      if (placed) log.ok(`Created CPP “${page.name}” (${res.pageId}) with its own screenshot set (${placed} images); Apple reviews the page.`);
+      else log.warn(`Created CPP “${page.name}” (${res.pageId}) without screenshots: it shows the default set until \`shots\` is set and \`vitrin design\` renders the page's own set. Apple reviews the page.`);
     }
   }
   if (opts.events && shots && kindOn('events')) {
@@ -211,7 +215,8 @@ export async function uploadCommand(ctx: Ctx, opts: UploadOptions): Promise<numb
         continue;
       }
       const res = await createInAppEvent(client!, plan.appId!, e, ctx.config.app.primaryLocale, languages);
-      log.ok(`Created In-App Event “${e.id}” as a draft (${res.eventId}).`);
+      const placed = await placeEventMedia(client!, plan.appId!, ctx.paths.creative, e.id, res.localizations);
+      log.ok(`Created In-App Event “${e.id}” as a draft (${res.eventId}) with ${placed} card/detail images${e.schedule ? '' : '; set its schedule in App Store Connect'}${e.deepLink ? '' : '; it needs a deep link before review'}.`);
     }
   }
 

@@ -92,6 +92,8 @@ export function appPaths(root: string) {
     fastlaneMetadata: join(v, 'store', 'metadata'),
     screenshots: join(v, 'store', 'screenshots'),
     appPreviews: join(v, 'store', 'app-previews'),
+    /** Each Custom Product Page's own screenshot set: cpp/<page id>/<locale>/NN_slug_<target>.png. */
+    cppScreenshots: join(v, 'store', 'cpp'),
     /** Google Play listing in the supply layout. */
     androidMetadata: join(v, 'store', 'metadata', 'android'),
     /** HTML recreations of the app's screens (capture.mode: html), written by Claude from the source code. */

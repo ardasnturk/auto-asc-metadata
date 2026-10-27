@@ -1,5 +1,5 @@
 import { loadTargets } from '@vitrin/core';
-import { ShotList, VideoPlan, VitrinConfig, type AppProfile } from '@vitrin/schemas';
+import { CppSuggestions, ShotList, VideoPlan, VitrinConfig, type AppProfile } from '@vitrin/schemas';
 import { mkdtempSync, mkdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -96,6 +96,37 @@ describe('claim ↔ evidence', () => {
     const shots = ShotList.parse({ shots: [{ id: '01', slug: 'a', archetype: 'hero', screens: ['home'], featureIds: ['streaks'], copy: { tr: { headline: 'bir iki üç dört beş altı yedi sekiz' } } }] });
     const c = validateClaims({ config, profile, shots, enabledTargets: [] }).items.map((i) => i.code);
     expect(c).toContain('shot.headline-words');
+  });
+
+  it('checks In-App Event copy limits, the deep link and Apple’s schedule rules', () => {
+    const creative = { copy: { tr: { headline: 'Seri' } }, screens: ['home'], featureIds: ['streaks'] };
+    const event = (over: Record<string, unknown>) => ({ id: 'kis', badge: 'CHALLENGE', name: { tr: 'Kış serisi' }, shortDescription: { tr: 'Her gün tek dokunuş.' }, longDescription: { tr: 'Kış boyunca serini koru.' }, card: creative, detail: creative, ...over });
+    const codes = (e: Record<string, unknown>) => validateClaims({ config, profile, shots: ShotList.parse({ shots: [{ id: '01', slug: 'a', archetype: 'hero', screens: ['home'], featureIds: ['streaks'], copy: { tr: { headline: 'Serini koru' } } }], creatives: { events: [event(e)] } }), enabledTargets: [] }).items.map((i) => i.code);
+    const base = codes({});
+    expect(base).toContain('event.deep-link');
+    expect(base).toContain('event.no-schedule');
+    expect(codes({ name: { tr: 'Kış boyunca her gün serini koruma yarışması' } })).toContain('event.too-long');
+    expect(codes({ shortDescription: {} })).toContain('event.missing-copy');
+    const day = 24 * 3600 * 1000;
+    const at = (d: number) => new Date(Date.now() + d * day).toISOString();
+    expect(codes({ deepLink: 'ritim://kis', schedule: { territories: ['TUR'], publishStart: at(5), eventStart: at(10), eventEnd: at(20) } }).filter((c) => c.startsWith('event.'))).toEqual([]);
+    expect(codes({ schedule: { territories: ['TUR'], eventStart: at(10), eventEnd: at(50) } })).toContain('event.schedule');
+    expect(codes({ schedule: { territories: ['TUR'], publishStart: at(1), eventStart: at(20), eventEnd: at(21) } })).toContain('event.schedule');
+    expect(codes({ schedule: { territories: ['TUR'], eventStart: 'yarın', eventEnd: at(2) } })).toContain('event.schedule');
+  });
+
+  it('asks Custom Product Pages for their own shots and checks them against shots.json', () => {
+    const shots = ShotList.parse({ shots: [{ id: '01', slug: 'a', archetype: 'hero', screens: ['home'], featureIds: ['streaks'], copy: { tr: { headline: 'Serini koru' } } }] });
+    const cpp = CppSuggestions.parse({
+      pages: [
+        { id: 'empty', name: 'Empty', segment: '', rationale: '' },
+        { id: 'water', name: 'Water', segment: '', rationale: '', shots: ['01', '07'], copy: { '05': { tr: { headline: 'Su' } } } },
+      ],
+    });
+    const c = validateClaims({ config, profile, shots, cpp, enabledTargets: [] }).items.map((i) => i.code);
+    expect(c).toContain('cpp.no-shots');
+    expect(c).toContain('cpp.unknown-shot');
+    expect(c).toContain('cpp.copy-unused');
   });
 
   it('checks flow beats and the optional closing line of a video plan', () => {
