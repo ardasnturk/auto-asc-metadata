@@ -10,7 +10,7 @@ Vitrin renders videos with Remotion. You write `metadata/video-plan.json`; the C
 - Audio is muted by default: the video must work silently (Vitrin adds a silent stereo track). Make the first 2 seconds strong. Cut fast but readable: every screen stays at least 0.6 s, and a caption stays long enough to read (≈ 1.5 s for five words).
 - Vision Pro previews are 3840×2160 landscape (`device: "vision"`, target `preview-vision`, off by default); Mac and Apple TV previews are landscape only. Processing in App Store Connect can take up to 24 hours.
 - **Real app footage must dominate.** Text cards are short (≤ 1.5 s) and few: at most 2 in a preview, counting the `text` beats and the kinetic style's cards (Vitrin keeps the kinetic cards within that budget). No hands, people or footage outside the device; the touch indicator of a `flow` is a dot, not a hand.
-- It must make sense without sound (it plays muted in search). The poster frame is at 5 seconds: put a legible UI scene there.
+- It must make sense without sound (it plays muted in search). The poster frame is at 5 seconds: Vitrin holds the scene before it a little longer when needed, so that frame shows a settled UI scene — not a cut, a device still flying in or a text card. The hook starts already half-way into its entrance, so the very first frame shows the device and the hook line too (autoplay starts there).
 - The first ~1.5 s of a recording is the app launch: `from` ≥ 1.5 (for the hook, `hookFrom`, default 1.5).
 
 ## Look and device frames
@@ -28,7 +28,7 @@ The preview takes its colors and fonts from the selected art direction (its styl
 
 In every style the camera keeps moving after the device has landed (push-in, drift), and the backdrop shifts on every cut, so the preview reads as one moving shot rather than a slide show.
 
-If unsure, `vitrin video --styles all` renders the first preview in all four styles under `metadata/video-styles/<locale>/` (not uploaded). Show them to the user and write the chosen one to the `style` field. `transition` (`fade|slide|wipe|flip|push|iris|none`) forces a single transition type; `lightLeaks` turns light leaks on/off.
+If unsure, `vitrin video --styles all` renders the first preview in all four styles under `metadata/video-styles/<locale>/` (not uploaded). In a development checkout, `vitrin video --studio` opens the first preview with the exact props it would render in Remotion Studio, to scrub it and tune the motion before rendering (run it in the background; it keeps running until stopped). Show them to the user and write the chosen one to the `style` field. `transition` (`fade|slide|wipe|flip|push|iris|none`) forces a single transition type; `lightLeaks` turns light leaks on/off.
 
 ## Scenes (`beats[].scene`)
 

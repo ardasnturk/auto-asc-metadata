@@ -149,8 +149,9 @@ program
   .command('video')
   .description('App Previews and header/search loops with Remotion')
   .option('--styles <styles>', 'render the first preview in these styles for comparison: classic,showcase,kinetic,energetic | all')
-  .option('--locale <locales>', 'locales for --styles (default: primary locale)')
-  .action(action(async (o: { styles?: string; locale?: string }) => videoCommand(await createContext(globals()), { styles: o.styles?.split(','), locales: o.locale?.split(',') })));
+  .option('--locale <locales>', 'locales for --styles and --studio (default: primary locale)')
+  .option('--studio', 'open the first preview in Remotion Studio to scrub and tune it (development checkout)')
+  .action(action(async (o: { styles?: string; locale?: string; studio?: boolean }) => videoCommand(await createContext(globals()), { styles: o.styles?.split(','), locales: o.locale?.split(','), studio: o.studio })));
 
 program
   .command('validate')

@@ -4,7 +4,7 @@ import { renderDesign, renderDesignSamples, selectedOption } from '@vitrin/rende
 import { runResearch, totalScore } from '@vitrin/research';
 import { AppMetadata, AppProfile, ArtDirection, CppSuggestions, KeywordPlan, LocaleMetadata, ShotList, StylePreset, VideoPlan, type CustomProductPage, type Issue, type Platform, type TargetFamily, type ValidationReport } from '@vitrin/schemas';
 import { validateAll } from '@vitrin/validate';
-import { renderVideos } from '@vitrin/video';
+import { previewPropsFor, remotionCliPath, renderVideos, VIDEO_DIR } from '@vitrin/video';
 import { exportFastlaneMetadata } from '@vitrin/upload';
 import { readFile } from 'node:fs/promises';
 import { dirname, join, relative } from 'node:path';
@@ -633,7 +633,7 @@ async function designSamples(ctx: Ctx, profile: AppProfile, opts: DesignOptions)
 }
 
 // ---------------------------------------------------------------- video
-export async function videoCommand(ctx: Ctx, opts: { styles?: string[]; locales?: string[] } = {}): Promise<number> {
+export async function videoCommand(ctx: Ctx, opts: { styles?: string[]; locales?: string[]; studio?: boolean } = {}): Promise<number> {
   const assets = ctx.config.selection?.assets;
   if (assets && !assets.includes('previews') && !assets.includes('creatives')) {
     log.dim('selection.assets has no previews or creatives — video skipped.');
@@ -652,6 +652,7 @@ export async function videoCommand(ctx: Ctx, opts: { styles?: string[]; locales?
   const plan = await readJson(ctx.paths.videoPlan, VideoPlan);
   const ad = selectedOption(await readJson(ctx.paths.artDirection, ArtDirection));
   const rawHash = await hashPaths([ctx.paths.raw], ctx.root);
+  if (opts.studio) return videoStudio(ctx, plan, ad, opts.locales?.[0] ?? ctx.config.app.primaryLocale);
   if (opts.styles?.length) {
     // Comparison renders: not a pipeline stage, nothing here is uploaded.
     const all = ['classic', 'showcase', 'kinetic', 'energetic'] as const;
@@ -683,6 +684,26 @@ export async function videoCommand(ctx: Ctx, opts: { styles?: string[]; locales?
   const report = await validateAll(ctx.paths, ctx.config, { text: false, claims: false, images: false, videos: true });
   printIssues(report.issues);
   return report.ok ? EXIT.OK : EXIT.FAIL;
+}
+
+/**
+ * `vitrin video --studio`: the first preview of the plan, with the props `vitrin video` would render, in Remotion
+ * Studio — scrub, tune kit.tsx/scenes.tsx and watch it reload before rendering. Needs @remotion/cli (a development
+ * checkout); runs until stopped.
+ */
+async function videoStudio(ctx: Ctx, plan: VideoPlan, ad: ReturnType<typeof selectedOption>, locale: string): Promise<number> {
+  const cli = remotionCliPath();
+  if (!cli || !existsSync(cli)) {
+    log.warn('Remotion Studio needs @remotion/cli, which only a development checkout of Vitrin installs (pnpm install). Use `vitrin video --styles all` to compare renders instead.');
+    return EXIT.FAIL;
+  }
+  const { props, warnings } = await previewPropsFor({ paths: ctx.paths, plan, ad, locale, primaryLocale: ctx.config.app.primaryLocale });
+  for (const w of [...new Set(warnings)]) log.warn(w);
+  const file = join(ctx.paths.cache, 'remotion', 'studio-props.json');
+  await writeJson(file, props);
+  log.step(`Remotion Studio: AppPreview (${locale}, ${props.style}, ${props.scenes.length} scenes) — props in ${relative(ctx.root, file)}. Stop with Ctrl+C.`);
+  const res = await exec(process.execPath, [cli, 'studio', 'src/remotion/index.ts', `--props=${file}`, `--public-dir=${ctx.paths.raw}`], { cwd: VIDEO_DIR, stream: true });
+  return res.code === 0 ? EXIT.OK : EXIT.FAIL;
 }
 
 // ---------------------------------------------------------------- validate

@@ -40,6 +40,8 @@ All notable changes to this project are documented in this file. The format is b
 - **No icon card at the end:** `outro` is optional and its line now runs over the outcome screen (`outro.source`, default the last beat's screen); without `outro` the preview ends on the last beat. App Review wants previews made of app footage.
 - **Kinetic style:** typography cards go before at most two beats (the first and the middle one), counted together with the plan's `text` beats; the other captions pop in word by word over the UI. Energetic captions pop in as well.
 - Screenshots in previews push in faster (5 % over 3 s instead of 6 % over 6 s).
+- **No blank first frame, a settled poster frame:** the hook starts 0.6 s into its own entrance, so frame 0 (where autoplay starts) already shows the device and the hook line; the scene before the 5-second poster frame is held a little longer when that frame would land on a cut, an entrance or a text card.
+- **`vitrin video --studio`:** the first preview with the props `vitrin video` would render, in Remotion Studio (development checkouts, where @remotion/cli is installed).
 
 ## 0.8.0 — 2026-10-26
 

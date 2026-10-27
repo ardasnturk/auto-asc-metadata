@@ -1,5 +1,5 @@
 import React from 'react';
-import { AbsoluteFill, Easing, interpolate, useCurrentFrame, useVideoConfig } from 'remotion';
+import { AbsoluteFill, Easing, interpolate, Sequence, useCurrentFrame, useVideoConfig } from 'remotion';
 import { isLandscape, type AppPreviewProps, type Look, type MediaRef, type PreviewFamily, type PreviewStyle, type Scene } from '../types.js';
 import { fontStack } from './fonts.js';
 import { ChipView, Counter, Device, DeviceEntrance, deviceHeight, FlowScreens, KineticText, screenRect } from './kit.js';
@@ -80,12 +80,22 @@ const DeviceAt: React.FC<{ look: Look; style: PreviewStyle; media: MediaRef; fra
   );
 };
 
-export const HookScene: React.FC<SceneProps<'hook'>> = ({ scene, look, style }) => (
-  <AbsoluteFill>
-    <Caption look={look} style={style} text={scene.text} big />
-    <DeviceAt look={look} style={style} media={scene.media} frames={scene.frames} widthRatio={0.84} tilt={style === 'energetic' ? -6 : 0} />
-  </AbsoluteFill>
-);
+/**
+ * The opening: it starts 0.6 s into its own entrance, so the very first frame — the autoplay start in search and
+ * the poster where the store uses the first frame — already shows the device and most of the hook line.
+ */
+export const HookScene: React.FC<SceneProps<'hook'>> = ({ scene, look, style }) => {
+  const { fps } = useVideoConfig();
+  const preroll = Math.round(0.6 * fps);
+  return (
+    <AbsoluteFill>
+      <Sequence from={-preroll} layout="none">
+        <Caption look={look} style={style} text={scene.text} big />
+        <DeviceAt look={look} style={style} media={scene.media} frames={scene.frames + preroll} widthRatio={0.84} tilt={style === 'energetic' ? -6 : 0} />
+      </Sequence>
+    </AbsoluteFill>
+  );
+};
 
 export const DeviceScene: React.FC<SceneProps<'device'>> = ({ scene, look, style }) => (
   <AbsoluteFill>

@@ -1,7 +1,7 @@
 import { PreviewPlan } from '@vitrin/schemas';
 import { describe, expect, it } from 'vitest';
 import { resolveDirection } from '@vitrin/render';
-import { buildPreviewProps, compositionSize, cutFrames, fitDurations, flowTiming, isLandscape, kineticCardBeats, lookFrom, previewDurationFrames, previewDurationSec, previewTargetId, renderScale, resolveTransitions, type Look, type MediaRef, type Scene } from '../src/index.js';
+import { buildPreviewProps, compositionSize, cutFrames, fitDurations, flowTiming, isLandscape, kineticCardBeats, lookFrom, POSTER_SEC, previewDurationFrames, previewDurationSec, previewTargetId, renderScale, resolveTransitions, sceneStarts, type Look, type MediaRef, type Scene } from '../src/index.js';
 
 const look = { background: ['#000000'], accent: '#FF8A6B', text: '#FFFFFF', textMuted: '#DDDDDD', surface: '#111111', badgeBackground: '#FFFFFF', badgeText: '#111111', headlineFont: 'Inter', bodyFont: 'Inter', headlineWeight: 800, dir: 'ltr', deviceFamily: 'iphone', aspect: 2 } satisfies Look;
 const media: MediaRef = { path: 'tr/iphone/home.png', kind: 'image', from: 0, aspect: 2 };
@@ -101,6 +101,19 @@ describe('scene list', () => {
     // A tight flow shortens the change instead of overrunning the next screen.
     const fast = flowTiming([{ change: 'push' }, { change: 'push' }, { change: 'push' }, { change: 'scroll' }], 45, 30);
     for (let i = 1; i < 3; i++) expect(fast.arrive[i]! + fast.change[i]!).toBeLessThanOrEqual(fast.arrive[i + 1]!);
+  });
+
+  it('settles the 5-second poster frame on a UI scene, away from cuts, entrances and text cards', () => {
+    const beats = Array.from({ length: 6 }, (_, i) => ({ source: 'home', to: 2.2 + (i % 2) * 0.3, caption: { tr: `Adım ${i}` }, featureIds: ['a'] }));
+    for (const style of ['showcase', 'kinetic', 'classic', 'energetic'] as const) {
+      const p = buildPreviewProps({ plan: plan({ style }, beats), locale: 'tr', look, hookMedia: media, beats: beats.map(() => ({ media })) });
+      const starts = sceneStarts(p);
+      const i = starts.findLastIndex((s) => s <= POSTER_SEC * 30);
+      expect(p.scenes[i]!.kind, style).not.toBe('text');
+      expect(POSTER_SEC * 30 - starts[i]!, style).toBeGreaterThanOrEqual(27);
+      expect((starts[i + 1] ?? Infinity) - POSTER_SEC * 30, style).toBeGreaterThan(p.transitionFrames);
+      expect(previewDurationSec(p)).toBeLessThanOrEqual(30);
+    }
   });
 
   it('puts cut points in the middle of overlapping transitions', () => {

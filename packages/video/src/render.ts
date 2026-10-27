@@ -3,11 +3,14 @@ import type { AppProfile, LoopPlan, PreviewPlan, RenderManifest, VideoPlan } fro
 import { frameShell, lucideIcon, type ResolvedDirection } from '@vitrin/render';
 import { readdir, rm } from 'node:fs/promises';
 import { dirname, join, relative } from 'node:path';
+import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 import sharp from 'sharp';
 import { FPS_PREVIEW, MAX_TEXT_CARDS, previewDurationSec, STYLE_DEFAULTS, type AppPreviewProps, type Look, type LoopProps, type MediaRef, type PreviewFamily, renderScale, type Scene, type TransitionKind } from './types.js';
 
-const ENTRY = join(dirname(fileURLToPath(import.meta.url)), '..', 'src', 'remotion', 'index.ts');
+/** packages/video: the Remotion project (entry and remotion.config.ts) the renderer bundles and Studio runs. */
+export const VIDEO_DIR = join(dirname(fileURLToPath(import.meta.url)), '..');
+const ENTRY = join(VIDEO_DIR, 'src', 'remotion', 'index.ts');
 
 export interface VideoRenderOptions {
   paths: AppPaths;
@@ -219,7 +222,55 @@ export function buildPreviewProps(opts: {
     const targetFlex = (total < 15 ? 16 : 28) * FPS_PREVIEW - fixed - overlaps;
     for (const s of flexible) s.frames = Math.max(sec(1.5), Math.round((s.frames / flexFrames) * targetFlex));
   }
+  settlePosterFrame(props);
   return props;
+}
+
+/** App Store Connect's default poster frame (references/apple-notes.md). */
+export const POSTER_SEC = 5;
+
+/** Frame index where each scene starts on the timeline (overlapping transitions pull the next scene earlier). */
+export function sceneStarts(p: Pick<AppPreviewProps, 'scenes' | 'transitions' | 'transitionFrames'>): number[] {
+  const starts = [0];
+  p.scenes.slice(0, -1).forEach((s, i) => {
+    const cut = p.transitions[i];
+    starts.push(starts[i]! + s.frames - (cut && cut !== 'none' && cut !== 'leak' ? p.transitionFrames : 0));
+  });
+  return starts;
+}
+
+/**
+ * The poster frame should show a settled UI scene — not a cut, a device still flying in, or a text card. With short
+ * beats it easily lands on one of those, so the scene before it is held a little longer until the frame falls into
+ * that scene's settled tail (or the current scene is held past the next cut). Nothing changes when that would push
+ * the preview over 30 s.
+ */
+export function settlePosterFrame(props: AppPreviewProps, posterSec = POSTER_SEC): void {
+  const p = Math.round(posterSec * FPS_PREVIEW);
+  const settle = Math.round(0.9 * FPS_PREVIEW);
+  const margin = 6;
+  const overlap = (i: number) => {
+    const cut = props.transitions[i];
+    return cut && cut !== 'none' && cut !== 'leak' ? props.transitionFrames : 0;
+  };
+  const before = props.scenes.map((s) => s.frames);
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const starts = sceneStarts(props);
+    const i = starts.findLastIndex((s) => s <= p);
+    const scene = props.scenes[i];
+    if (!scene) return;
+    const end = starts[i + 1] ?? starts[i]! + scene.frames;
+    const into = p - starts[i]!;
+    if (scene.kind !== 'text' && into >= settle && end - p >= overlap(i) + margin) break;
+    if (scene.kind === 'text' || into < settle) {
+      const prev = props.scenes[i - 1];
+      if (!prev || prev.kind === 'text') break;
+      prev.frames += p + overlap(i - 1) + margin - starts[i]!;
+    } else {
+      scene.frames += overlap(i) + margin - (end - p);
+    }
+  }
+  if (previewDurationSec(props) > 30) props.scenes.forEach((s, k) => (s.frames = before[k]!));
 }
 
 /** Every source one preview plan uses, resolved for one locale (`family` = the preview's device). */
@@ -245,6 +296,25 @@ async function resolvePlanMedia(paths: AppPaths, locale: string, primary: string
   }
   const outro = p.outro?.source ? (await resolveMedia(paths, locale, primary, family, p.outro.source, 0, warnings)).ref : undefined;
   return { hook, beats, outro };
+}
+
+/** One preview of the plan for one locale with the props `vitrin video` would render — what Remotion Studio shows. */
+export async function previewPropsFor(opts: { paths: AppPaths; plan: VideoPlan; ad: ResolvedDirection; locale: string; primaryLocale: string; id?: string }): Promise<{ props: AppPreviewProps; warnings: string[] }> {
+  const p = (opts.id ? opts.plan.previews.find((x) => x.id === opts.id) : undefined) ?? opts.plan.previews[0];
+  if (!p) throw new Error('video-plan.json has no previews.');
+  const warnings: string[] = [];
+  const { hook, beats, outro } = await resolvePlanMedia(opts.paths, opts.locale, opts.primaryLocale, p, warnings);
+  const props = buildPreviewProps({ plan: p, locale: opts.locale, look: lookFrom(opts.ad, opts.locale, p.device, hook.aspect), hookMedia: hook.ref, beats, outroMedia: outro });
+  return { props, warnings };
+}
+
+/** @remotion/cli's entry script when it is installed (a development checkout); Remotion Studio needs it. */
+export function remotionCliPath(): string | undefined {
+  try {
+    return join(dirname(createRequire(join(VIDEO_DIR, 'package.json')).resolve('@remotion/cli/package.json')), 'remotion-cli.js');
+  } catch {
+    return undefined;
+  }
 }
 
 export async function renderVideos(opts: VideoRenderOptions): Promise<VideoRenderResult> {
