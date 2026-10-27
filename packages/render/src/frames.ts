@@ -250,6 +250,8 @@ function duo(o: DeviceOptions, g: FrameGeometry): string {
   const m = Math.min(g.screen.w, g.screen.h);
   // The outer display's front camera sits in the screen's top-right corner; the app lays its UI around it.
   const camera = inner ? '' : `<div style="position:absolute;top:${r(m * 0.034)}px;right:${r(m * 0.034)}px;width:${r(m * 0.05)}px;height:${r(m * 0.05)}px;border-radius:50%;background:radial-gradient(circle at 38% 38%,#27304A,#04060B 62%)"></div>`;
+  // Open (inner display): the book-style fold leaves a faint crease down the middle of the screen.
+  const crease = inner ? `<div aria-hidden="true" style="position:absolute;top:0;bottom:0;left:50%;width:${r(Math.max(2, g.screen.w * 0.012))}px;transform:translateX(-50%);background:linear-gradient(90deg,rgba(0,0,0,0) 0%,rgba(0,0,0,.10) 35%,rgba(255,255,255,.10) 50%,rgba(0,0,0,.10) 65%,rgba(0,0,0,0) 100%);pointer-events:none"></div>` : '';
   const t = Math.max(1.2, W * 0.006);
   const buttons = button('right', H * 0.2, H * 0.08, t, f.button) + button('right', H * 0.32, H * 0.1, t, f.button);
   return wrap(
@@ -257,7 +259,7 @@ function duo(o: DeviceOptions, g: FrameGeometry): string {
     g,
     `${buttons}<div style="position:absolute;inset:0;border-radius:${r(g.radius)}px;background:${f.band};box-shadow:inset 0 0 0 ${r(Math.max(0.6, W * 0.002))}px ${f.edge}"></div>
   <div style="position:absolute;inset:${r(band)}px;border-radius:${r(g.radius - band)}px;background:#050506"></div>
-  ${screenImg(o, g, camera)}`,
+  ${screenImg(o, g, camera + crease)}`,
   );
 }
 

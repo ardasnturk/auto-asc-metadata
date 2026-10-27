@@ -1,1 +1,0 @@
-planner,calendar,reminder,motivation,checklist,progress,heatmap,consistency,focus,morning,todo

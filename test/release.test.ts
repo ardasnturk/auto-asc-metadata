@@ -78,6 +78,7 @@ describe.skipIf(!existsSync(CLI))('packed @ardasnturk/vitrin tarball', () => {
       'scripts/ocr.swift',
       'src/types.ts',
       ...readdirSync(join(ROOT, 'data')).filter((f) => f.endsWith('.json')).map((f) => `data/${f}`),
+      ...readdirSync(join(ROOT, 'data', 'screen-kit')).map((f) => `data/screen-kit/${f}`),
       ...readdirSync(join(ROOT, 'packages', 'video', 'src', 'remotion')).map((f) => `src/remotion/${f}`),
     ];
     expect(files.sort()).toEqual([...new Set(expected)].sort());

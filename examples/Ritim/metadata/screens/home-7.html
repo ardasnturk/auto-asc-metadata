@@ -1,0 +1,81 @@
+<!doctype html>
+<html data-status-bar="dark">
+<head>
+<meta charset="utf-8">
+<!-- After one check-in on “Drink water” (7 of 8). HomeView.swift: TodaySummaryCard + HabitCard grid, demo data from Support/VitrinDemo.swift (3 of 7 done today). -->
+<link rel="stylesheet" href="kit/ios.css">
+<link rel="stylesheet" href="icons.css">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<div class="screen">
+  <div class="toolbar">
+    <div class="gbtn glass"><i class="i i-crown"></i></div>
+    <div class="toptabs glass"><div><i class="i i-sidebar"></i></div><div class="on">{{tab_today}}</div><div>{{tab_stats}}</div><div>{{tab_reminders}}</div></div>
+    <div style="display:flex;gap:12px;align-items:center">
+      <div class="gbtn glass"><i class="i i-plus"></i></div>
+      <div class="search ipad-only" style="margin:0;width:240px;background:var(--glass);box-shadow:var(--glass-shadow);height:44px;border-radius:22px"><i class="i i-search"></i>{{search}}</div>
+    </div>
+  </div>
+  <div class="large-title">{{today}}</div>
+  <div class="search iphone-only"><i class="i i-search"></i>{{search}}</div>
+  <div class="content">
+    <div class="summary">
+      <div class="text">
+        <div class="date" data-date="0"></div>
+        <div class="done">{{done_3}}</div>
+        <div class="msg">{{msg_nice}}</div>
+      </div>
+      <div class="ring-wrap">
+        <svg class="pring" viewBox="0 0 92 92"><circle class="track" cx="46" cy="46" r="46" stroke-width="10"/><circle class="bar" cx="46" cy="46" r="46" stroke-width="10" stroke-dasharray="124.3 290"/></svg>
+        <span data-pct="0.43"></span>
+      </div>
+    </div>
+    <div class="grid">
+      <div class="habit c-blue">
+        <div class="tile"><i class="i i-water"></i></div>
+        <div class="info"><div class="name">{{h_water}}</div><div class="streak"><i class="i i-flame"></i>{{days_12}}</div><div class="week"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class=""></i></div></div>
+        <div class="checkin"><svg class="pring" viewBox="0 0 54 54"><circle class="track" cx="27" cy="27" r="27" stroke-width="6"/><circle class="bar" cx="27" cy="27" r="27" stroke-width="6" stroke-dasharray="148.4 170"/></svg><span class="count">7/8</span></div>
+      </div>
+      <div class="habit c-coral">
+        <div class="tile"><i class="i i-run"></i></div>
+        <div class="info"><div class="name">{{h_run}}</div><div class="streak"><i class="i i-flame"></i>{{days_6}}</div><div class="week"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></div></div>
+        <div class="checkin"><svg class="pring" viewBox="0 0 54 54"><circle class="track" cx="27" cy="27" r="27" stroke-width="6"/><circle class="bar" cx="27" cy="27" r="27" stroke-width="6" stroke-dasharray="170 170"/></svg><i class="i i-check"></i></div>
+      </div>
+      <div class="habit c-purple">
+        <div class="tile"><i class="i i-book"></i></div>
+        <div class="info"><div class="name">{{h_read}}</div><div class="streak"><i class="i i-flame"></i>{{days_24}}</div><div class="week"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></div></div>
+        <div class="checkin"><svg class="pring" viewBox="0 0 54 54"><circle class="track" cx="27" cy="27" r="27" stroke-width="6"/><circle class="bar" cx="27" cy="27" r="27" stroke-width="6" stroke-dasharray="170 170"/></svg><i class="i i-check"></i></div>
+      </div>
+      <div class="habit c-mint">
+        <div class="tile"><i class="i i-leaf"></i></div>
+        <div class="info"><div class="name">{{h_meditate}}</div><div class="streak"><i class="i i-flame"></i>{{days_42}}</div><div class="week"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></div></div>
+        <div class="checkin"><svg class="pring" viewBox="0 0 54 54"><circle class="track" cx="27" cy="27" r="27" stroke-width="6"/><circle class="bar" cx="27" cy="27" r="27" stroke-width="6" stroke-dasharray="170 170"/></svg><i class="i i-check"></i></div>
+      </div>
+      <div class="habit c-orange">
+        <div class="tile"><i class="i i-carrot"></i></div>
+        <div class="info"><div class="name">{{h_sugar}}</div><div class="streak"><i class="i i-flame"></i>{{days_3}}</div><div class="week"><i class="on"></i><i></i><i></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i></div></div>
+        <div class="checkin"><svg class="pring" viewBox="0 0 54 54"><circle class="track" cx="27" cy="27" r="27" stroke-width="6"/></svg><i class="i i-plus"></i></div>
+      </div>
+      <div class="habit c-teal">
+        <div class="tile"><i class="i i-bubble"></i></div>
+        <div class="info"><div class="name">{{h_spanish}}</div><div class="streak"><i class="i i-flame"></i>{{days_9}}</div><div class="week"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i></div></div>
+        <div class="checkin"><svg class="pring" viewBox="0 0 54 54"><circle class="track" cx="27" cy="27" r="27" stroke-width="6"/></svg><i class="i i-plus"></i></div>
+      </div>
+      <div class="habit c-indigo">
+        <div class="tile"><i class="i i-moon"></i></div>
+        <div class="info"><div class="name">{{h_lights}}</div><div class="streak"><i class="i i-flame"></i>{{days_7}}</div><div class="week"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i></div></div>
+        <div class="checkin"><svg class="pring" viewBox="0 0 54 54"><circle class="track" cx="27" cy="27" r="27" stroke-width="6"/></svg><i class="i i-plus"></i></div>
+      </div>
+    </div>
+  </div>
+  <div class="edge"></div>
+  <div class="tabbar glass">
+    <div class="on"><i class="i i-tab-today"></i>{{tab_today}}</div>
+    <div><i class="i i-tab-stats"></i>{{tab_stats}}</div>
+    <div><i class="i i-tab-bell"></i>{{tab_reminders}}</div>
+  </div>
+</div>
+<script src="screen.js"></script>
+</body>
+</html>

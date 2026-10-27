@@ -1,33 +1,20 @@
-import { ensureDir, existsSync, localeInfo, loadTargets, log } from '@vitrin/core';
-import { launchChromium } from '@vitrin/render';
+import { DATA_DIR, ensureDir, existsSync, localeInfo, loadTargets, log } from '@vitrin/core';
+import { launchChromium, SCREEN_TARGET } from '@vitrin/render';
 import type { RenderTarget } from '@vitrin/schemas';
-import { readdir, readFile } from 'node:fs/promises';
+import { copyFile, readdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import type { Ctx } from './context.js';
 
 /**
  * capture.mode `html`: no build, no simulator. Claude reads the app's source and writes each screen as an HTML/CSS
- * recreation with demo data in `.vitrin/screens/<id>.html` (optionally `<id>.<family>.html` for an iPad, Mac, Watch
- * … layout), with text as `{{key}}` placeholders filled from `.vitrin/screens/strings/<locale>.json`. Vitrin renders
+ * recreation with demo data in `metadata/screens/<id>.html` (optionally `<id>.<family>.html` for an iPad, Mac, Watch
+ * … layout), with text as `{{key}}` placeholders filled from `metadata/screens/strings/<locale>.json`. Vitrin renders
  * each screen per locale and device family at the device's screen size into the same raw files a simulator capture
- * writes (`.vitrin/raw/<locale>/<family>/<id>.png`), so design, video and review work unchanged.
+ * writes (`metadata/raw/<locale>/<family>/<id>.png`), so design, video and review work unchanged.
  */
 
 export type ScreenFamily = 'iphone' | 'ipad' | 'duo' | 'mac' | 'watch' | 'tv' | 'vision' | 'android-phone' | 'android-tablet';
-
-/** The screenshot format whose logical size is the device screen of each family. */
-const SCREEN_TARGET: Record<ScreenFamily, string> = {
-  iphone: 'iphone-6.9',
-  ipad: 'ipad-13',
-  duo: 'duo-inner',
-  mac: 'mac-16x10',
-  watch: 'watch-ultra',
-  tv: 'appletv-4k',
-  vision: 'vision-pro',
-  'android-phone': 'play-phone',
-  'android-tablet': 'play-tablet-10',
-};
 
 /** Safe areas (CSS px) the status bar and home indicator take; exposed as --safe-top / --safe-bottom. */
 const SAFE_AREA: Record<ScreenFamily, { top: number; bottom: number; statusBar: 'ios' | 'ipados' | 'android' | 'none' }> = {
@@ -113,11 +100,24 @@ export function statusBarHtml(family: ScreenFamily): string {
 }
 
 /** The page Vitrin renders: Claude's HTML with the base URL, language, family, safe areas and status bar. */
-export function wrapScreen(html: string, opts: { dir: string; family: ScreenFamily; locale: string }): string {
+export function wrapScreen(html: string, opts: { dir: string; family: ScreenFamily; locale: string; appearance?: string }): string {
   const safe = SAFE_AREA[opts.family];
   const textDir = localeInfo(opts.locale)?.dir ?? 'ltr';
-  const head = `<base href="${pathToFileURL(opts.dir + '/').href}"><script>(()=>{const d=document.documentElement;d.lang=${JSON.stringify(opts.locale)};if(!d.hasAttribute('dir'))d.dir=${JSON.stringify(textDir)};d.dataset.family=${JSON.stringify(opts.family)};})()</script><style>:root{--safe-top:${safe.top}px;--safe-bottom:${safe.bottom}px}html,body{margin:0;width:100%;height:100%;overflow:hidden}*{-webkit-font-smoothing:antialiased}</style>`;
+  const head = `<base href="${pathToFileURL(opts.dir + '/').href}"><script>(()=>{const d=document.documentElement;d.lang=${JSON.stringify(opts.locale)};if(!d.hasAttribute('dir'))d.dir=${JSON.stringify(textDir)};d.dataset.family=${JSON.stringify(opts.family)};if(!d.dataset.appearance)d.dataset.appearance=${JSON.stringify(opts.appearance ?? 'light')};})()</script><style>:root{--safe-top:${safe.top}px;--safe-bottom:${safe.bottom}px}html,body{margin:0;width:100%;height:100%;overflow:hidden}*{-webkit-font-smoothing:antialiased}</style>`;
   return /<head[^>]*>/i.test(html) ? html.replace(/<head[^>]*>/i, (m) => m + head) : `<!doctype html><html><head><meta charset="utf-8">${head}</head><body>${html}</body></html>`;
+}
+
+/** The native UI kit (iOS, Material 3, watchOS, macOS CSS) screens link to as `kit/<name>.css`; kept current by Vitrin. */
+export async function installScreenKit(screensDir: string): Promise<string[]> {
+  const src = join(DATA_DIR, 'screen-kit');
+  if (!existsSync(src)) return [];
+  const out: string[] = [];
+  await ensureDir(join(screensDir, 'kit'));
+  for (const f of await readdir(src)) {
+    await copyFile(join(src, f), join(screensDir, 'kit', f));
+    out.push(join(screensDir, 'kit', f));
+  }
+  return out;
 }
 
 export interface HtmlScreenJob {
@@ -130,10 +130,11 @@ export interface HtmlScreenJob {
 export async function renderHtmlScreens(ctx: Ctx, jobs: HtmlScreenJob[], fallbackLocale: string): Promise<{ outputs: string[]; missingFiles: string[]; missingStrings: string[] }> {
   const dir = ctx.paths.screens;
   const strings = await loadStrings(dir);
-  const missingFiles = [...new Set(jobs.filter((j) => !screenFile(dir, j.id, j.family)).map((j) => `.vitrin/screens/${j.id}.html`))];
+  const missingFiles = [...new Set(jobs.filter((j) => !screenFile(dir, j.id, j.family)).map((j) => `metadata/screens/${j.id}.html`))];
   const missingStrings: string[] = [];
   const outputs: string[] = [];
   if (missingFiles.length) return { outputs, missingFiles, missingStrings };
+  await installScreenKit(dir);
   const browser = await launchChromium();
   try {
     const byFamily = new Map<ScreenFamily, HtmlScreenJob[]>();
@@ -147,7 +148,11 @@ export async function renderHtmlScreens(ctx: Ctx, jobs: HtmlScreenJob[], fallbac
         const filled = fillStrings(await readFile(file, 'utf8'), strings, j.locale, fallbackLocale);
         for (const k of filled.missing) missingStrings.push(`${j.locale}: ${k} (${j.id})`);
         if (filled.fellBack.length) log.warn(`  ${j.locale}/${j.id}: no ${j.locale} text for ${filled.fellBack.join(', ')}; used ${fallbackLocale}.`);
-        await page.setContent(wrapScreen(filled.html, { dir: dirname(file), family, locale: j.locale }), { waitUntil: 'load' });
+        // Loaded from a file (not setContent): an about:blank page may not read the file:// CSS, fonts and images it links.
+        const pageFile = join(ctx.paths.cache, 'screens', j.locale, family, `${j.id}.html`);
+        await ensureDir(dirname(pageFile));
+        await writeFile(pageFile, wrapScreen(filled.html, { dir: dirname(file), family, locale: j.locale, appearance: ctx.config.capture.appearance }));
+        await page.goto(pathToFileURL(pageFile).href, { waitUntil: 'load' });
         await page.evaluate(async (bar: string) => {
           const d = document.documentElement;
           const mode = d.getAttribute('data-status-bar');

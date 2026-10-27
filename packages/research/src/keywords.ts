@@ -42,14 +42,21 @@ export function median(values: number[]): number {
 }
 
 /**
- * Competition 0–1: half from how crowded the result list is, half from how entrenched the top 10 are
- * (median rating count on a log scale; 1M ratings ≈ 1.0).
+ * Competition 0–1: half from how many of the top 10 target the term in their name (`titleShare`), half from how
+ * entrenched they are (median rating count on a log scale; 1M ratings ≈ 1.0). The result count is kept for
+ * reference only: iTunes Search returns the full `limit` for almost every real term, so it does not separate them.
  */
-export function competitionScore(resultCount: number, top10Ratings: number[], limit: number): { resultCount: number; top10MedianRatings: number; score: number } {
-  const crowd = Math.min(resultCount / limit, 1);
+export function competitionScore(resultCount: number, top10Ratings: number[], titleShare: number): { resultCount: number; top10MedianRatings: number; titleShare: number; score: number } {
   const med = median(top10Ratings);
   const strength = Math.min(Math.log10(med + 1) / 6, 1);
-  return { resultCount, top10MedianRatings: med, score: round(0.5 * crowd + 0.5 * strength) };
+  return { resultCount, top10MedianRatings: med, titleShare: round(titleShare), score: round(0.5 * titleShare + 0.5 * strength) };
+}
+
+/** Share of the first 10 results whose name contains the term. */
+export function titleShare(term: string, results: Pick<ItunesSoftware, 'trackName'>[], locale: string): number {
+  const t = term.toLocaleLowerCase(locale);
+  const top = results.slice(0, 10);
+  return top.length ? top.filter((r) => r.trackName.toLocaleLowerCase(locale).includes(t)).length / top.length : 0;
 }
 
 /**

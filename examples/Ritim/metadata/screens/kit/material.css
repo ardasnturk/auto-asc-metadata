@@ -1,0 +1,68 @@
+/*
+ * Vitrin screen kit — Android, Material Design 3 (Jetpack Compose / Material Components defaults).
+ * <link rel="stylesheet" href="kit/material.css">. Set the tokens from the app's theme (colors.xml, Theme.kt,
+ * MaterialTheme colorScheme, Flutter ThemeData) — a dynamic-color app should use its seed's tonal palette.
+ */
+:root {
+  --primary: #6750A4; --on-primary: #fff; --primary-container: #EADDFF; --on-primary-container: #21005D;
+  --secondary-container: #E8DEF8; --on-secondary-container: #1D192B; --tertiary: #7D5260;
+  --surface: #FEF7FF; --surface-container: #F3EDF7; --surface-container-high: #ECE6F0; --surface-container-low: #F7F2FA;
+  --on-surface: #1D1B20; --on-surface-variant: #49454F; --outline: #79747E; --outline-variant: #CAC4D0; --error: #B3261E;
+  --font: Roboto, 'Google Sans Text', system-ui, Arial, sans-serif; --font-display: 'Google Sans', Roboto, system-ui, sans-serif;
+}
+html[data-appearance="dark"], .dark {
+  --primary: #D0BCFF; --on-primary: #381E72; --primary-container: #4F378B; --on-primary-container: #EADDFF;
+  --secondary-container: #4A4458; --on-secondary-container: #E8DEF8;
+  --surface: #141218; --surface-container: #211F26; --surface-container-high: #2B2930; --surface-container-low: #1D1B20;
+  --on-surface: #E6E0E9; --on-surface-variant: #CAC4D0; --outline: #938F99; --outline-variant: #49454F;
+}
+html, body { background: var(--surface); color: var(--on-surface); font: 400 14px/20px var(--font); letter-spacing: .25px; }
+* { box-sizing: border-box; }
+.screen { position: absolute; inset: 0; display: flex; flex-direction: column; padding-top: var(--safe-top); overflow: hidden; }
+.content { flex: 1; overflow: hidden; padding: 0 16px; }
+
+/* Type scale */
+.display-small { font: 400 36px/44px var(--font-display); } .headline-large { font: 400 32px/40px var(--font-display); }
+.headline-medium { font: 400 28px/36px var(--font-display); } .headline-small { font: 400 24px/32px var(--font-display); }
+.title-large { font: 400 22px/28px var(--font-display); } .title-medium { font: 500 16px/24px var(--font); letter-spacing: .15px; }
+.title-small { font: 500 14px/20px var(--font); letter-spacing: .1px; } .body-large { font: 400 16px/24px var(--font); letter-spacing: .5px; }
+.body-medium { font: 400 14px/20px var(--font); } .label-large { font: 500 14px/20px var(--font); letter-spacing: .1px; }
+.label-medium { font: 500 12px/16px var(--font); letter-spacing: .5px; } .label-small { font: 500 11px/16px var(--font); letter-spacing: .5px; }
+.variant { color: var(--on-surface-variant); }
+
+/* Top app bars */
+.appbar { height: 64px; display: flex; align-items: center; gap: 16px; padding: 0 16px 0 4px; flex: none; }
+.appbar .title { font: 400 22px/28px var(--font-display); flex: 1; } .appbar .icon-btn { width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; }
+.appbar-large { padding: 0 16px 28px; } .appbar-large .title { font: 400 28px/36px var(--font-display); }
+.searchbar { height: 56px; border-radius: 28px; background: var(--surface-container-high); display: flex; align-items: center; gap: 16px; padding: 0 16px; color: var(--on-surface-variant); margin: 8px 16px; }
+
+/* Lists and cards */
+.list-item { min-height: 56px; display: flex; align-items: center; gap: 16px; padding: 8px 16px; }
+.list-item.two-line { min-height: 72px; } .list-item .grow { flex: 1; min-width: 0; }
+.list-item .headline { font: 400 16px/24px var(--font); letter-spacing: .5px; } .list-item .supporting { color: var(--on-surface-variant); }
+.divider { height: 1px; background: var(--outline-variant); }
+.card-elevated { background: var(--surface-container-low); border-radius: 12px; padding: 16px; box-shadow: 0 1px 2px rgba(0,0,0,.3), 0 1px 3px 1px rgba(0,0,0,.15); }
+.card-filled { background: var(--surface-container-high); border-radius: 12px; padding: 16px; }
+.card-outlined { border: 1px solid var(--outline-variant); border-radius: 12px; padding: 16px; }
+.avatar { width: 40px; height: 40px; border-radius: 50%; background: var(--primary-container); color: var(--on-primary-container); display: flex; align-items: center; justify-content: center; font: 500 16px var(--font); flex: none; }
+
+/* Buttons, chips, controls */
+.btn-filled, .btn-tonal, .btn-outlined, .btn-text { height: 40px; border-radius: 20px; padding: 0 24px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; font: 500 14px var(--font); letter-spacing: .1px; }
+.btn-filled { background: var(--primary); color: var(--on-primary); } .btn-tonal { background: var(--secondary-container); color: var(--on-secondary-container); }
+.btn-outlined { border: 1px solid var(--outline); color: var(--primary); } .btn-text { color: var(--primary); padding: 0 12px; }
+.chip { height: 32px; border-radius: 8px; border: 1px solid var(--outline); padding: 0 16px; display: inline-flex; align-items: center; gap: 8px; font: 500 14px var(--font); }
+.chip.on { background: var(--secondary-container); border-color: transparent; }
+.switch { width: 52px; height: 32px; border-radius: 16px; border: 2px solid var(--outline); background: var(--surface-container-high); position: relative; flex: none; }
+.switch::after { content: ''; position: absolute; left: 6px; top: 6px; width: 16px; height: 16px; border-radius: 50%; background: var(--outline); }
+.switch.on { background: var(--primary); border-color: var(--primary); } .switch.on::after { left: 22px; top: 2px; width: 24px; height: 24px; background: var(--on-primary); }
+.linear-progress { height: 4px; border-radius: 2px; background: var(--secondary-container); overflow: hidden; } .linear-progress > i { display: block; height: 100%; background: var(--primary); border-radius: inherit; }
+.fab { position: absolute; right: 16px; bottom: 96px; width: 56px; height: 56px; border-radius: 16px; background: var(--primary-container); color: var(--on-primary-container); display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 3px rgba(0,0,0,.3), 0 4px 8px 3px rgba(0,0,0,.15); }
+.fab.extended { width: auto; padding: 0 20px; gap: 12px; font: 500 14px var(--font); }
+
+/* Navigation bar (bottom, 80dp) + gesture handle */
+.navbar { flex: none; height: 80px; background: var(--surface-container); display: flex; justify-content: space-around; align-items: flex-start; padding-top: 12px; }
+.navbar > * { display: flex; flex-direction: column; align-items: center; gap: 4px; font: 500 12px var(--font); letter-spacing: .5px; color: var(--on-surface-variant); }
+.navbar .pill { width: 64px; height: 32px; border-radius: 16px; display: flex; align-items: center; justify-content: center; }
+.navbar > .on { color: var(--on-surface); } .navbar > .on .pill { background: var(--secondary-container); color: var(--on-secondary-container); }
+.gesture-bar { height: 24px; flex: none; display: flex; align-items: center; justify-content: center; background: inherit; }
+.gesture-bar::after { content: ''; width: 108px; height: 4px; border-radius: 2px; background: var(--on-surface); opacity: .4; }

@@ -3,6 +3,7 @@ export * from './app-profile.js';
 export * from './research.js';
 export * from './metadata.js';
 export * from './design.js';
+export * from './experiments.js';
 export * from './targets.js';
 export * from './config.js';
 export * from './state.js';

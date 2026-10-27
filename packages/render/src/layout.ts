@@ -23,6 +23,8 @@ export interface ScreenImage {
   aspect: number;
   /** Device family the capture came from. */
   family: DeviceFamily;
+  /** Locale of the capture (another one when the raw library fell back to the primary locale). */
+  locale?: string;
 }
 
 export interface PageInput {

@@ -1,20 +1,20 @@
 import { ensureDir, existsSync, log, writeJson } from '@vitrin/core';
-import { copyFile, lstat, readdir, readFile, rm, rmdir, writeFile } from 'node:fs/promises';
+import { copyFile, lstat, readdir, readFile, rm } from 'node:fs/promises';
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
-import { parseDocument } from 'yaml';
-import { buildInventory, hashFile, readApproval, requireApproval, syncFastlaneMetadata, type InventoryItem } from './approval.js';
+import { buildInventory, readApproval, syncFastlaneMetadata, hashFile, type InventoryItem } from './approval.js';
 import { writeBrief } from './briefs.js';
 import { EXIT, NeedsInput, type Ctx } from './context.js';
 
 /**
- * `vitrin finalize --keep | --discard` — what happens to the generated files after a successful upload whose
- * read-back the user checked. `--keep` copies exactly the uploaded set into `<project>/metadata/`; both modes then
- * delete the generated media and the research artifacts, keeping the small source JSON.
+ * `vitrin finalize --checked --delete-research | --keep-research` — after a successful upload whose read-back
+ * the user checked. Everything Vitrin generated stays in `<project>/metadata/`; the only question is whether the
+ * research data (competitors, review clusters, keyword research and the downloads behind them) is deleted.
+ * Nothing is deleted unless the user said so.
  */
 
 export interface FinalizeOptions {
-  /** true = keep in metadata/, false = discard, undefined = use config.retention.keep or ask. */
-  keep?: boolean;
+  /** true = delete metadata/research/, false = keep it, undefined = ask the user. */
+  deleteResearch?: boolean;
   /** The user looked at the read-back result and confirmed the store shows what they approved. */
   checked?: boolean;
 }
@@ -22,7 +22,6 @@ export interface FinalizeOptions {
 export interface Removed {
   path: string;
   bytes: number;
-  group: 'media' | 'renders' | 'research';
 }
 
 const toPosix = (p: string) => p.split(sep).join('/');
@@ -55,41 +54,13 @@ export function fmtSize(n: number): string {
   return n >= 1024 ? `${Math.round(n / 1024)} KB` : `${n} B`;
 }
 
-/** Generated paths deleted after upload (both modes). Source JSON, competitors.json and keywords stay. */
-export async function generatedPaths(ctx: Ctx): Promise<Array<{ rel: string; group: Removed['group'] }>> {
-  const out: Array<{ rel: string; group: Removed['group'] }> = [];
-  const rel = (abs: string) => toPosix(relative(ctx.root, abs));
-  const p = ctx.paths;
-  for (const abs of [p.screenshots, p.appPreviews, p.creative, p.raw, join(p.vitrin, 'video-styles'), join(p.vitrin, 'samples'), join(p.vitrin, 'variants'), p.report, p.reviewSnapshot, p.renderManifest, p.uploadPlan]) {
-    out.push({ rel: rel(abs), group: abs === p.report || abs === p.reviewSnapshot || abs === p.renderManifest || abs === p.uploadPlan ? 'renders' : 'media' });
-  }
-  // Google Play images exported for supply (the text files stay, like .vitrin/store/metadata).
-  if (existsSync(p.androidMetadata)) {
-    for (const locale of await readdir(p.androidMetadata)) {
-      const images = join(p.androidMetadata, locale, 'images');
-      if (existsSync(images)) out.push({ rel: rel(images), group: 'media' });
-    }
-  }
-  // .vitrin/cache: HTTP cache, competitor screenshots and the OCR binary are research; html/thumbs/remotion are renders.
-  if (existsSync(p.cache)) {
-    for (const e of await readdir(p.cache)) {
-      const research = e === 'http' || e === 'competitor-shots' || e.startsWith('vitrin-ocr') || e === 'refdata.json';
-      out.push({ rel: rel(join(p.cache, e)), group: research ? 'research' : 'renders' });
-    }
-  }
+/** The research data `--delete-research` removes: every entry of metadata/research/ (project-relative). */
+export async function researchPaths(ctx: Ctx): Promise<Array<{ rel: string; bytes: number }>> {
+  const dir = ctx.paths.research;
+  if (!existsSync(dir)) return [];
+  const out: Array<{ rel: string; bytes: number }> = [];
+  for (const e of (await readdir(dir)).sort()) out.push({ rel: toPosix(relative(ctx.root, join(dir, e))), bytes: await diskSize(join(dir, e)) });
   return out;
-}
-
-async function removeAll(ctx: Ctx, list: Array<{ rel: string; group: Removed['group'] }>): Promise<Removed[]> {
-  const removed: Removed[] = [];
-  for (const { rel, group } of list) {
-    const abs = insideProject(ctx.root, rel);
-    if (!existsSync(abs) && !(await lstat(abs).catch(() => undefined))) continue;
-    const bytes = await diskSize(abs);
-    await rm(abs, { recursive: true, force: true });
-    removed.push({ path: rel, bytes, group });
-  }
-  return removed;
 }
 
 const MEDIA_DIR: Record<string, string> = { screenshot: 'screenshots', preview: 'previews', creative: 'creatives', event: 'creatives', other: 'other' };
@@ -122,20 +93,18 @@ async function readProjectManifest(file: string): Promise<ProjectManifest | unde
 
 /**
  * After a successful `vitrin write`: the validated store text, readable in the project as
- * `metadata/<store>/<platform>/<locale>/<field>.txt` (the same layout `finalize --keep` uses). A `metadata/`
- * folder Vitrin did not write is never touched.
+ * `metadata/<store>/<platform>/<locale>/<field>.txt` next to the rest of the workspace.
  */
 export async function exportProjectMetadata(ctx: Ctx): Promise<{ files: string[]; skipped?: string }> {
   const outRoot = insideProject(ctx.root, 'metadata');
   const manifestFile = join(outRoot, 'manifest.json');
   const prev = await readProjectManifest(manifestFile);
-  if (existsSync(outRoot) && (await readdir(outRoot)).length && prev?.generator !== 'vitrin') return { files: [], skipped: 'metadata/ already exists and was not written by Vitrin' };
   await syncFastlaneMetadata(ctx);
   const inv = await buildInventory(ctx);
   const text: KeptFile[] = [];
   for (const item of inv.items.filter((i) => i.kind === 'metadata')) {
     for (const f of item.fields ?? []) {
-      if (!f.file.startsWith('.vitrin/store/')) continue;
+      if (!f.file.startsWith('metadata/store/')) continue;
       const dest = keepPath(item, f.file);
       const abs = insideProject(ctx.root, dest);
       await ensureDir(dirname(abs));
@@ -146,66 +115,18 @@ export async function exportProjectMetadata(ctx: Ctx): Promise<{ files: string[]
   // Text from an earlier write that is no longer produced goes; media kept by `finalize --keep` stays.
   const written = new Set(text.map((f) => f.path));
   const old = prev?.files ?? [];
-  for (const f of old) if (f.source.startsWith('.vitrin/store/metadata/') && !written.has(f.path)) await rm(insideProject(ctx.root, f.path), { force: true });
-  const kept = old.filter((f) => !f.source.startsWith('.vitrin/store/metadata/'));
+  for (const f of old) if (f.source.startsWith('metadata/store/metadata/') && !written.has(f.path)) await rm(insideProject(ctx.root, f.path), { force: true });
+  const kept = old.filter((f) => !f.source.startsWith('metadata/store/metadata/'));
   await writeJson(manifestFile, { generator: 'vitrin', updatedAt: new Date().toISOString(), files: [...kept, ...text] });
   return { files: text.map((f) => f.path) };
 }
 
-/** Copies exactly the approved, uploaded set into metadata/ and writes metadata/manifest.json with hashes. */
-async function keepUploaded(ctx: Ctx): Promise<{ kept: KeptFile[]; bytes: number }> {
-  // A first-release upload removes release_notes.txt after the gate; re-export restores the approved text files.
-  await syncFastlaneMetadata(ctx);
-  const approval = await requireApproval(ctx);
-  const inv = await buildInventory(ctx);
-  const approvedHash = new Map([...approval.files, ...approval.metadataJson].map((f) => [f.path, f.sha256]));
-  const outRoot = insideProject(ctx.root, 'metadata');
-  const manifestFile = join(outRoot, 'manifest.json');
-  if (existsSync(outRoot) && (await readdir(outRoot)).length) {
-    // Never overwrite a user folder named metadata/: only one Vitrin wrote before (its manifest says so).
-    const prev = existsSync(manifestFile) ? (JSON.parse(await readFile(manifestFile, 'utf8')) as { generator?: string; files?: KeptFile[] }) : undefined;
-    if (prev?.generator !== 'vitrin') throw new NeedsInput('metadata/ already exists and was not written by Vitrin; move it away or choose --discard.');
-    for (const f of prev.files ?? []) await rm(insideProject(ctx.root, f.path), { force: true });
-  }
-  const kept: KeptFile[] = [];
-  for (const item of inv.items) {
-    if (item.kind === 'cpp' || (item.kind === 'event' && !item.abs)) {
-      const dest = `metadata/${item.store}/${item.platform}/all/${item.kind === 'cpp' ? 'cpp' : 'events'}/${item.id.split('/').pop()}.json`;
-      const data = JSON.stringify(item.data, null, 2) + '\n';
-      await ensureDir(dirname(insideProject(ctx.root, dest)));
-      await writeFile(insideProject(ctx.root, dest), data);
-      kept.push({ path: dest, source: item.files[0]!, sha256: await hashFile(insideProject(ctx.root, dest)), bytes: Buffer.byteLength(data) });
-      continue;
-    }
-    for (const source of item.files) {
-      const expected = approvedHash.get(source);
-      if (!expected) continue;
-      if (item.kind === 'metadata' && source.startsWith('.vitrin/') && !source.startsWith('.vitrin/store/')) continue; // source JSON stays where it is
-      const dest = keepPath(item, source);
-      const abs = insideProject(ctx.root, dest);
-      await ensureDir(dirname(abs));
-      await copyFile(insideProject(ctx.root, source), abs);
-      const sha = await hashFile(abs);
-      if (sha !== expected) throw new Error(`Copy of ${source} does not match the approved hash.`);
-      kept.push({ path: dest, source, sha256: sha, bytes: (await lstat(abs)).size });
-    }
-  }
-  await writeJson(manifestFile, {
-    generator: 'vitrin',
-    finalizedAt: new Date().toISOString(),
-    overallHash: approval.overallHash,
-    uploadedAt: approval.upload?.uploadedAt,
-    files: kept,
-  });
-  return { kept, bytes: kept.reduce((n, f) => n + f.bytes, 0) };
-}
-
-/** Stores the user's retention answer in vitrin.config.yaml (comments and formatting preserved). */
-export async function storeRetention(ctx: Ctx, keep: boolean): Promise<void> {
-  const doc = parseDocument(await readFile(ctx.paths.config, 'utf8'));
-  doc.setIn(['retention', 'keep'], keep);
-  await writeFile(ctx.paths.config, doc.toString(), 'utf8');
-  ctx.config.retention = { ...ctx.config.retention, keep };
+/** `metadata/uploaded.json`: exactly what was uploaded (paths and hashes from the approval). */
+async function writeUploadRecord(ctx: Ctx): Promise<number> {
+  const approval = (await readApproval(ctx))!;
+  const files = [...approval.files, ...approval.metadataJson].map((f) => ({ path: f.path, sha256: f.sha256 }));
+  await writeJson(join(ctx.paths.vitrin, 'uploaded.json'), { generator: 'vitrin', overallHash: approval.overallHash, uploadedAt: approval.upload?.uploadedAt, finalizedAt: new Date().toISOString(), files });
+  return files.length;
 }
 
 export async function finalizeCommand(ctx: Ctx, opts: FinalizeOptions): Promise<number> {
@@ -218,8 +139,10 @@ export async function finalizeCommand(ctx: Ctx, opts: FinalizeOptions): Promise<
   if (approval.upload.overallHash !== approval.overallHash) throw new NeedsInput('The recorded upload is for different content than the current approval; upload again first.');
   if (approval.upload.readBack !== 'ok') throw new NeedsInput('The read-back after the upload found differences; resolve them (and upload again) before finalizing.', approval.upload.differences);
 
-  const keep = opts.keep ?? ctx.config.retention.keep;
-  if (!opts.checked || keep === undefined) {
+  const research = await researchPaths(ctx);
+  const researchBytes = research.reduce((n, r) => n + r.bytes, 0);
+  if (!opts.checked || opts.deleteResearch === undefined) {
+    const list = research.length ? research.map((r) => `   - \`${r.rel}\` (${fmtSize(r.bytes)})`).join('\n') : '   - (no research data in metadata/research/)';
     const brief = await writeBrief(
       ctx,
       'finalize',
@@ -228,36 +151,32 @@ export async function finalizeCommand(ctx: Ctx, opts: FinalizeOptions): Promise<
 The upload of the approved content (hash \`${approval.overallHash.slice(0, 12)}\`) finished on ${approval.upload.uploadedAt} and the read-back matched.
 ${opts.checked ? '' : `
 1. Show the user the read-back result and ask them to check the listing in App Store Connect / Google Play. Continue only when they confirm it looks right.`}
-${keep === undefined ? `
-2. Ask the user: **"Keep the generated content in metadata/ or delete it after upload?"**
-   - keep → the exact uploaded files are copied to \`metadata/<store>/<platform>/<locale>/\` (with \`metadata/manifest.json\` hashes); git-ignored unless \`retention.commit: true\`.
-   - delete → generated screenshots, videos, creatives, renders and raw captures are removed; the source JSON (metadata, art direction, shot list, video plan) stays so everything can be regenerated.
-   Either way the research cache (HTTP cache, competitor screenshots, OCR files) is removed; competitors.json and keywords stay.` : `
-2. Retention is configured: ${keep ? 'keep in metadata/' : 'delete'} (vitrin.config.yaml → retention.keep).`}
 
-Then run \`vitrin finalize --checked ${keep === undefined ? '--keep` or `vitrin finalize --checked --discard' : keep ? '--keep' : '--discard'}\`. The flag stores the answer in \`vitrin.config.yaml\` → \`retention.keep\`.
+2. Everything Vitrin generated stays in \`metadata/\` (store text, screenshots, previews, creatives, mockups, design samples). **Ask** the user whether to delete all research data now (${fmtSize(researchBytes)}):
+${list}
+   That is the competitor list and review clusters, the keyword research and the downloads behind them (HTTP cache, competitor screenshots, OCR). The next run can download it again with \`vitrin research\`. Never delete without their explicit answer.
+
+Then run \`vitrin finalize --checked --delete-research\` (yes) or \`vitrin finalize --checked --keep-research\` (no).
 `,
     );
-    throw new NeedsInput(`Finalize needs the user's input: ${opts.checked ? '' : 'confirm the read-back; '}${keep === undefined ? 'keep or delete the generated content' : ''}. Brief: ${relative(ctx.root, brief)}`);
+    throw new NeedsInput(`Finalize needs the user's input: ${opts.checked ? '' : 'confirm the read-back; '}${opts.deleteResearch === undefined ? 'delete the research data or keep it' : ''}. Brief: ${relative(ctx.root, brief)}`);
   }
-  if (opts.keep !== undefined && opts.keep !== ctx.config.retention.keep) await storeRetention(ctx, opts.keep);
 
-  let keptBytes = 0;
-  if (keep) {
-    const res = await keepUploaded(ctx);
-    keptBytes = res.bytes;
-    log.ok(`Kept ${res.kept.length} uploaded files (${fmtSize(res.bytes)}) in metadata/ (manifest: metadata/manifest.json${ctx.config.retention.commit ? ', committed' : ', git-ignored'}).`);
+  const recorded = await writeUploadRecord(ctx);
+  log.ok(`Recorded the ${recorded} uploaded files in metadata/uploaded.json; everything generated stays in metadata/.`);
+  const removed: Removed[] = [];
+  if (opts.deleteResearch) {
+    for (const r of research) {
+      await rm(insideProject(ctx.root, r.rel), { recursive: true, force: true });
+      removed.push({ path: r.rel, bytes: r.bytes });
+    }
+    await rm(ctx.paths.research, { recursive: true, force: true });
+    log.info(`Deleted the research data (${fmtSize(researchBytes)}):`);
+    for (const r of removed) log.dim(`  ${r.path}  ${fmtSize(r.bytes)}`);
+  } else {
+    log.info(`Kept the research data in metadata/research/ (${fmtSize(researchBytes)}).`);
   }
-  const removed = await removeAll(ctx, await generatedPaths(ctx));
-  await rmdir(ctx.paths.cache).catch(() => undefined); // only when empty
-  for (const group of ['media', 'renders', 'research'] as const) {
-    const list = removed.filter((r) => r.group === group);
-    if (!list.length) continue;
-    log.info(`Deleted ${group} (${fmtSize(list.reduce((n, r) => n + r.bytes, 0))}):`);
-    for (const r of list) log.dim(`  ${r.path}  ${fmtSize(r.bytes)}`);
-  }
-  log.info('Kept: .vitrin/app_profile.json, .vitrin/metadata/, keywords/, competitors.json, art-direction.json, shots.json, video-plan.json, cpp-suggestions.json, screens/, .vitrin/store/metadata text.');
-  await writeJson(ctx.paths.approval, { ...approval, finalized: { at: new Date().toISOString(), mode: keep ? 'keep' : 'discard' } });
-  log.result({ mode: keep ? 'keep' : 'discard', keptBytes, removed });
+  await writeJson(ctx.paths.approval, { ...approval, finalized: { at: new Date().toISOString(), mode: opts.deleteResearch ? 'delete-research' : 'keep-research' } });
+  log.result({ mode: opts.deleteResearch ? 'delete-research' : 'keep-research', removed, researchBytes });
   return EXIT.OK;
 }

@@ -1,14 +1,17 @@
 import { existsSync, log, readJson, readJsonIfExists, selectedPlatforms, writeJson } from '@vitrin/core';
-import { AppMetadata, CppSuggestions, ShotList, uploaderOf } from '@vitrin/schemas';
+import { AppMetadata, CppSuggestions, ExperimentPlan, ShotList, uploaderOf, type Experiment } from '@vitrin/schemas';
 import {
   AscClient,
   buildPlan,
   createCustomProductPage,
+  createExperiment,
   createInAppEvent,
   credentialsFromEnv,
   exportFastlaneMetadata,
   formatPlan,
   installFastlaneTemplates,
+  placeCustomProductPageMedia,
+  placeEventMedia,
   prepareStores,
   readBack,
   runDeliverForPlatforms,
@@ -35,7 +38,19 @@ export interface UploadOptions {
   creatives?: boolean;
   cpp?: boolean;
   events?: boolean;
+  /** Create a Product Page Optimization test: its id, or true for the first one without a result. */
+  experiment?: string | boolean;
   skipScreenshots?: boolean;
+}
+
+/** The test `--experiment` means: the named one, or the first one without a result. */
+async function pickExperiment(ctx: Ctx, which: string | boolean): Promise<Experiment> {
+  if (!existsSync(ctx.paths.experiments)) throw new NeedsInput('No metadata/experiments.json yet; plan a test first (references/experiments.md).');
+  const plan = await readJson(ctx.paths.experiments, ExperimentPlan);
+  const e = typeof which === 'string' ? plan.experiments.find((x) => x.id === which) : plan.experiments.find((x) => !x.result);
+  if (!e) throw new NeedsInput(typeof which === 'string' ? `No test “${which}” in metadata/experiments.json.` : 'Every test in metadata/experiments.json already has a result; plan the next one.');
+  if (e.result) throw new NeedsInput(`Test “${e.id}” already ended (${e.result.winner}); plan the next one.`);
+  return e;
 }
 
 async function confirm(question: string): Promise<boolean> {
@@ -56,7 +71,7 @@ export async function uploadCommand(ctx: Ctx, opts: UploadOptions): Promise<numb
   if (!existsSync(ctx.paths.appMetadata) || metadata.length !== ctx.config.app.locales.length) throw new NeedsInput('Metadata is missing; run `vitrin write` first.');
   const app = await readJson(ctx.paths.appMetadata, AppMetadata);
   await exportFastlaneMetadata(ctx.paths, ctx.config, app, metadata);
-  // Approval gate: a real upload sends only the exact files the user reviewed and approved (.vitrin/approval.json).
+  // Approval gate: a real upload sends only the exact files the user reviewed and approved (metadata/approval.json).
   // Checked after the export so the text files compared are the ones deliver would read. --yes never skips this.
   if (!opts.dryRun) await requireApproval(ctx);
   else {
@@ -114,6 +129,7 @@ export async function uploadCommand(ctx: Ctx, opts: UploadOptions): Promise<numb
 
   const shots = await readJsonIfExists(ctx.paths.shots, ShotList).catch(() => undefined);
   const cpp = await readJsonIfExists(ctx.paths.cpp, CppSuggestions).catch(() => undefined);
+  const experiment = opts.experiment ? await pickExperiment(ctx, opts.experiment) : undefined;
   const plan = await buildPlan({
     paths: ctx.paths,
     config: ctx.config,
@@ -121,6 +137,7 @@ export async function uploadCommand(ctx: Ctx, opts: UploadOptions): Promise<numb
     metadata,
     shots,
     cpp,
+    experiment,
     client,
     include: { creatives: Boolean(opts.creatives), cpp: Boolean(opts.cpp), events: Boolean(opts.events) },
     platforms: stores.platforms,
@@ -148,7 +165,7 @@ export async function uploadCommand(ctx: Ctx, opts: UploadOptions): Promise<numb
         log.warn(`asc dry run: ${(err as Error).message}`);
       }
     }
-    log.ok(`Plan: .vitrin/upload-plan.json (--dry-run, nothing was uploaded)`);
+    log.ok(`Plan: metadata/upload-plan.json (--dry-run, nothing was uploaded)`);
     return plan.blockers.length ? EXIT.NEEDS_INPUT : EXIT.OK;
   }
 
@@ -200,7 +217,9 @@ export async function uploadCommand(ctx: Ctx, opts: UploadOptions): Promise<numb
         continue;
       }
       const res = await createCustomProductPage(client!, plan.appId!, page, languages);
-      log.ok(`Created CPP “${page.name}” (${res.pageId}); images are placed by the --creatives flow, Apple approval required.`);
+      const placed = await placeCustomProductPageMedia(client!, plan.appId!, join(ctx.paths.cppScreenshots, page.id), res.localizations);
+      if (placed) log.ok(`Created CPP “${page.name}” (${res.pageId}) with its own screenshot set (${placed} images); Apple reviews the page.`);
+      else log.warn(`Created CPP “${page.name}” (${res.pageId}) without screenshots: it shows the default set until \`shots\` is set and \`vitrin design\` renders the page's own set. Apple reviews the page.`);
     }
   }
   if (opts.events && shots && kindOn('events')) {
@@ -211,7 +230,17 @@ export async function uploadCommand(ctx: Ctx, opts: UploadOptions): Promise<numb
         continue;
       }
       const res = await createInAppEvent(client!, plan.appId!, e, ctx.config.app.primaryLocale, languages);
-      log.ok(`Created In-App Event “${e.id}” as a draft (${res.eventId}).`);
+      const placed = await placeEventMedia(client!, plan.appId!, ctx.paths.creative, e.id, res.localizations);
+      log.ok(`Created In-App Event “${e.id}” as a draft (${res.eventId}) with ${placed} card/detail images${e.schedule ? '' : '; set its schedule in App Store Connect'}${e.deepLink ? '' : '; it needs a deep link before review'}.`);
+    }
+  }
+
+  if (experiment && (plan.scope?.assets.includes('screenshots') ?? true)) {
+    const existing = await client!.getAll<{ name?: string }>(`/v1/apps/${plan.appId}/appStoreVersionExperimentsV2?limit=200`).catch(() => []);
+    if (existing.some((x) => x.attributes.name === experiment.name)) log.dim(`Test “${experiment.name}” already exists; skipped.`);
+    else {
+      const res = await createExperiment(client!, plan.appId!, experiment, { locales: languages, dir: join(ctx.paths.experimentScreenshots, experiment.id) });
+      log.ok(`Created test “${experiment.name}” (${res.experimentId}): ${Object.keys(res.treatments).length} treatment(s), ${res.placed} screenshots. It is a draft — App Review checks the treatments, then start it in App Store Connect → Product Page Optimization.`);
     }
   }
 
@@ -224,7 +253,7 @@ export async function uploadCommand(ctx: Ctx, opts: UploadOptions): Promise<numb
     return EXIT.FAIL;
   }
   log.ok('Text in the stores matches the local files.');
-  log.info('Next: show the user the read-back above; once they confirm the listing, run `vitrin finalize --checked` (keeps the uploaded set in metadata/ or deletes the generated files, per retention.keep).');
+  log.info('Next: show the user the read-back above; once they confirm the listing, ask whether to delete the research data and run `vitrin finalize --checked --delete-research` or `--keep-research`.');
   await ctx.state.mark('upload', plan.generatedAt, [relative(ctx.root, ctx.paths.uploadPlan)]);
   log.info('Reminder: final approval of the privacy labels and age rating questionnaire is yours; check the App Store tags (US) after the upload.');
   return EXIT.OK;

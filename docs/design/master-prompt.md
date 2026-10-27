@@ -189,7 +189,7 @@ Known facts (October 2026):
 
 ## 1. Architecture principles
 - Creative decisions in Claude, deterministic work in the CLI. Copy, art direction, layout choices and competitor interpretation are written by Claude while the skill runs and saved to schema-conforming JSON files. Data collection, rendering, validation and upload are the TypeScript CLI's job. No additional LLM API key is required.
-- Every stage is idempotent and resumable: .vitrin/state.json stores completed stages and input hashes; running again with the same input skips the stage.
+- Every stage is idempotent and resumable: metadata/state.json stores completed stages and input hashes; running again with the same input skips the stage.
 - Safe defaults: upload shows a --dry-run plan first; submitting for review is a separate command and requires explicit approval.
 
 ## 2. Technology
@@ -214,30 +214,30 @@ vitrin/
   fastlane/           Fastfile and Gemfile templates
   data/               targets.json, storefront-languages.json, forbidden-terms.json
   skill/              SKILL.md, references/, scripts/
-Outputs in the app repository: .vitrin/ (state, cache, report) and fastlane/{metadata,screenshots,app-previews}/.
+Outputs in the app repository: metadata/ (state, cache, report) and fastlane/{metadata,screenshots,app-previews}/.
 
 ## 4. Pipeline (CLI)
-vitrin init → creates vitrin.config.yaml and .env.example; adds .env, *.p8, .vitrin/cache to .gitignore.
+vitrin init → creates vitrin.config.yaml and .env.example; adds .env, *.p8, metadata/.cache to .gitignore.
 vitrin doctor → environment and key checks (section 5).
-vitrin analyze → .vitrin/app_profile.json
+vitrin analyze → metadata/app_profile.json
   Read: .pbxproj (bundle id, targets, deployment target, iPad support), Info.plist (display name, permission descriptions), entitlements (HealthKit, iCloud, Push, Sign in with Apple), Localizable.xcstrings and knownRegions, Assets.xcassets (AppIcon, AccentColor, color sets), .storekit (IAP names), App Intents, widget/watch/extension targets, README, CHANGELOG, git log since the last tag.
   Output: feature list with evidence for each (file path), target audience, the user's job-to-be-done, revenue model, tone, brand colors, category suggestion, language → ASC locale mapping (tr, en-US, de-DE, ja, zh-Hans, pt-BR …).
-vitrin research → .vitrin/competitors.json, .vitrin/keywords/<locale>.json
+vitrin research → metadata/research/competitors.json, metadata/research/keywords/<locale>.json
   Target storefronts from config (default: the primary language's country + US). For each seed term, the top 50 results via the iTunes Search API; via Lookup: name, description, rating, rating count, release notes, screenshot URLs (Lookup does not return the subtitle); category top charts; recent reviews.
   Analysis: name word frequency matrix, captions on competitors' first 3 screenshots (OCR), color palettes, complaint/praise clusters in reviews, unoccupied positioning space. Competitor copy or images are never copied; they are used only for analysis. Respect rate limits, cache results for 24 hours.
   Keyword score: relevance (Claude), competition (result count + rating counts of the top 10), popularity (from the Apple Ads key if present; otherwise marked as an estimate).
-vitrin write → .vitrin/metadata/<locale>.json and cpp-suggestions.json
+vitrin write → metadata/listing/<locale>.json and cpp-suggestions.json
   Claude writes, the CLI validates. Rules: name = brand + primary keyword; subtitle = benefit + secondary keyword; no repetition across name, subtitle and keyword field; keyword field comma-separated, no spaces, singular, no competitor/brand names or price terms; the first 3 lines of the description are the hook; no keyword stuffing; in every language a local rewrite, not a translation; different keywords for storefront additional languages; What's New from git log in user language; promotional text based on the current campaign. Every claim is tied to evidence in app_profile.
-vitrin capture → .vitrin/raw/<locale>/<device>/NN.png and preview recordings
-vitrin design → .vitrin/art-direction.json, fastlane/screenshots/<locale>/NN_<slug>.png
+vitrin capture → metadata/raw/<locale>/<device>/NN.png and preview recordings
+vitrin design → metadata/art-direction.json, fastlane/screenshots/<locale>/NN_<slug>.png
   No fixed template. From app_profile and the competitor visual analysis, Claude proposes 2–3 art directions (palette, typography, background language, layout archetypes) and picks the one that differs most from competitors. Archetypes: hero, single feature, split screen, collage, before/after, stat, social proof, panoramic (a background that continues across consecutive screenshots). Every screenshot has a caption (at most 6–7 words, reinforcing the primary keyword), a subcaption, a screen and badge(s).
   Badge component kinds: feature (Offline, No ads, iCloud sync, Apple Health), new (New), proof (rating, award), platform (iPad, Apple Watch, iPhone Duo). Proof badges only with verifiable data (real rating from Lookup, documented award); no price badges; Apple marks and award names only if real.
   Quality checks: measure text overflow/clipping with Playwright, caption ≥ 96 px on the 6.9" screenshot, WCAG AA contrast, safe area; the first 3 screenshots are rendered at 25% size and checked for legibility.
   Also the header (3840×1646) and search (3:2) creatives and, if requested, In-App Event media.
-vitrin video → fastlane/app-previews/<locale>/NN.mp4 and .vitrin/creative/*.mp4
+vitrin video → fastlane/app-previews/<locale>/NN.mp4 and metadata/creative/*.mp4
   App Preview (886×1920, target 20–25 s): 0–3 s hook, 3–4 feature beats with real screen recordings, closing card; only app footage + a text/motion layer, no footage of hands or people. Header/Search loops: 5–30 s, understandable without sound, seamless loop. All text per locale.
-vitrin validate → .vitrin/validation.json; exit code 1 on errors.
-vitrin review → .vitrin/report.html: search result row and product-page-like preview, contact sheet for all locales, byte/character counters, competitor comparison.
+vitrin validate → metadata/validation.json; exit code 1 on errors.
+vitrin review → metadata/report.html: search result row and product-page-like preview, contact sheet for all locales, byte/character counters, competitor comparison.
 vitrin upload [--dry-run] → fastlane + ASC API; plan first, upload after approval.
 vitrin submit → submits for review; requires explicit approval.
 vitrin all → runs everything in order, writing state after each stage.

@@ -258,7 +258,7 @@ export interface UploaderReport {
   tools: UploaderTools;
   /** fastlane is needed anyway (Google Play supply). */
   fastlaneNeededForPlay: boolean;
-  options: Array<{ uploader: 'asc' | 'deliver'; label: string; installed: boolean; install: string; note: string }>;
+  options: Array<{ uploader: 'asc' | 'deliver'; label: string; installed: boolean; install: string; note: string; warning?: string }>;
   /** Suggested default for the question; the user decides. */
   recommended: 'asc' | 'deliver';
 }
@@ -274,6 +274,12 @@ export function uploaderReport(config: VitrinConfig, tools: UploaderTools, platf
       installed: Boolean(tools.asc),
       install: 'brew install asc',
       note: tools.asc ? `installed (${tools.asc}); no Ruby needed` : 'not installed; one Homebrew command, no Ruby needed',
+      // Picking a tool that is not installed means installing it first: the user hears that before choosing, and Claude installs only after a yes.
+      warning: tools.asc
+        ? undefined
+        : tools.brew === null
+          ? 'The asc CLI is not installed and Homebrew was not found. If the user picks asc, tell them Homebrew (https://brew.sh) and then `brew install asc` must be installed first, and install nothing without their yes.'
+          : 'The asc CLI is not installed on this computer. If the user picks asc, tell them it will be installed first with `brew install asc`, and run it only after their yes.',
     },
     {
       uploader: 'deliver',
@@ -281,6 +287,7 @@ export function uploaderReport(config: VitrinConfig, tools: UploaderTools, platf
       installed: fastlaneOk,
       install: `gem "fastlane", ">= ${MIN_FASTLANE}" in the Gemfile, then bundle install`,
       note: tools.fastlane ? `installed (${tools.fastlane})${fastlaneOk ? '' : `, needs ≥ ${MIN_FASTLANE}`}` : `not installed; needs Ruby${tools.ruby ? ` (found ${tools.ruby})` : ' (not found)'} and Bundler`,
+      warning: fastlaneOk ? undefined : `fastlane ≥ ${MIN_FASTLANE} is not installed. If the user picks fastlane, tell them it will be added to the Gemfile and installed with \`bundle install\` first, and do it only after their yes.`,
     },
   ];
   const recommended = tools.asc || !fastlaneOk ? 'asc' : 'deliver';
@@ -296,7 +303,10 @@ export async function uploaderCommand(ctx: Ctx, opts: { json?: boolean } = {}): 
     return EXIT.OK;
   }
   log.step(`App Store uploader: ${report.chosen ?? pc.yellow('not chosen yet')}`);
-  for (const o of report.options) log.info(`${o.installed ? pc.green('✓') : pc.dim('○')} ${o.uploader.padEnd(8)} ${o.label} — ${o.note}${o.installed ? '' : pc.dim(` → ${o.install}`)}`);
+  for (const o of report.options) {
+    log.info(`${o.installed ? pc.green('✓') : pc.dim('○')} ${o.uploader.padEnd(8)} ${o.label} — ${o.note}${o.installed ? '' : pc.dim(` → ${o.install}`)}`);
+    if (o.warning) log.warn(`  ${o.warning}`);
+  }
   if (report.fastlaneNeededForPlay) log.dim('Google Play uploads always use fastlane supply.');
   log.dim(`Choose with: vitrin select --uploader asc|deliver (suggested: ${report.recommended})`);
   return EXIT.OK;

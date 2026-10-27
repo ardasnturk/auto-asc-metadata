@@ -4,6 +4,7 @@ import {
   AppProfile,
   ApprovalManifest,
   CppSuggestions,
+  ExperimentPlan,
   RenderManifest,
   ReviewFeedback,
   ReviewSnapshot,
@@ -27,7 +28,7 @@ import { loadLocaleMetadata } from './commands/pipeline.js';
 
 /**
  * The review-and-approve gate. Everything `vitrin upload` could send is inventoried here, hashed, shown in the
- * report, and signed off in `.vitrin/approval.json`. A real upload refuses unless every hash still matches.
+ * report, and signed off in `metadata/approval.json`. A real upload refuses unless every hash still matches.
  */
 
 /** A review item plus what the gallery needs to show it. */
@@ -110,19 +111,22 @@ export function overallHash(files: HashedFile[], metadataJson: HashedFile[]): st
 export async function uploadFiles(ctx: Ctx): Promise<string[]> {
   const p = ctx.paths;
   const creative = (await walk(p.creative)).filter((f) => MEDIA_RE.test(f) && !basename(f).includes('.remotion.'));
-  return [...(await walk(p.fastlaneMetadata)), ...(await walk(p.screenshots)), ...(await walk(p.appPreviews)), ...creative];
+  const image = (f: string) => /\.(png|jpe?g)$/i.test(f);
+  const cpp = (await walk(p.cppScreenshots)).filter(image);
+  const tests = (await walk(p.experimentScreenshots)).filter(image);
+  return [...(await walk(p.fastlaneMetadata)), ...(await walk(p.screenshots)), ...(await walk(p.appPreviews)), ...creative, ...cpp, ...tests];
 }
 
 /** Absolute paths of the JSON the upload reads text from (metadata, CPP pages, In-App Event copy). */
 export async function metadataJsonFiles(ctx: Ctx): Promise<string[]> {
   const p = ctx.paths;
   const json = (await walk(p.metadataDir)).filter((f) => f.endsWith('.json'));
-  for (const f of [p.cpp, p.shots]) if (existsSync(f)) json.push(f);
+  for (const f of [p.cpp, p.shots, p.experiments]) if (existsSync(f)) json.push(f);
   return json;
 }
 
 /**
- * Writes .vitrin/store/metadata from `.vitrin/metadata` exactly as `vitrin upload` does, so the reviewed and
+ * Writes metadata/store/metadata from `metadata/listing` exactly as `vitrin upload` does, so the reviewed and
  * approved text files are the ones that will be uploaded. Skipped silently while metadata is incomplete.
  */
 export async function syncFastlaneMetadata(ctx: Ctx): Promise<boolean> {
@@ -135,7 +139,7 @@ export async function syncFastlaneMetadata(ctx: Ctx): Promise<boolean> {
     await syncPlayMetadata(ctx);
     return true;
   } catch (err) {
-    log.warn(`.vitrin/store/metadata was not refreshed: ${(err as Error).message}`);
+    log.warn(`metadata/store/metadata was not refreshed: ${(err as Error).message}`);
     return false;
   }
 }
@@ -201,7 +205,7 @@ export async function buildInventory(ctx: Ctx): Promise<Inventory> {
   };
 
   const under = (dir: string, f: string) => toPosix(relative(dir, f)).split('/');
-  // App Store screenshots: .vitrin/store/screenshots/<locale>/… (deliver uploads every image, in file-name order).
+  // App Store screenshots: metadata/store/screenshots/<locale>/… (deliver uploads every image, in file-name order).
   for (const f of await walk(p.screenshots)) {
     if (!/\.(png|jpe?g)$/i.test(f)) continue;
     const locale = under(p.screenshots, f)[0];
@@ -209,7 +213,7 @@ export async function buildInventory(ctx: Ctx): Promise<Inventory> {
     const target = (m && byId.get(m.target)) || targetFromName(f, targets);
     items.push(mediaItem(f, 'screenshot', 'app-store', locale, target, ascPlatform));
   }
-  // App Previews: .vitrin/store/app-previews/<locale>/NN_<DEVICE>.mp4
+  // App Previews: metadata/store/app-previews/<locale>/NN_<DEVICE>.mp4
   for (const f of await walk(p.appPreviews)) {
     if (!VIDEO_RE.test(f)) continue;
     const locale = under(p.appPreviews, f)[0];
@@ -217,7 +221,7 @@ export async function buildInventory(ctx: Ctx): Promise<Inventory> {
     const target = (m && byId.get(m.target)) || byId.get(basename(f).includes('IPAD') ? 'preview-ipad' : 'preview-iphone');
     items.push(mediaItem(f, 'preview', 'app-store', locale, target, ascPlatform));
   }
-  // Creatives and event cards: .vitrin/creative/<locale>/<target>_<key>.(png|mp4)
+  // Creatives and event cards: metadata/creative/<locale>/<target>_<key>.(png|mp4)
   for (const f of await walk(p.creative)) {
     if (!MEDIA_RE.test(f) || basename(f).includes('.remotion.')) continue;
     const locale = under(p.creative, f)[0];
@@ -226,7 +230,7 @@ export async function buildInventory(ctx: Ctx): Promise<Inventory> {
     items.push(mediaItem(f, target?.kind === 'event' ? 'event' : 'creative', 'app-store', locale, target, ascPlatform));
   }
 
-  // App Store text: .vitrin/store/metadata/<locale>/*.txt per locale, the rest is app level.
+  // App Store text: metadata/store/metadata/<locale>/*.txt per locale, the rest is app level.
   const ascMeta = (await walk(p.fastlaneMetadata)).filter((f) => !f.startsWith(p.androidMetadata + sep));
   const ascGroups = new Map<string, string[]>();
   for (const f of ascMeta) {
@@ -239,7 +243,7 @@ export async function buildInventory(ctx: Ctx): Promise<Inventory> {
     items.push(await textItem(root, locale ? `metadata/app-store/${locale}` : 'metadata/app-store/app', 'app-store', ascPlatform, locale || undefined, list, join(p.fastlaneMetadata, locale), source));
   }
 
-  // Google Play (supply layout): .vitrin/store/metadata/android/<locale>/{*.txt,changelogs/*.txt,images/**}
+  // Google Play (supply layout): metadata/store/metadata/android/<locale>/{*.txt,changelogs/*.txt,images/**}
   const playFiles = await walk(p.androidMetadata);
   const playText = new Map<string, string[]>();
   for (const f of playFiles) {
@@ -261,10 +265,34 @@ export async function buildInventory(ctx: Ctx): Promise<Inventory> {
     items.push(await textItem(root, locale ? `metadata/google-play/${locale}` : 'metadata/google-play/app', 'google-play', 'android', locale || undefined, list, join(p.androidMetadata, locale), undefined));
   }
 
-  // Custom Product Pages and In-App Events (text from JSON, uploaded with --cpp / --events).
+  // Custom Product Pages and In-App Events (text from JSON, uploaded with --cpp / --events); each page's own
+  // screenshot set is metadata/store/cpp/<page id>/<locale>/NN_slug_<target>.png.
   const cpp = await readJsonIfExists(p.cpp, CppSuggestions).catch(() => undefined);
+  const cppImages = new Map<string, string[]>();
+  for (const f of await walk(p.cppScreenshots)) {
+    if (!/\.(png|jpe?g)$/i.test(f)) continue;
+    const [pageId, locale] = under(p.cppScreenshots, f);
+    const item = mediaItem(f, 'cpp', 'app-store', locale, targetFromName(f, targets), ascPlatform);
+    item.label = `Custom Product Page ${pageId} · ${item.label}`;
+    items.push(item);
+    cppImages.set(pageId!, [...(cppImages.get(pageId!) ?? []), item.id]);
+  }
   for (const page of cpp?.pages ?? []) {
-    items.push({ id: `cpp/${page.id}`, kind: 'cpp', store: 'app-store', platform: ascPlatform, label: `Custom Product Page · ${page.name}`, files: [rel(p.cpp)], data: page });
+    items.push({ id: `cpp/${page.id}`, kind: 'cpp', store: 'app-store', platform: ascPlatform, label: `Custom Product Page · ${page.name}`, files: [rel(p.cpp), ...(cppImages.get(page.id) ?? [])], data: page });
+  }
+  // Product Page Optimization tests: each treatment's own set, experiments/<test>/<treatment>/<locale>/…
+  const tests = await readJsonIfExists(p.experiments, ExperimentPlan).catch(() => undefined);
+  const testImages = new Map<string, string[]>();
+  for (const f of await walk(p.experimentScreenshots)) {
+    if (!/\.(png|jpe?g)$/i.test(f)) continue;
+    const [testId, treatmentId, locale] = under(p.experimentScreenshots, f);
+    const item = mediaItem(f, 'experiment', 'app-store', locale, targetFromName(f, targets), ascPlatform);
+    item.label = `Test ${testId} · ${treatmentId} · ${item.label}`;
+    items.push(item);
+    testImages.set(testId!, [...(testImages.get(testId!) ?? []), item.id]);
+  }
+  for (const e of (tests?.experiments ?? []).filter((x) => !x.result)) {
+    items.push({ id: `experiment/${e.id}`, kind: 'experiment', store: 'app-store', platform: ascPlatform, label: `Product Page Optimization · ${e.name}`, files: [rel(p.experiments), ...(testImages.get(e.id) ?? [])], data: e });
   }
   const shots = await readJsonIfExists(p.shots, ShotList).catch(() => undefined);
   for (const e of shots?.creatives.events ?? []) {
@@ -280,7 +308,7 @@ export async function buildInventory(ctx: Ctx): Promise<Inventory> {
   const selFiles = files.filter((f) => referenced.has(f.path));
   // Source JSON is hashed even before its export exists, unless the selection excludes what it feeds.
   const sel = ctx.config.selection?.assets;
-  const feeds = (path: string): AssetKind[] => (path === rel(p.shots) ? ['screenshots', 'creatives', 'events'] : ['metadata']);
+  const feeds = (path: string): AssetKind[] => (path === rel(p.shots) ? ['screenshots', 'creatives', 'events'] : path === rel(p.experiments) ? ['screenshots'] : ['metadata']);
   const selJson = metadataJson.filter((f) => referenced.has(f.path) || !sel || feeds(f.path).some((k) => sel.includes(k)));
 
   // Upload order within each locale × target group.
@@ -296,7 +324,7 @@ export async function buildInventory(ctx: Ctx): Promise<Inventory> {
 }
 
 /** Review item kind → `config.selection.assets` kind. CPP pages are listing text, so they follow metadata. */
-const ASSET_OF: Record<ReviewItemKind, AssetKind> = { screenshot: 'screenshots', preview: 'previews', creative: 'creatives', event: 'events', metadata: 'metadata', cpp: 'metadata', other: 'screenshots' };
+const ASSET_OF: Record<ReviewItemKind, AssetKind> = { screenshot: 'screenshots', preview: 'previews', creative: 'creatives', event: 'events', metadata: 'metadata', cpp: 'metadata', experiment: 'screenshots', other: 'screenshots' };
 
 /** Whether an item is part of this run's selection (unset selection = everything). */
 export function isSelected(ctx: Pick<Ctx, 'config'>, item: Pick<ReviewItem, 'kind' | 'platform'> & { target?: string }): boolean {
@@ -356,9 +384,9 @@ export async function checkApproval(ctx: Ctx, inv?: Inventory): Promise<Approval
   try {
     approval = await readApproval(ctx);
   } catch (err) {
-    return { ok: false, reason: `.vitrin/approval.json is invalid: ${(err as Error).message}`, ...empty };
+    return { ok: false, reason: `metadata/approval.json is invalid: ${(err as Error).message}`, ...empty };
   }
-  if (!approval) return { ok: false, reason: 'Nothing has been approved yet (.vitrin/approval.json is missing).', ...empty };
+  if (!approval) return { ok: false, reason: 'Nothing has been approved yet (metadata/approval.json is missing).', ...empty };
   if (approval.status !== 'approved') return { ok: false, reason: `The last review requested changes (${approval.rejections.length} rejected items).`, approval, ...empty };
   const current = inv ?? (await buildInventory(ctx));
   const files = diffHashes(approval.files, current.files);
@@ -404,7 +432,7 @@ export async function requireReviewedContent(ctx: Ctx, inv: Inventory, expectHas
     throw new NeedsInput(`The content changed: expected hash ${expectHash.slice(0, 12)}…, current ${inv.overallHash.slice(0, 12)}…. Regenerate the report with \`vitrin review\` and show it to the user again.`);
   }
   const snap = await readJsonIfExists(ctx.paths.reviewSnapshot, ReviewSnapshot).catch(() => undefined);
-  if (!snap) throw new NeedsInput('No review report has been generated for this content; run `vitrin review` and show `.vitrin/report.html` to the user first.');
+  if (!snap) throw new NeedsInput('No review report has been generated for this content; run `vitrin review` and show `metadata/report.html` to the user first.');
   if (snap.overallHash !== inv.overallHash) {
     const f = diffHashes(snap.files, inv.files);
     const j = diffHashes(snap.metadataJson, inv.metadataJson);
@@ -490,18 +518,18 @@ async function reviewBrief(ctx: Ctx, feedback: ReviewFeedback): Promise<string> 
 
 Nothing may be uploaded until the user approves. Fix each item below at its source, then regenerate it:
 
-- Metadata text → \`.vitrin/metadata/<locale>.json\` (or the Google Play listing JSON) → \`vitrin write\`.
-- Screenshots / creatives / event cards → \`.vitrin/shots.json\` or \`art-direction.json\` → \`vitrin design\` (\`--only <shot ids>\`).
-- App Previews / loops → \`.vitrin/video-plan.json\` → \`vitrin video\`.
-- Custom Product Pages → \`.vitrin/cpp-suggestions.json\`; In-App Events → \`shots.json\` → \`creatives.events\`.
+- Metadata text → \`metadata/listing/<locale>.json\` (or the Google Play listing JSON) → \`vitrin write\`.
+- Screenshots / creatives / event cards → \`metadata/shots.json\` or \`art-direction.json\` → \`vitrin design\` (\`--only <shot ids>\`).
+- App Previews / loops → \`metadata/video-plan.json\` → \`vitrin video\`.
+- Custom Product Pages → \`metadata/cpp-suggestions.json\`; In-App Events → \`shots.json\` → \`creatives.events\`.
 
-Then run \`vitrin validate\` and \`vitrin review\` again and show the user the new report. Machine-readable copy: \`.vitrin/review-feedback.json\`.
+Then run \`vitrin validate\` and \`vitrin review\` again and show the user the new report. Machine-readable copy: \`metadata/review-feedback.json\`.
 
 ${rows}`,
   );
 }
 
-const KIND_LABEL: Record<ReviewItemKind, string> = { screenshot: 'screenshots', preview: 'App Previews', creative: 'creatives', event: 'event items', metadata: 'metadata sets', cpp: 'Custom Product Pages', other: 'other' };
+const KIND_LABEL: Record<ReviewItemKind, string> = { screenshot: 'screenshots', preview: 'App Previews', creative: 'creatives', event: 'event items', metadata: 'metadata sets', cpp: 'Custom Product Pages', experiment: 'test items', other: 'other' };
 
 /** Counts per store → platform → locale → kind; the textual summary `vitrin approve` prints. */
 export function summarize(inv: Inventory): { lines: string[]; counts: Record<string, Record<string, number>> } {
@@ -538,7 +566,7 @@ export async function approveCommand(ctx: Ctx, opts: ApproveOptions): Promise<nu
     if (!opts.comment?.trim()) throw new NeedsInput('--reject needs --comment "<what the user wants changed>".');
     const feedback = await recordRejections(ctx, inv, opts.reject.map((item) => ({ item, comment: opts.comment! })), 'cli');
     for (const r of feedback.rejections) log.warn(`Rejected: ${r.label} — ${r.comment}`);
-    log.info(`Feedback: ${relative(ctx.root, ctx.paths.reviewFeedback)}, brief: .vitrin/briefs/review.md. Fix the items, then run \`vitrin review\` again.`);
+    log.info(`Feedback: ${relative(ctx.root, ctx.paths.reviewFeedback)}, brief: metadata/briefs/review.md. Fix the items, then run \`vitrin review\` again.`);
     log.result({ rejected: feedback.rejections.map((r) => r.item), feedback: ctx.paths.reviewFeedback });
     return EXIT.NEEDS_INPUT;
   }
@@ -563,6 +591,6 @@ export async function approvalStage(ctx: Ctx): Promise<number> {
   }
   for (const l of summarize(inv).lines) log.info(`  ${l}`);
   for (const f of [...res.changed, ...res.added, ...res.removed].slice(0, 20)) log.info(`  changed since approval: ${f}`);
-  log.warn(`${res.reason} Show .vitrin/report.html (or \`vitrin review --serve\`) to the user and record their decision (\`vitrin approve\`).`);
+  log.warn(`${res.reason} Show metadata/report.html (or \`vitrin review --serve\`) to the user and record their decision (\`vitrin approve\`).`);
   return EXIT.NEEDS_INPUT;
 }

@@ -1,7 +1,7 @@
 import { PreviewPlan } from '@vitrin/schemas';
 import { describe, expect, it } from 'vitest';
 import { resolveDirection } from '@vitrin/render';
-import { buildPreviewProps, compositionSize, fitDurations, isLandscape, lookFrom, previewDurationFrames, previewDurationSec, previewTargetId, renderScale, resolveTransitions, type Look, type MediaRef } from '../src/index.js';
+import { buildPreviewProps, compositionSize, cutFrames, fitDurations, flowTiming, isLandscape, kineticCardBeats, lookFrom, POSTER_SEC, previewDurationFrames, previewDurationSec, previewTargetId, renderScale, resolveTransitions, sceneStarts, type Look, type MediaRef, type Scene } from '../src/index.js';
 
 const look = { background: ['#000000'], accent: '#FF8A6B', text: '#FFFFFF', textMuted: '#DDDDDD', surface: '#111111', badgeBackground: '#FFFFFF', badgeText: '#111111', headlineFont: 'Inter', bodyFont: 'Inter', headlineWeight: 800, dir: 'ltr', deviceFamily: 'iphone', aspect: 2 } satisfies Look;
 const media: MediaRef = { path: 'tr/iphone/home.png', kind: 'image', from: 0, aspect: 2 };
@@ -44,10 +44,43 @@ describe('scene list', () => {
     expect(badges.chips[0]!.iconSvg).toContain('<svg');
   });
 
-  it('kinetic puts each caption on its own typography card', () => {
+  it('kinetic puts at most two captions on typography cards, the rest stay on the UI beat', () => {
     const p = buildPreviewProps({ plan: plan({ style: 'kinetic' }), locale: 'tr', look, hookMedia: media, beats: [{ media }, { media }, { media }] });
-    expect(p.scenes.map((s) => s.kind)).toEqual(['hook', 'text', 'device', 'text', 'zoom', 'text', 'badges', 'outro']);
+    expect(p.scenes.map((s) => s.kind)).toEqual(['hook', 'text', 'device', 'zoom', 'text', 'badges', 'outro']);
     expect((p.scenes[2] as { caption: string }).caption).toBe('');
+    expect((p.scenes[3] as { caption: string }).caption).toBe('Serini *kırma*');
+    // Explicit text beats use up the same budget.
+    const withText = plan({ style: 'kinetic' }, [
+      { scene: 'text', to: 1, caption: { tr: 'Merhaba' }, featureIds: ['a'] },
+      { source: 'home', to: 2, caption: { tr: 'İşaretle' }, featureIds: ['a'] },
+      { source: 'home', to: 2, caption: { tr: 'Gör' }, featureIds: ['a'] },
+    ]);
+    expect([...kineticCardBeats(withText, 'tr')]).toEqual([1]);
+    expect(kineticCardBeats(plan(), 'tr').size).toBe(0);
+  });
+
+  it('ends on the outcome screen instead of an icon card, or on the last beat without an outro', () => {
+    const last: MediaRef = { ...media, path: 'tr/iphone/stats.png' };
+    const p = buildPreviewProps({ plan: plan(), locale: 'tr', look, hookMedia: media, beats: [{ media }, { media }, { media: last }] });
+    const outro = p.scenes.at(-1) as Extract<Scene, { kind: 'outro' }>;
+    expect(outro).toMatchObject({ kind: 'outro', title: 'Ritim', media: last });
+    expect('icon' in p).toBe(false);
+    const own = buildPreviewProps({ plan: plan(), locale: 'tr', look, hookMedia: media, beats: [{ media }, { media }, { media: last }], outroMedia: media });
+    expect((own.scenes.at(-1) as Extract<Scene, { kind: 'outro' }>).media).toBe(media);
+    const none = buildPreviewProps({ plan: plan({ outro: undefined }), locale: 'tr', look, hookMedia: media, beats: [{ media }, { media }, { media }] });
+    expect(none.scenes.at(-1)!.kind).toBe('badges');
+  });
+
+  it('builds a flow beat from its steps, and needs a source for every step', () => {
+    const flow = { scene: 'flow', to: 4, caption: { tr: 'Dokun, *bitti*' }, featureIds: ['a'], steps: [{ source: 'home', tap: { x: 0.5, y: 0.4 } }, { source: 'home-done', change: 'fade' }, { source: 'stats', change: 'scroll' }] };
+    const done: MediaRef = { ...media, path: 'tr/iphone/home-done.png' };
+    const p = buildPreviewProps({ plan: plan({}, [flow]), locale: 'tr', look, hookMedia: media, beats: [{ steps: [media, done, media] }] });
+    const scene = p.scenes[1] as Extract<Scene, { kind: 'flow' }>;
+    expect(scene.kind).toBe('flow');
+    expect(scene.steps.map((s) => s.change)).toEqual(['push', 'fade', 'scroll']);
+    expect(scene.steps[0]!.tap).toEqual({ x: 0.5, y: 0.4 });
+    expect(scene.steps[1]!.media).toBe(done);
+    expect(() => buildPreviewProps({ plan: plan({}, [flow]), locale: 'tr', look, hookMedia: media, beats: [{ steps: [media] }] })).toThrow(/home-done/);
   });
 
   it('always lands in Apple’s 15–30 s window', () => {
@@ -56,6 +89,36 @@ describe('scene list', () => {
     expect(previewDurationSec(long)).toBeLessThanOrEqual(30);
     const short = buildPreviewProps({ plan: plan({}, [{ source: 'home', to: 1, caption: { tr: 'x' }, featureIds: ['a'] }]), locale: 'tr', look, hookMedia: media, beats: [{ media }] });
     expect(previewDurationSec(short)).toBeGreaterThanOrEqual(15);
+  });
+
+  it('taps land just before the next screen arrives; changes fit their slot', () => {
+    const t = flowTiming([{ tap: { x: 0.5, y: 0.5 }, change: 'push' }, { tap: { x: 0.2, y: 0.2 }, change: 'fade' }, { change: 'cut' }], 120, 30);
+    expect(t.arrive[0]).toBe(0);
+    expect(t.arrive[1]!).toBeLessThan(t.arrive[2]!);
+    expect(t.taps[0]!).toBeLessThan(t.arrive[1]!);
+    expect(t.arrive[1]! - t.taps[0]!).toBeLessThan(5);
+    expect(t.change).toEqual([0, Math.round(0.25 * 30), 0]);
+    // A tight flow shortens the change instead of overrunning the next screen.
+    const fast = flowTiming([{ change: 'push' }, { change: 'push' }, { change: 'push' }, { change: 'scroll' }], 45, 30);
+    for (let i = 1; i < 3; i++) expect(fast.arrive[i]! + fast.change[i]!).toBeLessThanOrEqual(fast.arrive[i + 1]!);
+  });
+
+  it('settles the 5-second poster frame on a UI scene, away from cuts, entrances and text cards', () => {
+    const beats = Array.from({ length: 6 }, (_, i) => ({ source: 'home', to: 2.2 + (i % 2) * 0.3, caption: { tr: `Adım ${i}` }, featureIds: ['a'] }));
+    for (const style of ['showcase', 'kinetic', 'classic', 'energetic'] as const) {
+      const p = buildPreviewProps({ plan: plan({ style }, beats), locale: 'tr', look, hookMedia: media, beats: beats.map(() => ({ media })) });
+      const starts = sceneStarts(p);
+      const i = starts.findLastIndex((s) => s <= POSTER_SEC * 30);
+      expect(p.scenes[i]!.kind, style).not.toBe('text');
+      expect(POSTER_SEC * 30 - starts[i]!, style).toBeGreaterThanOrEqual(27);
+      expect((starts[i + 1] ?? Infinity) - POSTER_SEC * 30, style).toBeGreaterThan(p.transitionFrames);
+      expect(previewDurationSec(p)).toBeLessThanOrEqual(30);
+    }
+  });
+
+  it('puts cut points in the middle of overlapping transitions', () => {
+    const scenes = [{ kind: 'text', frames: 60, text: 'a' }, { kind: 'text', frames: 60, text: 'b' }, { kind: 'text', frames: 60, text: 'c' }] as never;
+    expect(cutFrames({ scenes, transitions: ['fade', 'leak'], transitionFrames: 10 })).toEqual([55, 110]);
   });
 
   it('honours an explicit transition and disabled light leaks', () => {

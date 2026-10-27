@@ -6,7 +6,9 @@ import { approvalStage, approveCommand } from './approval.js';
 import { createContext, EXIT, NeedsInput, type GlobalOptions } from './context.js';
 import { runDoctor } from './commands/doctor.js';
 import { initCommand } from './commands/init.js';
+import { mockupsCommand } from './commands/mockups.js';
 import { analyzeCommand, captureCommand, designCommand, researchCommand, validateCommand, videoCommand, writeCommand } from './commands/pipeline.js';
+import { rankCommand } from './commands/rank.js';
 import { platformsCommand, selectCommand, uploaderCommand, type SelectOptions } from './commands/select.js';
 import { submitCommand, uploadCommand } from './commands/upload.js';
 import { finalizeCommand } from './finalize.js';
@@ -74,7 +76,7 @@ program
     }),
   );
 
-program.command('analyze').description('reads the Xcode project → .vitrin/app_profile.json').action(action(async () => analyzeCommand(await createContext(globals()))));
+program.command('analyze').description('reads the Xcode project → metadata/app_profile.json').action(action(async () => analyzeCommand(await createContext(globals()))));
 
 program
   .command('research')
@@ -82,7 +84,12 @@ program
   .option('--no-images', 'do not download competitor screenshots (no OCR/palette)')
   .action(action(async (o: { images: boolean }) => researchCommand(await createContext(globals()), { skipImages: !o.images })));
 
-program.command('write').description('validates the metadata Claude wrote and exports it to .vitrin/store/metadata').action(action(async () => writeCommand(await createContext(globals()))));
+program.command('write').description('validates the metadata Claude wrote and exports it to metadata/store/metadata').action(action(async () => writeCommand(await createContext(globals()))));
+
+program
+  .command('rank')
+  .description("the app's own search rank for its chosen terms → metadata/rankings/<date>.json, compared with the previous snapshot")
+  .action(action(async () => rankCommand(await createContext(globals()))));
 
 program
   .command('platforms')
@@ -110,10 +117,19 @@ program
 
 program
   .command('capture')
-  .description('raw screens → .vitrin/raw: HTML screens from .vitrin/screens (capture.mode html, no build) or simulators / Mac window / Android emulator')
+  .description('raw screens → metadata/raw: HTML screens from metadata/screens (capture.mode html, no build) or simulators / Mac window / Android emulator')
   .option('--family <families>', 'iphone,ipad,duo,mac,watch,tv,vision,android-phone,android-tablet')
   .option('--locale <locales>', 'comma-separated locales')
   .action(action(async (o: { family?: string; locale?: string }) => captureCommand(await createContext(globals()), { families: o.family?.split(','), locales: o.locale?.split(',') })));
+
+program
+  .command('mockups')
+  .description('ready-made device mockups → metadata/mockups: iPhone, iPad, iPhone Duo open/closed, Watch, Mac, TV, Vision Pro, Android (--screens places the rendered screens in them)')
+  .option('--screens', 'also place every rendered screen (metadata/raw) into the mockups of its device family')
+  .option('--locale <locales>', 'comma-separated locales for --screens')
+  .option('--only <ids>', 'only these mockups (see --list)')
+  .option('--list', 'list the mockups')
+  .action(action(async (o: { screens?: boolean; locale?: string; only?: string; list?: boolean }) => mockupsCommand(await createContext(globals()), { screens: o.screens, locales: o.locale?.split(','), ids: o.only?.split(','), list: o.list })));
 
 program
   .command('design')
@@ -133,12 +149,13 @@ program
   .command('video')
   .description('App Previews and header/search loops with Remotion')
   .option('--styles <styles>', 'render the first preview in these styles for comparison: classic,showcase,kinetic,energetic | all')
-  .option('--locale <locales>', 'locales for --styles (default: primary locale)')
-  .action(action(async (o: { styles?: string; locale?: string }) => videoCommand(await createContext(globals()), { styles: o.styles?.split(','), locales: o.locale?.split(',') })));
+  .option('--locale <locales>', 'locales for --styles and --studio (default: primary locale)')
+  .option('--studio', 'open the first preview in Remotion Studio to scrub and tune it (development checkout)')
+  .action(action(async (o: { styles?: string; locale?: string; studio?: boolean }) => videoCommand(await createContext(globals()), { styles: o.styles?.split(','), locales: o.locale?.split(','), studio: o.studio })));
 
 program
   .command('validate')
-  .description('text, image, video and claim-evidence checks → .vitrin/validation.json')
+  .description('text, image, video and claim-evidence checks → metadata/validation.json')
   .action(
     action(async () => {
       const ctx = await createContext(globals());
@@ -150,15 +167,15 @@ program
 
 program
   .command('review')
-  .description('review gallery of everything that would be uploaded → .vitrin/report.html (--serve: approve/reject in the browser)')
+  .description('review gallery of everything that would be uploaded → metadata/report.html (--serve: approve/reject in the browser)')
   .option('--serve', 'serve the gallery on 127.0.0.1 with approve / reject buttons; waits for the decision')
   .option('--port <port>', 'port for --serve (0 = any free port)', '4870')
-  .option('--print-labels', 'print the gallery words in English as JSON, to translate into .vitrin/i18n/<language>.json')
+  .option('--print-labels', 'print the gallery words in English as JSON, to translate into metadata/i18n/<language>.json')
   .action(action(async (o: { serve?: boolean; port: string; printLabels?: boolean }) => reviewCommand(await createContext(globals()), { serve: o.serve, port: Number(o.port), printLabels: o.printLabels })));
 
 program
   .command('approve')
-  .description('records the user\'s approval of exactly the reviewed content → .vitrin/approval.json (only after an explicit "yes")')
+  .description('records the user\'s approval of exactly the reviewed content → metadata/approval.json (only after an explicit "yes")')
   .option('--expect-hash <hash>', 'overall hash (or its prefix) the user reviewed; refuses if the content differs')
   .option('--reject <items...>', 'reject these review items (id or file path from the report) instead of approving')
   .option('--comment <text>', 'the user\'s comment for --reject')
@@ -177,19 +194,20 @@ program
   .option('--creatives', 'also upload the product page header and search creatives')
   .option('--cpp', 'create the Custom Product Page suggestions')
   .option('--events', 'create the In-App Event drafts')
+  .option('--experiment [id]', 'create a Product Page Optimization test as a draft (default: the first one without a result)')
   .option('--skip-screenshots', 'skip screenshots and videos')
   .action(action(async (o) => uploadCommand(await createContext(globals()), o)));
 
 program
   .command('finalize')
-  .description('after a checked upload: keep the uploaded set in metadata/ (--keep) or delete the generated files (--discard)')
-  .option('--keep', 'copy exactly the uploaded files to metadata/, then delete the working copies')
-  .option('--discard', 'delete the generated media; keep the source JSON')
+  .description('after a checked upload: everything stays in metadata/; delete the research data only if the user says so')
+  .option('--delete-research', 'the user wants the research data deleted (metadata/research/: competitors, keywords, downloads)')
+  .option('--keep-research', 'the user wants to keep the research data')
   .option('--checked', 'the user checked the read-back / store listing after the upload')
   .action(
-    action(async (o: { keep?: boolean; discard?: boolean; checked?: boolean }) => {
-      if (o.keep && o.discard) throw new NeedsInput('Choose one: --keep or --discard.');
-      return finalizeCommand(await createContext(globals()), { keep: o.keep ? true : o.discard ? false : undefined, checked: o.checked });
+    action(async (o: { deleteResearch?: boolean; keepResearch?: boolean; checked?: boolean }) => {
+      if (o.deleteResearch && o.keepResearch) throw new NeedsInput('Choose one: --delete-research or --keep-research.');
+      return finalizeCommand(await createContext(globals()), { deleteResearch: o.deleteResearch ? true : o.keepResearch ? false : undefined, checked: o.checked });
     }),
   );
 

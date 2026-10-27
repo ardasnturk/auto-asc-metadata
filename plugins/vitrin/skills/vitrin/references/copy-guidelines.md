@@ -19,7 +19,7 @@
 
 ## What's New (≤ 4000)
 
-- From `app_profile.docs.commitsSinceTag` and the CHANGELOG, **in the user's language**: "The calendar view now shows 12 weeks." No technical internals (refactors, CI). Leave it empty for the first version.
+- From `app_profile.docs.commitsSinceTag` and the CHANGELOG, **in each store locale's own language** (the en-US notes in English, the tr notes in Turkish — not in the chat language): "The calendar view now shows 12 weeks." No technical internals (refactors, CI). Leave it empty for the first version.
 - App Review 2.3.12: significant changes must be listed specifically. "Bug fixes and performance improvements" is acceptable only when the release really is just fixes; validate warns (`whatsnew.generic`) when the commits add features.
 
 ## Review notes (≤ 4000 bytes)

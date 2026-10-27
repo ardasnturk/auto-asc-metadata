@@ -11,7 +11,7 @@ import { i18nFile, loadUiText, UI_EN } from './i18n.js';
 
 /**
  * `vitrin review --serve`: serves the review gallery on 127.0.0.1 with approve / reject buttons.
- * Approve writes `.vitrin/approval.json`; rejections write `.vitrin/review-feedback.json` and `briefs/review.md`.
+ * Approve writes `metadata/approval.json`; rejections write `metadata/review-feedback.json` and `briefs/review.md`.
  */
 
 export type ReviewDecision = { kind: 'approved'; overallHash: string } | { kind: 'rejected'; count: number };
@@ -37,7 +37,7 @@ const TYPES: Record<string, string> = {
 };
 
 /** Only these trees (relative to the app root) are ever served, and only files with a known media/text type. */
-const SERVED_ROOTS = ['.vitrin/report.html', '.vitrin/creative/', '.vitrin/cache/thumbs/', '.vitrin/video-styles/', '.vitrin/store/'];
+const SERVED_ROOTS = ['metadata/report.html', 'metadata/creative/', 'metadata/.cache/thumbs/', 'metadata/video-styles/', 'metadata/store/'];
 const MAX_BODY = 1_000_000;
 
 /**
@@ -196,7 +196,7 @@ export async function startReviewServer(ctx: Ctx, opts: { port?: number; host?: 
       }
       if (req.method !== 'GET' && req.method !== 'HEAD') return sendJson(res, 405, { error: 'Method not allowed.' });
       if (path === '/') {
-        res.writeHead(302, { location: '/.vitrin/report.html' });
+        res.writeHead(302, { location: '/metadata/report.html' });
         return void res.end();
       }
       if (path === '/api/state') {
@@ -232,7 +232,7 @@ export async function startReviewServer(ctx: Ctx, opts: { port?: number; host?: 
 export interface ReviewOptions {
   serve?: boolean;
   port?: number;
-  /** Print the gallery's English words as JSON (the template for .vitrin/i18n/<language>.json). */
+  /** Print the gallery's English words as JSON (the template for metadata/i18n/<language>.json). */
   printLabels?: boolean;
 }
 
@@ -270,9 +270,9 @@ export async function reviewCommand(ctx: Ctx, opts: ReviewOptions): Promise<numb
     return EXIT.NEEDS_INPUT;
   }
   if (outcome.kind === 'approved') {
-    log.ok(`Approved by the user on the review page (overall hash ${outcome.overallHash.slice(0, 12)}…) → .vitrin/approval.json`);
+    log.ok(`Approved by the user on the review page (overall hash ${outcome.overallHash.slice(0, 12)}…) → metadata/approval.json`);
     return EXIT.OK;
   }
-  log.warn(`The user rejected ${outcome.count} item(s): see .vitrin/briefs/review.md and .vitrin/review-feedback.json.`);
+  log.warn(`The user rejected ${outcome.count} item(s): see metadata/briefs/review.md and metadata/review-feedback.json.`);
   return EXIT.NEEDS_INPUT;
 }

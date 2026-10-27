@@ -1,6 +1,6 @@
-import { VitrinConfig, type AppMetadata, type AppProfile, type Competitors, type LocaleMetadata } from '@vitrin/schemas';
+import { VitrinConfig, type AppMetadata, type AppProfile, type Competitors, type KeywordPlan, type LiveListing, type LocaleMetadata } from '@vitrin/schemas';
 import { describe, expect, it } from 'vitest';
-import { containsTerm, pluralForms, validateText } from '../src/index.js';
+import { containsTerm, pluralForms, termCovered, validateText } from '../src/index.js';
 
 const config = VitrinConfig.parse({
   app: { locales: ['tr', 'en-US'], primaryLocale: 'tr' },
@@ -111,6 +111,69 @@ describe('ASO rules', () => {
 
   it('checks copyright format', () => {
     expect(codes(run([meta({ locale: 'tr' })], { app: { ...appMeta, copyright: '© JASTech' } }))).toContain('copyright.format');
+  });
+});
+
+describe('keyword plan and field usage', () => {
+  const candidate = (term: string, over: Partial<KeywordPlan['candidates'][number]> = {}) => ({
+    term,
+    relevance: 0.9,
+    competition: { resultCount: 50, top10MedianRatings: 100, score: 0.3 },
+    popularity: { score: 0.6, source: 'estimate' as const },
+    total: 0.5,
+    ownRank: null,
+    ...over,
+  });
+  const plan = (over: Partial<KeywordPlan> = {}): KeywordPlan => ({ locale: 'tr', storefront: 'tr', generatedAt: '2026-10-27T00:00:00Z', candidates: [candidate('hedef')], ...over });
+  const withPlan = (m: LocaleMetadata, p: KeywordPlan, live?: LiveListing) =>
+    validateText({ config, profile, appMetadata: appMeta, locales: new Map([[m.locale, m]]), keywordPlans: new Map([[m.locale, p]]), live }).issues.items.map((i) => i.code);
+
+  it('covers multi-word terms across the indexed fields', () => {
+    expect(termCovered('alışkanlık takibi', meta({ locale: 'tr' }), 'tr')).toBe(true);
+    expect(termCovered('alışkanlık hedef', meta({ locale: 'tr' }), 'tr')).toBe(true);
+    expect(termCovered('su takibi', meta({ locale: 'tr' }), 'tr')).toBe(false);
+  });
+
+  it('asks for relevance and a selection, and checks the selection against the fields', () => {
+    const c = withPlan(meta({ locale: 'tr' }), plan({ candidates: [candidate('hedef', { relevance: null, total: null })] }));
+    expect(c).toContain('keywords.plan-unscored');
+    expect(c).toContain('keywords.plan-unselected');
+    const mismatch = withPlan(meta({ locale: 'tr' }), plan({ selected: { name: ['su takibi'], subtitle: ['rutin'], keywords: ['hedef', 'meditasyon'] } }));
+    expect(mismatch.filter((x) => x === 'keywords.plan-mismatch')).toHaveLength(2);
+  });
+
+  it('warns when a term the app ranks for is dropped, and lists best candidates left out', () => {
+    const c = withPlan(meta({ locale: 'tr' }), plan({ candidates: [candidate('su takibi', { ownRank: 4 }), candidate('hedef', { ownRank: 2 })] }));
+    expect(c.filter((x) => x === 'keywords.drops-ranked-term')).toHaveLength(1);
+    expect(c).toContain('keywords.top-unused');
+  });
+
+  it('shows what changed against the live keyword field', () => {
+    const live: LiveListing = { generatedAt: '2026-10-27T00:00:00Z', source: 'asc', locales: { tr: { keywords: 'hedef,su,günlük' } } };
+    const r = validateText({ config, profile, appMetadata: appMeta, locales: new Map([['tr', meta({ locale: 'tr' })]]), live }).issues.items.find((i) => i.code === 'keywords.live-diff');
+    expect(r?.message).toContain('removed su');
+    expect(r?.message).toContain('added plan');
+  });
+
+  it('warns on an empty or short subtitle, a brand-only name and an underused keyword field', () => {
+    const c = codes(run([meta({ locale: 'tr', name: 'Ritim', subtitle: '', keywords: 'hedef,plan' })]));
+    expect(c).toContain('aso.subtitle-empty');
+    expect(c).toContain('aso.name-brand-only');
+    expect(c).toContain('keywords.underused');
+    expect(codes(run([meta({ locale: 'tr', subtitle: 'Günlük rutin' })]))).toContain('aso.subtitle-short');
+  });
+
+  it('compares locales that share a storefront index, not locales that share a language', () => {
+    const us = VitrinConfig.parse({ app: { locales: ['en-US', 'es-MX', 'en-GB'], primaryLocale: 'en-US' }, storefronts: ['us'], urls: config.urls });
+    const en = meta({ locale: 'en-US', name: 'Ritim: Habit Tracker', subtitle: 'Daily routine and streaks', keywords: 'goal,planner,motivation,calendar,reminder' });
+    const es = meta({ locale: 'es-MX', name: 'Ritim: Hábitos diarios', subtitle: 'Rutina y rachas', keywords: 'goal,meta,tracker,calendario' });
+    const gb = meta({ locale: 'en-GB', keywords: 'goal,planner,motivation,calendar,reminder' });
+    const items = validateText({ config: us, profile, appMetadata: appMeta, locales: new Map([en, es, gb].map((m) => [m.locale, m])) }).issues.items;
+    const dup = items.filter((i) => i.code === 'keywords.cross-locale-duplicate');
+    expect(dup).toHaveLength(1);
+    expect(dup[0]!.message).toContain('United States');
+    expect(dup[0]!.message).toContain('goal');
+    expect(items.some((i) => i.code === 'keywords.cross-locale-repeats-name' && i.locale === 'es-MX' && i.message.includes('tracker'))).toBe(true);
   });
 });
 

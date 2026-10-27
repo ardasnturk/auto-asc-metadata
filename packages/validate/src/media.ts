@@ -54,7 +54,7 @@ export async function validateScreenshots(opts: {
   const issues = new IssueList();
   const counts = new Map<string, Map<string, number>>(); // target → locale → n
   for (const extra of await strayLocaleDirs(opts.screenshotsDir, opts.locales)) {
-    issues.error('image.stray-locale', `.vitrin/store/screenshots/${extra} is a locale not in the config; deliver will upload it too. Remove the folder or add the locale.`);
+    issues.error('image.stray-locale', `metadata/store/screenshots/${extra} is a locale not in the config; deliver will upload it too. Remove the folder or add the locale.`);
   }
   for (const locale of opts.locales) {
     const dir = join(opts.screenshotsDir, locale);
@@ -99,6 +99,8 @@ export async function validateScreenshots(opts: {
         issues[sev === 'error' ? 'error' : 'warn']('image.missing-target', `${locale}: no screenshots for ${t.label}.`, { locale });
       } else if (n > maxScreenshots(t)) {
         issues.error('image.too-many', `${locale}: ${n} screenshots for ${t.label}; ${storeName(t)} allows at most ${maxScreenshots(t)}.`, { locale });
+      } else if (t.store === 'google-play' && n < 2) {
+        issues.error('image.too-few', `${locale}: ${n} screenshot for ${t.label}; Google Play needs at least 2.`, { locale });
       }
     }
     const values = [...(byLocale?.values() ?? [])];
@@ -110,6 +112,15 @@ export async function validateScreenshots(opts: {
   // Render-time quality measurements
   for (const img of opts.manifest?.images ?? []) {
     const where = `${img.locale}/${basename(img.file)}`;
+    // Screens borrowed from another device family or language: iOS UI on Google Play, or the wrong language.
+    const target = opts.targets.find((t) => t.id === img.target);
+    if (img.capture && target?.store === 'google-play' && img.capture.families.some((f) => !f.startsWith('android'))) {
+      issues.error('image.ios-ui-on-play', `${where}: shows the ${img.capture.families.join('/')} capture on a Google Play screenshot.`, { locale: img.locale, file: img.file, fix: 'Capture or write the Android screens (metadata/screens/<id>.android-phone.html, or an Android emulator capture).' });
+    }
+    if (img.capture?.locales.some((l) => l !== img.locale)) {
+      const early = Number(img.shot) <= 3;
+      issues[early ? 'error' : 'warn']('image.language-mismatch', `${where}: shows the ${img.capture.locales.filter((l) => l !== img.locale).join('/')} UI in a ${img.locale} screenshot.`, { locale: img.locale, file: img.file, fix: `Add ${img.locale} strings for the screen and run vitrin capture again.` });
+    }
     for (const o of img.overflow) issues.error('image.overflow', `${where}: text overflows/is clipped (${o}).`, { locale: img.locale, file: img.file, fix: 'Shorten the headline or remove the subheadline.' });
     if (img.target === 'iphone-6.9' && img.headlinePx !== undefined && img.headlinePx < MIN_HEADLINE_PX_69) {
       issues.error('image.headline-small', `${where}: headline is ${Math.round(img.headlinePx)} px; must be at least ${MIN_HEADLINE_PX_69} px on a 6.9" screenshot.`, { locale: img.locale, file: img.file });
@@ -210,7 +221,7 @@ export async function ffprobe(file: string): Promise<ProbeResult> {
     height: Number(v.height ?? 0),
     fps: den ? num! / den : 0,
     videoCodec: String(v.codec_name ?? ''),
-    profile: v.profile ? String(v.profile) : undefined,
+    profile: v.profile ? h264ProfileName(String(v.profile)) : undefined,
     level: v.level !== undefined ? Number(v.level) : undefined,
     bitrate: v.bit_rate ? Number(v.bit_rate) : json.format.bit_rate ? Number(json.format.bit_rate) : undefined,
     audioCodec: a ? String(a.codec_name) : undefined,
@@ -219,6 +230,12 @@ export async function ffprobe(file: string): Promise<ProbeResult> {
     audioBitrate: a?.bit_rate ? Number(a.bit_rate) : undefined,
     sizeBytes: Number(json.format.size ?? (await stat(file)).size),
   };
+}
+
+/** ffprobe builds without codec descriptors report the profile as its numeric id (66, 77, 100) instead of a name. */
+const H264_PROFILE_IDS: Record<string, string> = { '66': 'Baseline', '77': 'Main', '88': 'Extended', '100': 'High', '110': 'High 10', '122': 'High 4:2:2', '244': 'High 4:4:4 Predictive' };
+export function h264ProfileName(profile: string): string {
+  return H264_PROFILE_IDS[profile.trim()] ?? profile;
 }
 
 /** App Preview / creative video rules. Returns issues for one file. */
@@ -251,7 +268,7 @@ export function checkVideo(p: ProbeResult, target: RenderTarget, where: string):
 export async function validateVideos(opts: { previewsDir: string; creativeDir: string; locales: string[]; targets: RenderTarget[]; expectPreview: boolean }): Promise<IssueList> {
   const issues = new IssueList();
   const previewTargets = opts.targets.filter((t) => t.kind === 'preview');
-  for (const extra of await strayLocaleDirs(opts.previewsDir, opts.locales)) issues.error('video.stray-locale', `.vitrin/store/app-previews/${extra} is a locale not in the config.`);
+  for (const extra of await strayLocaleDirs(opts.previewsDir, opts.locales)) issues.error('video.stray-locale', `metadata/store/app-previews/${extra} is a locale not in the config.`);
   for (const locale of opts.locales) {
     const dir = join(opts.previewsDir, locale);
     const files = existsSync(dir) ? (await readdir(dir)).filter((f) => /\.(mp4|mov|m4v)$/i.test(f)).sort() : [];

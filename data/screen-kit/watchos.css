@@ -1,0 +1,16 @@
+/*
+ * Vitrin screen kit — watchOS 11+ (SwiftUI on Apple Watch). <link rel="stylesheet" href="kit/watchos.css">.
+ * The viewport is the watch screen (Ultra 211×257 pt, Series 208×248): content must clear the rounded corners.
+ */
+:root { --tint: #30D158; --label: #fff; --label2: rgba(255,255,255,.6); --platter: rgba(255,255,255,.14); --font: -apple-system, 'SF Compact Text', 'SF Pro', system-ui, sans-serif; --font-rounded: ui-rounded, 'SF Compact Rounded', -apple-system, sans-serif; }
+html, body { background: #000; color: var(--label); font: 400 16px/19px var(--font); }
+* { box-sizing: border-box; }
+.screen { position: absolute; inset: 0; padding: 30px 10px 8px; overflow: hidden; display: flex; flex-direction: column; gap: 6px; }
+.time { position: absolute; top: 8px; right: 14px; font: 600 15px var(--font); }
+.nav-title { position: absolute; top: 8px; left: 14px; font: 600 15px var(--font); color: var(--tint); }
+.title { font: 600 18px/21px var(--font); } .large { font: 600 34px/38px var(--font-rounded); font-variant-numeric: tabular-nums; }
+.footnote { font: 400 13px/16px var(--font); color: var(--label2); }
+.platter { background: var(--platter); border-radius: 18px; padding: 10px 12px; display: flex; align-items: center; gap: 8px; min-height: 44px; }
+.btn { height: 44px; border-radius: 22px; background: var(--platter); display: flex; align-items: center; justify-content: center; font: 600 16px var(--font); }
+.btn.prominent { background: var(--tint); color: #000; }
+.ring { --p: 60; --c: var(--tint); width: 90px; height: 90px; border-radius: 50%; background: conic-gradient(var(--c) calc(var(--p) * 1%), rgba(255,255,255,.18) 0); -webkit-mask: radial-gradient(circle, transparent 62%, #000 63%); mask: radial-gradient(circle, transparent 62%, #000 63%); }

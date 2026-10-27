@@ -1,6 +1,12 @@
-import type { CustomProductPage, InAppEventSpec } from '@vitrin/schemas';
+import { existsSync, log } from '@vitrin/core';
+import type { CustomProductPage, Experiment, ExperimentTreatment, InAppEventSpec } from '@vitrin/schemas';
+import { readdir } from 'node:fs/promises';
+import { join } from 'node:path';
 import { z } from 'zod';
 import type { AscClient, JsonApiDocument, JsonApiResource } from './asc-client.js';
+import { AssetLibraryClient, type OwnerType } from './asset-library.js';
+import { displayTypesFor } from './display-types.js';
+import type { PollOptions } from './upload-operations.js';
 
 type EventSpec = z.infer<typeof InAppEventSpec>;
 
@@ -61,13 +67,27 @@ export async function createCustomProductPage(asc: AscClient, appId: string, pag
   return { pageId, localizations };
 }
 
-/** In-App Event draft with localizations. Media is attached through Asset Library placements. */
+/** `appEvents` attributes of a spec: schedule and deep link only when the plan has them (a draft can do without). */
+export function eventAttributes(e: EventSpec, primaryLocale: string): Record<string, unknown> {
+  return {
+    referenceName: e.id,
+    badge: e.badge,
+    primaryLocale,
+    purchaseRequirement: e.purchaseRequirement,
+    priority: e.priority,
+    purpose: e.purpose,
+    ...(e.deepLink ? { deepLink: e.deepLink } : {}),
+    ...(e.schedule ? { territorySchedules: [{ territories: e.schedule.territories, publishStart: e.schedule.publishStart ?? e.schedule.eventStart, eventStart: e.schedule.eventStart, eventEnd: e.schedule.eventEnd }] } : {}),
+  };
+}
+
+/** In-App Event draft with localizations. Its card and detail images are placed with placeEventMedia. */
 export async function createInAppEvent(asc: AscClient, appId: string, e: EventSpec, primaryLocale: string, locales: string[]): Promise<{ eventId: string; localizations: Record<string, string> }> {
   const eventId = idOf(
     await asc.request<JsonApiDocument>('POST', '/v1/appEvents', {
       data: {
         type: 'appEvents',
-        attributes: { referenceName: e.id, badge: e.badge, primaryLocale, purchaseRequirement: 'NO_COST_ASSOCIATED', priority: 'NORMAL', purpose: 'APPROPRIATE_FOR_ALL_USERS' },
+        attributes: eventAttributes(e, primaryLocale),
         relationships: { app: { data: { type: 'apps', id: appId } } },
       },
     }),
@@ -85,4 +105,129 @@ export async function createInAppEvent(asc: AscClient, appId: string, e: EventSp
     );
   }
   return { eventId, localizations };
+}
+
+/** Target id of a rendered screenshot (`NN_<slug>_<target>.png`; slugs and target ids never contain `_`). */
+export function screenshotTargetOf(file: string): string | undefined {
+  const m = /^\d{2}_[a-z0-9-]+_([a-z0-9.-]+)\.(png|jpe?g)$/.exec(file);
+  return m?.[1];
+}
+
+/** A Custom Product Page's own screenshot set (rendered by `vitrin design`) on each of its localizations. */
+export function placeCustomProductPageMedia(asc: AscClient, appId: string, dir: string, localizations: Record<string, string>, opts: { uploadFetch?: typeof fetch; poll?: PollOptions } = {}): Promise<number> {
+  return placeScreenshotSets(asc, appId, dir, 'appCustomProductPageLocalizations', localizations, opts);
+}
+
+/**
+ * A screenshot set rendered by `vitrin design` (`<dir>/<locale>/NN_slug_<target>.png`) on each localization of a
+ * Custom Product Page or test treatment: one Asset Library placement group per target, in file order. Returns the
+ * count placed.
+ */
+export async function placeScreenshotSets(asc: AscClient, appId: string, dir: string, ownerType: OwnerType, localizations: Record<string, string>, opts: { uploadFetch?: typeof fetch; poll?: PollOptions } = {}): Promise<number> {
+  if (!existsSync(dir)) return 0;
+  const lib = new AssetLibraryClient(asc, opts);
+  let libraryId: string | undefined;
+  let n = 0;
+  for (const [locale, locId] of Object.entries(localizations)) {
+    const localeDir = join(dir, locale);
+    if (!existsSync(localeDir)) continue;
+    const byTarget = new Map<string, string[]>();
+    for (const f of (await readdir(localeDir)).sort()) {
+      const target = screenshotTargetOf(f);
+      if (target) byTarget.set(target, [...(byTarget.get(target) ?? []), join(localeDir, f)]);
+    }
+    for (const [target, files] of byTarget) {
+      const spec = displayTypesFor(target)?.assetLibrary;
+      if (!spec) {
+        log.warn(`${locale} ${target}: no App Asset Library placement in data/asc-display-types.json; not placed.`);
+        continue;
+      }
+      libraryId ??= await lib.libraryId(appId);
+      const res = await lib.replaceSet(libraryId, { type: ownerType, id: locId }, spec, files.map((file) => ({ file, kind: 'image' as const })));
+      n += res.placements.length;
+    }
+  }
+  return n;
+}
+
+/**
+ * An In-App Event's card (16:9) and detail page (9:16) images on each of its localizations, from
+ * `<creativeDir>/<locale>/event-card_event-<id>-card.png` and `event-detail_event-<id>-detail.png`.
+ */
+export async function placeEventMedia(asc: AscClient, appId: string, creativeDir: string, eventKey: string, localizations: Record<string, string>, opts: { uploadFetch?: typeof fetch; poll?: PollOptions } = {}): Promise<number> {
+  const lib = new AssetLibraryClient(asc, opts);
+  let libraryId: string | undefined;
+  let n = 0;
+  for (const [locale, locId] of Object.entries(localizations)) {
+    for (const [target, file] of [['event-card', `event-card_event-${eventKey}-card.png`], ['event-detail', `event-detail_event-${eventKey}-detail.png`]] as const) {
+      const path = join(creativeDir, locale, file);
+      const spec = displayTypesFor(target)?.assetLibrary;
+      if (!existsSync(path) || !spec) continue;
+      libraryId ??= await lib.libraryId(appId);
+      const res = await lib.replaceSet(libraryId, { type: 'appEventLocalizations', id: locId }, spec, [{ file: path, kind: 'image' }]);
+      n += res.placements.length;
+    }
+  }
+  return n;
+}
+
+// ---- Product Page Optimization ----
+
+/** AppStoreVersionExperimentV2CreateRequest: a test belongs to the app and one platform. */
+export function experimentCreateBody(e: Pick<Experiment, 'name' | 'trafficProportion'>, appId: string, platform: string) {
+  return {
+    data: {
+      type: 'appStoreVersionExperiments' as const,
+      attributes: { name: e.name, platform, trafficProportion: e.trafficProportion },
+      relationships: { app: { data: { type: 'apps' as const, id: appId } } },
+    },
+  };
+}
+
+/** AppStoreVersionExperimentTreatmentCreateRequest; `appIconName` makes it an icon treatment. */
+export function treatmentCreateBody(t: Pick<ExperimentTreatment, 'name' | 'appIconName'>, experimentId: string) {
+  return {
+    data: {
+      type: 'appStoreVersionExperimentTreatments' as const,
+      attributes: { name: t.name, ...(t.appIconName ? { appIconName: t.appIconName } : {}) },
+      relationships: { appStoreVersionExperimentV2: { data: { type: 'appStoreVersionExperiments' as const, id: experimentId } } },
+    },
+  };
+}
+
+export function treatmentLocalizationCreateBody(locale: string, treatmentId: string) {
+  return {
+    data: {
+      type: 'appStoreVersionExperimentTreatmentLocalizations' as const,
+      attributes: { locale },
+      relationships: { appStoreVersionExperimentTreatment: { data: { type: 'appStoreVersionExperimentTreatments' as const, id: treatmentId } } },
+    },
+  };
+}
+
+/**
+ * A Product Page Optimization test: the test (v2, per app and platform), its treatments, one localization per locale
+ * and each treatment's own screenshot set (`<dir>/<treatment id>/<locale>/…`) placed through the App Asset Library.
+ * It stays a draft: App Review checks the treatments and the user starts the test in App Store Connect. The request
+ * bodies follow the App Store Connect API resources above and are checked on first use, like the CPP keywords.
+ */
+export async function createExperiment(
+  asc: AscClient,
+  appId: string,
+  e: Experiment,
+  opts: { platform?: string; locales: string[]; dir: string; uploadFetch?: typeof fetch; poll?: PollOptions },
+): Promise<{ experimentId: string; treatments: Record<string, string>; placed: number }> {
+  const experimentId = idOf(await asc.request<JsonApiDocument>('POST', '/v2/appStoreVersionExperiments', experimentCreateBody(e, appId, opts.platform ?? 'IOS')));
+  const treatments: Record<string, string> = {};
+  let placed = 0;
+  for (const t of e.treatments) {
+    const treatmentId = idOf(await asc.request<JsonApiDocument>('POST', '/v1/appStoreVersionExperimentTreatments', treatmentCreateBody(t, experimentId)));
+    treatments[t.id] = treatmentId;
+    const localizations: Record<string, string> = {};
+    for (const locale of e.locales ?? opts.locales) {
+      localizations[locale] = idOf(await asc.request<JsonApiDocument>('POST', '/v1/appStoreVersionExperimentTreatmentLocalizations', treatmentLocalizationCreateBody(locale, treatmentId)));
+    }
+    placed += await placeScreenshotSets(asc, appId, join(opts.dir, t.id), 'appStoreVersionExperimentTreatmentLocalizations', localizations, opts);
+  }
+  return { experimentId, treatments, placed };
 }

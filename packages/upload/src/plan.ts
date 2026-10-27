@@ -1,5 +1,5 @@
 import { existsSync, type AppPaths } from '@vitrin/core';
-import { uploaderOf, type CppSuggestions, type LocaleMetadata, type Platform, type RenderTarget, type ShotList, type Store, type VitrinConfig } from '@vitrin/schemas';
+import { uploaderOf, type CppSuggestions, type Experiment, type LocaleMetadata, type Platform, type RenderTarget, type ShotList, type Store, type VitrinConfig } from '@vitrin/schemas';
 import { readdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { isEditableVersion, type AscClient } from './asc-client.js';
@@ -12,7 +12,7 @@ import type { PlayRemoteState } from './play-client.js';
 export type ChangeKind = 'create' | 'update' | 'unchanged' | 'unknown' | 'skip';
 
 export interface PlanItem {
-  area: 'metadata' | 'screenshots' | 'previews' | 'creatives' | 'cpp' | 'events' | 'app';
+  area: 'metadata' | 'screenshots' | 'previews' | 'creatives' | 'cpp' | 'events' | 'experiments' | 'app';
   /** Missing = app-store (kept optional so older plan files still read). */
   store?: Store;
   /** deliver platform for App Store items that belong to one version (ios, osx, appletvos, xros). */
@@ -107,6 +107,8 @@ export async function buildPlan(opts: {
   metadata: LocaleMetadata[];
   shots?: ShotList;
   cpp?: CppSuggestions;
+  /** The Product Page Optimization test `--experiment` creates. */
+  experiment?: Experiment;
   client?: AscClient;
   include: { creatives: boolean; cpp: boolean; events: boolean };
   /** Platforms the app ships on (profile.app.platforms). Defaults to config.upload.platform. */
@@ -277,12 +279,18 @@ export async function buildPlan(opts: {
     plan.items.push({ area: 'creatives', change: 'skip', via: 'asset-library', note: '--creatives not passed' });
   }
   if (opts.include.cpp && opts.cpp) {
-    for (const p of opts.cpp.pages) plan.items.push({ area: 'cpp', field: p.name, change: 'create', via: 'asc-api', note: `${p.keywords.length} keywords, ${p.shots.length} images; requires Apple review` });
+    for (const p of opts.cpp.pages) plan.items.push({ area: 'cpp', field: p.name, change: 'create', via: 'asc-api', note: `${p.keywords.length} keywords, ${p.shots.length ? `its own ${p.shots.length}-shot set (metadata/store/cpp/${p.id})` : 'no own screenshots (default set)'}; requires Apple review` });
   }
   if (opts.include.events && !kindSelected('events')) {
     plan.items.push({ area: 'events', change: 'skip', via: 'asc-api', note: 'events not selected: In-App Events stay untouched' });
   } else if (opts.include.events) {
-    for (const e of opts.shots?.creatives.events ?? []) plan.items.push({ area: 'events', field: e.id, change: 'create', via: 'asc-api', note: 'created as a draft' });
+    for (const e of opts.shots?.creatives.events ?? []) plan.items.push({ area: 'events', field: e.id, change: 'create', via: 'asc-api', note: `created as a draft with its card and detail images${e.schedule ? `, ${e.schedule.eventStart} → ${e.schedule.eventEnd}` : ', no schedule yet'}` });
+  }
+
+  if (opts.experiment) {
+    const e = opts.experiment;
+    const sets = e.treatments.filter((t) => t.shots.length || Object.keys(t.copy).length).length;
+    plan.items.push({ area: 'experiments', field: e.name, change: 'create', via: 'asc-api', note: `${e.treatments.length} treatment(s), ${sets} with their own screenshots (metadata/store/experiments/${e.id}), ${e.trafficProportion} % of traffic; a draft: App Review checks it, you start it in App Store Connect` });
   }
 
   // ---- Google Play ----

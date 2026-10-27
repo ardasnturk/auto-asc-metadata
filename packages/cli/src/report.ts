@@ -4,11 +4,15 @@ import {
   AppMetadata,
   AppProfile,
   Competitors,
+  EVENT_LIMITS,
+  experimentDays,
   PlatformEnum,
   RenderManifest,
   TEXT_LIMITS,
   ValidationReport,
   type CustomProductPage,
+  type Experiment,
+  type ExperimentTreatment,
   type InAppEventSpec,
   type Issue,
   type LocaleMetadata,
@@ -56,7 +60,6 @@ const PLAY_FIELDS: Record<string, FieldSpec> = {
 };
 const PLAY_CHANGELOG: FieldSpec = { label: 'Changelog', max: 500, unit: 'chars', issueField: 'changelog' };
 /** In-App Event text limits. */
-const EVENT_LIMITS = { name: 30, shortDescription: 50, longDescription: 120 } as const;
 
 const STORE_LABEL: Record<string, string> = { 'app-store': 'App Store', 'google-play': 'Google Play' };
 const PLATFORM_LABEL: Record<string, string> = { ios: 'iOS / iPadOS', macos: 'macOS', watchos: 'watchOS', tvos: 'tvOS', visionos: 'visionOS', android: 'Android' };
@@ -97,11 +100,11 @@ function rejectControl(item: InventoryItem): string {
   return `<div class="decide"><button type="button" class="rej" data-reject="${esc(item.id)}">${esc(T.reject)}</button><textarea class="comment" placeholder="${esc(T.rejectPlaceholder)}" hidden></textarea><code class="item-id" title="Item id">${esc(item.id)}</code></div>`;
 }
 
-/** `.vitrin/report.html` — the complete review gallery: everything that would be uploaded, grouped by store → platform → locale → target. */
+/** `metadata/report.html` — the complete review gallery: everything that would be uploaded, grouped by store → platform → locale → target. */
 export async function buildReport(ctx: Ctx, opts: { inventory?: Inventory; text?: UiText } = {}): Promise<string> {
   T = opts.text ?? (await loadUiText(ctx)).text;
   const p = ctx.paths;
-  // Refresh .vitrin/store/metadata so the text shown is byte-for-byte what deliver will read.
+  // Refresh metadata/store/metadata so the text shown is byte-for-byte what deliver will read.
   if (!opts.inventory) await syncFastlaneMetadata(ctx);
   const inv = opts.inventory ?? (await buildInventory(ctx));
   const profile = await readJsonIfExists(p.profile, AppProfile).catch(() => undefined);
@@ -123,8 +126,8 @@ export async function buildReport(ctx: Ctx, opts: { inventory?: Inventory; text?
   for (const issue of validation?.issues ?? []) {
     const file = issue.file ? relative(ctx.root, resolve(ctx.root, issue.file)).split('\\').join('/') : undefined;
     let target = file ? inv.items.find((i) => i.abs && i.files.includes(file)) : undefined;
-    if (!target && issue.locale && (issue.field || (file && file.startsWith('.vitrin/metadata/')))) target = inv.items.find((i) => i.kind === 'metadata' && i.locale === issue.locale);
-    if (!target && file === '.vitrin/metadata/app.json') target = inv.items.find((i) => i.id === 'metadata/app-store/app');
+    if (!target && issue.locale && (issue.field || (file && file.startsWith('metadata/listing/')))) target = inv.items.find((i) => i.kind === 'metadata' && i.locale === issue.locale);
+    if (!target && file === 'metadata/listing/app.json') target = inv.items.find((i) => i.id === 'metadata/app-store/app');
     if (target) add(target.id, issue);
     else general.push(issue);
   }
@@ -258,17 +261,38 @@ export async function buildReport(ctx: Ctx, opts: { inventory?: Inventory; text?
       .map(([l, v]) => `<tr><th>${esc(l)}</th><td dir="${localeInfo(l)?.dir ?? 'ltr'}"><div class="val">${esc(v)}</div></td><td class="num">${counter(v, { label: '', max: TEXT_LIMITS.promotionalText.max, unit: 'chars' })}</td></tr>`)
       .join('');
     const primary = ctx.config.app.primaryLocale;
-    const thumbs = page.shots
-      .map((id) => inv.items.find((i) => i.kind === 'screenshot' && i.locale === primary && i.abs?.split('/').pop()!.startsWith(`${id}_`) && (i.target === 'iphone-6.9' || i.target === 'iphone-6.3')))
-      .filter((x): x is InventoryItem => Boolean(x))
-      .map((i) => `<img src="${rel(i.abs!)}" loading="lazy" alt="">`)
-      .join('');
+    const iphone = (i: InventoryItem) => i.target === 'iphone-6.9' || i.target === 'iphone-6.3';
+    // The page's own set (rendered by vitrin design); before that, the default screenshots it is built from.
+    const own = inv.items.filter((i) => i.kind === 'cpp' && i.abs && i.locale === primary && iphone(i) && i.id.includes(`/cpp/${page.id}/`));
+    const fallback = page.shots
+      .map((id) => inv.items.find((i) => i.kind === 'screenshot' && i.locale === primary && i.abs?.split('/').pop()!.startsWith(`${id}_`) && iphone(i)))
+      .filter((x): x is InventoryItem => Boolean(x));
+    const thumbs = (own.length ? own.sort((a, b) => natural(a.id, b.id)) : fallback).map((i) => `<img src="${rel(i.abs!)}" loading="lazy" alt="">`).join('');
     return `<div class="meta card-wide" data-item="${esc(it.id)}"><h4>${esc(page.name)} <span class="muted small">${esc(page.id)}</span></h4>
   <p><b>Segment:</b> ${esc(page.segment)}<br><span class="muted">${esc(page.rationale)}</span>${page.deepLink ? `<br><b>Deep link:</b> <code>${esc(page.deepLink)}</code>` : ''}</p>
   ${page.keywords.length ? `<div class="chips">${page.keywords.map((k) => `<span>${esc(k)}</span>`).join('')}</div>` : ''}
   ${promo ? `<table class="fields">${promo}</table>` : ''}
   ${thumbs ? `<div class="sheet-row">${thumbs}</div>` : ''}
-  <div class="muted small">Created only with <code>vitrin upload --cpp</code>; Apple reviews each page.</div>${issueList(issuesFor.get(it.id) ?? [])}${rejectControl(it)}</div>`;
+  <div class="muted small">${own.length ? `Its own screenshot set (${esc(primary)} shown; every locale is uploaded). ` : page.shots.length ? 'Run <code>vitrin design</code> to render its own set. ' : 'No own screenshots: the page would only change promotional text. '}Created only with <code>vitrin upload --cpp</code>; Apple reviews each page.</div>${issueList(issuesFor.get(it.id) ?? [])}${rejectControl(it)}</div>`;
+  };
+
+  const experimentCard = (it: InventoryItem): string => {
+    const e = it.data as Experiment;
+    const primary = ctx.config.app.primaryLocale;
+    const days = experimentDays(e);
+    const thumbs = (t: ExperimentTreatment) =>
+      inv.items
+        .filter((i) => i.kind === 'experiment' && i.abs && i.locale === primary && (i.target === 'iphone-6.9' || i.target === 'iphone-6.3') && i.id.includes(`/experiments/${e.id}/${t.id}/`))
+        .sort((a, b) => natural(a.id, b.id))
+        .map((i) => `<img src="${rel(i.abs!)}" loading="lazy" alt="">`)
+        .join('');
+    const rows = e.treatments
+      .map((t) => `<tr><th>${esc(t.name)}</th><td>${esc(t.change)}${t.appIconName ? `<br><b>Icon:</b> <code>${esc(t.appIconName)}</code>` : ''}${thumbs(t) ? `<div class="sheet-row">${thumbs(t)}</div>` : ''}</td></tr>`)
+      .join('');
+    return `<div class="meta card-wide" data-item="${esc(it.id)}"><h4>${esc(e.name)} <span class="pill small">${esc(e.element)}</span></h4>
+  <p><b>Hypothesis:</b> ${esc(e.hypothesis)}<br><b>Metric:</b> ${esc(e.metric)} · <b>MDE:</b> +${Math.round(e.minimumDetectableEffect * 100)} % · <b>Traffic in the test:</b> ${e.trafficProportion} %${days ? ` · <b>Estimated:</b> ~${days} days` : ''}</p>
+  <table class="fields">${rows}</table>
+  <div class="muted small">Created as a draft only with <code>vitrin upload --experiment ${esc(e.id)}</code>; App Review checks the treatments, then the test is started in App Store Connect (one test at a time, 7–90 days).</div>${issueList(issuesFor.get(it.id) ?? [])}${rejectControl(it)}</div>`;
   };
 
   // ---------------------------------------------------------------- group store → platform → locale → target
@@ -310,8 +334,10 @@ export async function buildReport(ctx: Ctx, opts: { inventory?: Inventory; text?
       parts.push(`<h3>${esc(KIND_TITLE[kind]!)} <small class="muted">${esc(T.inUploadOrder)}</small></h3>${blocks.join('')}`);
     }
     for (const it of g.items.filter((i) => i.kind === 'event' && !i.abs)) parts.push(eventCard(it));
-    const cpps = g.items.filter((i) => i.kind === 'cpp');
+    const cpps = g.items.filter((i) => i.kind === 'cpp' && !i.abs);
     if (cpps.length) parts.push(`<h3>${esc(T.cppSuggestions)}</h3>${cpps.map(cppCard).join('')}`);
+    const tests = g.items.filter((i) => i.kind === 'experiment' && !i.abs);
+    if (tests.length) parts.push(`<h3>${esc(T.experiments)}</h3>${tests.map(experimentCard).join('')}`);
     sections.push(`<section class="locale" id="${anchor}" dir="ltr"><h2><span class="crumb">${esc(STORE_LABEL[g.store] ?? g.store)} › ${esc(PLATFORM_LABEL[g.platform] ?? g.platform)} ›</span> ${localeName}</h2>${parts.join('\n')}</section>`);
   }
 
@@ -330,9 +356,11 @@ export async function buildReport(ctx: Ctx, opts: { inventory?: Inventory; text?
         ? 'App Asset Library · only with --creatives'
         : kind === 'cpp'
           ? 'Custom Product Pages · only with --cpp'
-          : kind === 'event'
-            ? 'In-App Events (draft) · only with --events'
-            : `App Store Connect · ${uploader}`;
+          : kind === 'experiment'
+            ? 'Product Page Optimization · only with --experiment'
+            : kind === 'event'
+              ? 'In-App Events (draft) · only with --events'
+              : `App Store Connect · ${uploader}`;
   const sumRows: string[] = [];
   for (const g of ordered) {
     const byKind = new Map<string, InventoryItem[]>();

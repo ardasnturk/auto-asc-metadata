@@ -76,13 +76,15 @@ export interface UploaderTools {
   fastlane: string | null;
   ruby: string | null;
   bundler: string | null;
+  /** Homebrew, which installs the asc CLI (`brew install asc`). */
+  brew?: string | null;
 }
 
 export async function detectUploaderTools(root: string): Promise<UploaderTools> {
-  const [asc, ruby, bundler] = await Promise.all([ascVersion(), versionOf('ruby', ['--version'], /ruby (\d+\.\d+\.\d+)/), versionOf('bundle', ['--version'], /(\d+\.\d+\.\d+)/)]);
+  const [asc, ruby, bundler, brew] = await Promise.all([ascVersion(), versionOf('ruby', ['--version'], /ruby (\d+\.\d+\.\d+)/), versionOf('bundle', ['--version'], /(\d+\.\d+\.\d+)/), versionOf('brew', ['--version'], /Homebrew (\d+\.\d+\.\d+)/)]);
   let fastlane = bundler && existsSync(join(root, 'Gemfile')) ? await versionOf('bundle', ['exec', 'fastlane', '--version'], /fastlane (\d+\.\d+\.\d+)/, root) : null;
   fastlane ??= await versionOf('fastlane', ['--version'], /fastlane (\d+\.\d+\.\d+)/);
-  return { asc, fastlane, ruby, bundler };
+  return { asc, fastlane, ruby, bundler, brew };
 }
 
 /**
@@ -141,7 +143,7 @@ export async function googlePlayChecks(opts: { env: NodeJS.ProcessEnv; root: str
   try {
     const state = await new PlayClient(key.account, opts.fetchImpl).readState(opts.packageName, 'production');
     out.push({ id: 'play-api', title: 'Google Play API', status: 'ok', detail: `${state.listings.length} listings, production track: ${state.releases ? `${state.releases.length} releases` : 'none'}` });
-    if (!state.releases?.length) out.push({ id: 'play-track', title: 'Play track release', status: 'warn', detail: 'no release on production', fix: 'supply needs an existing release on the track it updates; set track in .vitrin/metadata/play/app.json or upload a build once.' });
+    if (!state.releases?.length) out.push({ id: 'play-track', title: 'Play track release', status: 'warn', detail: 'no release on production', fix: 'supply needs an existing release on the track it updates; set track in metadata/listing/play/app.json or upload a build once.' });
   } catch (err) {
     const status = err instanceof PlayApiError ? err.status : 0;
     const fix =

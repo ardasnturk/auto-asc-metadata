@@ -23,13 +23,23 @@ const placeholder = { path: 'placeholder.png', kind: 'image' as const, from: 0, 
 const defaultPreview: AppPreviewProps = {
   look: defaultLook,
   style: 'showcase',
-  transitions: ['push', 'leak'],
-  transitionFrames: 16,
+  transitions: ['push', 'leak', 'iris'],
+  transitionFrames: 12,
   lightLeaks: true,
   scenes: [
-    { kind: 'hook', frames: 90, text: 'One tap, *every day*', media: placeholder },
-    { kind: 'device', frames: 150, caption: 'See your *progress*', media: placeholder },
-    { kind: 'outro', frames: 90, title: 'App', subtitle: '' },
+    { kind: 'hook', frames: 66, text: 'One tap, *every day*', media: placeholder },
+    {
+      kind: 'flow',
+      frames: 120,
+      caption: 'Check it *off*',
+      steps: [
+        { media: placeholder, tap: { x: 0.5, y: 0.4 }, change: 'push' },
+        { media: placeholder, tap: { x: 0.8, y: 0.12 }, change: 'fade' },
+        { media: placeholder, change: 'scroll' },
+      ],
+    },
+    { kind: 'device', frames: 66, caption: 'See your *progress*', media: placeholder },
+    { kind: 'outro', frames: 72, title: 'Find your *rhythm*', subtitle: '', media: placeholder },
   ],
 };
 

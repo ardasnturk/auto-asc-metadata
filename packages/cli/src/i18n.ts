@@ -5,7 +5,7 @@ import type { Ctx } from './context.js';
 
 /**
  * Words of the review gallery (`vitrin review`) in the language the user talks to Vitrin in (`ui.language`).
- * English and Turkish are built in. For any other language Claude writes `.vitrin/i18n/<language>.json` (same keys,
+ * English and Turkish are built in. For any other language Claude writes `metadata/i18n/<language>.json` (same keys,
  * translated values; `vitrin review --print-labels` prints the English set to start from). Missing keys fall back
  * to English. Placeholders like {n} are filled in at render time. Store copy is never translated here.
  */
@@ -59,6 +59,7 @@ export const UI_EN = {
   kindEvent: 'In-App Event images',
   inUploadOrder: 'in upload order',
   cppSuggestions: 'Custom Product Page suggestions',
+  experiments: 'Product Page Optimization tests',
   allLocales: 'All locales',
   files: '{n} files',
   file: '1 file',
@@ -82,8 +83,16 @@ export const UI_EN = {
   sentRejections: 'Sent {n} rejection(s) to Claude. You can close this tab.',
   notSent: 'Not sent: {error}',
   samplesTitle: 'Choose a design',
-  samplesIntro: 'Each column shows how your App Store listing looks with that design: the search result first, then the product page. Pick A, B, C or D.',
+  samplesIntro: 'Pick a store and a design from the menus to see your listing as it would look. “All designs” compares them side by side.',
   samplesOption: 'If you choose {letter}',
+  previewStore: 'Store',
+  previewTheme: 'Design',
+  previewAppearance: 'Appearance',
+  previewAllThemes: 'All designs (compare)',
+  previewLight: 'Light',
+  previewDark: 'Dark',
+  install: 'Install',
+  previewChoose: 'Tell Claude “{letter}” to use this design.',
 };
 export type UiKey = keyof typeof UI_EN;
 export type UiText = Record<UiKey, string>;
@@ -138,6 +147,7 @@ const UI_TR: UiText = {
   kindEvent: 'Uygulama İçi Etkinlik görselleri',
   inUploadOrder: 'yükleme sırasıyla',
   cppSuggestions: 'Özel Ürün Sayfası önerileri',
+  experiments: 'Ürün Sayfası Optimizasyonu testleri',
   allLocales: 'Tüm diller',
   files: '{n} dosya',
   file: '1 dosya',
@@ -161,8 +171,16 @@ const UI_TR: UiText = {
   sentRejections: '{n} ret Claude’a gönderildi. Bu sekmeyi kapatabilirsiniz.',
   notSent: 'Gönderilmedi: {error}',
   samplesTitle: 'Bir tasarım seçin',
-  samplesIntro: 'Her sütun, o tasarımı seçerseniz App Store sayfanızın nasıl görüneceğini gösterir: önce arama sonucu, sonra ürün sayfası. A, B, C veya D’yi seçin.',
+  samplesIntro: 'Menülerden bir mağaza ve bir tasarım seçin; sayfanızın orada nasıl görüneceğini görün. “Tüm tasarımlar” hepsini yan yana karşılaştırır.',
   samplesOption: '{letter} seçeneğini seçerseniz',
+  previewStore: 'Mağaza',
+  previewTheme: 'Tasarım',
+  previewAppearance: 'Görünüm',
+  previewAllThemes: 'Tüm tasarımlar (karşılaştır)',
+  previewLight: 'Açık',
+  previewDark: 'Koyu',
+  install: 'Yükle',
+  previewChoose: 'Bu tasarımı kullanmak için Claude’a “{letter}” deyin.',
 };
 
 const BUILT_IN: Record<string, UiText> = { en: UI_EN, tr: UI_TR };
@@ -179,7 +197,7 @@ export function i18nFile(ctx: Pick<Ctx, 'paths'>, language: string): string {
 }
 
 /**
- * The gallery words for `ui.language`: `.vitrin/i18n/<tag>.json` (or its base language) over the built-in set,
+ * The gallery words for `ui.language`: `metadata/i18n/<tag>.json` (or its base language) over the built-in set,
  * over English. Reports when a language has neither, so Claude can write the file.
  */
 export async function loadUiText(ctx: Pick<Ctx, 'paths' | 'config'>): Promise<{ text: UiText; language: string; missing: boolean }> {

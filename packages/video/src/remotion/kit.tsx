@@ -1,18 +1,25 @@
 import { Video } from '@remotion/media';
 import { lightLeak } from '@remotion/effects/light-leak';
 import React from 'react';
-import { AbsoluteFill, Easing, Img, interpolate, Solid, staticFile, useCurrentFrame, useVideoConfig } from 'remotion';
-import type { Chip, Look, MediaRef, PreviewStyle } from '../types.js';
+import { AbsoluteFill, Easing, Img, interpolate, Sequence, Solid, staticFile, useCurrentFrame, useVideoConfig } from 'remotion';
+import { flowTiming, type Chip, type FlowShot, type Look, type MediaRef, type PreviewStyle } from '../types.js';
 import { fontStack } from './fonts.js';
 
 const clamp = { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' } as const;
 const outExpo = Easing.bezier(0.16, 1, 0.3, 1);
 
-/** Animated gradient backdrop. Energetic adds moving diagonal stripes. */
-export const Backdrop: React.FC<{ look: Look; style: PreviewStyle }> = ({ look, style }) => {
+/**
+ * Animated gradient backdrop. Energetic adds moving diagonal stripes. On every cut (`cuts`, frames) the backdrop
+ * shifts a little, so the scenes read as one moving camera instead of separate slides.
+ */
+export const Backdrop: React.FC<{ look: Look; style: PreviewStyle; cuts?: number[] }> = ({ look, style, cuts = [] }) => {
   const frame = useCurrentFrame();
-  const { durationInFrames } = useVideoConfig();
+  const { durationInFrames, fps, width, height } = useVideoConfig();
   const [c0, c1 = c0, c2 = c1] = look.background;
+  const moved = cuts.map((c) => interpolate(frame, [c - 0.1 * fps, c + 0.5 * fps], [0, 1], { ...clamp, easing: outExpo }));
+  // x swings left and right, y keeps climbing: both stay inside the -20 % inset.
+  const shiftX = moved.reduce((a, m, i) => a + (i % 2 ? -m : m), 0);
+  const shiftY = moved.reduce((a, m) => a + m, 0) / Math.max(cuts.length, 1);
   return (
     <AbsoluteFill style={{ background: c0, overflow: 'hidden' }}>
       <div
@@ -23,6 +30,7 @@ export const Backdrop: React.FC<{ look: Look; style: PreviewStyle }> = ({ look, 
           background: `radial-gradient(40% 32% at 25% 25%, ${c1} 0%, transparent 70%), radial-gradient(45% 35% at 80% 70%, ${c2} 0%, transparent 70%)`,
           rotate: interpolate(frame, [0, durationInFrames], ['0deg', style === 'energetic' ? '50deg' : '20deg']),
           scale: interpolate(frame, [0, durationInFrames / 2, durationInFrames], [1, 1.15, 1]),
+          translate: `${shiftX * width * 0.07}px ${-shiftY * height * 0.12}px`,
         }}
       />
       {style === 'energetic' ? (
@@ -40,8 +48,11 @@ export const Backdrop: React.FC<{ look: Look; style: PreviewStyle }> = ({ look, 
   );
 };
 
-/** Real app footage: a trimmed recording, or a screenshot with a slow Ken Burns push. */
-export const MediaView: React.FC<{ media: MediaRef }> = ({ media }) => {
+/**
+ * Real app footage: a trimmed recording, or a screenshot with a Ken Burns push. `still` keeps a screenshot
+ * unscaled (flow steps: the touch points must stay on the UI they point at).
+ */
+export const MediaView: React.FC<{ media: MediaRef; still?: boolean }> = ({ media, still }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   if (media.kind === 'video') {
@@ -56,9 +67,114 @@ export const MediaView: React.FC<{ media: MediaRef }> = ({ media }) => {
         objectFit: 'cover',
         objectPosition: 'top',
         transformOrigin: '50% 30%',
-        scale: interpolate(frame, [0, 6 * fps], [1, 1.06], { ...clamp, easing: Easing.inOut(Easing.quad) }),
+        scale: still ? undefined : interpolate(frame, [0, 3 * fps], [1, 1.05], { ...clamp, easing: Easing.inOut(Easing.quad) }),
       }}
     />
+  );
+};
+
+/** A touch on the screen: the dot lands, presses at `at` (frame) and leaves a ripple. Position in px of the screen. */
+export const TouchIndicator: React.FC<{ x: number; y: number; at: number; size: number }> = ({ x, y, at, size }) => {
+  const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
+  const land = at - 0.3 * fps;
+  if (frame < land || frame > at + 0.6 * fps) return null;
+  return (
+    <div style={{ position: 'absolute', left: x - size / 2, top: y - size / 2, width: size, height: size, pointerEvents: 'none' }}>
+      <div
+        style={{
+          position: 'absolute',
+          inset: 0,
+          borderRadius: '50%',
+          border: `${Math.max(1.5, size * 0.06)}px solid rgba(255,255,255,.9)`,
+          boxShadow: '0 0 0 1px rgba(0,0,0,.18)',
+          scale: interpolate(frame, [at, at + 0.5 * fps], [1, 2.4], { ...clamp, easing: outExpo, output: 'perceptual-scale' }),
+          opacity: interpolate(frame, [at, at + 0.5 * fps], [0.85, 0], clamp),
+        }}
+      />
+      <div
+        style={{
+          position: 'absolute',
+          inset: 0,
+          borderRadius: '50%',
+          background: 'rgba(255,255,255,.62)',
+          border: '1px solid rgba(0,0,0,.2)',
+          boxShadow: `0 ${size * 0.08}px ${size * 0.3}px rgba(0,0,0,.35)`,
+          scale: interpolate(frame, [land, land + 0.15 * fps, at - 0.05 * fps, at + 0.05 * fps, at + 0.2 * fps], [1.4, 1, 1, 0.8, 0.95], { ...clamp, output: 'perceptual-scale' }),
+          opacity: interpolate(frame, [land, land + 0.12 * fps, at + 0.1 * fps, at + 0.3 * fps], [0, 1, 1, 0], clamp),
+        }}
+      />
+    </div>
+  );
+};
+
+/**
+ * The screens of a `flow` beat inside the device (`w`×`h` px): each step holds, a finger taps, and the next screen
+ * arrives the way the app shows it — pushed in, raised as a sheet, faded (state change), scrolled up — or as a quick
+ * montage cut.
+ * `statusBar` is the fraction of the capture the status bar takes; it stays put while the content scrolls.
+ */
+export const FlowScreens: React.FC<{ steps: FlowShot[]; frames: number; w: number; h: number; dir: 'ltr' | 'rtl'; statusBar: number }> = ({ steps, frames, w, h, dir, statusBar }) => {
+  const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
+  const { arrive, change, taps } = flowTiming(steps, frames, fps);
+  const sign = dir === 'rtl' ? -1 : 1;
+  const progress = (i: number) => (i === 0 || change[i] === 0 ? (frame >= arrive[i]! ? 1 : 0) : interpolate(frame, [arrive[i]!, arrive[i]! + change[i]!], [0, 1], { ...clamp, easing: Easing.bezier(0.25, 1, 0.5, 1) }));
+  return (
+    <>
+      {steps.map((s, i) => {
+        const start = arrive[i]!;
+        const next = steps[i + 1];
+        const end = next ? arrive[i + 1]! + change[i + 1]! : frames;
+        if (frame < start || frame >= Math.max(end, start + 1)) return null;
+        const enter = progress(i);
+        const exit = next ? progress(i + 1) : 0;
+        const kind = i === 0 ? 'cut' : s.change;
+        const moveX = (kind === 'push' ? (1 - enter) * 100 * sign : 0) + (next?.change === 'push' ? -30 * exit * sign : 0);
+        // A scroll moves the content under the status bar, so both screens travel the height minus the bar.
+        const scroll = 100 - statusBar * 100;
+        const moveY = (kind === 'scroll' ? (1 - enter) * scroll : kind === 'sheet' ? (1 - enter) * 100 : 0) + (next?.change === 'scroll' ? -scroll * exit : 0);
+        return (
+          <div
+            key={i}
+            style={{
+              position: 'absolute',
+              inset: 0,
+              overflow: 'hidden',
+              translate: `${moveX}% ${moveY}%`,
+              // While it scrolls in, the arriving screen's own status bar is hidden (the held strip shows it).
+              clipPath: kind === 'scroll' && statusBar > 0 && enter < 1 ? `inset(${statusBar * 100}% 0 0 0)` : undefined,
+              opacity: kind === 'fade' ? enter : 1,
+              // A montage cut lands with a small punch; under a rising sheet the screen sinks back a little.
+              scale: kind === 'cut' && i > 0 ? interpolate(frame, [start, start + 0.3 * fps], [1.08, 1], { ...clamp, easing: outExpo, output: 'perceptual-scale' }) : next?.change === 'sheet' ? 1 - 0.06 * exit : undefined,
+              boxShadow: enter < 1 && kind === 'push' ? `${-sign * w * 0.04}px 0 ${w * 0.08}px rgba(0,0,0,.3)` : enter < 1 && kind === 'sheet' ? `0 ${-w * 0.03}px ${w * 0.08}px rgba(0,0,0,.3)` : undefined,
+            }}
+          >
+            <Sequence from={start} durationInFrames={Math.max(end - start, 1)} layout="none">
+              <MediaView media={s.media} still />
+              {/* The leaving screen dims under a pushed screen or a sheet, as in iOS. */}
+              {(next?.change === 'push' || next?.change === 'sheet') && exit > 0 ? <AbsoluteFill style={{ background: '#000', opacity: 0.22 * exit }} /> : null}
+            </Sequence>
+          </div>
+        );
+      })}
+      {steps.map((s, i) =>
+        s.change === 'scroll' && i > 0 && statusBar > 0 && progress(i) > 0 && progress(i) < 1 ? (
+          // The status bar does not scroll: hold the arriving screen's top strip in place.
+          <div key={`bar${i}`} style={{ position: 'absolute', left: 0, top: 0, width: w, height: h * statusBar, overflow: 'hidden' }}>
+            <div style={{ position: 'absolute', left: 0, top: 0, width: w, height: h }}>
+              <Sequence from={arrive[i]!} layout="none">
+                <MediaView media={s.media} still />
+              </Sequence>
+            </div>
+          </div>
+        ) : null,
+      )}
+      {steps.map((s, i) => {
+        const at = taps[i];
+        return s.tap && at !== undefined ? <TouchIndicator key={`tap${i}`} x={s.tap.x * w} y={s.tap.y * h} at={at} size={w * 0.13} /> : null;
+      })}
+    </>
   );
 };
 
@@ -82,8 +198,9 @@ export function screenRect(look: Look, width: number, aspect: number): { x: numb
 /**
  * Device around the media: the same HTML/CSS frame as the screenshots (from @vitrin/render, scaled from its
  * reference width), with the recording dropped into the screen between the bezel and the glare/island layer.
+ * `screen` replaces the single recording (a flow of screens); `media` still sets the screen's aspect.
  */
-export const Device: React.FC<{ look: Look; media: MediaRef; width: number; children?: React.ReactNode }> = ({ look, media, width, children }) => {
+export const Device: React.FC<{ look: Look; media: MediaRef; width: number; screen?: React.ReactNode; children?: React.ReactNode }> = ({ look, media, width, screen, children }) => {
   const f = look.frame;
   const s = screenRect(look, width, media.aspect);
   const shadow = `drop-shadow(0 ${width * 0.06}px ${width * 0.09}px rgba(0,0,0,.4)) drop-shadow(0 ${width * 0.01}px ${width * 0.02}px rgba(0,0,0,.2))`;
@@ -91,7 +208,7 @@ export const Device: React.FC<{ look: Look; media: MediaRef; width: number; chil
     return (
       <div style={{ position: 'relative', width, height: s.height, borderRadius: s.r + s.x, background: '#0E0F12', filter: shadow }}>
         <div style={{ position: 'absolute', left: s.x, top: s.y, width: s.w, height: s.h, borderRadius: s.r, overflow: 'hidden', background: '#000' }}>
-          <MediaView media={media} />
+          {screen ?? <MediaView media={media} />}
           {children}
         </div>
       </div>
@@ -109,7 +226,7 @@ export const Device: React.FC<{ look: Look; media: MediaRef; width: number; chil
     <div style={{ position: 'relative', width, height: s.height, filter: shadow }}>
       {layer(f.under)}
       <div style={{ position: 'absolute', left: s.x, top: s.y, width: s.w, height: s.h, borderRadius: s.r, overflow: 'hidden', background: '#000' }}>
-        <MediaView media={media} />
+        {screen ?? <MediaView media={media} />}
         {children}
       </div>
       {layer(f.over)}
@@ -121,17 +238,22 @@ export function deviceHeight(width: number, look: Look, aspect: number): number 
   return screenRect(look, width, aspect).height;
 }
 
-/** How a device arrives, per style. Wraps the device; frame 0 = scene start. */
+/**
+ * How a device arrives, per style, and how the camera keeps moving after it landed (a push-in and a slow drift
+ * until the scene ends), so no beat holds a frozen frame. Wraps the device; frame 0 = scene start.
+ */
 export const DeviceEntrance: React.FC<{ style: PreviewStyle; children: React.ReactNode; durationInFrames: number; tilt?: number }> = ({ style, children, durationInFrames, tilt = 0 }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
+  // Keyframes after the entrance need a later end frame than the entrance itself.
+  const end = Math.max(durationInFrames, fps);
   if (style === 'showcase') {
-    // 3D swing-in + slow camera push for the rest of the scene.
+    // 3D swing-in, then the camera keeps orbiting slightly and pushes in.
     return (
       <div
         style={{
-          transform: `perspective(1600px) rotateY(${interpolate(frame, [0, 0.9 * fps], [28, 0], { ...clamp, easing: outExpo })}deg) rotateX(${interpolate(frame, [0, 0.9 * fps], [8, 0], { ...clamp, easing: outExpo })}deg)`,
-          scale: interpolate(frame, [0, 0.9 * fps, durationInFrames], [0.82, 1, 1.05], { ...clamp, easing: [outExpo, Easing.linear], output: 'perceptual-scale' }),
+          transform: `perspective(1600px) rotateY(${interpolate(frame, [0, 0.9 * fps, end], [28, 0, -5], { ...clamp, easing: [outExpo, Easing.inOut(Easing.sin)] })}deg) rotateX(${interpolate(frame, [0, 0.9 * fps, end], [8, 0, 2], { ...clamp, easing: [outExpo, Easing.inOut(Easing.sin)] })}deg)`,
+          scale: interpolate(frame, [0, 0.9 * fps, end], [0.82, 1, 1.07], { ...clamp, easing: [outExpo, Easing.linear], output: 'perceptual-scale' }),
           opacity: interpolate(frame, [0, 0.35 * fps], [0, 1], clamp),
         }}
       >
@@ -140,11 +262,12 @@ export const DeviceEntrance: React.FC<{ style: PreviewStyle; children: React.Rea
     );
   }
   if (style === 'kinetic') {
-    // Punch-in: arrives slightly too big and snaps into place.
+    // Punch-in: arrives slightly too big, snaps into place, then pushes in and rises.
     return (
       <div
         style={{
-          scale: interpolate(frame, [0, 0.35 * fps], [1.18, 1], { ...clamp, easing: Easing.spring({ damping: 14 }), output: 'perceptual-scale' }),
+          scale: interpolate(frame, [0, 0.35 * fps, end], [1.18, 1, 1.07], { ...clamp, easing: [Easing.spring({ damping: 14 }), Easing.linear], output: 'perceptual-scale' }),
+          translate: interpolate(frame, [0.35 * fps, end], ['0px 0px', '0px -14px'], clamp),
           opacity: interpolate(frame, [0, 0.15 * fps], [0, 1], clamp),
         }}
       >
@@ -153,11 +276,13 @@ export const DeviceEntrance: React.FC<{ style: PreviewStyle; children: React.Rea
     );
   }
   if (style === 'energetic') {
+    // Springs in tilted, then keeps swaying and bobbing.
     return (
       <div
         style={{
-          rotate: `${interpolate(frame, [0, 0.6 * fps], [tilt - 18, tilt], { ...clamp, easing: Easing.spring({ damping: 9 }) }) + Math.sin((frame / fps) * 2.2) * 1.5}deg`,
-          translate: interpolate(frame, [0, 0.6 * fps], ['0px 600px', '0px 0px'], { ...clamp, easing: Easing.spring({ damping: 12 }) }),
+          rotate: `${interpolate(frame, [0, 0.6 * fps], [tilt - 18, tilt], { ...clamp, easing: Easing.spring({ damping: 9 }) }) + Math.sin((frame / fps) * 2.6) * 2.5}deg`,
+          translate: `0px ${interpolate(frame, [0, 0.6 * fps], [600, 0], { ...clamp, easing: Easing.spring({ damping: 12 }) }) + Math.sin((frame / fps) * 3.4) * 8}px`,
+          scale: interpolate(frame, [0.6 * fps, end], [1, 1.06], { ...clamp, output: 'perceptual-scale' }),
         }}
       >
         {children}
@@ -167,7 +292,8 @@ export const DeviceEntrance: React.FC<{ style: PreviewStyle; children: React.Rea
   return (
     <div
       style={{
-        translate: interpolate(frame, [0, 0.8 * fps], ['0px 80px', '0px 0px'], { ...clamp, easing: outExpo }),
+        translate: interpolate(frame, [0, 0.8 * fps, end], ['0px 80px', '0px 0px', '0px -10px'], { ...clamp, easing: [outExpo, Easing.linear] }),
+        scale: interpolate(frame, [0.8 * fps, end], [1, 1.04], { ...clamp, output: 'perceptual-scale' }),
         opacity: interpolate(frame, [0, 0.5 * fps], [0, 1], clamp),
       }}
     >

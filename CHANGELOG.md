@@ -2,6 +2,73 @@
 
 All notable changes to this project are documented in this file. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## 0.8.0 — 2026-10-27
+
+### Added — Product Page Optimization tests
+- **`metadata/experiments.json`:** an A/B test of the product page — hypothesis, metric, minimum detectable effect, traffic share, and up to three treatments that each change one thing (headline copy per shot and locale, the screenshot order, or an alternate icon from the binary). With the app's daily page views and conversion, validate estimates how many days the test needs and warns past Apple's 90.
+- **Treatment sets:** `vitrin design` renders every treatment that changes the screenshots to `metadata/store/experiments/<test>/<treatment>/<locale>/`; the review gallery shows a test card with the hypothesis, the estimate and each treatment's set, and approval hashes them.
+- **`vitrin upload --experiment [id]`:** creates the test in App Store Connect as a draft (v2 experiment, treatments, one localization per locale) and places each treatment's set through the App Asset Library. App Review checks it; the user starts it and reads the result in App Store Connect.
+- Checks: a written hypothesis, a treatment that changes nothing (error) or more than one thing (warning), icon tests without an alternate icon, unknown shots, one open test at a time, and a recorded `result` whose winner is the original, a treatment or inconclusive. `references/experiments.md` gives the order to test in (first screenshot → icon → order → style) and how a result becomes the next test.
+
+### Added — Google Play images that fit Play, and an icon check
+- **Google Play gets Play-safe images:** App Store ratings and Apple platform badges are left off Play images; ranking words (“#1”, “best”) and Apple names on a shot that reaches Play are errors (`shot.play-superlative`, `shot.play-apple-term`), a testimonial (App Store reviews) on Play is a warning, and Play needs at least 2 screenshots (`image.too-few`).
+- **Borrowed captures are caught:** the render manifest records which device family and locale each screen came from; iOS UI on a Google Play screenshot (`image.ios-ui-on-play`) and another language's UI in one of the first three shots (`image.language-mismatch`) are errors instead of a log line.
+- **Icon audit:** `vitrin research` renders `metadata/research/icons.png`, the app's icon outlined among the strongest competitors' icons at search-result size on light and dark; the skill asks Claude to judge it for the user. A missing app icon is an error when the Google Play icon is a target (before, a letter placeholder was rendered and uploaded).
+
+### Changed
+- The design brief asks for 8–10 iPhone shots when the features carry them (at least 5) and localized demo data (names, currency, dates, units) in the strings files, not only translated labels. SKILL.md's “first 3 = hook/proof/trust” now matches the art direction: hero (the only place for proof) → differentiator → core, trust near the end.
+
+### Added — Custom Product Pages and In-App Events that are complete
+- **Each Custom Product Page gets its own screenshot set:** `shots` (in the page's order) and per-shot `copy` overrides in `cpp-suggestions.json`; `vitrin design` renders them to `metadata/store/cpp/<page id>/<locale>/`, the review gallery shows them on the page card, approval hashes them, and `vitrin upload --cpp` places them on each page localization through the App Asset Library. Validate warns about pages without their own shots and unknown shot ids.
+- **In-App Events are uploaded with their images:** the card and detail images `vitrin design` renders are placed on each event localization (they were rendered but never uploaded). Events take `deepLink`, `purpose`, `purchaseRequirement`, `priority` and a `schedule` (territories, publish start, start, end), sent to App Store Connect when set.
+- Event checks: name ≤ 30, short description ≤ 50, long description ≤ 120 characters (errors; before, only counters in the review), a missing deep link, and Apple's schedule rules (15 minutes to 31 days, promoted at most 14 days ahead, publish before start).
+
+### Fixed
+- `vitrin upload --cpp` no longer claims that images are placed by the `--creatives` flow; it reports what it placed, or that the page has no screenshots of its own.
+- `store-preview.html` copies the app icon next to itself instead of linking it by an absolute `file://` path, so the page also opens on another machine.
+- Video validation reads numeric H.264 profile ids (ffprobe builds without codec names report `100` for High) instead of rejecting them.
+
+### Example
+- `examples/Ritim` now holds a whole `/vitrin` run in HTML-screen mode: the SwiftUI views recreated in HTML (checked against real simulator captures on iPhone and iPad, in English and Turkish), the keyword research with relevance and selected terms, the store text, the four design samples and the store preview, 15 screenshots and a 17.5 s App Preview per language, the creatives, an In-App Event and the review gallery. Its README walks through each step.
+
+### Added — Keyword research that reaches the listing, and a way to measure it
+- **The fields are checked against the keyword plan:** `vitrin write` recomputes every candidate's total after Claude set relevance, then warns about unscored candidates, a missing `selected`, selected terms that are not in their field (`keywords.plan-mismatch`), terms the app already ranks top 10 for that the new copy drops (`keywords.drops-ranked-term`) and the best-scored candidates left out.
+- **What the store shows today:** `vitrin research` writes `metadata/research/live-listing.json` — name, subtitle, keywords, promotional text and description from App Store Connect when the key is set, otherwise the public lookup. The write brief shows it next to the app's own rank per candidate (`ownRank`), and validate lists what changed against the live keyword field.
+- **`vitrin rank`:** the app's own search rank for its selected and best-scored terms, saved to `metadata/rankings/<date>.json` (committed, kept by finalize) and compared with the previous snapshot. Run it before a change and one to two weeks after.
+- **Storefront-aware cross-locale checks:** locales indexed in the same storefront (e.g. en-US and es-MX in the US) are compared with each other — every shared keyword and every keyword that repeats the other locale's name/subtitle words is flagged. Before, only locales with the same base language were compared (en-US vs en-GB, which never share a storefront). The write brief lists indexing slots the app does not use yet.
+- Warnings for an empty or short subtitle, a brand-only name and a keyword field under 90 bytes.
+
+### Changed
+- Keyword competition is now the share of the top 10 that carry the term in their name plus how entrenched they are; the result count (always the full page for real terms) no longer counts. The docs state the formula the CLI actually uses, and the write brief sorts candidates by their total.
+- What's New is written in each store locale's own language, not the chat language; the write brief adds the review complaint/praise clusters and asks for a secondary category.
+
+### Added — App Previews that move
+- **`flow` scene, the app in use:** 2–5 screens in one device (`beats[].steps`). A touch indicator taps (`tap {x,y}`) and the next screen arrives the way the app shows it: `push` (navigation), `sheet` (modal sheet), `fade` (state change), `scroll` (the same screen further down, the status bar stays put) or `cut` (quick montage). With HTML screens, the state after each tap is its own screen (e.g. `home-done`).
+- **The camera keeps moving:** after the device has landed it keeps pushing in and drifting in every style (showcase orbits slightly, energetic sways and bobs, split devices drift apart), and the backdrop shifts on every cut, so a preview reads as one moving shot instead of a slide show.
+
+### Changed
+- **Shorter, punchier timing:** hook 2.2 s, closing line 2.4 s, shorter cut transitions; the brief and `references/video.md` ask for 1.5–2.5 s beats in a hook → demo → breadth → proof structure and up to three previews with different hooks. Beats are stretched or shrunk only as far as Apple's 15–30 s needs (to 16 s or 28 s), not to a fixed 24 s.
+- **No icon card at the end:** `outro` is optional and its line now runs over the outcome screen (`outro.source`, default the last beat's screen); without `outro` the preview ends on the last beat. App Review wants previews made of app footage.
+- **Kinetic style:** typography cards go before at most two beats (the first and the middle one), counted together with the plan's `text` beats; the other captions pop in word by word over the UI. Energetic captions pop in as well.
+- Screenshots in previews push in faster (5 % over 3 s instead of 6 % over 6 s).
+- **No blank first frame, a settled poster frame:** the hook starts 0.6 s into its own entrance, so frame 0 (where autoplay starts) already shows the device and the hook line; the scene before the 5-second poster frame is held a little longer when that frame would land on a cut, an entrance or a text card.
+- **`vitrin video --studio`:** the first preview with the props `vitrin video` would render, in Remotion Studio (development checkouts, where @remotion/cli is installed).
+
+### Added — Designed for each app, shown in the store you ship to
+- **Bespoke designs:** Claude now designs screenshots for the app instead of only picking presets. Art directions without a preset (own palette, typography, background and device treatment) can be sampled next to presets (`vitrin design --samples --styles <preset>,<option-id>`), up to six options per `art-direction.json`. A shot can have its own HTML layout (`"template": "plan.html"` in `metadata/designs/`, per family `plan.ipad.html` …) with `{{headline}}`/`{{subheadline}}`/`{{badges}}` placeholders and `<vitrin-device screen="…">` mockups; it renders through the same size checks, quality gate and review. Guide: `references/custom-designs.md`.
+- **Store preview with menus:** `store-preview.html` now has drop-down menus for the store (App Store iPhone; iPad and Google Play phone when those formats are enabled), the design (A, B, C, D or all side by side) and light/dark appearance. The samples are rendered for every store view; Google Play gets its own listing layout.
+- **Ready-made device mockups:** `vitrin mockups` renders transparent templates with their screen rectangles (`mockups.json`) for iPhone, iPad, iPhone Duo closed, open (with its fold crease) and both together, Apple Watch, Mac laptop and window, Apple TV, Vision Pro, Android phone and tablet; `--screens` places the rendered screens into them. Prerendered templates ship with the skill (`assets/mockups/`).
+- **1:1 screens from any framework:** a native UI kit (`ios.css`, `material.css`, `watchos.css`, `macos.css`) is copied to `metadata/screens/kit/`, and the screens brief plus `references/screen-recreation.md` map SwiftUI/UIKit, Compose/XML, Flutter and React Native layouts to HTML with measured values.
+
+### Changed
+- **Everything lives in `metadata/`:** the workspace moved from `.vitrin/` to the project's `metadata/` folder (`listing/` for the store copy JSON, `research/` for competitors, keywords and downloads, `screens/`, `designs/`, `mockups/`, `design-samples/`, `store/`, …). An existing `.vitrin/` folder is moved automatically on the next command; a `metadata/` folder the user owns is never touched.
+- **The upload tool is asked after the design is approved**, not at the start. `vitrin uploader` warns when the chosen tool (asc CLI or fastlane) is missing: it is installed first, and only after the user agrees. `vitrin init` no longer writes fastlane files.
+- **finalize asks about the research data:** `vitrin finalize --checked --delete-research | --keep-research`. Generated files stay in `metadata/`; only `metadata/research/` is deleted, and only when the user said so. `--keep`/`--discard` and `retention.keep` are gone.
+- The skill does nothing the user has not approved: creating files, installing tools, uploading and deleting all wait for an explicit yes.
+
+### Fixed
+- HTML screens are loaded from a file, so the CSS, fonts and images they link render (pages set from a string could not read `file://` resources).
+
 ## 0.7.0 — 2026-10-26
 
 ### Added — See your choice in the store

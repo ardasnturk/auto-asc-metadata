@@ -7,7 +7,7 @@ import { fill, loadUiText, UI_EN } from '../src/i18n.js';
 import { configWith } from './helpers.js';
 
 function ctxWith(language?: string) {
-  const vitrin = join(mkdtempSync(join(tmpdir(), 'vitrin-i18n-')), '.vitrin');
+  const vitrin = join(mkdtempSync(join(tmpdir(), 'vitrin-i18n-')), 'metadata');
   return { paths: { vitrin }, config: configWith(language ? { ui: { language } } : {}) } as unknown as Pick<Ctx, 'paths' | 'config'>;
 }
 

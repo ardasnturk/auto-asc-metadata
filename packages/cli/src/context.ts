@@ -1,4 +1,4 @@
-import { appPaths, ensureVitrinGitignore, findAppRoot, hashValue, loadConfig, loadEnv, log, readJson, StateStore, type AppPaths } from '@vitrin/core';
+import { appPaths, ensureVitrinGitignore, ensureWorkspace, WorkspaceTaken, findAppRoot, hashValue, loadConfig, loadEnv, log, readJson, StateStore, type AppPaths } from '@vitrin/core';
 import { AppProfile, type StageName, type VitrinConfig } from '@vitrin/schemas';
 import { existsSync } from 'node:fs';
 
@@ -36,9 +36,21 @@ export async function createContext(opts: GlobalOptions): Promise<Ctx> {
   const paths = appPaths(root);
   const env = loadEnv(paths.env);
   const config = loadConfig(paths.config);
+  await prepareWorkspace(root);
   const state = await StateStore.load(paths.state);
   await syncGitignore(root, config);
   return { root, paths, config, state, env, force: Boolean(opts.force), json: Boolean(opts.json) };
+}
+
+/** `metadata/` is the workspace: created on first use, an older `.vitrin/` folder is moved into it. */
+async function prepareWorkspace(root: string): Promise<void> {
+  try {
+    const res = await ensureWorkspace(root);
+    if (res.migrated.length) log.ok(`Moved the Vitrin files from .vitrin/ to metadata/ (${res.migrated.length} entries); everything Vitrin generates now lives in metadata/.`);
+  } catch (err) {
+    if (err instanceof WorkspaceTaken) throw new NeedsInput(err.message);
+    throw err;
+  }
 }
 
 /** Keeps the managed .gitignore block current (every command that writes files runs through here). */

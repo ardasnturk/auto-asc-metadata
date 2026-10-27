@@ -1,0 +1,138 @@
+{
+  "generator": "vitrin",
+  "updatedAt": "2026-10-27T09:08:09.299Z",
+  "files": [
+    {
+      "path": "metadata/app-store/ios/all/copyright.txt",
+      "source": "metadata/store/metadata/copyright.txt",
+      "sha256": "938241c56f1f3d13576d20cc259b4dfbd1d8930593b6e0f2cedef62555884433",
+      "bytes": 13
+    },
+    {
+      "path": "metadata/app-store/ios/all/primary_category.txt",
+      "source": "metadata/store/metadata/primary_category.txt",
+      "sha256": "959afd9d997e32ec0a1c6af2cea2e7603506ae238c8070166d8c1590e812afaa",
+      "bytes": 19
+    },
+    {
+      "path": "metadata/app-store/ios/all/review_information/notes.txt",
+      "source": "metadata/store/metadata/review_information/notes.txt",
+      "sha256": "a1c3113010588add29fc163e78629d553aa5e2276cfcfb20bf25f382de1bf97a",
+      "bytes": 249
+    },
+    {
+      "path": "metadata/app-store/ios/all/secondary_category.txt",
+      "source": "metadata/store/metadata/secondary_category.txt",
+      "sha256": "6f184b13d9f0726937d6acef869176464b21b0de4ac236d2107ef78b29a0cf91",
+      "bytes": 13
+    },
+    {
+      "path": "metadata/app-store/ios/en-US/description.txt",
+      "source": "metadata/store/metadata/en-US/description.txt",
+      "sha256": "33f354b450b3e43191ed2c006a9d9d05d98d90bdd8a7bf4e49571a3f08bb5c51",
+      "bytes": 1369
+    },
+    {
+      "path": "metadata/app-store/ios/en-US/keywords.txt",
+      "source": "metadata/store/metadata/en-US/keywords.txt",
+      "sha256": "dcea4650500a9c08ba6a58adb398fab5c6d26381919023d0084912fef35fd87b",
+      "bytes": 98
+    },
+    {
+      "path": "metadata/app-store/ios/en-US/marketing_url.txt",
+      "source": "metadata/store/metadata/en-US/marketing_url.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "metadata/app-store/ios/en-US/name.txt",
+      "source": "metadata/store/metadata/en-US/name.txt",
+      "sha256": "6d043e2723dd1d48ea0e327ed726f4e25157bb4cc84d5ba2d529e5460b7d6479",
+      "bytes": 21
+    },
+    {
+      "path": "metadata/app-store/ios/en-US/privacy_url.txt",
+      "source": "metadata/store/metadata/en-US/privacy_url.txt",
+      "sha256": "b1f444d3169c4f1cbc809d21c495ef7ad7060b4b54d258b1021ff5bc4fb756ae",
+      "bytes": 28
+    },
+    {
+      "path": "metadata/app-store/ios/en-US/promotional_text.txt",
+      "source": "metadata/store/metadata/en-US/promotional_text.txt",
+      "sha256": "21abdea1911b231757ea7a675d1874ab66b5a12a918a1f675e3d40fea3493a64",
+      "bytes": 117
+    },
+    {
+      "path": "metadata/app-store/ios/en-US/release_notes.txt",
+      "source": "metadata/store/metadata/en-US/release_notes.txt",
+      "sha256": "516b3803cab8828717fb1d40ee840536a179e08588eac3bbe100800c1d69faf8",
+      "bytes": 455
+    },
+    {
+      "path": "metadata/app-store/ios/en-US/subtitle.txt",
+      "source": "metadata/store/metadata/en-US/subtitle.txt",
+      "sha256": "da387853e8676667e4ab634c019cfe17eef8bc75d1c71eddfb80b85d7bf211d1",
+      "bytes": 29
+    },
+    {
+      "path": "metadata/app-store/ios/en-US/support_url.txt",
+      "source": "metadata/store/metadata/en-US/support_url.txt",
+      "sha256": "00567490f66ec548193f5510e1f596b60d56e7053c545e6976540b9561a880ea",
+      "bytes": 28
+    },
+    {
+      "path": "metadata/app-store/ios/tr/description.txt",
+      "source": "metadata/store/metadata/tr/description.txt",
+      "sha256": "ec2ba7045f64da6842a873d68fa749cddf7a486af5bf5044841815ff87a24d78",
+      "bytes": 1415
+    },
+    {
+      "path": "metadata/app-store/ios/tr/keywords.txt",
+      "source": "metadata/store/metadata/tr/keywords.txt",
+      "sha256": "e11dd37089b099437009099504267757dc24a0f6dd26bd47cfeeef0fb1d5cc4c",
+      "bytes": 97
+    },
+    {
+      "path": "metadata/app-store/ios/tr/marketing_url.txt",
+      "source": "metadata/store/metadata/tr/marketing_url.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "metadata/app-store/ios/tr/name.txt",
+      "source": "metadata/store/metadata/tr/name.txt",
+      "sha256": "80ec1660e9aff352ec5cfa25cfd2949aa485d319b1c4c28429525b24f639ebcc",
+      "bytes": 28
+    },
+    {
+      "path": "metadata/app-store/ios/tr/privacy_url.txt",
+      "source": "metadata/store/metadata/tr/privacy_url.txt",
+      "sha256": "b1f444d3169c4f1cbc809d21c495ef7ad7060b4b54d258b1021ff5bc4fb756ae",
+      "bytes": 28
+    },
+    {
+      "path": "metadata/app-store/ios/tr/promotional_text.txt",
+      "source": "metadata/store/metadata/tr/promotional_text.txt",
+      "sha256": "f50cad2734ad3f8b0ea5f1cd3679f693f3489ae625d6c6ae18509cc83307f35a",
+      "bytes": 135
+    },
+    {
+      "path": "metadata/app-store/ios/tr/release_notes.txt",
+      "source": "metadata/store/metadata/tr/release_notes.txt",
+      "sha256": "0a3af5f84e51ff63eb78e9c5104bc00f320fe1c6ed5685f5103be4839870e6cb",
+      "bytes": 546
+    },
+    {
+      "path": "metadata/app-store/ios/tr/subtitle.txt",
+      "source": "metadata/store/metadata/tr/subtitle.txt",
+      "sha256": "0d1dfc12200c0c0f19ae9157cb57ae2e30c488d1ec85ca0e7468bac33c5c7dd0",
+      "bytes": 30
+    },
+    {
+      "path": "metadata/app-store/ios/tr/support_url.txt",
+      "source": "metadata/store/metadata/tr/support_url.txt",
+      "sha256": "00567490f66ec548193f5510e1f596b60d56e7053c545e6976540b9561a880ea",
+      "bytes": 28
+    }
+  ]
+}

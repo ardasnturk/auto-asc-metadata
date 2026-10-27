@@ -80,6 +80,8 @@ export const RenderManifest = z.object({
       thumbnailLegible: z.boolean().optional(),
       /** Quality-bar measurements (device ratio, empty bands, glyph contrast, thumbnail test). */
       quality: ImageQuality.optional(),
+      /** Where the screens on the image came from: device families and locales of the raw captures used. */
+      capture: z.object({ families: z.array(z.string()), locales: z.array(z.string()) }).optional(),
     }),
   ),
   videos: z

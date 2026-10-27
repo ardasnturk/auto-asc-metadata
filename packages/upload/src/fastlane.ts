@@ -3,7 +3,7 @@ import type { AppMetadata, LocaleMetadata, VitrinConfig } from '@vitrin/schemas'
 import { copyFile, readdir, readFile, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 
-/** deliver's per-locale file names (.vitrin/store/metadata/<locale>/<name>.txt). */
+/** deliver's per-locale file names (metadata/store/metadata/<locale>/<name>.txt). */
 export const LOCALE_FILES: Record<string, (m: LocaleMetadata, c: VitrinConfig) => string | undefined> = {
   'name.txt': (m) => m.name,
   'subtitle.txt': (m) => m.subtitle,
@@ -153,7 +153,7 @@ export function deliverLaneInvocation(lane: string, env: LaneEnv): LaneInvocatio
 
 export interface SupplyLaneEnv {
   packageName: string;
-  /** .vitrin/store/metadata/android (absolute). */
+  /** metadata/store/metadata/android (absolute). */
   metadataPath: string;
   /** Track whose existing release supply reads; never changed. */
   track: string;
@@ -214,9 +214,9 @@ export async function runSupplyLane(paths: AppPaths, env: SupplyLaneEnv, runner:
   if (res.code !== 0) {
     const text = res.stdout + res.stderr;
     if (/Unable to find the requested track|Could not find release for version code/i.test(text)) {
-      throw new Error(`supply needs an existing release on the “${env.track}” track to update the listing (it reads the release even for metadata-only runs). Upload a build once in Play Console, or set track/versionCode in .vitrin/metadata/play/app.json.`);
+      throw new Error(`supply needs an existing release on the “${env.track}” track to update the listing (it reads the release even for metadata-only runs). Upload a build once in Play Console, or set track/versionCode in metadata/listing/play/app.json.`);
     }
-    if (/More than one release found/i.test(text)) throw new Error('The track has more than one release; set versionCode in .vitrin/metadata/play/app.json.');
+    if (/More than one release found/i.test(text)) throw new Error('The track has more than one release; set versionCode in metadata/listing/play/app.json.');
     if (/Package not found|applicationNotFound/i.test(text)) throw new Error(`Google Play has no app ${env.packageName}; the app must be created once in Play Console (the API cannot create apps).`);
     if (/\b403\b|The caller does not have permission|forbidden/i.test(text)) throw new Error('Google Play refused the service account (403). Invite it in Play Console > Users and permissions with “Edit store listing” for this app.');
     throw new Error(`fastlane vitrin_play_upload failed (exit ${res.code}). See the details above.`);

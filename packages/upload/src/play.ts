@@ -25,12 +25,12 @@ export function playLocaleFor(ascLocale: string, override?: string, table: PlayL
   return table.map[ascLocale] ?? null;
 }
 
-/** `.vitrin/metadata/play/` */
+/** `metadata/listing/play/` */
 export function playMetadataDir(paths: AppPaths): string {
   return join(paths.metadataDir, 'play');
 }
 
-/** supply's metadata root: `.vitrin/store/metadata/android/`. */
+/** supply's metadata root: `metadata/store/metadata/android/`. */
 export function playExportDir(paths: AppPaths): string {
   return join(paths.fastlaneMetadata, 'android');
 }
@@ -40,7 +40,7 @@ export interface PlayInputs {
   app: PlayAppMetadata;
 }
 
-/** Loads `.vitrin/metadata/play/<locale>.json` for the configured locales plus `app.json`. */
+/** Loads `metadata/listing/play/<locale>.json` for the configured locales plus `app.json`. */
 export async function loadPlayInputs(paths: AppPaths, locales: string[]): Promise<PlayInputs> {
   const dir = playMetadataDir(paths);
   const listings: PlayListing[] = [];
@@ -185,7 +185,7 @@ export const PLAY_LISTING_FILES: Record<string, (l: PlayListing) => string | und
 
 /**
  * Writes the supply tree:
- * `.vitrin/store/metadata/android/<play-locale>/{title,short_description,full_description,video}.txt`,
+ * `metadata/store/metadata/android/<play-locale>/{title,short_description,full_description,video}.txt`,
  * `changelogs/<versionCode>.txt`, `images/{phone,sevenInch,tenInch}Screenshots/NN.png`, `images/featureGraphic.png`,
  * `images/icon.png`. Image folders of the exported languages are rebuilt so supply never uploads stale files.
  * `video` undefined = leave the remote value (no file); `video: ""` = clear it (empty file).
@@ -256,7 +256,7 @@ export async function exportPlayMetadata(
   return { root, written, skipped, sets };
 }
 
-/** Play language folders under .vitrin/store/metadata/android that no listing produces (supply would upload them too). */
+/** Play language folders under metadata/store/metadata/android that no listing produces (supply would upload them too). */
 export async function strayPlayLocaleDirs(paths: AppPaths, inputs: PlayInputs, table: PlayLocaleTable = loadPlayLocales()): Promise<string[]> {
   const root = playExportDir(paths);
   if (!existsSync(root)) return [];
@@ -314,8 +314,8 @@ export function buildPlayPlan(opts: {
   const metadata = scope?.metadata ?? true;
   const sets = opts.sets.filter((s) => playSlotSelected(s.slot, scope));
   if (!opts.packageName) res.blockers.push('[play.package] No Android application id: set profile.project.androidApplicationId (vitrin analyze) or GOOGLE_PLAY_PACKAGE_NAME.');
-  if (!inputs.listings.length) res.blockers.push('[play.listing.none] No Google Play listing in .vitrin/metadata/play/<locale>.json.');
-  for (const s of opts.stray ?? []) res.blockers.push(`[play.stray-locale] .vitrin/store/metadata/android/${s} is not produced by any listing; supply would upload it too. Remove the folder.`);
+  if (!inputs.listings.length) res.blockers.push('[play.listing.none] No Google Play listing in metadata/listing/play/<locale>.json.');
+  for (const s of opts.stray ?? []) res.blockers.push(`[play.stray-locale] metadata/store/metadata/android/${s} is not produced by any listing; supply would upload it too. Remove the folder.`);
   for (const i of opts.imageIssues) {
     if (i.slot && !playSlotSelected(i.slot, scope)) continue;
     (i.severity === 'error' ? res.blockers : res.warnings).push(`[${i.code}] ${i.message}`);
@@ -338,7 +338,7 @@ export function buildPlayPlan(opts: {
     if (!releases) res.blockers.push(`[play.track] The “${inputs.app.track}” track does not exist; supply needs an existing release on it even for listing-only updates.`);
     else if (!releases.length) res.blockers.push(`[play.track] The “${inputs.app.track}” track has no release; upload a build once in Play Console (Vitrin never creates releases).`);
     else if (vc && !releases.some((r) => (r.versionCodes ?? []).includes(String(vc)))) res.blockers.push(`[play.version-code] No release with version code ${vc} on the “${inputs.app.track}” track.`);
-    else if (!vc && releases.length > 1) res.blockers.push(`[play.version-code] The “${inputs.app.track}” track has ${releases.length} releases; set versionCode in .vitrin/metadata/play/app.json.`);
+    else if (!vc && releases.length > 1) res.blockers.push(`[play.version-code] The “${inputs.app.track}” track has ${releases.length} releases; set versionCode in metadata/listing/play/app.json.`);
   }
 
   for (const l of metadata ? inputs.listings : []) {
@@ -359,7 +359,7 @@ export function buildPlayPlan(opts: {
       res.items.push({ area: 'metadata', locale: pl, field, change: !r ? 'create' : rv === value ? 'unchanged' : 'update', local: value ? short(value) : '(empty — will be cleared)', remote: rv ? short(rv) : undefined });
     }
     if (l.changelog.trim()) {
-      if (!inputs.app.versionCode) res.items.push({ area: 'metadata', locale: pl, field: 'changelog', change: 'skip', note: 'no versionCode in .vitrin/metadata/play/app.json' });
+      if (!inputs.app.versionCode) res.items.push({ area: 'metadata', locale: pl, field: 'changelog', change: 'skip', note: 'no versionCode in metadata/listing/play/app.json' });
       else {
         const rel = remote?.releases?.find((x) => (x.versionCodes ?? []).includes(String(inputs.app.versionCode)));
         const rv = norm(rel?.releaseNotes?.find((n) => n.language === pl)?.text);

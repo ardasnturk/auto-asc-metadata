@@ -1,0 +1,247 @@
+{
+  "locale": "tr",
+  "storefront": "tr",
+  "generatedAt": "2026-10-27T09:06:26.700Z",
+  "candidates": [
+    {
+      "term": "alışkanlık takibi",
+      "relevance": 1,
+      "competition": {
+        "resultCount": 47,
+        "top10MedianRatings": 52,
+        "titleShare": 0,
+        "score": 0.144
+      },
+      "popularity": {
+        "score": 0.382,
+        "source": "estimate"
+      },
+      "total": 0.538,
+      "ownRank": null
+    },
+    {
+      "term": "alışkanlık",
+      "relevance": 1,
+      "competition": {
+        "resultCount": 48,
+        "top10MedianRatings": 158,
+        "titleShare": 0,
+        "score": 0.183
+      },
+      "popularity": {
+        "score": 0.404,
+        "source": "estimate"
+      },
+      "total": 0.534,
+      "ownRank": null
+    },
+    {
+      "term": "günlük rutin",
+      "relevance": 0.9,
+      "competition": {
+        "resultCount": 48,
+        "top10MedianRatings": 548.5,
+        "titleShare": 0,
+        "score": 0.228
+      },
+      "popularity": {
+        "score": 0.392,
+        "source": "estimate"
+      },
+      "total": 0.457,
+      "ownRank": null
+    },
+    {
+      "term": "hedef takip",
+      "relevance": 0.8,
+      "competition": {
+        "resultCount": 48,
+        "top10MedianRatings": 17,
+        "titleShare": 0,
+        "score": 0.105
+      },
+      "popularity": {
+        "score": 0.326,
+        "source": "estimate"
+      },
+      "total": 0.416,
+      "ownRank": null
+    },
+    {
+      "term": "seri takibi",
+      "relevance": 1,
+      "competition": {
+        "resultCount": 50,
+        "top10MedianRatings": 5.5,
+        "titleShare": 0,
+        "score": 0.068
+      },
+      "popularity": {
+        "score": 0.309,
+        "source": "estimate"
+      },
+      "total": 0.525,
+      "ownRank": null
+    },
+    {
+      "term": "rutin planlayıcı",
+      "relevance": 0.6,
+      "competition": {
+        "resultCount": 49,
+        "top10MedianRatings": 100.5,
+        "titleShare": 0,
+        "score": 0.167
+      },
+      "popularity": {
+        "score": 0.369,
+        "source": "estimate"
+      },
+      "total": 0.313,
+      "ownRank": null
+    },
+    {
+      "term": "tracker",
+      "relevance": 0.5,
+      "competition": {
+        "resultCount": 43,
+        "top10MedianRatings": 2140,
+        "titleShare": 0.7,
+        "score": 0.628
+      },
+      "popularity": {
+        "score": 0.78,
+        "source": "estimate"
+      },
+      "total": 0.24,
+      "ownRank": null
+    },
+    {
+      "term": "habit",
+      "relevance": 0.6,
+      "competition": {
+        "resultCount": 43,
+        "top10MedianRatings": 146.5,
+        "titleShare": 0.9,
+        "score": 0.631
+      },
+      "popularity": {
+        "score": 0.753,
+        "source": "estimate"
+      },
+      "total": 0.281,
+      "ownRank": null
+    },
+    {
+      "term": "daily",
+      "relevance": 0.4,
+      "competition": {
+        "resultCount": 43,
+        "top10MedianRatings": 3228.5,
+        "titleShare": 0.8,
+        "score": 0.692
+      },
+      "popularity": {
+        "score": 0.738,
+        "source": "estimate"
+      },
+      "total": 0.171,
+      "ownRank": null
+    },
+    {
+      "term": "daily routine",
+      "relevance": 0.5,
+      "competition": {
+        "resultCount": 47,
+        "top10MedianRatings": 2493,
+        "titleShare": 0.4,
+        "score": 0.483
+      },
+      "popularity": {
+        "score": 0.524,
+        "source": "estimate"
+      },
+      "total": 0.229,
+      "ownRank": null
+    },
+    {
+      "term": "day",
+      "relevance": 0.1,
+      "competition": {
+        "resultCount": 47,
+        "top10MedianRatings": 1861.5,
+        "titleShare": 0.9,
+        "score": 0.723
+      },
+      "popularity": {
+        "score": 0.85,
+        "source": "estimate"
+      },
+      "total": 0.045,
+      "ownRank": null
+    },
+    {
+      "term": "habits",
+      "relevance": 0.5,
+      "competition": {
+        "resultCount": 45,
+        "top10MedianRatings": 146.5,
+        "titleShare": 0.5,
+        "score": 0.431
+      },
+      "popularity": {
+        "score": 0.496,
+        "source": "estimate"
+      },
+      "total": 0.235,
+      "ownRank": null
+    },
+    {
+      "term": "planner",
+      "relevance": 0.3,
+      "competition": {
+        "resultCount": 45,
+        "top10MedianRatings": 1625,
+        "titleShare": 0.6,
+        "score": 0.568
+      },
+      "popularity": {
+        "score": 0.69,
+        "source": "estimate"
+      },
+      "total": 0.144,
+      "ownRank": null
+    },
+    {
+      "term": "routine",
+      "relevance": 0.5,
+      "competition": {
+        "resultCount": 41,
+        "top10MedianRatings": 2154.5,
+        "titleShare": 0.6,
+        "score": 0.578
+      },
+      "popularity": {
+        "score": 0.616,
+        "source": "estimate"
+      },
+      "total": 0.223,
+      "ownRank": null
+    }
+  ],
+  "selected": {
+    "name": [
+      "alışkanlık takibi"
+    ],
+    "subtitle": [
+      "günlük rutin",
+      "seri"
+    ],
+    "keywords": [
+      "takvim",
+      "planlayıcı",
+      "hatırlatıcı",
+      "motivasyon",
+      "habit"
+    ]
+  }
+}

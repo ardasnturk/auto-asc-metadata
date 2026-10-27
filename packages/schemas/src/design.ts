@@ -125,7 +125,8 @@ export const ArtDirectionOption = z
 export type ArtDirectionOption = z.infer<typeof ArtDirectionOption>;
 
 export const ArtDirection = z.object({
-  options: z.array(ArtDirectionOption).min(1).max(3),
+  /** Preset-based and bespoke (own palette/typography) directions; the design samples can show any of them. */
+  options: z.array(ArtDirectionOption).min(1).max(6),
   selected: z.string(),
   selectionReason: z.string(),
 });
@@ -221,6 +222,12 @@ export const Shot = z.object({
    * store. Text never crosses. One per 5+ shot set, at most two.
    */
   bridge: z.boolean().default(false),
+  /**
+   * Bespoke layout: an HTML file in metadata/designs/ that Claude wrote for this shot (it replaces the archetype
+   * layout; `archetype` still says what the shot is for). `<name>.<family>.html` next to it wins for that device
+   * family. Placeholders and the `<vitrin-device>` tag: references/custom-designs.md.
+   */
+  template: z.string().regex(/^[\w.-]+\.html$/).optional(),
   /** feature-wall: one short line per real feature (each backed by `featureIds`), localized. */
   wall: z.array(Localized).max(8).default([]),
 });
@@ -237,14 +244,30 @@ export type CreativeSpec = z.infer<typeof CreativeSpec>;
 export const InAppEventSpec = z.object({
   id: z.string().regex(/^[a-z0-9-]+$/),
   badge: z.enum(['CHALLENGE', 'COMPETITION', 'LIVE_EVENT', 'MAJOR_UPDATE', 'NEW_SEASON', 'PREMIERE', 'SPECIAL_EVENT']),
+  /** ≤ 30 characters. */
   name: Localized,
+  /** ≤ 50 characters. */
   shortDescription: Localized,
+  /** ≤ 120 characters. */
   longDescription: Localized,
+  /** Opens the event's destination in the app; App Review needs it even though a draft can be created without. */
+  deepLink: z.string().optional(),
+  purpose: z.enum(['APPROPRIATE_FOR_ALL_USERS', 'ATTRACT_NEW_USERS', 'KEEP_ACTIVE_USERS_INFORMED', 'BRING_BACK_LAPSED_USERS']).default('APPROPRIATE_FOR_ALL_USERS'),
+  /** App Store Connect `purchaseRequirement` value. */
+  purchaseRequirement: z.string().default('NO_COST_ASSOCIATED'),
+  priority: z.enum(['HIGH', 'NORMAL']).default('NORMAL'),
+  /**
+   * RFC 3339 times: the event runs 15 minutes to 31 days; it can be promoted from at most 14 days before the start.
+   * `territories` are App Store Connect territory ids (e.g. "USA", "TUR").
+   */
+  schedule: z
+    .object({ territories: z.array(z.string()).min(1), publishStart: z.string().optional(), eventStart: z.string(), eventEnd: z.string() })
+    .optional(),
   card: CreativeSpec,
   detail: CreativeSpec,
 });
 
-/** `.vitrin/shots.json` — written by Claude in the design step. */
+/** `metadata/shots.json` — written by Claude in the design step. */
 export const ShotList = z.object({
   shots: z.array(Shot).min(1).max(10),
   creatives: z
@@ -271,8 +294,27 @@ export const BeatScene = z.enum([
   'stat',
   /** Feature chips pop around the device (`badges`). */
   'badges',
+  /** The app in use: 2–5 screens in one device (`steps`), a finger taps and the next screen arrives. */
+  'flow',
 ]);
 export type BeatScene = z.infer<typeof BeatScene>;
+
+/** How a `flow` step's screen arrives: navigation push, modal sheet, state change, the same screen further down, or a quick montage cut. */
+export const FlowChange = z.enum(['push', 'sheet', 'fade', 'scroll', 'cut']);
+export type FlowChange = z.infer<typeof FlowChange>;
+
+/** One screen of a `flow` beat. */
+export const FlowStep = z.object({
+  /** Recording id from capture.recordings, or a raw screenshot id. */
+  source: z.string().min(1),
+  /** Seconds into a recording (ignored for screenshots). */
+  from: z.number().nonnegative().default(0),
+  /** Touch point (fractions of the capture); the next step's screen arrives right after it. */
+  tap: z.object({ x: z.number().min(0).max(1), y: z.number().min(0).max(1) }).optional(),
+  /** How this screen arrives from the previous step (ignored on the first step). */
+  change: FlowChange.default('push'),
+});
+export type FlowStep = z.infer<typeof FlowStep>;
 
 export const VideoBeat = z.object({
   scene: BeatScene.default('device'),
@@ -287,6 +329,8 @@ export const VideoBeat = z.object({
   zoom: z.object({ x: z.number().min(0).max(1), y: z.number().min(0).max(1), w: z.number().min(0.1).max(1), h: z.number().min(0.05).max(1) }).optional(),
   stat: z.object({ value: z.number(), suffix: Localized.default({}), label: Localized.default({}), featureId: FeatureId }).optional(),
   badges: z.array(z.object({ icon: z.string().default('check'), label: Localized, featureId: FeatureId })).max(4).default([]),
+  /** `flow` only: the screens in order (the beat's `source` is not used). */
+  steps: z.array(FlowStep).max(5).default([]),
 });
 export type VideoBeat = z.infer<typeof VideoBeat>;
 
@@ -315,7 +359,11 @@ export const PreviewPlan = z.object({
   /** Seconds into the hook recording (skips the app launch at the start of a capture). */
   hookFrom: z.number().nonnegative().default(1.5),
   beats: z.array(VideoBeat).min(1).max(8),
-  outro: z.object({ title: Localized, subtitle: Localized.default({}) }),
+  /**
+   * Optional closing line over the outcome screen (no icon or logo card: App Review wants app footage).
+   * `source` defaults to the last beat's screen. Without it the preview ends on the last beat.
+   */
+  outro: z.object({ title: Localized, subtitle: Localized.default({}), source: z.string().optional() }).optional(),
 });
 export type PreviewPlan = z.infer<typeof PreviewPlan>;
 
@@ -328,7 +376,7 @@ export const LoopPlan = z.object({
 });
 export type LoopPlan = z.infer<typeof LoopPlan>;
 
-/** `.vitrin/video-plan.json` — written by Claude. */
+/** `metadata/video-plan.json` — written by Claude. */
 export const VideoPlan = z.object({
   previews: z.array(PreviewPlan).max(3),
   loops: z.object({ header: LoopPlan.optional(), search: LoopPlan.optional() }).default({}),

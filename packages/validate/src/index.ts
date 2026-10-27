@@ -3,6 +3,10 @@ import {
   AppMetadata,
   AppProfile,
   Competitors,
+  CppSuggestions,
+  ExperimentPlan,
+  KeywordPlan,
+  LiveListing,
   LocaleMetadata,
   PlayAppMetadata,
   PlayListing,
@@ -51,6 +55,8 @@ export async function validateAll(paths: AppPaths, config: VitrinConfig, scope: 
   const competitors = await load(paths.competitors, Competitors);
   const appMetadata = await load(paths.appMetadata, AppMetadata);
   const shots = await load(paths.shots, ShotList);
+  const cpp = await load(paths.cpp, CppSuggestions);
+  const experiments = await load(paths.experiments, ExperimentPlan);
   const videoPlan = await load(paths.videoPlan, VideoPlan);
   const manifest = await load(paths.renderManifest, RenderManifest);
   const targets = enabledTargets(config, profile);
@@ -67,9 +73,15 @@ export async function validateAll(paths: AppPaths, config: VitrinConfig, scope: 
     }
     for (const extra of await strayLocaleDirs(paths.fastlaneMetadata, config.app.locales)) {
       // `android/` is supply's Google Play folder; deliver runs get per-platform copies without it.
-      if (!['default', 'android'].includes(extra)) issues.error('metadata.stray-locale', `.vitrin/store/metadata/${extra} is a locale not in the config; deliver will upload it too.`);
+      if (!['default', 'android'].includes(extra)) issues.error('metadata.stray-locale', `metadata/store/metadata/${extra} is a locale not in the config; deliver will upload it too.`);
     }
-    const text = validateText({ config, profile, competitors, appMetadata, locales });
+    const keywordPlans = new Map<string, KeywordPlan>();
+    for (const locale of config.app.locales) {
+      const plan = await load(paths.keywordFile(locale), KeywordPlan);
+      if (plan) keywordPlans.set(locale, plan);
+    }
+    const live = await load(paths.liveListing, LiveListing);
+    const text = validateText({ config, profile, competitors, appMetadata, locales, keywordPlans, live });
     issues.push(...text.issues.items);
     measurements = text.measurements;
     if (profile?.app.platforms.includes('android')) {
@@ -88,14 +100,14 @@ export async function validateAll(paths: AppPaths, config: VitrinConfig, scope: 
   }
 
   if (scope.claims !== false && profile) {
-    issues.push(...validateClaims({ config, profile, shots, videoPlan, competitors, enabledTargets: targets.map((t) => t.id) }).items);
+    issues.push(...validateClaims({ config, profile, shots, videoPlan, competitors, cpp, experiments, enabledTargets: targets.map((t) => t.id) }).items);
   }
 
   if (scope.images !== false) {
     if (existsSync(paths.screenshots)) {
       issues.push(...(await validateScreenshots({ screenshotsDir: paths.screenshots, locales: config.app.locales, targets: targets.filter((t) => t.kind === 'screenshot'), manifest })).items);
     } else {
-      issues.warn('image.none', '.vitrin/store/screenshots does not exist yet (run vitrin design).');
+      issues.warn('image.none', 'metadata/store/screenshots does not exist yet (run vitrin design).');
     }
   }
 

@@ -1,0 +1,122 @@
+{
+  "previews": [
+    {
+      "id": "01",
+      "device": "iphone",
+      "style": "showcase",
+      "transition": "auto",
+      "hookSource": "detail",
+      "hookFrom": 0,
+      "hook": {
+        "en-US": "Build habits that *stick*",
+        "tr": "Kalıcı *alışkanlıklar* edin"
+      },
+      "beats": [
+        {
+          "scene": "flow",
+          "from": 0,
+          "to": 3.9,
+          "featureIds": ["habit-tracking", "daily-summary"],
+          "caption": {
+            "en-US": "One tap, *done*",
+            "tr": "Tek dokunuş, *tamam*"
+          },
+          "steps": [
+            { "source": "home", "tap": { "x": 0.866, "y": 0.439 } },
+            { "source": "home-7", "change": "fade", "tap": { "x": 0.866, "y": 0.439 } },
+            { "source": "home-done", "change": "fade" }
+          ]
+        },
+        {
+          "scene": "zoom",
+          "source": "detail",
+          "from": 0,
+          "to": 2.4,
+          "zoom": { "x": 0.05, "y": 0.47, "w": 0.9, "h": 0.26 },
+          "featureIds": ["calendar-heatmap", "streaks"],
+          "caption": {
+            "en-US": "Never *break* the streak",
+            "tr": "Serini *kırma*"
+          }
+        },
+        {
+          "scene": "flow",
+          "from": 0,
+          "to": 2.6,
+          "featureIds": ["charts"],
+          "caption": {
+            "en-US": "Progress you can *see*",
+            "tr": "İlerlemen *grafiklerde*"
+          },
+          "steps": [
+            { "source": "stats" },
+            { "source": "stats-more", "change": "scroll" }
+          ]
+        },
+        {
+          "scene": "flow",
+          "from": 0,
+          "to": 2.6,
+          "featureIds": ["custom-habits"],
+          "caption": {
+            "en-US": "Make it *yours*",
+            "tr": "Sana göre *ayarla*"
+          },
+          "steps": [
+            { "source": "home", "tap": { "x": 0.914, "y": 0.09 } },
+            { "source": "add", "change": "sheet" }
+          ]
+        },
+        {
+          "scene": "badges",
+          "source": "reminders",
+          "from": 0,
+          "to": 2.6,
+          "featureIds": ["reminders", "export", "dark-mode"],
+          "badges": [
+            { "icon": "bell", "featureId": "reminders", "label": { "en-US": "Daily reminders", "tr": "Günlük hatırlatıcı" } },
+            { "icon": "file-down", "featureId": "export", "label": { "en-US": "CSV export", "tr": "CSV dışa aktarma" } },
+            { "icon": "moon", "featureId": "dark-mode", "label": { "en-US": "Dark mode", "tr": "Koyu mod" } }
+          ],
+          "caption": {
+            "en-US": "On *your* schedule",
+            "tr": "Senin *saatinde*"
+          }
+        }
+      ],
+      "outro": {
+        "title": {
+          "en-US": "Find your *rhythm*",
+          "tr": "Ritmini *bul*"
+        },
+        "subtitle": {
+          "en-US": "One tap a day keeps the streak alive",
+          "tr": "Günde bir dokunuş, seri devam eder"
+        },
+        "source": "home-done"
+      }
+    }
+  ],
+  "loops": {
+    "header": {
+      "durationSec": 12,
+      "fps": 30,
+      "copy": {
+        "en-US": "Build habits that stick",
+        "tr": "Kalıcı alışkanlıklar edin"
+      },
+      "sources": ["home", "detail", "stats"],
+      "featureIds": ["habit-tracking", "calendar-heatmap", "charts"]
+    },
+    "search": {
+      "durationSec": 10,
+      "fps": 30,
+      "copy": {
+        "en-US": "Habits in one tap",
+        "tr": "Tek dokunuşla alışkanlık"
+      },
+      "sources": ["home", "detail"],
+      "featureIds": ["habit-tracking", "streaks"]
+    }
+  }
+}

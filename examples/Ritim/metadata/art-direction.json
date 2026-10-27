@@ -1,0 +1,43 @@
+{
+  "options": [
+    {
+      "id": "night-rhythm",
+      "name": "Night rhythm",
+      "rationale": "Carries the app's indigo → pink brand gradient onto a dark canvas; the progress rings and charts glow on it.",
+      "differentiation": "Most competitors' first screenshots sit on light pastel backgrounds (white, pink, cream); a dark indigo canvas stands apart in search.",
+      "palette": {
+        "background": [
+          "#120F2E",
+          "#3A2C9C",
+          "#E2557A"
+        ],
+        "surface": "#1E1A47",
+        "primary": "#7B6CFF",
+        "accent": "#FF8A6B",
+        "text": "#FFFFFF",
+        "textMuted": "#D9D4FF",
+        "badgeBackground": "#FFFFFF",
+        "badgeText": "#2A1F7A"
+      },
+      "typography": {
+        "headline": "Plus Jakarta Sans",
+        "body": "Inter",
+        "headlineWeight": 800,
+        "headlineCase": "none",
+        "letterSpacing": -0.025
+      },
+      "background": {
+        "style": "mesh",
+        "angle": 160,
+        "intensity": 0.65
+      },
+      "device": {
+        "frame": "minimal",
+        "shadow": true,
+        "tilt": 0
+      }
+    }
+  ],
+  "selected": "night-rhythm",
+  "selectionReason": "The user chose A (Night rhythm) from the store preview."
+}

@@ -1,17 +1,18 @@
 import { analyzeProject } from '@vitrin/analyzer';
 import { enabledTargets, exec, existsSync, getTarget, hashPaths, hashValue, log, readJson, readJsonIfExists, run, storefrontForLocale, which, writeJson } from '@vitrin/core';
 import { renderDesign, renderDesignSamples, selectedOption } from '@vitrin/render';
-import { runResearch } from '@vitrin/research';
-import { AppMetadata, AppProfile, ArtDirection, CppSuggestions, LocaleMetadata, ShotList, StylePreset, VideoPlan, type Issue, type Platform, type TargetFamily, type ValidationReport } from '@vitrin/schemas';
+import { runResearch, totalScore } from '@vitrin/research';
+import { AppMetadata, AppProfile, ArtDirection, CppSuggestions, ExperimentPlan, KeywordPlan, LocaleMetadata, ShotList, StylePreset, VideoPlan, type CustomProductPage, type Experiment, type ExperimentTreatment, type Issue, type Platform, type TargetFamily, type ValidationReport } from '@vitrin/schemas';
 import { validateAll } from '@vitrin/validate';
-import { renderVideos } from '@vitrin/video';
+import { previewPropsFor, remotionCliPath, renderVideos, VIDEO_DIR } from '@vitrin/video';
 import { exportFastlaneMetadata } from '@vitrin/upload';
 import { readFile } from 'node:fs/promises';
 import { dirname, join, relative } from 'node:path';
 import pc from 'picocolors';
 import { designBrief, metadataBrief, profileBrief, screensBrief, videoBrief } from '../briefs.js';
-import { renderHtmlScreens, type ScreenFamily } from '../html-screens.js';
+import { installScreenKit, renderHtmlScreens, type ScreenFamily } from '../html-screens.js';
 import { exportProjectMetadata } from '../finalize.js';
+import { refreshLiveListing } from '../live-listing.js';
 import { loadUiText } from '../i18n.js';
 import { EXIT, loadProfile, NeedsInput, stage, type Ctx } from '../context.js';
 import { AndroidDevice, androidLocaleTag, androidTools, ensureAvd, launchArgsToExtras, serialFor, startEmulator } from '../android.js';
@@ -27,7 +28,7 @@ export function printIssues(issues: Issue[], max = 40): void {
     const tag = i.severity === 'error' ? pc.red('ERROR') : i.severity === 'warning' ? pc.yellow('WARN ') : pc.dim('info ');
     log.info(`${tag} ${pc.dim(i.code)} ${i.locale ? `[${i.locale}] ` : ''}${i.message}${i.fix ? pc.dim(` → ${i.fix}`) : ''}`);
   }
-  if (sorted.length > max) log.info(pc.dim(`… and ${sorted.length - max} more (.vitrin/validation.json)`));
+  if (sorted.length > max) log.info(pc.dim(`… and ${sorted.length - max} more (metadata/validation.json)`));
 }
 
 // ---------------------------------------------------------------- analyze
@@ -86,7 +87,9 @@ export async function researchCommand(ctx: Ctx, opts: { skipImages?: boolean } =
     const res = await runResearch({ paths: ctx.paths, config: ctx.config, profile, env: ctx.env, skipImages: opts.skipImages });
     log.ok(`${res.competitors.apps.length} competitors, keyword candidates for ${res.keywordFiles.length} locales`);
     if (res.competitors.self) log.ok(`App is on the App Store: ${res.competitors.self.averageUserRating?.toFixed(1) ?? '–'}★ (${res.competitors.self.userRatingCount ?? 0} ratings)`);
-    return [ctx.paths.competitors, ...res.keywordFiles];
+    const live = await refreshLiveListing(ctx, profile, res.competitors);
+    if (live) log.ok(`Live listing (${live.source === 'asc' ? 'App Store Connect' : 'App Store lookup'}): ${Object.keys(live.locales).join(', ')} → metadata/research/live-listing.json`);
+    return [ctx.paths.competitors, ...res.keywordFiles, ...(live ? [ctx.paths.liveListing] : [])];
   });
   return EXIT.OK;
 }
@@ -98,6 +101,24 @@ export async function loadLocaleMetadata(ctx: Ctx): Promise<LocaleMetadata[]> {
   return out;
 }
 
+/** Claude scores relevance after research ran: bring every candidate's total up to date before the fields are checked against the plan. */
+export async function refreshKeywordTotals(ctx: Ctx): Promise<void> {
+  for (const locale of ctx.config.app.locales) {
+    const file = ctx.paths.keywordFile(locale);
+    const plan = await readJsonIfExists(file, KeywordPlan).catch(() => undefined);
+    if (!plan) continue;
+    let changed = false;
+    for (const c of plan.candidates) {
+      const total = totalScore(c);
+      if (total !== c.total) {
+        c.total = total;
+        changed = true;
+      }
+    }
+    if (changed) await writeJson(file, plan);
+  }
+}
+
 export async function writeCommand(ctx: Ctx): Promise<number> {
   const profile = await loadProfile(ctx);
   const missing = ctx.config.app.locales.filter((l) => !existsSync(ctx.paths.metadataFile(l)));
@@ -105,6 +126,7 @@ export async function writeCommand(ctx: Ctx): Promise<number> {
     const brief = await metadataBrief(ctx, profile);
     throw new NeedsInput(`Claude input needed: metadata must be written by Claude (missing: ${[...missing.map((m) => `${m}.json`), ...(existsSync(ctx.paths.appMetadata) ? [] : ['app.json'])].join(', ')}).`, [`Brief: ${relative(ctx.root, brief)}`]);
   }
+  await refreshKeywordTotals(ctx);
   const report = await validateAll(ctx.paths, ctx.config, { text: true, claims: true, images: false, videos: false });
   const issues = report.issues.filter((i) => !i.code.startsWith('shot.') && !i.code.startsWith('badge.') && !i.code.startsWith('video.'));
   printIssues(issues);
@@ -116,11 +138,11 @@ export async function writeCommand(ctx: Ctx): Promise<number> {
   const app = await readJson(ctx.paths.appMetadata, AppMetadata);
   const written = await exportFastlaneMetadata(ctx.paths, ctx.config, app, metadata);
   await ctx.state.mark('write', hashValue({ metadata, app, urls: ctx.config.urls }), written.map((w) => relative(ctx.root, w)));
-  log.ok(`Wrote .vitrin/store/metadata (${written.length} files)`);
+  log.ok(`Wrote metadata/store/metadata (${written.length} files)`);
   // The finished text, readable in the project: metadata/app-store/<platform>/<locale>/*.txt (+ google-play).
   const project = await exportProjectMetadata(ctx);
-  if (project.skipped) log.warn(`${project.skipped}; the metadata text stays in .vitrin/store/metadata.`);
-  else log.ok(`Metadata in the project: metadata/ (${project.files.length} files)`);
+  if (project.skipped) log.warn(`${project.skipped}; the metadata text stays in metadata/store/metadata.`);
+  else log.ok(`Store text, readable: metadata/app-store/ and metadata/google-play/ (${project.files.length} files)`);
   for (const m of metadata) {
     const kw = Buffer.byteLength(m.keywords, 'utf8');
     log.dim(`  ${m.locale}: name “${m.name}”, subtitle “${m.subtitle}”, keywords ${kw}/100 bytes`);
@@ -133,7 +155,7 @@ export async function writeCommand(ctx: Ctx): Promise<number> {
 }
 
 // ---------------------------------------------------------------- capture
-/** Raw-capture family → platform it is built and run on. Raw files live at .vitrin/raw/<locale>/<family>/<id>.png. */
+/** Raw-capture family → platform it is built and run on. Raw files live at metadata/raw/<locale>/<family>/<id>.png. */
 export const FAMILY_PLATFORM: Record<CaptureFamilyName, Platform> = {
   iphone: 'ios',
   ipad: 'ios',
@@ -241,7 +263,7 @@ export async function captureCommand(ctx: Ctx, opts: { families?: string[]; loca
   }
   if (cap.mode === 'html') return captureHtml(ctx, profile, families, locales, kinds);
   if (cap.mode === 'xcuitest') {
-    throw new NeedsInput('xcuitest mode: capture with `fastlane snapshot`, place the output at .vitrin/raw/<locale>/<family>/<id>.png, then use capture.mode: manual.');
+    throw new NeedsInput('xcuitest mode: capture with `fastlane snapshot`, place the output at metadata/raw/<locale>/<family>/<id>.png, then use capture.mode: manual.');
   }
   if (!profile.signals['vitrin.demo-mode']) {
     log.warn('No trace of -VitrinDemo in the app: captures may show real user data. See the /vitrin skill’s references/troubleshooting.md “Demo mode”.');
@@ -312,7 +334,7 @@ async function buildFor(ctx: Ctx, profile: AppProfile, platform: Platform): Prom
 }
 
 /** iPhone, iPad, Duo, Apple Watch, Apple TV and Vision Pro: dedicated simulators, simctl screenshots and recordings. */
-/** capture.mode html: renders Claude's HTML screens (.vitrin/screens) per locale and family; no build. */
+/** capture.mode html: renders Claude's HTML screens (metadata/screens) per locale and family; no build. */
 async function captureHtml(ctx: Ctx, profile: AppProfile, families: CaptureFamily[], locales: string[], kinds: ReturnType<typeof captureKinds>): Promise<number> {
   const cap = ctx.config.capture;
   if (!families.length) {
@@ -328,16 +350,17 @@ async function captureHtml(ctx: Ctx, profile: AppProfile, families: CaptureFamil
     const res = await renderHtmlScreens(ctx, jobs, sampleLocale(ctx.config));
     missing = { files: res.missingFiles, strings: res.missingStrings };
     if (res.missingFiles.length) {
+      await installScreenKit(ctx.paths.screens);
       const brief = await screensBrief(ctx, profile);
       throw new NeedsInput('Claude input needed: HTML recreations of the app screens.', [...res.missingFiles.slice(0, 12), `Brief: ${relative(ctx.root, brief)}`]);
     }
     return res.outputs;
   });
   if (missing.strings.length) {
-    log.warn(`Text missing in .vitrin/screens/strings (rendered empty): ${missing.strings.slice(0, 12).join('; ')}${missing.strings.length > 12 ? ' …' : ''}`);
+    log.warn(`Text missing in metadata/screens/strings (rendered empty): ${missing.strings.slice(0, 12).join('; ')}${missing.strings.length > 12 ? ' …' : ''}`);
     return EXIT.FAIL;
   }
-  log.ok('HTML screens rendered → .vitrin/raw');
+  log.ok('HTML screens rendered → metadata/raw');
   return EXIT.OK;
 }
 
@@ -506,17 +529,74 @@ export async function designCommand(ctx: Ctx, opts: DesignOptions = {}): Promise
     return EXIT.OK;
   }
   const rawHash = await hashPaths([ctx.paths.raw], ctx.root);
-  await stage(ctx, 'design', { ad, shots, targets: targets.map((t) => t.id), rawHash, locales: ctx.config.app.locales, only: opts.only }, async () => {
+  const cpp = existsSync(ctx.paths.cpp) ? await readJson(ctx.paths.cpp, CppSuggestions) : undefined;
+  const cppPages = (cpp?.pages ?? []).filter((page) => page.shots.length);
+  const experiments = existsSync(ctx.paths.experiments) ? await readJson(ctx.paths.experiments, ExperimentPlan) : undefined;
+  await stage(ctx, 'design', { ad, shots, targets: targets.map((t) => t.id), rawHash, locales: ctx.config.app.locales, only: opts.only, cppPages, tests: screenshotTreatments(experiments) }, async () => {
     log.step(`Render: ${shots.shots.length} shots × ${targets.filter((t) => t.kind === 'screenshot').length} sizes × ${ctx.config.app.locales.length} locales`);
     const appIcon = profile.brand.appIcon ? join(profile.project.root, profile.brand.appIcon) : undefined;
-    const res = await renderDesign({ paths: ctx.paths, locales: ctx.config.app.locales, primaryLocale: ctx.config.app.primaryLocale, targets, artDirection: ad, shots, onlyShots: opts.only, appIcon, appName: profile.app.displayName });
+    const common = { locales: ctx.config.app.locales, primaryLocale: ctx.config.app.primaryLocale, artDirection: ad, appIcon, appName: profile.app.displayName };
+    const res = await renderDesign({ ...common, paths: ctx.paths, targets, shots, onlyShots: opts.only });
     for (const w of res.warnings) log.warn(w);
-    log.ok(`Rendered ${res.manifest.images.length} images → .vitrin/store/screenshots, .vitrin/creative`);
-    return res.manifest.images.map((i) => i.file);
+    log.ok(`Rendered ${res.manifest.images.length} images → metadata/store/screenshots, metadata/creative`);
+    const files = res.manifest.images.map((i) => i.file);
+    // Custom Product Pages get their own set (their shots, in their order, with their copy) for --cpp to place.
+    const cppTargets = targets.filter((t) => t.kind === 'screenshot' && t.store === 'app-store');
+    if (!opts.only && cppTargets.length) {
+      await rm(ctx.paths.cppScreenshots, { recursive: true, force: true });
+      for (const page of cppPages) {
+        const pageShots = shotListFor(shots, page);
+        const pagePaths = { ...ctx.paths, screenshots: join(ctx.paths.cppScreenshots, page.id), renderManifest: join(ctx.paths.cache, 'cpp', `${page.id}.json`) };
+        const out = await renderDesign({ ...common, paths: pagePaths, targets: cppTargets, shots: pageShots });
+        log.ok(`Custom Product Page “${page.name}”: ${pageShots.shots.length} shots → metadata/store/cpp/${page.id}`);
+        files.push(...out.manifest.images.map((i) => i.file));
+      }
+      // Product Page Optimization: every treatment that changes the screenshots gets its own set.
+      await rm(ctx.paths.experimentScreenshots, { recursive: true, force: true });
+      for (const { experiment, treatment } of screenshotTreatments(experiments)) {
+        const set = shotListFor(shots, treatment);
+        const dir = join(ctx.paths.experimentScreenshots, experiment.id, treatment.id);
+        const out = await renderDesign({ ...common, locales: experiment.locales ?? common.locales, paths: { ...ctx.paths, screenshots: dir, renderManifest: join(ctx.paths.cache, 'experiments', `${experiment.id}-${treatment.id}.json`) }, targets: cppTargets, shots: set });
+        log.ok(`Test “${experiment.name}”, treatment “${treatment.name}”: ${set.shots.length} shots → ${relative(ctx.root, dir)}`);
+        files.push(...out.manifest.images.map((i) => i.file));
+      }
+    }
+    return files;
   });
   const report = await validateAll(ctx.paths, ctx.config, { text: false, claims: true, images: true, videos: false });
   printIssues(report.issues);
   return report.ok ? EXIT.OK : EXIT.FAIL;
+}
+
+/**
+ * The shot list of a Custom Product Page or a test treatment: its shots in its order (renumbered 01, 02 … so the
+ * files sort that way; no `shots` = the original order), with its copy overrides. A bridge only survives when the
+ * next shot is the one it was made for.
+ */
+export function shotListFor(shots: ShotList, variant: Pick<CustomProductPage, 'shots' | 'copy'>): ShotList {
+  const byId = new Map(shots.shots.map((s) => [s.id, s]));
+  const ids = shots.shots.map((s) => s.id).sort();
+  const order = variant.shots.length ? variant.shots : ids;
+  const picked = order.map((id) => byId.get(id)).filter((s): s is NonNullable<typeof s> => Boolean(s));
+  return {
+    ...shots,
+    shots: picked.map((s, i) => {
+      const nextInSet = ids[ids.indexOf(s.id) + 1];
+      return {
+        ...s,
+        id: String(i + 1).padStart(2, '0'),
+        copy: { ...s.copy, ...variant.copy[s.id] },
+        bridge: s.bridge && picked[i + 1]?.id === nextInSet,
+      };
+    }),
+  };
+}
+
+/** Treatments of open tests (no result yet) that change the screenshots, i.e. need a set of their own. */
+export function screenshotTreatments(plan: ExperimentPlan | undefined): Array<{ experiment: Experiment; treatment: ExperimentTreatment }> {
+  return (plan?.experiments ?? [])
+    .filter((e) => !e.result)
+    .flatMap((experiment) => experiment.treatments.filter((t) => t.shots.length || Object.keys(t.copy).length).map((treatment) => ({ experiment, treatment })));
 }
 
 /** `vitrin design --samples`: N clearly different designs of the first shots for the user to pick from. */
@@ -527,12 +607,16 @@ async function designSamples(ctx: Ctx, profile: AppProfile, opts: DesignOptions)
   }
   const shots = await readJson(ctx.paths.shots, ShotList);
   const ad = existsSync(ctx.paths.artDirection) ? await readJson(ctx.paths.artDirection, ArtDirection) : undefined;
-  const known = StylePreset.options as readonly string[];
+  // Presets, or the ids of bespoke options Claude wrote into art-direction.json for this app.
+  const known = [...(StylePreset.options as readonly string[]), ...(ad?.options.map((o) => o.id) ?? [])];
   const unknown = (opts.styles ?? []).filter((s) => !known.includes(s));
-  if (unknown.length) throw new NeedsInput(`Unknown style preset: ${unknown.join(', ')} (${known.join(', ')}).`);
+  if (unknown.length) throw new NeedsInput(`Unknown design: ${unknown.join(', ')} — use a style preset (${StylePreset.options.join(', ')}) or an option id from art-direction.json.`);
   // One locale (English when the app has it) and the main iPhone format: the user picks a design before Vitrin
   // spends time on every language and size.
   const target = sampleTarget(ctx.config, profile);
+  // The store preview can switch to the other stores and devices the user ships on (same shots, same designs).
+  const enabled = enabledTargets(ctx.config, profile, { quiet: true }).filter((t) => t.kind === 'screenshot');
+  const extraTargets = ['play-phone', 'ipad-13'].map((id) => enabled.find((t) => t.id === id)).filter((t): t is NonNullable<typeof t> => Boolean(t) && t!.id !== target.id);
   const locale = opts.locale ?? sampleLocale(ctx.config);
   const missingCopy = shots.shots.slice(0, 2).filter((s) => !s.copy[locale]);
   if (missingCopy.length) log.warn(`shots ${missingCopy.map((s) => s.id).join(', ')} have no ${locale} copy; the samples use another locale's text.`);
@@ -541,19 +625,20 @@ async function designSamples(ctx: Ctx, profile: AppProfile, opts: DesignOptions)
   const meta = existsSync(ctx.paths.metadataFile(locale)) ? await readJson(ctx.paths.metadataFile(locale), LocaleMetadata).catch(() => undefined) : undefined;
   const res = await renderDesignSamples({
     subtitle: meta?.subtitle,
-    labels: { title: ui.samplesTitle, intro: ui.samplesIntro, option: ui.samplesOption, searchResult: ui.searchResult, productPage: ui.productPage, get: ui.get },
+    labels: { title: ui.samplesTitle, intro: ui.samplesIntro, option: ui.samplesOption, searchResult: ui.searchResult, productPage: ui.productPage, get: ui.get, store: ui.previewStore, theme: ui.previewTheme, appearance: ui.previewAppearance, allThemes: ui.previewAllThemes, light: ui.previewLight, dark: ui.previewDark, install: ui.install, choose: ui.previewChoose },
+    extraTargets,
     paths: ctx.paths,
     primaryLocale: locale,
     target,
     shots,
     artDirection: ad,
-    styles: opts.styles as StylePreset[] | undefined,
+    styles: opts.styles,
     count: opts.count,
     category: profile.categorySuggestion?.primary,
     appIcon,
     appName: profile.app.displayName,
   });
-  const out = { storePreview: res.storePreview, contactSheet: res.contactSheet, target: target.id, locale, samples: res.samples.map((s) => ({ letter: s.letter, preset: s.style, name: s.name, files: s.files })), warnings: res.warnings };
+  const out = { storePreview: res.storePreview, contactSheet: res.contactSheet, target: target.id, locale, samples: res.samples.map((s) => ({ letter: s.letter, preset: s.style, name: s.name, bespoke: s.bespoke, files: s.files, byTarget: s.byTarget })), stores: [target.id, ...extraTargets.map((t) => t.id)], warnings: res.warnings };
   if (ctx.json) {
     process.stdout.write(JSON.stringify(out, null, 2) + '\n');
     return EXIT.OK;
@@ -561,13 +646,13 @@ async function designSamples(ctx: Ctx, profile: AppProfile, opts: DesignOptions)
   for (const w of res.warnings) log.warn(w);
   for (const s of res.samples) log.ok(`${s.letter}  ${s.name} (${s.style}) — ${s.files.map((f) => relative(ctx.root, f)).join(', ')}`);
   log.ok(`Contact sheet: ${relative(ctx.root, res.contactSheet)}`);
-  log.ok(`Store preview (A/B/C/D as they would look in the App Store): ${relative(ctx.root, res.storePreview.html)} · ${relative(ctx.root, res.storePreview.png)}`);
-  log.info(`Samples: ${locale}, ${target.id}. Show the store preview (store-preview.html / .png) and ask which design (A/B/C/D) to use; set its preset in art-direction.json (options[].preset + selected). Then ask which store languages and formats to produce (vitrin select --locales … --targets …) before \`vitrin design\`.`);
+  log.ok(`Store preview with store, design and appearance menus (${[target, ...extraTargets].map((t) => t.id).join(', ')}): ${relative(ctx.root, res.storePreview.html)} · ${relative(ctx.root, res.storePreview.png)}`);
+  log.info(`Samples: ${locale}, ${target.id}. Open the store preview for the user (store-preview.html; show store-preview.png in the chat) and ask which design (A/B/C/D) to use; write it into art-direction.json (options[] + selected). Only after they approved a design: ask how to upload (vitrin uploader), then which store languages and formats to produce (vitrin select --locales … --targets …) before \`vitrin design\`.`);
   return EXIT.OK;
 }
 
 // ---------------------------------------------------------------- video
-export async function videoCommand(ctx: Ctx, opts: { styles?: string[]; locales?: string[] } = {}): Promise<number> {
+export async function videoCommand(ctx: Ctx, opts: { styles?: string[]; locales?: string[]; studio?: boolean } = {}): Promise<number> {
   const assets = ctx.config.selection?.assets;
   if (assets && !assets.includes('previews') && !assets.includes('creatives')) {
     log.dim('selection.assets has no previews or creatives — video skipped.');
@@ -586,6 +671,7 @@ export async function videoCommand(ctx: Ctx, opts: { styles?: string[]; locales?
   const plan = await readJson(ctx.paths.videoPlan, VideoPlan);
   const ad = selectedOption(await readJson(ctx.paths.artDirection, ArtDirection));
   const rawHash = await hashPaths([ctx.paths.raw], ctx.root);
+  if (opts.studio) return videoStudio(ctx, plan, ad, opts.locales?.[0] ?? ctx.config.app.primaryLocale);
   if (opts.styles?.length) {
     // Comparison renders: not a pipeline stage, nothing here is uploaded.
     const all = ['classic', 'showcase', 'kinetic', 'energetic'] as const;
@@ -617,6 +703,26 @@ export async function videoCommand(ctx: Ctx, opts: { styles?: string[]; locales?
   const report = await validateAll(ctx.paths, ctx.config, { text: false, claims: false, images: false, videos: true });
   printIssues(report.issues);
   return report.ok ? EXIT.OK : EXIT.FAIL;
+}
+
+/**
+ * `vitrin video --studio`: the first preview of the plan, with the props `vitrin video` would render, in Remotion
+ * Studio — scrub, tune kit.tsx/scenes.tsx and watch it reload before rendering. Needs @remotion/cli (a development
+ * checkout); runs until stopped.
+ */
+async function videoStudio(ctx: Ctx, plan: VideoPlan, ad: ReturnType<typeof selectedOption>, locale: string): Promise<number> {
+  const cli = remotionCliPath();
+  if (!cli || !existsSync(cli)) {
+    log.warn('Remotion Studio needs @remotion/cli, which only a development checkout of Vitrin installs (pnpm install). Use `vitrin video --styles all` to compare renders instead.');
+    return EXIT.FAIL;
+  }
+  const { props, warnings } = await previewPropsFor({ paths: ctx.paths, plan, ad, locale, primaryLocale: ctx.config.app.primaryLocale });
+  for (const w of [...new Set(warnings)]) log.warn(w);
+  const file = join(ctx.paths.cache, 'remotion', 'studio-props.json');
+  await writeJson(file, props);
+  log.step(`Remotion Studio: AppPreview (${locale}, ${props.style}, ${props.scenes.length} scenes) — props in ${relative(ctx.root, file)}. Stop with Ctrl+C.`);
+  const res = await exec(process.execPath, [cli, 'studio', 'src/remotion/index.ts', `--props=${file}`, `--public-dir=${ctx.paths.raw}`], { cwd: VIDEO_DIR, stream: true });
+  return res.code === 0 ? EXIT.OK : EXIT.FAIL;
 }
 
 // ---------------------------------------------------------------- validate

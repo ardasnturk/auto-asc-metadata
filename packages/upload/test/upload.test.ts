@@ -6,7 +6,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { decodeJwt, decodeProtectedHeader } from 'jose';
 import { describe, expect, it } from 'vitest';
-import { AscClient, buildPlan, createToken, diffRefData, exportFastlaneMetadata, formatPlan, isEditableVersion, isPem } from '../src/index.js';
+import { AscClient, buildPlan, createExperiment, createToken, diffRefData, eventAttributes, experimentCreateBody, exportFastlaneMetadata, fetchLiveListing, formatPlan, isEditableVersion, isPem, screenshotTargetOf, treatmentCreateBody } from '../src/index.js';
 
 const { privateKey } = generateKeyPairSync('ec', { namedCurve: 'prime256v1' });
 const pem = privateKey.export({ type: 'pkcs8', format: 'pem' }).toString();
@@ -78,10 +78,94 @@ describe('upload plan', () => {
     expect(formatPlan(plan)).toContain('“Eski” → “Yeni”');
   });
 
+  it('reads the live listing from the live version and app info, not the draft', async () => {
+    const client = new AscClient(
+      creds,
+      fakeFetch({
+        '/v1/apps?filter': { data: [{ type: 'apps', id: '1', attributes: { bundleId: 'com.x', name: 'X' } }] },
+        '/v1/apps/1/appStoreVersions': {
+          data: [
+            { type: 'appStoreVersions', id: 'v2', attributes: { versionString: '1.3.0', appVersionState: 'PREPARE_FOR_SUBMISSION' } },
+            { type: 'appStoreVersions', id: 'v1', attributes: { versionString: '1.2.0', appVersionState: 'READY_FOR_DISTRIBUTION' } },
+          ],
+        },
+        '/v1/appStoreVersions/v1/appStoreVersionLocalizations': { data: [{ type: 'appStoreVersionLocalizations', id: 'l1', attributes: { locale: 'tr', description: 'Canlı', keywords: 'hedef,su', promotionalText: null } }] },
+        '/v1/apps/1/appInfos': { data: [{ type: 'appInfos', id: 'i2', attributes: { state: 'PREPARE_FOR_SUBMISSION' } }, { type: 'appInfos', id: 'i1', attributes: { state: 'READY_FOR_DISTRIBUTION' } }] },
+        '/v1/appInfos/i1/appInfoLocalizations': { data: [{ type: 'appInfoLocalizations', id: 'il1', attributes: { locale: 'tr', name: 'Ritim: Alışkanlık', subtitle: 'Günlük rutin' } }] },
+      }),
+    );
+    const live = await fetchLiveListing(client, 'com.x');
+    expect(live).toMatchObject({ source: 'asc', version: '1.2.0', locales: { tr: { name: 'Ritim: Alışkanlık', subtitle: 'Günlük rutin', keywords: 'hedef,su', description: 'Canlı' } } });
+    expect(live!.locales.tr!.promotionalText).toBeUndefined();
+    expect(await fetchLiveListing(new AscClient(creds, fakeFetch({ '/v1/apps?filter': { data: [] } })), 'com.none')).toBeNull();
+  });
+
   it('reports a blocker when the app record does not exist', async () => {
     const client = new AscClient(creds, fakeFetch({ '/v1/apps?filter': { data: [] } }));
     const plan = await buildPlan({ paths: appPaths(mkdtempSync(join(tmpdir(), 'v-'))), config: VitrinConfig.parse({ app: {}, urls: {} }), bundleId: 'com.none', metadata: [], client, include: { creatives: false, cpp: false, events: false } });
     expect(plan.blockers[0]).toContain('create it once in App Store Connect');
+  });
+});
+
+describe('Custom Product Page and In-App Event media', () => {
+  it('reads the target from a rendered screenshot name', () => {
+    expect(screenshotTargetOf('01_hero_iphone-6.9.png')).toBe('iphone-6.9');
+    expect(screenshotTargetOf('12_water-intake_ipad-13.png')).toBe('ipad-13');
+    expect(screenshotTargetOf('header_header.png')).toBeUndefined();
+  });
+
+  it('sends the event schedule and deep link only when the plan has them', () => {
+    const creative = { copy: {}, screens: ['home'], featureIds: ['a'], badges: [] };
+    const base = { id: 'kis', badge: 'CHALLENGE' as const, name: {}, shortDescription: {}, longDescription: {}, purpose: 'APPROPRIATE_FOR_ALL_USERS' as const, purchaseRequirement: 'NO_COST_ASSOCIATED', priority: 'NORMAL' as const, card: creative, detail: creative };
+    expect(eventAttributes(base, 'tr')).not.toHaveProperty('territorySchedules');
+    expect(eventAttributes({ ...base, deepLink: 'ritim://kis', schedule: { territories: ['TUR'], eventStart: '2026-12-01T09:00:00Z', eventEnd: '2026-12-08T09:00:00Z' } }, 'tr')).toMatchObject({
+      deepLink: 'ritim://kis',
+      territorySchedules: [{ territories: ['TUR'], publishStart: '2026-12-01T09:00:00Z', eventStart: '2026-12-01T09:00:00Z', eventEnd: '2026-12-08T09:00:00Z' }],
+    });
+  });
+});
+
+describe('Product Page Optimization', () => {
+  const experiment = {
+    id: 'hero',
+    name: 'Hero: outcome',
+    element: 'screenshots' as const,
+    hypothesis: 'If the hero states the outcome, conversion rises because people search for outcomes.',
+    metric: 'conversion rate',
+    minimumDetectableEffect: 0.1,
+    trafficProportion: 40,
+    treatments: [
+      { id: 'outcome', name: 'Outcome', change: 'hero copy', shots: [], copy: {} },
+      { id: 'icon', name: 'Icon', change: 'orange icon', shots: [], copy: {}, appIconName: 'Orange' },
+    ],
+  };
+
+  it('builds the v2 test and treatment requests', () => {
+    expect(experimentCreateBody(experiment, 'app1', 'IOS')).toEqual({ data: { type: 'appStoreVersionExperiments', attributes: { name: 'Hero: outcome', platform: 'IOS', trafficProportion: 40 }, relationships: { app: { data: { type: 'apps', id: 'app1' } } } } });
+    expect(treatmentCreateBody(experiment.treatments[1]!, 'exp1').data).toMatchObject({ attributes: { name: 'Icon', appIconName: 'Orange' }, relationships: { appStoreVersionExperimentV2: { data: { type: 'appStoreVersionExperiments', id: 'exp1' } } } });
+    expect(treatmentCreateBody(experiment.treatments[0]!, 'exp1').data.attributes).toEqual({ name: 'Outcome' });
+  });
+
+  it('creates the test, a treatment per variant and a localization per locale', async () => {
+    const calls: Array<{ method: string; path: string; body?: { data?: { type?: string; attributes?: Record<string, unknown> } } }> = [];
+    let n = 0;
+    const fetcher = (async (url: string, init?: RequestInit) => {
+      const path = String(url).replace('https://api.appstoreconnect.apple.com', '');
+      calls.push({ method: init?.method ?? 'GET', path, body: init?.body ? JSON.parse(String(init.body)) : undefined });
+      return new Response(JSON.stringify({ data: { type: 'x', id: `id${++n}` } }), { status: 201 });
+    }) as typeof fetch;
+    const res = await createExperiment(new AscClient(creds, fetcher), 'app1', experiment, { locales: ['en-US', 'tr'], dir: join(tmpdir(), 'vitrin-no-sets') });
+    expect(calls.map((c) => `${c.method} ${c.path}`)).toEqual([
+      'POST /v2/appStoreVersionExperiments',
+      'POST /v1/appStoreVersionExperimentTreatments',
+      'POST /v1/appStoreVersionExperimentTreatmentLocalizations',
+      'POST /v1/appStoreVersionExperimentTreatmentLocalizations',
+      'POST /v1/appStoreVersionExperimentTreatments',
+      'POST /v1/appStoreVersionExperimentTreatmentLocalizations',
+      'POST /v1/appStoreVersionExperimentTreatmentLocalizations',
+    ]);
+    expect(calls[2]!.body?.data?.attributes).toEqual({ locale: 'en-US' });
+    expect(res).toMatchObject({ experimentId: 'id1', treatments: { outcome: 'id2', icon: 'id5' }, placed: 0 });
   });
 });
 

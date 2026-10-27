@@ -157,7 +157,7 @@ export interface DeliverFolders {
   assetLibraryPreviews: RenderedAsset[];
 }
 
-/** `.vitrin/deliver/<platform>/` — rebuilt for every run. */
+/** `metadata/deliver/<platform>/` — rebuilt for every run. */
 export function deliverRoot(paths: AppPaths, platform: DeliverPlatform): string {
   return join(paths.vitrin, 'deliver', platform);
 }

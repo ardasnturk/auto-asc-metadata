@@ -1,0 +1,1 @@
+1.2 ile yeni: haftalık grafiklerle İstatistikler sekmesi ve her alışkanlık için 12 haftalık takvim. Ritmini tek bakışta gör.

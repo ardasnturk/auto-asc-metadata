@@ -59,3 +59,6 @@ export const PLAY_IMAGE_RULES = {
   icon: { width: 512, height: 512, maxBytes: 1024 * 1024 },
   maxUploadBytes: 15 * 1024 * 1024,
 } as const;
+
+/** In-App Event text limits (characters). */
+export const EVENT_LIMITS = { name: 30, shortDescription: 50, longDescription: 120 } as const;

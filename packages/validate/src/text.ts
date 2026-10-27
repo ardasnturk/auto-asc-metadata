@@ -1,10 +1,12 @@
-import { baseLanguage, byteLength, DATA_DIR, graphemeLength, loadForbiddenTerms, splitKeywords, storefrontForLocale, tokenize } from '@vitrin/core';
+import { baseLanguage, byteLength, DATA_DIR, graphemeLength, loadForbiddenTerms, splitKeywords, storefrontForLocale, storefrontInfo, tokenize } from '@vitrin/core';
 import {
   PLAY_TEXT_LIMITS,
   TEXT_LIMITS,
   type AppMetadata,
   type AppProfile,
   type Competitors,
+  type KeywordPlan,
+  type LiveListing,
   type LocaleMetadata,
   type PlayAppMetadata,
   type PlayListing,
@@ -24,6 +26,10 @@ export interface TextValidationInput {
   competitors?: Competitors;
   appMetadata?: AppMetadata;
   locales: Map<string, LocaleMetadata>;
+  /** metadata/research/keywords/<locale>.json — the research the fields should follow. */
+  keywordPlans?: Map<string, KeywordPlan>;
+  /** metadata/research/live-listing.json — what the store shows today. */
+  live?: LiveListing;
 }
 
 type Measurements = ValidationReport['measurements'];
@@ -70,8 +76,15 @@ export function competitorBrands(competitors?: Competitors, ownNames: string[] =
   return [...names];
 }
 
+/** Every word of `term` appears among the words of the name, subtitle and keyword field (the App Store combines them). */
+export function termCovered(term: string, m: Pick<LocaleMetadata, 'name' | 'subtitle' | 'keywords'>, locale: string): boolean {
+  const words = new Set(tokenize([m.name, m.subtitle, splitKeywords(m.keywords).join(' ')].join(' '), locale));
+  const need = tokenize(term, locale);
+  return need.length > 0 && need.every((w) => words.has(w));
+}
+
 export function validateText(input: TextValidationInput): { issues: IssueList; measurements: Measurements } {
-  const { config, profile, competitors, appMetadata, locales } = input;
+  const { config, profile, competitors, appMetadata, locales, keywordPlans, live } = input;
   const issues = new IssueList();
   const measurements: Measurements = {};
   const forbidden = loadForbiddenTerms();
@@ -83,12 +96,12 @@ export function validateText(input: TextValidationInput): { issues: IssueList; m
 
   for (const locale of config.app.locales) {
     if (!locales.has(locale)) {
-      issues.error('metadata.missing-locale', `No metadata file for ${locale} (.vitrin/metadata/${locale}.json).`, { locale });
+      issues.error('metadata.missing-locale', `No metadata file for ${locale} (metadata/listing/${locale}.json).`, { locale });
     }
   }
 
   for (const [locale, m] of locales) {
-    const at = (field: string) => ({ locale, field, file: `.vitrin/metadata/${locale}.json` });
+    const at = (field: string) => ({ locale, field, file: `metadata/listing/${locale}.json` });
     const lm: Measurements[string] = {};
     measurements[locale] = lm;
 
@@ -130,6 +143,14 @@ export function validateText(input: TextValidationInput): { issues: IssueList; m
         fix: 'Use secondary keywords in the subtitle that differ from the name.',
       });
     }
+    // The subtitle is the second most weighted field; an empty or half-used one gives away ranking.
+    if (!m.subtitle.trim()) issues.warn('aso.subtitle-empty', 'The subtitle is empty; it is indexed right after the name — use it for a benefit and a secondary keyword (≤ 30).', at('subtitle'));
+    else if (graphemeLength(m.subtitle) < 20) issues.warn('aso.subtitle-short', `The subtitle uses ${graphemeLength(m.subtitle)}/30 characters; there is room for another keyword.`, at('subtitle'));
+    const plan = keywordPlans?.get(locale);
+    const brandWords = new Set(tokenize(profile?.app.displayName ?? '', locale));
+    if (nameWords.length && nameWords.every((w) => brandWords.has(w)) && !(plan?.candidates ?? []).some((c) => termCovered(c.term, { name: m.name, subtitle: '', keywords: '' }, locale))) {
+      issues.warn('aso.name-brand-only', `The name is only the brand (“${m.name}”); the name is the most weighted field — add the primary keyword (brand: keyword).`, at('name'));
+    }
 
     // ---- keywords ----
     const kwField = m.keywords;
@@ -168,8 +189,43 @@ export function validateText(input: TextValidationInput): { issues: IssueList; m
     for (const noise of forbidden.keywordNoise) {
       if (seen.has(noise.toLowerCase())) issues.warn('keywords.noise', `“${noise}” is low-value; spend these bytes on another keyword.`, at('keywords'));
     }
-    if (byteLength(kwField) < 80) {
-      issues.info('keywords.underused', `Keyword field is ${byteLength(kwField)}/100 bytes; use the remaining bytes.`, at('keywords'));
+    if (kwField.trim() && byteLength(kwField) < 90) {
+      issues.warn('keywords.underused', `Keyword field is ${byteLength(kwField)}/100 bytes; use the remaining bytes for another term.`, at('keywords'));
+    }
+
+    // ---- keyword plan: the research has to reach the fields ----
+    if (plan) {
+      const file = `metadata/research/keywords/${locale}.json`;
+      const unscored = plan.candidates.filter((c) => c.relevance === null).length;
+      if (unscored) issues.warn('keywords.plan-unscored', `${unscored} of ${plan.candidates.length} keyword candidates have no relevance; score them (0–1) so the plan can rank them.`, { locale, file });
+      if (!plan.selected) issues.warn('keywords.plan-unselected', 'The keyword plan has no `selected` terms; write which terms go in the name, subtitle and keyword field.', { locale, file });
+      else {
+        for (const field of ['name', 'subtitle'] as const) {
+          for (const term of plan.selected[field]) {
+            if (!tokenize(term, locale).every((w) => tokenize(m[field], locale).includes(w))) issues.warn('keywords.plan-mismatch', `“${term}” is selected for the ${field}, but the ${field} does not contain it.`, at(field));
+          }
+        }
+        for (const term of plan.selected.keywords) {
+          if (!termCovered(term, m, locale)) issues.warn('keywords.plan-mismatch', `“${term}” is selected for the keyword field, but no field carries it.`, at('keywords'));
+        }
+      }
+      // Dropping a term the app already ranks for gives away traffic it has today.
+      for (const c of plan.candidates) {
+        if (c.ownRank !== null && c.ownRank <= 10 && !termCovered(c.term, m, locale)) {
+          issues.warn('keywords.drops-ranked-term', `The app ranks #${c.ownRank} for “${c.term}”, but the name, subtitle and keywords no longer carry it.`, { ...at('keywords'), fix: 'Keep the term unless something better replaces it.' });
+        }
+      }
+      const best = plan.candidates.filter((c) => c.total !== null && (c.relevance ?? 0) >= 0.6).sort((a, b) => b.total! - a.total!).slice(0, 5);
+      const unused = best.filter((c) => !termCovered(c.term, m, locale)).map((c) => c.term);
+      if (unused.length) issues.info('keywords.top-unused', `Best-scored candidates not in any field: ${unused.join(', ')}.`, at('keywords'));
+    }
+    const was = live?.locales[locale];
+    if (was?.keywords !== undefined) {
+      const before = new Set(splitKeywords(was.keywords).map((t) => t.toLocaleLowerCase(locale)));
+      const after = new Set(splitKeywords(kwField).map((t) => t.toLocaleLowerCase(locale)));
+      const removed = [...before].filter((t) => !after.has(t) && !termCovered(t, m, locale));
+      const added = [...after].filter((t) => !before.has(t));
+      if (removed.length || added.length) issues.info('keywords.live-diff', `Compared with the live keyword field: removed ${removed.join(', ') || '—'}; added ${added.join(', ') || '—'}.`, at('keywords'));
     }
 
     // ---- forbidden terms ----
@@ -258,35 +314,49 @@ export function validateText(input: TextValidationInput): { issues: IssueList; m
     if (!m.claims.length) issues.warn('claim.none', 'The claims list is empty; link the feature claims in the description to app_profile features.', at('claims'));
   }
 
-  // ---- cross-locale: additional storefront languages should carry different keywords ----
-  const byStorefront = new Map<string, string[]>();
-  for (const locale of locales.keys()) {
-    const sf = storefrontForLocale(locale);
-    byStorefront.set(sf, [...(byStorefront.get(sf) ?? []), locale]);
-  }
-  const allLocales = [...locales.keys()];
-  for (let i = 0; i < allLocales.length; i++) {
-    for (let j = i + 1; j < allLocales.length; j++) {
-      const a = locales.get(allLocales[i]!)!;
-      const b = locales.get(allLocales[j]!)!;
-      if (baseLanguage(a.locale) !== baseLanguage(b.locale)) continue;
-      const ta = new Set(splitKeywords(a.keywords).map((x) => x.toLowerCase()));
-      const shared = splitKeywords(b.keywords).filter((x) => ta.has(x.toLowerCase()));
-      if (shared.length > 3) {
-        issues.warn('keywords.cross-locale-duplicate', `${a.locale} and ${b.locale} share ${shared.length} keywords; give additional languages that may count toward the same storefront different keywords.`, { locale: b.locale, field: 'keywords' });
+  // ---- cross-locale: languages indexed in the same storefront share one search index ----
+  // e.g. the US store indexes en-US and es-MX: a term in both keyword fields, or a keyword that repeats a word from
+  // the other locale's name/subtitle, spends bytes twice for the same storefront.
+  const pairs = new Map<string, { a: string; b: string; storefronts: string[] }>();
+  const storefronts = config.storefronts.length ? config.storefronts : [...new Set([...locales.keys()].map(storefrontForLocale))];
+  for (const code of storefronts) {
+    const sf = storefrontInfo(code);
+    if (!sf) continue;
+    const indexed = [sf.default, ...sf.additional].filter((l) => locales.has(l));
+    for (let i = 0; i < indexed.length; i++) {
+      for (let j = i + 1; j < indexed.length; j++) {
+        const key = [indexed[i]!, indexed[j]!].sort().join('|');
+        const pair = pairs.get(key) ?? { a: indexed[i]!, b: indexed[j]!, storefronts: [] };
+        pair.storefronts.push(sf.country);
+        pairs.set(key, pair);
       }
+    }
+  }
+  for (const { a, b, storefronts: where } of pairs.values()) {
+    const ma = locales.get(a)!;
+    const mb = locales.get(b)!;
+    const store = where.length > 1 ? `${where[0]} (and ${where.length - 1} more)` : where[0];
+    const ta = new Set(splitKeywords(ma.keywords).map((x) => x.toLowerCase()));
+    const shared = splitKeywords(mb.keywords).filter((x) => ta.has(x.toLowerCase()));
+    if (shared.length) {
+      issues.warn('keywords.cross-locale-duplicate', `${a} and ${b} are both indexed in ${store}; their keyword fields share ${shared.join(', ')}.`, { locale: b, field: 'keywords', fix: 'Give the second locale different terms: together they form one index there.' });
+    }
+    for (const [x, y] of [[ma, mb], [mb, ma]] as const) {
+      const titled = new Set(tokenize(`${x.name} ${x.subtitle}`, x.locale).filter((w) => !STOP_FOR_DUPES.has(w)));
+      const repeats = [...new Set(splitKeywords(y.keywords).flatMap((t) => tokenize(t, y.locale)).filter((w) => titled.has(w)))];
+      if (repeats.length) issues.warn('keywords.cross-locale-repeats-name', `${y.locale} keywords repeat ${repeats.join(', ')} from the ${x.locale} name/subtitle; both are indexed in ${store}.`, { locale: y.locale, field: 'keywords' });
     }
   }
 
   // ---- app level ----
   if (appMetadata) {
     if (!/^\d{4}\s+\S/.test(appMetadata.copyright)) {
-      issues.error('copyright.format', `Copyright must be in the form “2026 Company Name”: “${appMetadata.copyright}”.`, { field: 'copyright', file: '.vitrin/metadata/app.json' });
+      issues.error('copyright.format', `Copyright must be in the form “2026 Company Name”: “${appMetadata.copyright}”.`, { field: 'copyright', file: 'metadata/listing/app.json' });
     }
     if (appMetadata.reviewNotes.trim().length < 40) {
-      issues.warn('review.notes-short', 'Review notes are empty or very short; describe new features specifically, how to reach them and any demo account or demo mode (App Review 2.1, 2.3.1).', { field: 'reviewNotes', file: '.vitrin/metadata/app.json' });
+      issues.warn('review.notes-short', 'Review notes are empty or very short; describe new features specifically, how to reach them and any demo account or demo mode (App Review 2.1, 2.3.1).', { field: 'reviewNotes', file: 'metadata/listing/app.json' });
     } else if (findPlaceholder(appMetadata.reviewNotes)) {
-      issues.error('text.placeholder', 'Review notes contain template text; App Review rejects placeholder content (2.1).', { field: 'reviewNotes', file: '.vitrin/metadata/app.json' });
+      issues.error('text.placeholder', 'Review notes contain template text; App Review rejects placeholder content (2.1).', { field: 'reviewNotes', file: 'metadata/listing/app.json' });
     }
     if (appMetadata.copyright.includes('©')) issues.warn('copyright.symbol', 'Do not include the © symbol; the App Store adds it.', { field: 'copyright' });
     const notesBytes = byteLength(appMetadata.reviewNotes);
@@ -295,7 +365,7 @@ export function validateText(input: TextValidationInput): { issues: IssueList; m
       issues.error('category.same', 'Primary and secondary category cannot be the same.', { field: 'secondaryCategory' });
     }
   } else {
-    issues.error('metadata.app-missing', '.vitrin/metadata/app.json is missing (copyright, categories, review notes).');
+    issues.error('metadata.app-missing', 'metadata/listing/app.json is missing (copyright, categories, review notes).');
   }
 
   return { issues, measurements };
@@ -331,7 +401,7 @@ export interface PlayTextValidationInput {
   config: VitrinConfig;
   profile?: AppProfile;
   competitors?: Competitors;
-  /** Keyed by ASC locale (the file name under .vitrin/metadata/play/). */
+  /** Keyed by ASC locale (the file name under metadata/listing/play/). */
   listings: Map<string, PlayListing>;
   app?: PlayAppMetadata;
   /** Defaults to data/play-locales.json. */
@@ -405,13 +475,13 @@ export function validatePlayText(input: PlayTextValidationInput): { issues: Issu
     const mapped = table.map[locale];
     if (mapped === null || mapped === undefined) continue;
     const sev = locale === config.app.primaryLocale ? 'error' : 'warn';
-    issues[sev]('play.missing-locale', `No Google Play listing for ${locale} (.vitrin/metadata/play/${locale}.json, Play language ${mapped}).`, { locale });
+    issues[sev]('play.missing-locale', `No Google Play listing for ${locale} (metadata/listing/play/${locale}.json, Play language ${mapped}).`, { locale });
   }
 
   const seenPlay = new Map<string, string>();
   let anyChangelog = false;
   for (const [locale, l] of listings) {
-    const at = (field: string) => ({ locale, field, file: `.vitrin/metadata/play/${locale}.json` });
+    const at = (field: string) => ({ locale, field, file: `metadata/listing/play/${locale}.json` });
     const lm: Measurements[string] = {};
     measurements[`play:${locale}`] = lm;
 
@@ -524,7 +594,7 @@ export function validatePlayText(input: PlayTextValidationInput): { issues: Issu
   }
 
   if (anyChangelog && !app?.versionCode) {
-    issues.warn('play.changelog.no-version-code', 'A changelog is set but .vitrin/metadata/play/app.json has no versionCode; the release notes are not uploaded.', { file: '.vitrin/metadata/play/app.json', field: 'versionCode' });
+    issues.warn('play.changelog.no-version-code', 'A changelog is set but metadata/listing/play/app.json has no versionCode; the release notes are not uploaded.', { file: 'metadata/listing/play/app.json', field: 'versionCode' });
   }
   return { issues, measurements };
 }

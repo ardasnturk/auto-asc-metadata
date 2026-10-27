@@ -198,6 +198,7 @@ export async function findJsLocales(root: string): Promise<FrameworkLocale[]> {
     for (const e of entries) {
       if (!e.isDirectory() || SKIP.has(e.name) || e.name.startsWith('.') || (depth === 0 && ['ios', 'android', 'macos', 'windows', 'web'].includes(e.name))) continue;
       const full = join(dir, e.name);
+      if (existsSync(join(full, '.vitrin-workspace'))) continue; // Vitrin's metadata/ workspace
       if (LOCALE_DIRS.test(e.name)) {
         for (const c of await readdir(full, { withFileTypes: true })) {
           const stem = c.isFile() ? c.name.replace(/\.(json|ts|js|ya?ml|po)$/, '') : c.name;

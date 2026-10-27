@@ -1,6 +1,6 @@
 /** Props passed from the CLI to the Remotion compositions (must stay JSON-serialisable). */
 export interface MediaRef {
-  /** Path relative to the bundle's public dir (.vitrin/raw), resolved with staticFile(). */
+  /** Path relative to the bundle's public dir (metadata/raw), resolved with staticFile(). */
   path: string;
   kind: 'video' | 'image';
   /** Seconds into the source video where this beat starts. */
@@ -70,6 +70,16 @@ export interface Chip {
   iconSvg: string;
 }
 
+/** How a flow screen arrives: navigation push, modal sheet, state change, the same screen further down, or a montage cut. */
+export type FlowChange = 'push' | 'sheet' | 'fade' | 'scroll' | 'cut';
+
+export interface FlowShot {
+  media: MediaRef;
+  /** Touch point (fractions of the capture), shown just before the next screen arrives. */
+  tap?: { x: number; y: number };
+  change: FlowChange;
+}
+
 export type Scene =
   | { kind: 'hook'; frames: number; text: string; media: MediaRef }
   | { kind: 'device'; frames: number; caption: string; media: MediaRef }
@@ -78,7 +88,9 @@ export type Scene =
   | { kind: 'text'; frames: number; text: string }
   | { kind: 'stat'; frames: number; caption: string; media: MediaRef; value: number; suffix: string; label: string; locale: string }
   | { kind: 'badges'; frames: number; caption: string; media: MediaRef; chips: Chip[] }
-  | { kind: 'outro'; frames: number; title: string; subtitle: string };
+  | { kind: 'flow'; frames: number; caption: string; steps: FlowShot[] }
+  /** Closing line over the outcome screen (no icon card). */
+  | { kind: 'outro'; frames: number; title: string; subtitle: string; media: MediaRef };
 
 export interface AppPreviewProps extends Record<string, unknown> {
   look: Look;
@@ -88,8 +100,6 @@ export interface AppPreviewProps extends Record<string, unknown> {
   transitionFrames: number;
   lightLeaks: boolean;
   scenes: Scene[];
-  /** Path of the app icon inside public dir, if available. */
-  icon?: string;
 }
 
 export interface LoopProps extends Record<string, unknown> {
@@ -113,10 +123,47 @@ export function previewDurationSec(p: Pick<AppPreviewProps, 'scenes' | 'transiti
   return previewDurationFrames(p) / FPS_PREVIEW;
 }
 
-/** Per-style defaults: which cut transitions to cycle through and how long a cut lasts. */
+/** Frames where one scene hands over to the next (the middle of an overlapping transition, or the hard cut). */
+export function cutFrames(p: Pick<AppPreviewProps, 'scenes' | 'transitions' | 'transitionFrames'>): number[] {
+  const cuts: number[] = [];
+  let at = 0;
+  p.scenes.slice(0, -1).forEach((s, i) => {
+    const cut = p.transitions[i];
+    const overlap = cut && cut !== 'none' && cut !== 'leak' ? p.transitionFrames : 0;
+    at += s.frames - overlap;
+    cuts.push(at + overlap / 2);
+  });
+  return cuts;
+}
+
+/** Seconds each kind of screen change takes inside a flow (a montage cut is instant). */
+const CHANGE_SEC = { push: 0.4, sheet: 0.45, scroll: 0.45, fade: 0.25, cut: 0 } as const;
+
+/**
+ * Frame timing of a flow: when each step's screen starts to arrive (`arrive`), how long that takes (`change`) and
+ * when the finger presses for each tap. Step 0 is there from the start; the others share the rest evenly.
+ */
+export function flowTiming(steps: Pick<FlowShot, 'tap' | 'change'>[], frames: number, fps: number): { arrive: number[]; change: number[]; taps: Array<number | undefined> } {
+  const n = steps.length;
+  const lead = Math.min(0.35 * fps, frames * 0.1);
+  const slot = (frames - lead) / n;
+  const arrive = steps.map((_, i) => (i === 0 ? 0 : Math.round(lead + i * slot)));
+  const change = steps.map((s, i) => (i === 0 ? 0 : Math.round(Math.min(CHANGE_SEC[s.change] * fps, slot * 0.45))));
+  // The press lands just before the next screen starts to move; a tap on the last step lands mid-step.
+  const taps = steps.map((s, i) => (s.tap ? (i < n - 1 ? arrive[i + 1]! - 0.08 * fps : arrive[i]! + (frames - arrive[i]!) * 0.5) : undefined));
+  return { arrive, change, taps };
+}
+
+/** Most full-screen text cards a preview may have (explicit `text` beats plus kinetic cards): app footage must dominate. */
+export const MAX_TEXT_CARDS = 2;
+
+/**
+ * Per-style defaults: which cut transitions to cycle through and how long a cut lasts. Cuts are short because
+ * beats are short (≈ 2 s); `textCards` = kinetic typography cards before up to MAX_TEXT_CARDS beats.
+ */
 export const STYLE_DEFAULTS: Record<PreviewStyle, { transitions: TransitionKind[]; transitionFrames: number; lightLeaks: boolean; textCards: boolean }> = {
-  classic: { transitions: ['fade'], transitionFrames: 12, lightLeaks: false, textCards: false },
-  showcase: { transitions: ['push', 'leak', 'iris', 'leak'], transitionFrames: 16, lightLeaks: true, textCards: false },
-  kinetic: { transitions: ['slide', 'push', 'wipe'], transitionFrames: 10, lightLeaks: false, textCards: true },
-  energetic: { transitions: ['wipe', 'flip', 'slide'], transitionFrames: 12, lightLeaks: false, textCards: false },
+  classic: { transitions: ['fade'], transitionFrames: 10, lightLeaks: false, textCards: false },
+  showcase: { transitions: ['push', 'leak', 'iris', 'leak'], transitionFrames: 12, lightLeaks: true, textCards: false },
+  kinetic: { transitions: ['slide', 'push', 'wipe'], transitionFrames: 8, lightLeaks: false, textCards: true },
+  energetic: { transitions: ['wipe', 'flip', 'slide'], transitionFrames: 9, lightLeaks: false, textCards: false },
 };

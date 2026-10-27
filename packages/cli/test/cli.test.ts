@@ -64,10 +64,10 @@ describe('cli', () => {
     writeFileSync(join(dir, 'vitrin.config.yaml'), 'app:\n  bundleId: com.example.app\n  locales: [tr]\nurls: {}\n');
     const profile = { generatedAt: 'x', project: { root: dir, targets: [] }, app: { displayName: 'X' }, features: [], brand: {}, docs: {} };
     const { mkdirSync } = await import('node:fs');
-    mkdirSync(join(dir, '.vitrin'));
-    writeFileSync(join(dir, '.vitrin', 'app_profile.json'), JSON.stringify(profile));
+    mkdirSync(join(dir, 'metadata'));
+    writeFileSync(join(dir, 'metadata', 'app_profile.json'), JSON.stringify(profile));
     const res = await vitrin(dir, 'write');
     expect(res.code).toBe(2);
-    expect(readFileSync(join(dir, '.vitrin', 'briefs', 'write.md'), 'utf8')).toContain('100 bytes');
+    expect(readFileSync(join(dir, 'metadata', 'briefs', 'write.md'), 'utf8')).toContain('100 bytes');
   }, 60_000);
 });
