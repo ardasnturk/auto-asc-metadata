@@ -119,6 +119,27 @@ function fixLabel(fix: Blocker['fixes'][number], b: Blocker): string {
   }
 }
 
+/** A command or snippet the user runs or pastes themselves, with a copy button. */
+export function CopyCode({ text, block }: { text: string; block?: boolean }) {
+  const { toast } = useStudio();
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(text);
+      toast(t('copied'), 'ok');
+    } catch (err) {
+      toast((err as Error).message, 'err');
+    }
+  };
+  return (
+    <span className={`copy-code ${block ? 'block' : ''}`}>
+      {block ? <pre>{text}</pre> : <code>{text}</code>}
+      <Button size="sm" kind="ghost" onClick={copy}>
+        {t('copy')}
+      </Button>
+    </span>
+  );
+}
+
 /** What waits for the user: blockers and decisions first, then stages that wait for their click (approve, upload). */
 export type Pending = { key: string; question: StudioQuestion } | { key: string; blocker: Blocker } | { key: string; stage: StageView };
 
@@ -148,19 +169,11 @@ export function StageDecision({ stage, o }: { stage: StageView; o: Overview }) {
 
 /** One blocker: what is wrong, and its one-click fixes (or the install command to copy). */
 export function BlockerItem({ blocker, primary, openClaude }: { blocker: Blocker; primary?: boolean; openClaude?: () => void }) {
-  const { state, run, toast } = useStudio();
+  const { state, run } = useStudio();
   const busy = useBusy();
   const o = state.overview!;
   if (blocker.code === 'design-choice') return <DesignChoice blocker={blocker} o={o} openClaude={openClaude} />;
   const install = typeof blocker.params.install === 'string' ? blocker.params.install : undefined;
-  const copy = async () => {
-    try {
-      await navigator.clipboard.writeText(install!);
-      toast(t('copied'), 'ok');
-    } catch (err) {
-      toast((err as Error).message, 'err');
-    }
-  };
   return (
     <div className={`blocker ${blocker.severity}`}>
       <div>{blockerText(blocker)}</div>
@@ -178,14 +191,7 @@ export function BlockerItem({ blocker, primary, openClaude }: { blocker: Blocker
               {fixLabel(f, blocker)}
             </Button>
           ))}
-          {install && (
-            <>
-              <code>{install}</code>
-              <Button size="sm" kind="ghost" onClick={copy}>
-                {t('copy')}
-              </Button>
-            </>
-          )}
+          {install && <CopyCode text={install} />}
         </div>
       )}
     </div>

@@ -56,6 +56,19 @@ export function Check({ checked, onChange, children, disabled }: { checked: bool
   );
 }
 
+/** One choice of several (a real radio): the label and, under it, what the choice means. */
+export function Radio({ name, checked, onChange, children, hint, disabled }: { name: string; checked: boolean; onChange: () => void; children: ReactNode; hint?: ReactNode; disabled?: boolean }) {
+  return (
+    <label className={`check radio ${checked ? 'on' : ''}`}>
+      <input type="radio" name={name} checked={checked} disabled={disabled} onChange={onChange} />
+      <span className="stack tight">
+        <span>{children}</span>
+        {hint && <span className="dim small">{hint}</span>}
+      </span>
+    </label>
+  );
+}
+
 export function Field({ label, hint, right, children }: { label: ReactNode; hint?: ReactNode; right?: ReactNode; children: ReactNode }) {
   return (
     <div className="field">
