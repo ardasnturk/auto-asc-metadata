@@ -5,7 +5,7 @@ import { createServer, type IncomingMessage, type ServerResponse } from 'node:ht
 import type { AddressInfo } from 'node:net';
 import { extname, isAbsolute, relative, resolve, sep } from 'node:path';
 import { buildInventory, checkApproval, recordApproval, recordRejections, summarize, syncFastlaneMetadata, type Inventory } from './approval.js';
-import { EXIT, type Ctx } from './context.js';
+import { EXIT, NeedsInput, type Ctx } from './context.js';
 import { buildReport } from './report.js';
 import { i18nFile, loadUiText, UI_EN } from './i18n.js';
 
@@ -206,7 +206,7 @@ export async function startReviewServer(ctx: Ctx, opts: { port?: number; host?: 
       if (!file) return sendJson(res, 404, { error: 'Not found.' });
       await sendFile(req, res, file);
     } catch (err) {
-      const status = (err as { status?: number }).status ?? 500;
+      const status = (err as { status?: number }).status ?? (err instanceof NeedsInput ? 409 : 500);
       if (!res.headersSent) sendJson(res, status, { error: (err as Error).message });
       else res.destroy();
     }

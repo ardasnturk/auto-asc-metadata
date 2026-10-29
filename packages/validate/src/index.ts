@@ -71,6 +71,9 @@ export async function validateAll(paths: AppPaths, config: VitrinConfig, scope: 
         locales.set(locale, m);
       }
     }
+    if (!config.app.locales.includes(config.app.primaryLocale)) {
+      issues.warn('config.primary-locale', `app.primaryLocale ${config.app.primaryLocale} is not one of app.locales (${config.app.locales.join(', ')}); copy and captures fall back to it. Add it, or set one of them as the primary locale (vitrin select --primary-locale ${config.app.locales[0]}).`);
+    }
     for (const extra of await strayLocaleDirs(paths.fastlaneMetadata, config.app.locales)) {
       // `android/` is supply's Google Play folder; deliver runs get per-platform copies without it.
       if (!['default', 'android'].includes(extra)) issues.error('metadata.stray-locale', `metadata/store/metadata/${extra} is a locale not in the config; deliver will upload it too.`);

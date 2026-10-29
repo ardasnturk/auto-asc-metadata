@@ -112,6 +112,9 @@ p {
   flex-direction: column;
   gap: 10px;
 }
+.stack.tight {
+  gap: 4px;
+}
 .grid {
   display: grid;
   gap: 12px;
@@ -515,6 +518,14 @@ textarea.code {
   border-color: rgba(139, 124, 255, 0.55);
   background: var(--accent-soft);
 }
+.check.radio {
+  display: flex;
+  align-items: flex-start;
+  padding: 8px 10px;
+}
+.check.radio input {
+  margin-top: 3px;
+}
 .check:has(input:disabled) {
   opacity: 0.6;
   cursor: default;
@@ -690,6 +701,100 @@ textarea.code {
   font-size: 12px;
   margin-top: 2px;
 }
+.stage.skipped {
+  opacity: 0.55;
+}
+/* The stages beside what waits for the user; stacked when the page is narrow (the Claude drawer is open). */
+.pipeline-wrap {
+  container-type: inline-size;
+}
+.pipeline-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 14px;
+  align-items: start;
+}
+@container (max-width: 720px) {
+  .pipeline-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.stage-group {
+  margin: 10px 0 0;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+.stage-group:first-child {
+  margin-top: 0;
+}
+.stage .title a {
+  color: inherit;
+  text-decoration: none;
+}
+.stage .title a:hover {
+  color: var(--accent-2);
+  text-decoration: underline;
+}
+.stage .hint {
+  color: var(--text-2);
+  font-size: 12px;
+  margin-top: 2px;
+}
+.stage .more {
+  position: relative;
+}
+.stage .more > summary {
+  list-style: none;
+}
+.stage .more > summary::-webkit-details-marker {
+  display: none;
+}
+.stage .more .menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 4px);
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  min-width: 180px;
+  padding: 4px;
+  background: var(--bg-3);
+  border: 1px solid var(--line-2);
+  border-radius: var(--radius-s);
+}
+.stage .more .menu .btn {
+  justify-content: flex-start;
+}
+.next-step {
+  border-color: var(--accent);
+  margin-bottom: 14px;
+}
+.next-step .next-title {
+  font-size: 16px;
+  font-weight: 600;
+}
+.blocker {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px 10px;
+  border-left: 3px solid var(--warn);
+  background: var(--bg-3);
+  border-radius: var(--radius-s);
+}
+.blocker.error {
+  border-left-color: var(--err);
+}
+.blocker.decision {
+  border-left-color: var(--accent);
+}
+.blocker code {
+  font-size: 12px;
+}
 .thumbs {
   display: flex;
   gap: 10px;
@@ -799,6 +904,11 @@ textarea.code {
 }
 .kv dd {
   margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.text-err {
+  color: var(--err);
 }
 .claude-log {
   flex: 1;
@@ -843,6 +953,23 @@ textarea.code {
 .msg.error {
   color: var(--err);
   background: rgba(255, 107, 107, 0.1);
+}
+.msg.result .written {
+  text-align: left;
+  margin-bottom: 6px;
+  padding: 6px 8px;
+  background: var(--bg-3);
+  border-radius: var(--radius-s);
+}
+.msg.result .written a {
+  color: var(--accent-2);
+}
+.msg.result .row {
+  justify-content: center;
+}
+.blocker .question {
+  font-weight: 500;
+  white-space: pre-wrap;
 }
 .drawer .head {
   display: flex;
@@ -930,7 +1057,7 @@ textarea.code {
 }
 .beat {
   display: grid;
-  grid-template-columns: 110px minmax(0, 1fr) 70px 70px auto;
+  grid-template-columns: 110px minmax(0, 1fr) 84px 84px auto;
   gap: 8px;
   align-items: start;
   padding: 8px;
@@ -952,4 +1079,323 @@ textarea.code {
   font-size: 12px;
   color: var(--text-2);
   margin-top: 4px;
+}
+
+/* ---------------------------------------------------------------- setup */
+.page.setup {
+  max-width: 920px;
+}
+.setup-section .section-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  margin-right: 6px;
+  border-radius: 50%;
+  font-size: 11px;
+  background: var(--accent-soft);
+  color: var(--accent-2);
+}
+.setup .format-kind {
+  min-width: 110px;
+}
+.tools {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr) max-content max-content;
+  gap: 6px 12px;
+  align-items: center;
+}
+.tools .tool {
+  display: contents;
+}
+.tools .tool.missing .mono {
+  color: var(--err);
+}
+.copy-code {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+.copy-code code {
+  font-size: 12px;
+}
+.copy-code.block {
+  display: flex;
+  align-items: flex-start;
+}
+.copy-code.block pre {
+  flex: 1;
+  margin: 0;
+  padding: 8px 10px;
+  font-family: var(--mono);
+  font-size: 12px;
+  background: var(--bg-3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-s);
+  white-space: pre-wrap;
+}
+ol.steps {
+  margin: 0;
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 12.5px;
+}
+/* Unsaved edits: one bar at the bottom of the page, only while there is something to save. */
+.savebar {
+  position: sticky;
+  bottom: 0;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+  padding: 10px 14px;
+  background: var(--bg-3);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  box-shadow: 0 -6px 18px rgba(0, 0, 0, 0.35);
+}
+
+/* Large thumbnails that fill the row; a missing render keeps its place. */
+.gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.gallery .thumb {
+  width: auto;
+}
+.thumb.missing {
+  cursor: default;
+}
+.thumb.missing .placeholder {
+  width: 100%;
+  aspect-ratio: 9 / 19.5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-size: 11px;
+  color: var(--text-3);
+  border: 1px dashed var(--line-2);
+  border-radius: 4px;
+}
+.thumb.missing.wide .placeholder {
+  aspect-ratio: 16 / 10;
+}
+details.advanced {
+  margin: 6px 0 14px;
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--bg-2);
+}
+details.advanced > summary {
+  cursor: pointer;
+  color: var(--text-2);
+  font-size: 12.5px;
+}
+details.advanced[open] > summary {
+  margin-bottom: 10px;
+}
+table.plain {
+  border-collapse: collapse;
+  width: 100%;
+}
+table.plain td {
+  padding: 4px 8px 4px 0;
+  vertical-align: middle;
+}
+.btn.chip {
+  border: 1px dashed var(--line-2);
+}
+
+label.mini {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 10.5px;
+  color: var(--text-3);
+}
+.timeline {
+  display: flex;
+  gap: 2px;
+  height: 38px;
+  border-radius: var(--radius-s);
+  overflow: hidden;
+}
+.timeline .seg {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 0 6px;
+  background: var(--bg-4);
+  font-size: 11px;
+}
+.timeline .seg span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.timeline .seg small {
+  color: var(--text-3);
+  font-size: 10px;
+}
+.timeline .seg.hook,
+.timeline .seg.outro {
+  background: var(--accent-soft);
+}
+
+/* Steps of a page (Tasarım): one at a time. */
+.stepper {
+  display: inline-flex;
+  gap: 4px;
+  padding: 3px;
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+.stepper button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 0;
+  border-radius: var(--radius-s);
+  background: transparent;
+  color: var(--text-2);
+  font: inherit;
+  cursor: pointer;
+}
+.stepper button.on {
+  background: var(--accent-soft);
+  color: var(--text);
+}
+.screen-pick {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(78px, 1fr));
+  gap: 8px;
+}
+.screen-pick button {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 4px;
+  background: var(--bg-3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-s);
+  color: var(--text-2);
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+}
+.screen-pick button.on {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--text);
+}
+.screen-pick img,
+.screen-pick .ph {
+  width: 100%;
+  aspect-ratio: 9 / 19.5;
+  object-fit: cover;
+  border-radius: 3px;
+  background: var(--bg);
+}
+
+/* ---------------------------------------------------------------- upload checklist */
+.page.upload {
+  max-width: 980px;
+}
+.checklist {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.check-step {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  gap: 12px;
+  padding: 12px 14px;
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+.check-step .num {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  background: rgba(241, 181, 74, 0.18);
+  color: var(--warn);
+}
+.check-step.ok .num {
+  background: rgba(79, 207, 138, 0.18);
+  color: var(--ok);
+}
+
+/* Shot list · editor · preview; on a narrow page the preview moves under the editor. */
+.design-wrap {
+  container-type: inline-size;
+}
+.design-grid {
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr) 260px;
+  gap: 12px;
+  align-items: start;
+}
+@container (max-width: 980px) {
+  .design-grid {
+    grid-template-columns: 200px minmax(0, 1fr);
+  }
+  .design-grid > .preview-pane {
+    grid-column: 1 / -1;
+  }
+}
+
+/* The plan beside the rendered previews; stacked on a narrow page so a scene row keeps its width. */
+.video-wrap {
+  container-type: inline-size;
+}
+.video-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  gap: 12px;
+  align-items: start;
+}
+@container (max-width: 960px) {
+  .video-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* A page's status in the sidebar (Akış and İnceleme carry a count instead). */
+.nav .sdot {
+  margin-left: auto;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--text-3);
+}
+.nav .sdot.ok {
+  background: var(--ok);
+}
+.nav .sdot.warn {
+  background: var(--warn);
+}
+.nav .sdot.err {
+  background: var(--err);
+}
+.nav .sdot.info {
+  background: var(--info);
 }

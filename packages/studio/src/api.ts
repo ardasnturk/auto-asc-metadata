@@ -1,3 +1,4 @@
+import { t, type UiKey } from './i18n';
 /** Types and calls for the Studio server (packages/cli/src/studio). Kept in sync by hand; the server is the source. */
 
 export interface RenderedFile {
@@ -68,14 +69,61 @@ export type ClaudeEvent =
   | { type: 'error'; text: string }
   | { type: 'exit'; code: number };
 
+/** Mirrors claude.ts: what a run was started for. */
+export type RunLabel = { kind: 'brief'; stage: string; extra?: string } | { kind: 'answer'; question: string; answer: string } | { kind: 'prompt'; text: string };
+
 export interface ClaudeRun {
   id: string;
   prompt: string;
+  label?: RunLabel;
   startedAt: string;
   endedAt?: string;
   status: 'running' | 'done' | 'failed' | 'cancelled';
   events: ClaudeEvent[];
 }
+
+/** Mirrors overview.ts in the CLI: the server computes where each stage stands. */
+export type StageStatus = 'done' | 'needs-claude' | 'needs-user' | 'blocked' | 'outdated' | 'not-run' | 'skipped';
+export type PipelineStage = 'analyze' | 'research' | 'write' | 'capture' | 'mockups' | 'design' | 'video' | 'validate' | 'review' | 'upload' | 'rank';
+
+export interface StageView {
+  id: PipelineStage;
+  status: StageStatus;
+  optional?: boolean;
+  completedAt?: string;
+  note?: string;
+  brief?: string;
+  reason?: string;
+}
+
+export type BlockerCode = 'config-error' | 'stray-locales' | 'primary-locale' | 'ffmpeg-missing' | 'claude-missing' | 'uploader-unset' | 'uploader-missing' | 'keys-missing' | 'design-choice';
+
+export interface Blocker {
+  code: BlockerCode;
+  severity: 'error' | 'warning' | 'decision';
+  stage: PipelineStage;
+  params: Record<string, string | number | string[]>;
+  fixes: Array<{ id: string; command: string; args: Record<string, unknown> }>;
+}
+
+export interface NextStep {
+  stage: PipelineStage;
+  action: 'answer' | 'claude' | 'run' | 'fix' | 'decide' | 'approve' | 'upload' | 'finalize';
+  blocker?: BlockerCode;
+  question?: string;
+}
+
+/** A question Claude left for the user (metadata/questions.json). */
+export interface StudioQuestion {
+  id: string;
+  stage?: string;
+  question: string;
+  options: Array<{ label: string; value: string }>;
+  askedAt?: string;
+}
+
+/** The locale a page opens on: the primary one when it is a store locale, else the first store locale. */
+export const startLocale = (cfg: { locales: string[]; primaryLocale: string }): string => (cfg.locales.includes(cfg.primaryLocale) ? cfg.primaryLocale : (cfg.locales[0] ?? cfg.primaryLocale));
 
 export interface Overview {
   version: string;
@@ -93,22 +141,38 @@ export interface Overview {
     selection: { platforms?: string[]; assets?: string[]; targets?: string[] };
     video: { enabled: boolean; loops: boolean };
     seeds: string[] | Record<string, string[]>;
+    urls: { support?: string; privacy?: string; marketing?: string };
   };
   platforms?: PlatformsReport;
   stages: Record<string, { completedAt: string; status: string; note?: string } | undefined>;
   files: Record<string, boolean>;
   listing: string[];
   playListing: string[];
-  briefs: Array<{ name: string; path: string; modifiedAt: string }>;
-  validation?: { ok: boolean; counts: { error: number; warning: number; info: number }; generatedAt?: string };
-  approval?: { status: string; approvedAt: string; via: string; overallHash: string; upload?: { uploadedAt: string; overallHash: string; readBack: string; differences: string[] }; finalized?: { at: string; mode: string }; rejections: number };
+  /** Open briefs only. */
+  briefs: Array<{ name: string; path: string; modifiedAt: string; stage?: PipelineStage }>;
+  validation?: { ok: boolean; counts: { error: number; warning: number; info: number }; generatedAt?: string; issues: Array<{ severity: 'error' | 'warning' | 'info'; code: string; message: string; file?: string; locale?: string; field?: string }> };
+  approval?: {
+    status: string;
+    approvedAt: string;
+    via: string;
+    overallHash: string;
+    upload?: { uploadedAt: string; overallHash: string; readBack: string; differences: string[] };
+    finalized?: { at: string; mode: string };
+    rejections: number;
+    valid: boolean;
+    problem?: 'validation-errors' | 'content-changed' | 'rejected';
+  };
+  flow: StageView[];
+  blockers: Blocker[];
+  questions: StudioQuestion[];
+  next?: NextStep;
   raw: Record<string, Record<string, RenderedFile[]>>;
   screenshots: Record<string, RenderedFile[]>;
   previews: Record<string, RenderedFile[]>;
   creatives: Record<string, RenderedFile[]>;
   videoStyles: Record<string, RenderedFile[]>;
   cpp: Record<string, Record<string, RenderedFile[]>>;
-  samples?: { styles: string[]; contactSheet?: string; storePreview?: string };
+  samples?: { styles: string[]; contactSheet?: string; storePreview?: string; generatedAt?: string; options: Array<{ letter: string; style: string; name: string }> };
   mockups?: { index?: string; screens: RenderedFile[] };
   tools: { asc: string | null; fastlane: string | null; ruby: string | null; bundler: string | null; brew?: string | null; claude: string | null; ffmpeg: string | null };
   missingKeys: string[];
@@ -145,6 +209,23 @@ export class ApiError extends Error {
   }
 }
 
+/** Server errors the Studio words itself (the server's `code`); anything else keeps the server's sentence. */
+const ERROR_TEXT: Record<string, UiKey> = {
+  'claude-busy': 'errClaudeBusy',
+  'job-busy': 'errJobBusy',
+  'no-brief': 'errNoBrief',
+  'question-gone': 'errQuestionGone',
+  'files-changed': 'errFilesChanged',
+  'validation-errors': 'errValidationErrors',
+};
+
+function errorText(data: Record<string, unknown>, fallback: string): string {
+  const key = typeof data.code === 'string' ? ERROR_TEXT[data.code] : undefined;
+  if (!key) return typeof data.error === 'string' ? data.error : fallback;
+  const params = (typeof data.params === 'object' && data.params ? data.params : {}) as Record<string, string | number>;
+  return t(key, params);
+}
+
 async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
   const res = await fetch(path, { method, headers: body === undefined ? {} : { 'content-type': 'application/json' }, body: body === undefined ? undefined : JSON.stringify(body) });
   const text = await res.text();
@@ -154,7 +235,7 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
   } catch {
     data = { error: text };
   }
-  if (!res.ok) throw new ApiError(typeof data.error === 'string' ? data.error : `${res.status} ${res.statusText}`, res.status, Array.isArray(data.issues) ? (data.issues as string[]) : [], data);
+  if (!res.ok) throw new ApiError(errorText(data, `${res.status} ${res.statusText}`), res.status, Array.isArray(data.issues) ? (data.issues as string[]) : [], data);
   return data as T;
 }
 
@@ -168,6 +249,8 @@ export const api = {
   claude: () => request<{ available: boolean; running: string | null; sessionId: string | null; runs: ClaudeRun[] }>('GET', '/api/claude'),
   askClaude: (body: { prompt?: string; stage?: string; extra?: string; fresh?: boolean }) => request<{ id: string }>('POST', '/api/claude', body),
   cancelClaude: () => request<{ cancelled: boolean }>('POST', '/api/claude/cancel', {}),
+  resetClaude: () => request<{ ok: boolean }>('POST', '/api/claude/reset', {}),
+  answerQuestion: (id: string, answer: string) => request<{ id: string }>('POST', '/api/questions/answer', { id, answer }),
   review: () => request<ReviewState>('GET', '/api/review'),
   approve: (overallHash: string) => request<{ ok: true; overallHash: string; approvedAt: string }>('POST', '/api/approve', { overallHash }),
   reject: (overallHash: string, rejections: Array<{ item: string; comment: string }>) => request<{ ok: true; rejected: number }>('POST', '/api/reject', { overallHash, rejections }),

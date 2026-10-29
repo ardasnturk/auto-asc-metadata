@@ -23,6 +23,10 @@ export interface StudioState {
   /** Bumps whenever metadata/ changed on disk, so editors reload what they are not editing. */
   changedTick: number;
   toasts: Toast[];
+  /** The last job that ended (for the shell's summary toast). */
+  finishedJob?: JobSummary;
+  /** Shows CLI commands, file paths, JSON editors and Claude's tool calls; remembered in this browser. */
+  devMode: boolean;
 }
 
 interface StudioApi {
@@ -33,12 +37,22 @@ interface StudioApi {
   dismiss(id: number): void;
   setClaudeEvents(fn: (prev: StudioState['claudeEvents']) => StudioState['claudeEvents']): void;
   clearLogs(): void;
+  setDevMode(on: boolean): void;
+}
+
+const DEV_KEY = 'vitrin.studio.devMode';
+function readDevMode(): boolean {
+  try {
+    return localStorage.getItem(DEV_KEY) === '1';
+  } catch {
+    return false;
+  }
 }
 
 const Ctx = createContext<StudioApi | undefined>(undefined);
 
 export function StudioProvider({ children }: { children: ReactNode }) {
-  const [state, setState] = useState<StudioState>({ connected: false, job: null, logs: [], claudeEvents: [], claudeRunning: false, remotion: { running: false }, changedTick: 0, toasts: [] });
+  const [state, setState] = useState<StudioState>({ connected: false, job: null, logs: [], claudeEvents: [], claudeRunning: false, remotion: { running: false }, changedTick: 0, toasts: [], devMode: readDevMode() });
   const toastId = useRef(0);
 
   const toast = useCallback((text: string, kind: Toast['kind'] = 'info') => {
@@ -65,7 +79,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         if (e.event === 'hello') setState((s) => ({ ...s, job: e.data.job, claudeRunning: Boolean(e.data.claude), remotion: { running: e.data.remotion.running, url: e.data.remotion.url } }));
         else if (e.event === 'log') setState((s) => ({ ...s, logs: [...s.logs.slice(-2500), e.data] }));
         else if (e.event === 'job') {
-          setState((s) => ({ ...s, job: e.data.status === 'running' ? e.data : null }));
+          setState((s) => ({ ...s, job: e.data.status === 'running' ? e.data : null, ...(e.data.status === 'running' ? {} : { finishedJob: e.data }) }));
           if (e.data.status !== 'running') void refresh();
         } else if (e.event === 'claude') {
           setState((s) => ({ ...s, claudeEvents: [...s.claudeEvents.slice(-1500), e.data], claudeRunning: e.data.type !== 'exit' }));
@@ -108,6 +122,14 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       dismiss: (id) => setState((s) => ({ ...s, toasts: s.toasts.filter((t) => t.id !== id) })),
       setClaudeEvents: (fn) => setState((s) => ({ ...s, claudeEvents: fn(s.claudeEvents) })),
       clearLogs: () => setState((s) => ({ ...s, logs: [] })),
+      setDevMode: (on) => {
+        try {
+          localStorage.setItem(DEV_KEY, on ? '1' : '0');
+        } catch {
+          /* private window: the choice lasts for this page only */
+        }
+        setState((s) => ({ ...s, devMode: on }));
+      },
     }),
     [state, refresh, run, toast],
   );
@@ -118,6 +140,17 @@ export function useStudio(): StudioApi {
   const v = useContext(Ctx);
   if (!v) throw new Error('useStudio outside StudioProvider');
   return v;
+}
+
+/** Developer mode: CLI commands, file paths, JSON editors and tool calls are shown only when it is on. */
+export function useDev(): boolean {
+  return useStudio().state.devMode;
+}
+
+/** A tooltip naming the CLI command behind a button, in developer mode only. */
+export function useCli(): (command: string) => string | undefined {
+  const dev = useDev();
+  return (command) => (dev ? command : undefined);
 }
 
 /** The job is busy when a stage or Claude runs: editors stay usable, run buttons wait. */

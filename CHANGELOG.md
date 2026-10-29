@@ -2,6 +2,56 @@
 
 All notable changes to this project are documented in this file. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## Unreleased
+
+### Changed — Vitrin Studio, revised after a first run on a real app
+- **One status model, worked out by the CLI:**
+  - The overview gives every stage a status with a reason: done, needs Claude, needs you, blocked, outdated, not run or skipped.
+  - It also lists the blockers and the one next step. The blockers are config errors, store languages left over from an earlier selection, the primary locale, ffmpeg, Claude Code, the uploader and missing keys.
+  - The Studio shows these as they are instead of guessing from files. Briefs that a later run already answered are no longer listed.
+- **Flow (Akış):**
+  - The next step is a card at the top.
+  - The stages are grouped into Preparation, Content, and Check and publish. Each stage has a one-line hint and a link to its page.
+  - The decisions that wait for you are listed under the stages, next to a summary.
+  - A stage that needs a missing tool cannot be started, and says how to install the tool.
+- **Claude asks with cards:**
+  - A run inside the Studio can no longer wait for an answer. When it needs a decision, it leaves the question in `metadata/questions.json`.
+  - The Studio shows the question as a card with option buttons, removes it once you answer, and starts Claude again with your answer. The design-style choice works the same way.
+  - The Claude panel has one compose box and a "New conversation" button that sends nothing.
+  - Each run has a label and a cost. The files a run wrote are listed with links to their pages.
+  - Tool calls are counted, and shown one by one only in developer mode.
+  - Claude replies in the Studio's language and never starts background commands.
+- **Setup (Kurulum):**
+  - Setup has eight numbered sections, in the order the run needs them.
+  - Edits stay a draft until you save them. A sticky bar shows how many changes are unsaved, with Discard and Save.
+  - The capture mode and the uploader are plain choices.
+  - Each tool shows what needs it and how to install it.
+  - The keys section explains how to add them, with an `.env` snippet that contains names only.
+- **Content pages:**
+  - Metadata shows the write and research actions on the page and puts each issue next to its field with a plain title. It gains a URLs card and keyword chips with the 100-byte count.
+  - Screens is a gallery per language and device, iPhone first, with placeholders for missing renders. Sources, HTML and strings move under Advanced.
+  - Design is three steps: style (with the samples' store preview), shots (copy first, technical fields under Advanced) and render.
+  - Video shows the ffmpeg blocker with its install command, and a timeline with the 15–30 s bounds.
+  - Upload is a five-step checklist (uploader, keys, approved content, dry run, upload), where each step says what it waits for.
+  - Review disables approve while validation fails.
+- **One language, a quieter shell:**
+  - Every label comes from the English or Turkish dictionary, and the page's `lang` follows the UI language. Validator codes have Turkish titles.
+  - Developer mode, off by default, shows the CLI commands, raw JSON, tool calls and file paths.
+  - The sidebar shows a status dot per page.
+  - The console stays collapsed until a job starts, and a toast reports when the job ends.
+- Studio errors carry a stable code, so the Studio words them in its own language.
+
+### Changed
+- **Approval needs valid content:** `vitrin approve` refuses while `metadata/validation.json` has errors (exit 2, with the first issues). The approve button in the review gallery refuses too. Fix the errors, run `vitrin validate`, then review again.
+- **Briefs close:** a stage that completes removes its brief from `metadata/briefs/`. This applies to analyze, write, screens, design and video, and to analyze again once the app profile is complete.
+- **Leftover store languages:** before `vitrin write` validates, it removes a `metadata/store/metadata/<locale>` folder for a language that is no longer selected. It does so only when the folder holds nothing but Vitrin's own locale files.
+- **Leftover renders:** capture and video remove a render folder for a language that is no longer selected. They do so only when the folder holds nothing but images or videos.
+
+### Added
+- `vitrin select --primary-locale <locale>` sets the listing's main language.
+- `vitrin select --support-url`, `--privacy-url` and `--marketing-url` set the URLs for every locale. They accept http(s) only, and an empty value removes the URL.
+- `vitrin validate` warns with `config.primary-locale` when `app.primaryLocale` is not one of the store locales.
+
 ## 1.0.0 — 2026-10-27
 
 ### Added — Vitrin Studio

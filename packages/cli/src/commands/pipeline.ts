@@ -3,13 +3,13 @@ import { enabledTargets, exec, existsSync, getTarget, hashPaths, hashValue, log,
 import { renderDesign, renderDesignSamples, selectedOption } from '@vitrin/render';
 import { runResearch, totalScore } from '@vitrin/research';
 import { AppMetadata, AppProfile, ArtDirection, CppSuggestions, ExperimentPlan, KeywordPlan, LocaleMetadata, ShotList, StylePreset, VideoPlan, type CustomProductPage, type Experiment, type ExperimentTreatment, type Issue, type Platform, type TargetFamily, type ValidationReport } from '@vitrin/schemas';
-import { validateAll } from '@vitrin/validate';
+import { strayLocaleDirs, validateAll } from '@vitrin/validate';
 import { previewPropsFor, remotionCliPath, renderVideos, VIDEO_DIR } from '@vitrin/video';
-import { exportFastlaneMetadata } from '@vitrin/upload';
-import { readFile } from 'node:fs/promises';
+import { exportFastlaneMetadata, pruneStrayLocales } from '@vitrin/upload';
+import { readdir, readFile } from 'node:fs/promises';
 import { dirname, join, relative } from 'node:path';
 import pc from 'picocolors';
-import { designBrief, metadataBrief, profileBrief, screensBrief, videoBrief } from '../briefs.js';
+import { closeBrief, designBrief, metadataBrief, profileBrief, screensBrief, videoBrief } from '../briefs.js';
 import { installScreenKit, renderHtmlScreens, type ScreenFamily } from '../html-screens.js';
 import { exportProjectMetadata } from '../finalize.js';
 import { refreshLiveListing } from '../live-listing.js';
@@ -49,12 +49,17 @@ export async function analyzeCommand(ctx: Ctx): Promise<number> {
     return [ctx.paths.profile];
   });
   const profile = await loadProfile(ctx);
-  const seedsEmpty = seedCount(ctx) === 0;
-  if (!profile.positioning || seedsEmpty || !ctx.config.capture.screens.length) {
+  if (!profileComplete(ctx, profile)) {
     const brief = await profileBrief(ctx, profile);
     throw new NeedsInput('Analysis done. Claude input needed: positioning, additional features, research.seeds and capture.screens.', [`Brief: ${relative(ctx.root, brief)}`]);
   }
+  await closeBrief(ctx, 'analyze');
   return EXIT.OK;
+}
+
+/** What the analyze brief asks Claude for: positioning, search seeds and the screens to capture. */
+function profileComplete(ctx: Ctx, profile: AppProfile): boolean {
+  return Boolean(profile.positioning) && seedCount(ctx) > 0 && ctx.config.capture.screens.length > 0;
 }
 
 /** Keeps everything Claude added (features with source "claude", positioning, category) across re-analysis. */
@@ -91,6 +96,7 @@ export async function researchCommand(ctx: Ctx, opts: { skipImages?: boolean } =
     if (live) log.ok(`Live listing (${live.source === 'asc' ? 'App Store Connect' : 'App Store lookup'}): ${Object.keys(live.locales).join(', ')} → metadata/research/live-listing.json`);
     return [ctx.paths.competitors, ...res.keywordFiles, ...(live ? [ctx.paths.liveListing] : [])];
   });
+  if (profileComplete(ctx, profile)) await closeBrief(ctx, 'analyze');
   return EXIT.OK;
 }
 
@@ -127,6 +133,9 @@ export async function writeCommand(ctx: Ctx): Promise<number> {
     throw new NeedsInput(`Claude input needed: metadata must be written by Claude (missing: ${[...missing.map((m) => `${m}.json`), ...(existsSync(ctx.paths.appMetadata) ? [] : ['app.json'])].join(', ')}).`, [`Brief: ${relative(ctx.root, brief)}`]);
   }
   await refreshKeywordTotals(ctx);
+  // Folders of locales dropped from app.locales are Vitrin's own leftovers: remove them before they fail validation.
+  const pruned = await pruneStrayLocales(ctx.paths, ctx.config);
+  if (pruned.length) log.ok(`Removed metadata/store/metadata/${pruned.length === 1 ? pruned[0] : `{${pruned.join(',')}}`}: not in app.locales any more, so deliver must not upload ${pruned.length === 1 ? 'it' : 'them'}.`);
   const report = await validateAll(ctx.paths, ctx.config, { text: true, claims: true, images: false, videos: false });
   const issues = report.issues.filter((i) => !i.code.startsWith('shot.') && !i.code.startsWith('badge.') && !i.code.startsWith('video.'));
   printIssues(issues);
@@ -138,6 +147,7 @@ export async function writeCommand(ctx: Ctx): Promise<number> {
   const app = await readJson(ctx.paths.appMetadata, AppMetadata);
   const written = await exportFastlaneMetadata(ctx.paths, ctx.config, app, metadata);
   await ctx.state.mark('write', hashValue({ metadata, app, urls: ctx.config.urls }), written.map((w) => relative(ctx.root, w)));
+  await closeBrief(ctx, 'write');
   log.ok(`Wrote metadata/store/metadata (${written.length} files)`);
   // The finished text, readable in the project: metadata/app-store/<platform>/<locale>/*.txt (+ google-play).
   const project = await exportProjectMetadata(ctx);
@@ -297,6 +307,7 @@ export async function captureCommand(ctx: Ctx, opts: { families?: string[]; loca
     }
     return outputs;
   });
+  await capturedBriefs(ctx, profile);
   return EXIT.OK;
 }
 
@@ -360,8 +371,15 @@ async function captureHtml(ctx: Ctx, profile: AppProfile, families: CaptureFamil
     log.warn(`Text missing in metadata/screens/strings (rendered empty): ${missing.strings.slice(0, 12).join('; ')}${missing.strings.length > 12 ? ' …' : ''}`);
     return EXIT.FAIL;
   }
+  await capturedBriefs(ctx, profile);
   log.ok('HTML screens rendered → metadata/raw');
   return EXIT.OK;
+}
+
+/** A finished capture answers the screens brief, and the analyze brief once its screens and seeds are in. */
+async function capturedBriefs(ctx: Ctx, profile: AppProfile): Promise<void> {
+  await closeBrief(ctx, 'screens');
+  if (profileComplete(ctx, profile)) await closeBrief(ctx, 'analyze');
 }
 
 async function captureSimulator(ctx: Ctx, f: CaptureFamily, platform: SimPlatform, appPath: string, bundleId: string, locales: string[]): Promise<string[]> {
@@ -563,6 +581,8 @@ export async function designCommand(ctx: Ctx, opts: DesignOptions = {}): Promise
     }
     return files;
   });
+  await closeBrief(ctx, 'design');
+  if (!opts.only) await pruneStrayRenders(ctx, ctx.paths.screenshots);
   const report = await validateAll(ctx.paths, ctx.config, { text: false, claims: true, images: true, videos: false });
   printIssues(report.issues);
   return report.ok ? EXIT.OK : EXIT.FAIL;
@@ -651,6 +671,16 @@ async function designSamples(ctx: Ctx, profile: AppProfile, opts: DesignOptions)
   return EXIT.OK;
 }
 
+/** Render folders of locales dropped from app.locales (only images and videos Vitrin made): deliver would upload them too. */
+async function pruneStrayRenders(ctx: Ctx, dir: string): Promise<void> {
+  for (const extra of await strayLocaleDirs(dir, ctx.config.app.locales)) {
+    const files = (await readdir(join(dir, extra))).filter((f) => !f.startsWith('.'));
+    if (files.some((f) => !/\.(png|jpe?g|mp4|mov|m4v)$/i.test(f))) continue;
+    await rm(join(dir, extra), { recursive: true, force: true });
+    log.ok(`Removed ${relative(ctx.root, join(dir, extra))}: ${extra} is not in app.locales any more.`);
+  }
+}
+
 // ---------------------------------------------------------------- video
 export async function videoCommand(ctx: Ctx, opts: { styles?: string[]; locales?: string[]; studio?: boolean } = {}): Promise<number> {
   const assets = ctx.config.selection?.assets;
@@ -700,6 +730,8 @@ export async function videoCommand(ctx: Ctx, opts: { styles?: string[]; locales?
     log.ok(`Rendered ${res.videos.length} videos`);
     return res.videos.map((v) => v.file);
   });
+  await closeBrief(ctx, 'video');
+  await pruneStrayRenders(ctx, ctx.paths.appPreviews);
   const report = await validateAll(ctx.paths, ctx.config, { text: false, claims: false, images: false, videos: true });
   printIssues(report.issues);
   return report.ok ? EXIT.OK : EXIT.FAIL;

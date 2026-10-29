@@ -65,6 +65,25 @@ export async function exportFastlaneMetadata(paths: AppPaths, config: VitrinConf
   return written;
 }
 
+/**
+ * Locale folders left from an earlier run whose locale is no longer in app.locales: deliver would upload them too.
+ * Only folders Vitrin wrote (nothing but the per-locale files above) are removed; a downloaded or hand-made one stays.
+ */
+export async function pruneStrayLocales(paths: AppPaths, config: VitrinConfig): Promise<string[]> {
+  const root = paths.fastlaneMetadata;
+  if (!existsSync(root)) return [];
+  const removed: string[] = [];
+  for (const e of await readdir(root, { withFileTypes: true })) {
+    if (!e.isDirectory() || e.name.startsWith('.') || ['default', 'android', 'review_information'].includes(e.name) || config.app.locales.includes(e.name)) continue;
+    const dir = join(root, e.name);
+    const files = (await readdir(dir)).filter((f) => !f.startsWith('.'));
+    if (files.some((f) => !Object.hasOwn(LOCALE_FILES, f))) continue;
+    await rm(dir, { recursive: true, force: true });
+    removed.push(e.name);
+  }
+  return removed;
+}
+
 /** `# vitrin-template: N` marker in the Fastfile template; files without it are version 1. */
 export function templateVersion(text: string): number {
   return Number(/^# vitrin-template: (\d+)/m.exec(text)?.[1] ?? 1);
