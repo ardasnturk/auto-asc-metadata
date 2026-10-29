@@ -30,7 +30,19 @@ export interface ClaudeRun {
 const ALLOWED_TOOLS = ['Read', 'Edit', 'Write', 'Glob', 'Grep', 'MultiEdit', 'Skill', 'Bash(vitrin:*)', 'Bash(cat:*)', 'Bash(ls:*)', 'Bash(ffmpeg:*)', 'Bash(ffprobe:*)', 'Bash(open:*)'];
 const DISALLOWED_TOOLS = ['Bash(vitrin upload:*)', 'Bash(vitrin approve:*)', 'Bash(vitrin submit:*)', 'Bash(vitrin finalize:*)', 'Bash(vitrin init:*)', 'Bash(git:*)', 'WebFetch', 'WebSearch'];
 
-const SYSTEM = `You are running headless inside Vitrin Studio, a local web UI for the Vitrin pipeline (the /vitrin skill). The user watches your output in a panel and cannot answer questions mid-run: never wait for an answer. When you need a decision from the user, do everything that does not depend on it and end with a short message that asks the question. Write only inside metadata/ and vitrin.config.yaml. Never run vitrin upload, approve, submit, finalize or init, never use git, never commit: the user does those in the Studio. When you are done, end with a short summary of what you wrote and what to run next.`;
+const SYSTEM = `You are running headless inside Vitrin Studio, a local web UI for the Vitrin pipeline (the /vitrin skill). The user watches your output in a panel and cannot answer questions mid-run: never wait for an answer. When you need a decision from the user, do everything that does not depend on it and end with a short message that asks the question. Run every command in the foreground and wait for it to finish: never start background commands, never sleep or poll for them. Write only inside metadata/ and vitrin.config.yaml. Never run vitrin upload, approve, submit, finalize or init, never use git, never commit: the user does those in the Studio. When you are done, end with a short summary of what you wrote and what to run next.`;
+
+/** The Studio's rules plus the language the user reads the panel in (ui.language; unset = English). */
+export function systemPrompt(language?: string | null): string {
+  if (!language || language === 'en') return SYSTEM;
+  let name = language;
+  try {
+    name = new Intl.DisplayNames(['en'], { type: 'language' }).of(language) ?? language;
+  } catch {
+    /* not a language tag Intl knows: name it by the tag */
+  }
+  return `${SYSTEM} Write every message to the user in ${name} (${language}), including questions and the final summary. Files keep the language they need: store copy is written in its store locale, JSON keys and commands stay as they are.`;
+}
 
 /** Short, human-readable line for a tool call in the panel. */
 function toolSummary(name: string, input: Record<string, unknown> | undefined): string {
@@ -78,14 +90,14 @@ export class ClaudeRunner extends EventEmitter {
   }
 
   /** Starts `claude -p` with the prompt; `fresh` drops the conversation so far. */
-  async start(prompt: string, opts: { fresh?: boolean } = {}): Promise<ClaudeRun> {
+  async start(prompt: string, opts: { fresh?: boolean; language?: string | null } = {}): Promise<ClaudeRun> {
     if (this.current) throw Object.assign(new Error('Claude is still working.'), { status: 409 });
     if (!(await this.available())) throw Object.assign(new Error('Claude Code (`claude`) is not installed or not on PATH.'), { status: 424 });
     const run: ClaudeRun = { id: randomUUID().slice(0, 8), prompt, startedAt: new Date().toISOString(), status: 'running', events: [] };
     this.runs.push(run);
     if (this.runs.length > 30) this.runs.splice(0, this.runs.length - 30);
     this.current = run;
-    const args = ['-p', prompt, '--output-format', 'stream-json', '--verbose', '--permission-mode', 'acceptEdits', '--allowedTools', ALLOWED_TOOLS.join(','), '--disallowedTools', DISALLOWED_TOOLS.join(','), '--append-system-prompt', SYSTEM];
+    const args = ['-p', prompt, '--output-format', 'stream-json', '--verbose', '--permission-mode', 'acceptEdits', '--allowedTools', ALLOWED_TOOLS.join(','), '--disallowedTools', DISALLOWED_TOOLS.join(','), '--append-system-prompt', systemPrompt(opts.language)];
     if (!opts.fresh && this.sessionId) args.push('--resume', this.sessionId);
     // A Studio started from inside Claude Code must not look like a nested session to the child.
     const env = { ...process.env };

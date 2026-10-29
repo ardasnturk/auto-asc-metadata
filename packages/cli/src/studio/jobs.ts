@@ -64,6 +64,7 @@ export const RUNNERS: Record<string, Runner> = {
       assets: list(a.assets),
       targets: list(a.targets),
       locales: list(a.locales),
+      primaryLocale: str(a.primaryLocale),
       language: str(a.language) ?? (a.language === null ? 'default' : undefined),
       uploader: str(a.uploader),
       capture: str(a.capture),

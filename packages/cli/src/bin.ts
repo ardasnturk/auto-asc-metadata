@@ -105,6 +105,7 @@ program
   .option('--assets <assets>', 'metadata,screenshots,previews,creatives,events or "all"')
   .option('--targets <formats>', 'formats (target ids: iphone-6.9,ipad-13,…) or "all"; see vitrin platforms')
   .option('--locales <locales>', 'store locales of this run (app.locales), e.g. en-US,tr,de-DE')
+  .option('--primary-locale <locale>', 'the listing\'s main language (app.primaryLocale), one of the store locales')
   .option('--language <tag>', 'language Vitrin talks to the user in (en, tr, de …; "default" = English)')
   .option('--uploader <name>', 'App Store uploader: asc | deliver | asset-library')
   .option('--capture <mode>', 'how screens are made: html (from the code, no build) | launch-args (build + simulators) | manual')

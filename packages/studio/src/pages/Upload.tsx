@@ -3,6 +3,7 @@ import { api, type JobSummary } from '../api';
 import { t } from '../i18n';
 import { useBusy, useStudio } from '../store';
 import { Button, Card, Check, fmtDate, Modal, Pill } from '../ui';
+import { BlockerItem, stageReason } from '../status';
 import { DoctorChecks } from './Setup';
 
 /** Keys (names only) → doctor → dry-run plan → the upload after the user's explicit confirmation → read-back → finalize. */
@@ -36,7 +37,8 @@ export function Upload() {
       });
   }, [state.job, doctor, planJob]);
 
-  const approved = o.approval?.status === 'approved';
+  const approved = Boolean(o.approval?.valid);
+  const blockers = o.blockers.filter((b) => b.stage === 'upload');
   const uploaded = o.approval?.upload;
   const appName = o.app?.name ?? '';
   const canUpload = approved && o.missingKeys.length === 0 && !busy;
@@ -72,8 +74,16 @@ export function Upload() {
                 <Pill tone={o.config?.uploader ? 'ok' : 'warn'}>
                   {t('uploader')}: {o.config?.uploader ?? '—'}
                 </Pill>
-                <Pill tone={approved ? 'ok' : 'warn'}>{approved ? `${t('approved')} ${fmtDate(o.approval?.approvedAt)}` : t('notApproved')}</Pill>
+                {approved ? (
+                  <Pill tone="ok">{`${t('approved')} ${fmtDate(o.approval?.approvedAt)}`}</Pill>
+                ) : o.approval?.status !== 'approved' ? (
+                  <Pill tone="warn">{t('notApproved')}</Pill>
+                ) : null}
               </div>
+              {!approved && o.approval?.status === 'approved' && <div className="text-err small">{t('approvalInvalid', { reason: stageReason({ id: 'review', status: 'blocked', reason: o.approval.problem }, o) })}</div>}
+              {blockers.map((b) => (
+                <BlockerItem key={b.code} blocker={b} primary />
+              ))}
               {o.missingKeys.length > 0 && <div className="dim small">{t('keysHint')}</div>}
               {doctor?.result ? <DoctorChecks result={doctor.result as { checks: Array<{ id: string; title: string; status: string; detail?: string; fix?: string }> }} /> : null}
             </div>
@@ -106,6 +116,7 @@ export function Upload() {
                   {t('uploadNow')}
                 </Button>
               </div>
+              {!canUpload && !busy && <div className="dim small">{t('uploadBlocked')}</div>}
               {planJob && planJob.status !== 'running' && (
                 <div>
                   <div className="row" style={{ marginBottom: 6 }}>

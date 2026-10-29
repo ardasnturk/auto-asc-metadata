@@ -1,4 +1,4 @@
-import { exec, existsSync, log, VITRIN_HOME } from '@vitrin/core';
+import { appPaths, exec, existsSync, loadConfig, log, VITRIN_HOME } from '@vitrin/core';
 import { watch, type FSWatcher } from 'node:fs';
 import { createReadStream } from 'node:fs';
 import { readFile, realpath, stat } from 'node:fs/promises';
@@ -7,7 +7,7 @@ import type { AddressInfo } from 'node:net';
 import { spawn, type ChildProcess } from 'node:child_process';
 import { extname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { buildInventory, checkApproval, recordApproval, recordRejections, summarize, syncFastlaneMetadata } from '../approval.js';
-import { createContext } from '../context.js';
+import { createContext, NeedsInput } from '../context.js';
 import { buildReport } from '../report.js';
 import { briefPrompt, ClaudeRunner } from './claude.js';
 import { EditableError, readEditable, resolveEditable, writeEditable } from './files.js';
@@ -243,6 +243,15 @@ export async function startStudioServer(root: string, opts: { port?: number; hos
     }
   };
 
+  /** ui.language from the config as it is now (the user may change it in Setup while the Studio runs). */
+  function uiLanguage(): string | null {
+    try {
+      return loadConfig(appPaths(root).config).ui?.language ?? null;
+    } catch {
+      return null;
+    }
+  }
+
   /** The review gallery's state and decisions, the contract report.html's buttons use (same as `vitrin review --serve`). */
   async function reviewState() {
     const ctx = await createContext({ cwd: root });
@@ -291,7 +300,9 @@ export async function startStudioServer(root: string, opts: { port?: number; hos
             prompt = briefPrompt(body.stage, brief, extra);
           }
           if (!prompt) return sendJson(res, 400, { error: 'prompt or stage is required.' });
-          const run = await claude.start(prompt, { fresh: body.fresh === true });
+          // A brief is a task of its own: it starts a new conversation instead of resuming the last one's long context.
+          const fresh = body.fresh === true || (typeof body.prompt !== 'string' && typeof body.stage === 'string');
+          const run = await claude.start(prompt, { fresh, language: uiLanguage() });
           return sendJson(res, 202, { id: run.id, startedAt: run.startedAt });
         }
         if (path === '/api/claude/cancel' && method === 'POST') return sendJson(res, 200, { cancelled: claude.cancel() });
@@ -387,7 +398,7 @@ export async function startStudioServer(root: string, opts: { port?: number; hos
       if (!path.startsWith('/api/') && !extname(path)) return sendFile(req, res, join(ui, 'index.html'));
       return sendJson(res, 404, { error: 'Not found.' });
     } catch (err) {
-      const status = (err as { status?: number }).status ?? (err instanceof EditableError ? err.status : 500);
+      const status = (err as { status?: number }).status ?? (err instanceof EditableError ? err.status : err instanceof NeedsInput ? 409 : 500);
       const body: Record<string, unknown> = { error: (err as Error).message };
       if (err instanceof EditableError) body.issues = err.issues;
       if (!res.headersSent) sendJson(res, status, body);

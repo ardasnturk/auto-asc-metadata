@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { api, fileUrl } from '../api';
+import { api, fileUrl, startLocale } from '../api';
 import { t } from '../i18n';
 import { useBusy, useFile, useStudio } from '../store';
 import { Button, Card, CodeEditor, Empty, Field, ListInput, SaveBar, Select, Tabs, TextField, useMode } from '../ui';
@@ -38,7 +38,7 @@ export function Video({ openClaude }: { openClaude: () => void }) {
   const busy = useBusy();
   const o = state.overview!;
   const cfg = o.config!;
-  const [locale, setLocale] = useState(cfg.primaryLocale);
+  const [locale, setLocale] = useState(startLocale(cfg));
   const file = useFile<VideoPlan>('metadata/video-plan.json');
   const [mode, toggle] = useMode();
   const hasBrief = o.briefs.some((b) => b.name === 'video');

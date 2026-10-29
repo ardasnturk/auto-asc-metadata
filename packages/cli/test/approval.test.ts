@@ -157,6 +157,28 @@ describe('inventory, approval and change detection', () => {
   });
 });
 
+describe('approval and validation', () => {
+  it('refuses to approve while the last validation found errors, and approves once it passes', async () => {
+    const fx = await makeFixture({ android: false });
+    try {
+      const ctx = await createContext({ cwd: fx.root });
+      const inv = await buildInventory(ctx);
+      const report = JSON.parse(readFileSync(ctx.paths.validation, 'utf8'));
+      const failing = { ...report, ok: false, counts: { error: 1, warning: 0, info: 0 }, issues: [{ severity: 'error', code: 'metadata.stray-locale', message: 'metadata/store/metadata/de-DE is a locale not in the config.' }] };
+      writeFileSync(ctx.paths.validation, JSON.stringify(failing));
+      const err = await recordApproval(ctx, inv, 'cli').catch((e: unknown) => e);
+      expect(err).toBeInstanceOf(NeedsInput);
+      expect((err as NeedsInput).message).toContain('1 error(s)');
+      expect((err as NeedsInput).details).toEqual(['[metadata.stray-locale] metadata/store/metadata/de-DE is a locale not in the config.']);
+      expect(existsSync(ctx.paths.approval)).toBe(false);
+      writeFileSync(ctx.paths.validation, JSON.stringify(report));
+      await expect(recordApproval(ctx, inv, 'cli')).resolves.toMatchObject({ status: 'approved' });
+    } finally {
+      rmSync(fx.root, { recursive: true, force: true });
+    }
+  });
+});
+
 describe('Custom Product Page screenshot sets', () => {
   it('are hashed for approval, listed under their page and shown in the report', async () => {
     const fx = await makeFixture();

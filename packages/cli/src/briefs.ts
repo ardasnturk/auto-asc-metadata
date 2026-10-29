@@ -1,6 +1,7 @@
 import { enabledTargets, existsSync, localeInfo, readJsonIfExists, storefrontForLocale, storefrontInfo, writeText } from '@vitrin/core';
 import { Competitors, KeywordPlan, LiveListing, StylePreset, type AppProfile, type KeywordCandidate } from '@vitrin/schemas';
 import { PRESETS, suggestStyles } from '@vitrin/render';
+import { rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { Ctx } from './context.js';
 import { sampleLocale, sampleTarget } from './commands/select.js';
@@ -14,6 +15,11 @@ export async function writeBrief(ctx: Ctx, name: string, body: string): Promise<
   const file = join(ctx.paths.briefs, `${name}.md`);
   await writeText(file, body);
   return file;
+}
+
+/** A brief is open until the stage it feeds completes; the Studio lists only the open ones. */
+export async function closeBrief(ctx: Ctx, name: string): Promise<void> {
+  await rm(join(ctx.paths.briefs, `${name}.md`), { force: true });
 }
 
 function featureTable(profile: AppProfile): string {

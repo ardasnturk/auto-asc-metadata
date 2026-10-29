@@ -1,5 +1,6 @@
 import { appPaths, existsSync, loadConfig, loadEnv, readJsonIfExists, StateStore, vitrinVersion, which, type AppPaths } from '@vitrin/core';
 import { AppProfile, ApprovalManifest, Archetype, BadgeType, BeatScene, EmphasisStyle, Framing, StylePreset, ValidationReport, VideoStyle, VideoTransition, type VitrinConfig } from '@vitrin/schemas';
+import { strayLocaleDirs } from '@vitrin/validate';
 import { readdir, stat } from 'node:fs/promises';
 import { join, relative, resolve, sep } from 'node:path';
 import { detectUploaderTools, missingUploadKeys, type UploaderTools } from '../commands/doctor.js';
@@ -15,6 +16,51 @@ export interface RenderedFile {
   path: string;
   name: string;
   bytes: number;
+}
+
+/** The stages the Studio walks through, in order. mockups and rank are optional side steps. */
+export const PIPELINE = ['analyze', 'research', 'write', 'capture', 'mockups', 'design', 'video', 'validate', 'review', 'rank'] as const;
+export type PipelineStage = (typeof PIPELINE)[number];
+const OPTIONAL = new Set<PipelineStage>(['mockups', 'rank']);
+
+/**
+ * Where a stage stands. Computed here, from state, briefs, approval and validation, so every Studio page tells the
+ * same story: needs-claude = an open brief waits for Claude, needs-user = waits for the user's decision, blocked =
+ * something must be fixed first (see `reason`), outdated = an input stage ran after it, skipped = not selected.
+ */
+export type StageStatus = 'done' | 'needs-claude' | 'needs-user' | 'blocked' | 'outdated' | 'not-run' | 'skipped';
+
+export interface StageView {
+  id: PipelineStage;
+  status: StageStatus;
+  optional?: boolean;
+  completedAt?: string;
+  note?: string;
+  /** Open brief Claude can take (metadata/briefs/<brief>.md). */
+  brief?: string;
+  /** Why the stage has its status: a blocker code, or the stage that ran after it (outdated). */
+  reason?: string;
+}
+
+export type BlockerCode = 'config-error' | 'stray-locales' | 'primary-locale' | 'ffmpeg-missing' | 'claude-missing' | 'uploader-unset' | 'uploader-missing' | 'keys-missing';
+
+/** Something that stops a stage or the upload, with the one-click fixes the Studio offers for it. */
+export interface Blocker {
+  code: BlockerCode;
+  severity: 'error' | 'warning';
+  /** Where it stops the run; the Studio shows it there. */
+  stage: PipelineStage | 'upload';
+  params: Record<string, string | number | string[]>;
+  /** Studio jobs that fix it (the user picks one), most likely first. */
+  fixes: Array<{ id: string; command: string; args: Record<string, unknown> }>;
+}
+
+/** The one thing to do now: the first stage that is not done, or the upload when everything is. */
+export interface NextStep {
+  stage: PipelineStage | 'upload';
+  action: 'claude' | 'run' | 'fix' | 'approve' | 'upload';
+  /** For fix: the blocker to resolve. */
+  blocker?: BlockerCode;
 }
 
 export interface Overview {
@@ -40,9 +86,17 @@ export interface Overview {
   files: Record<string, boolean>;
   listing: string[];
   playListing: string[];
-  briefs: Array<{ name: string; path: string; modifiedAt: string }>;
-  validation?: { ok: boolean; counts: ValidationReport['counts']; generatedAt?: string };
-  approval?: Pick<ApprovalManifest, 'status' | 'approvedAt' | 'via' | 'overallHash' | 'upload' | 'finalized'> & { rejections: number };
+  /** Open briefs only: one is closed once the stage it feeds completed after it was written. */
+  briefs: Array<{ name: string; path: string; modifiedAt: string; stage?: PipelineStage }>;
+  validation?: { ok: boolean; counts: ValidationReport['counts']; generatedAt?: string; issues: Array<Pick<ValidationReport['issues'][number], 'severity' | 'code' | 'message' | 'file' | 'locale' | 'field'>> };
+  /**
+   * `valid` is false when the approval cannot be uploaded as it is: validation found errors, or content stages ran
+   * after it (a cheap check by time; the upload itself compares every file hash).
+   */
+  approval?: Pick<ApprovalManifest, 'status' | 'approvedAt' | 'via' | 'overallHash' | 'upload' | 'finalized'> & { rejections: number; valid: boolean; problem?: 'validation-errors' | 'content-changed' | 'rejected' };
+  flow: StageView[];
+  blockers: Blocker[];
+  next?: NextStep;
   raw: Record<string, Record<string, RenderedFile[]>>;
   screenshots: Record<string, RenderedFile[]>;
   previews: Record<string, RenderedFile[]>;
@@ -113,6 +167,8 @@ export async function buildOverview(root: string): Promise<Overview> {
     listing: [],
     playListing: [],
     briefs: [],
+    flow: [],
+    blockers: [],
     raw: {},
     screenshots: {},
     previews: {},
@@ -182,15 +238,25 @@ export async function buildOverview(root: string): Promise<Overview> {
   for (const [k, p] of Object.entries(flags)) base.files[k] = existsSync(p);
   base.listing = (await filesIn(root, paths.metadataDir, /^(?!app\.json$).+\.json$/)).map((f) => f.name.replace(/\.json$/, ''));
   base.playListing = (await filesIn(root, join(paths.metadataDir, 'play'), /^(?!app\.json$).+\.json$/)).map((f) => f.name.replace(/\.json$/, ''));
+  const validation = await readJsonIfExists(paths.validation, ValidationReport).catch(() => undefined);
+  if (validation)
+    base.validation = {
+      ok: validation.ok,
+      counts: validation.counts,
+      generatedAt: (validation as { generatedAt?: string }).generatedAt,
+      issues: validation.issues.slice(0, 200).map((i) => ({ severity: i.severity, code: i.code, message: i.message, file: i.file, locale: i.locale, field: i.field })),
+    };
+  const approval = await readJsonIfExists(paths.approval, ApprovalManifest).catch(() => undefined);
+  if (approval) {
+    const problem = approvalProblem(approval, base.stages, base.validation);
+    base.approval = { status: approval.status, approvedAt: approval.approvedAt, via: approval.via, overallHash: approval.overallHash, upload: approval.upload, finalized: approval.finalized, rejections: approval.rejections.length, valid: !problem, problem };
+  }
   for (const f of await filesIn(root, paths.briefs, /\.md$/)) {
     const st = await stat(join(root, f.path));
-    base.briefs.push({ name: f.name.replace(/\.md$/, ''), path: f.path, modifiedAt: st.mtime.toISOString() });
+    const brief = { name: f.name.replace(/\.md$/, ''), path: f.path, modifiedAt: st.mtime.toISOString(), stage: BRIEF_STAGE[f.name.replace(/\.md$/, '')] };
+    if (briefOpen(brief, base.stages, approval)) base.briefs.push(brief);
   }
   base.briefs.sort((a, b) => b.modifiedAt.localeCompare(a.modifiedAt));
-  const validation = await readJsonIfExists(paths.validation, ValidationReport).catch(() => undefined);
-  if (validation) base.validation = { ok: validation.ok, counts: validation.counts, generatedAt: (validation as { generatedAt?: string }).generatedAt };
-  const approval = await readJsonIfExists(paths.approval, ApprovalManifest).catch(() => undefined);
-  if (approval) base.approval = { status: approval.status, approvedAt: approval.approvedAt, via: approval.via, overallHash: approval.overallHash, upload: approval.upload, finalized: approval.finalized, rejections: approval.rejections.length };
   for (const locale of await subdirs(paths.raw)) {
     base.raw[locale] = {};
     for (const family of await subdirs(join(paths.raw, locale))) base.raw[locale]![family] = await filesIn(root, join(paths.raw, locale, family), MEDIA);
@@ -211,5 +277,152 @@ export async function buildOverview(root: string): Promise<Overview> {
     const index = join(mockupScreens, 'index.html');
     base.mockups = { index: existsSync(index) ? toPosix(relative(root, index)) : undefined, screens: await filesIn(root, mockupScreens, IMAGE) };
   }
+  if (base.configError) base.blockers.push({ code: 'config-error', severity: 'error', stage: 'analyze', params: { message: base.configError }, fixes: [] });
+  if (config) {
+    base.blockers.push(...(await localeBlockers(paths, config, base.listing)), ...toolBlockers(base, config));
+    base.flow = stageFlow(base, config, existsSync(paths.rankings));
+    base.next = nextStep(base.flow, base.blockers);
+  }
   return base;
+}
+
+/** The stage each brief feeds. */
+const BRIEF_STAGE: Record<string, PipelineStage> = { analyze: 'analyze', write: 'write', screens: 'capture', design: 'design', video: 'video', review: 'review' };
+/** The stage whose completion answers a brief (the CLI closes briefs itself; this covers ones written before it did). */
+const ANSWERED_BY: Record<string, string> = { analyze: 'research', write: 'write', screens: 'capture', design: 'design', video: 'video' };
+
+type Stages = Overview['stages'];
+
+export function briefOpen(brief: { name: string; modifiedAt: string }, stages: Stages, approval?: Pick<ApprovalManifest, 'status' | 'approvedAt' | 'finalized'>): boolean {
+  const after = (at?: string) => Boolean(at && at >= brief.modifiedAt);
+  if (brief.name === 'review') return !(approval?.status === 'approved' && after(approval.approvedAt));
+  if (brief.name === 'finalize') return !after(approval?.finalized?.at);
+  const by = ANSWERED_BY[brief.name];
+  const rec = by ? stages[by] : undefined;
+  return !(rec && rec.status !== 'blocked' && after(rec.completedAt));
+}
+
+/** Content stages: a run of one after the approval changed what would be uploaded. */
+const CONTENT_STAGES = ['write', 'design', 'video'];
+
+export function approvalProblem(approval: Pick<ApprovalManifest, 'status' | 'approvedAt'>, stages: Stages, validation?: { ok: boolean }): 'validation-errors' | 'content-changed' | 'rejected' | undefined {
+  if (approval.status !== 'approved') return 'rejected';
+  if (validation && !validation.ok) return 'validation-errors';
+  if (CONTENT_STAGES.some((s) => (stages[s]?.completedAt ?? '') > approval.approvedAt)) return 'content-changed';
+  return undefined;
+}
+
+/** Inputs of a stage: when one of them completed after it, its output no longer matches. */
+const UPSTREAM: Partial<Record<PipelineStage, string[]>> = {
+  design: ['capture'],
+  video: ['capture', 'design'],
+  validate: ['write', 'design', 'video'],
+};
+
+export function stageFlow(o: Pick<Overview, 'stages' | 'briefs' | 'blockers' | 'approval' | 'validation' | 'mockups'>, config: VitrinConfig, ranked = false): StageView[] {
+  const assets = config.selection?.assets;
+  const skipped: Partial<Record<PipelineStage, boolean>> = {
+    design: Boolean(assets && !assets.some((a) => a === 'screenshots' || a === 'creatives' || a === 'events')),
+    video: Boolean((assets && !assets.includes('previews') && !assets.includes('creatives')) || (!config.video.enabled && !assets?.includes('previews'))),
+  };
+  return PIPELINE.map((id): StageView => {
+    const rec = o.stages[id];
+    const view: StageView = { id, status: 'not-run', ...(OPTIONAL.has(id) ? { optional: true } : {}), ...(rec ? { completedAt: rec.completedAt, note: rec.note } : {}) };
+    const brief = o.briefs.find((b) => b.stage === id);
+    const blocker = o.blockers.find((b) => b.stage === id && b.severity === 'error');
+    const newer = (UPSTREAM[id] ?? []).find((up) => rec && (o.stages[up]?.completedAt ?? '') > rec.completedAt);
+    if (skipped[id]) return { ...view, status: 'skipped' };
+    // Claude can write the plan while a tool is missing, but the stage cannot finish until the blocker is fixed: say both.
+    if (brief) return { ...view, status: 'needs-claude', brief: brief.name, ...(blocker ? { reason: blocker.code } : {}) };
+    if (id === 'mockups') return { ...view, status: o.mockups?.screens.length ? 'done' : 'not-run' };
+    if (id === 'rank') return { ...view, status: ranked ? 'done' : 'not-run' };
+    if (id === 'review') {
+      const a = o.approval;
+      if (!a) return { ...view, status: o.validation?.ok ? 'needs-user' : 'not-run' };
+      const base = { ...view, completedAt: a.approvedAt };
+      if (a.problem === 'validation-errors') return { ...base, status: 'blocked', reason: 'validation-errors' };
+      if (a.problem === 'content-changed') return { ...base, status: 'needs-user', reason: 'content-changed' };
+      if (a.problem === 'rejected') return { ...base, status: 'needs-claude', reason: 'rejected' };
+      return { ...base, status: 'done' };
+    }
+    if (blocker) return { ...view, status: 'blocked', reason: blocker.code };
+    if (!rec) return view;
+    if (rec.status === 'blocked') return { ...view, status: 'blocked', reason: id === 'validate' ? 'validation-errors' : undefined };
+    if (newer) return { ...view, status: 'outdated', reason: newer };
+    return { ...view, status: 'done' };
+  });
+}
+
+export function nextStep(flow: StageView[], blockers: Blocker[]): NextStep | undefined {
+  for (const s of flow) {
+    if (s.optional || s.status === 'done' || s.status === 'skipped') continue;
+    const blocker = blockers.find((b) => b.stage === s.id && b.severity === 'error');
+    if (blocker) return { stage: s.id, action: 'fix', blocker: blocker.code };
+    if (s.status === 'needs-claude') return { stage: s.id, action: 'claude' };
+    if (s.status === 'needs-user') return { stage: s.id, action: 'approve' };
+    if (s.status === 'blocked' && s.id === 'review') return { stage: 'validate', action: 'run' };
+    return { stage: s.id, action: 'run' };
+  }
+  const upload = blockers.find((b) => b.stage === 'upload' && b.severity === 'error');
+  return upload ? { stage: 'upload', action: 'fix', blocker: upload.code } : { stage: 'upload', action: 'upload' };
+}
+
+/**
+ * Store folders of locales that are not in app.locales (validate fails on them: deliver would upload them too), and
+ * a primary locale outside the store locales (copy and captures fall back to it).
+ */
+async function localeBlockers(paths: AppPaths, config: VitrinConfig, listing: string[]): Promise<Blocker[]> {
+  const out: Blocker[] = [];
+  const locales = config.app.locales;
+  const metadata = (await strayLocaleDirs(paths.fastlaneMetadata, locales)).filter((d) => d !== 'default' && d !== 'android');
+  const screenshots = await strayLocaleDirs(paths.screenshots, locales);
+  const previews = await strayLocaleDirs(paths.appPreviews, locales);
+  const stray = [...new Set([...metadata, ...screenshots, ...previews])].sort();
+  if (stray.length) {
+    // Dropping them = re-running the stage that wrote them: it removes folders of locales no longer selected.
+    const drop = metadata.length ? 'write' : screenshots.length ? 'design' : 'video';
+    out.push({
+      code: 'stray-locales',
+      severity: 'error',
+      stage: 'validate',
+      params: { locales: stray, selected: locales },
+      fixes: [
+        { id: 'add-locales', command: 'select', args: { locales: [...locales, ...stray.filter((l) => listing.includes(l))] } },
+        { id: 'drop-locales', command: drop, args: {} },
+      ].filter((f) => f.id !== 'add-locales' || (f.args.locales as string[]).length > locales.length),
+    });
+  }
+  if (!locales.includes(config.app.primaryLocale)) {
+    out.push({
+      code: 'primary-locale',
+      severity: 'warning',
+      stage: 'write',
+      params: { primary: config.app.primaryLocale, selected: locales },
+      fixes: [
+        { id: 'set-primary', command: 'select', args: { primaryLocale: locales[0] } },
+        ...(listing.includes(config.app.primaryLocale) ? [{ id: 'add-primary', command: 'select', args: { locales: [...locales, config.app.primaryLocale] } }] : []),
+      ],
+    });
+  }
+  return out;
+}
+
+function toolBlockers(o: Pick<Overview, 'tools' | 'missingKeys'>, config: VitrinConfig): Blocker[] {
+  const out: Blocker[] = [];
+  const assets = config.selection?.assets;
+  const video = (!assets || assets.includes('previews') || assets.includes('creatives')) && (config.video.enabled || Boolean(assets?.includes('previews')));
+  if (video && !o.tools.ffmpeg) out.push({ code: 'ffmpeg-missing', severity: 'error', stage: 'video', params: { install: 'brew install ffmpeg' }, fixes: [] });
+  if (!o.tools.claude) out.push({ code: 'claude-missing', severity: 'warning', stage: 'analyze', params: { install: 'npm install -g @anthropic-ai/claude-code' }, fixes: [] });
+  const uploader = config.upload.uploader;
+  if (!uploader) {
+    const asc = { id: 'use-asc', command: 'select', args: { uploader: 'asc' } };
+    const deliver = { id: 'use-deliver', command: 'select', args: { uploader: 'deliver' } };
+    out.push({ code: 'uploader-unset', severity: 'error', stage: 'upload', params: {}, fixes: o.tools.asc || !o.tools.fastlane ? [asc, deliver] : [deliver, asc] });
+  } else if (uploader === 'asc' && !o.tools.asc) {
+    out.push({ code: 'uploader-missing', severity: 'error', stage: 'upload', params: { tool: 'asc', install: 'brew install asc' }, fixes: [] });
+  } else if (uploader !== 'asc' && !o.tools.fastlane) {
+    out.push({ code: 'uploader-missing', severity: 'error', stage: 'upload', params: { tool: 'fastlane', install: 'bundle install' }, fixes: [] });
+  }
+  if (o.missingKeys.length) out.push({ code: 'keys-missing', severity: 'error', stage: 'upload', params: { keys: o.missingKeys }, fixes: [] });
+  return out;
 }

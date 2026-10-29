@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { api, fileUrl } from '../api';
+import { api, fileUrl, startLocale } from '../api';
 import { t } from '../i18n';
 import { useBusy, useFile, useStudio } from '../store';
 import { Button, Card, CodeEditor, Empty, Modal, Pill, Tabs, Thumb } from '../ui';
@@ -10,8 +10,9 @@ export function Screens({ openClaude }: { openClaude: () => void }) {
   const busy = useBusy();
   const o = state.overview!;
   const cfg = o.config!;
-  const locales = Object.keys(o.raw).length ? Object.keys(o.raw) : cfg.locales;
-  const [locale, setLocale] = useState(locales[0] ?? cfg.primaryLocale);
+  // Only the store locales: raw captures of a locale that is no longer selected are not part of this run.
+  const locales = cfg.locales;
+  const [locale, setLocale] = useState(startLocale(cfg));
   const [editing, setEditing] = useState<string | undefined>();
   const [stringsLocale, setStringsLocale] = useState<string | undefined>();
   const families = Object.keys(o.raw[locale] ?? {});

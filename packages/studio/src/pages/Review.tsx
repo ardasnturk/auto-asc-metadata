@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { api, fileUrl, type ReviewState } from '../api';
 import { t } from '../i18n';
 import { useBusy, useStudio } from '../store';
+import { stageReason } from '../status';
 import { Button, Card, fmtDate, Modal, Pill } from '../ui';
 
 /** The review gallery (metadata/report.html) with approve and reject, exactly as `vitrin review --serve` offers it. */
@@ -30,6 +31,8 @@ export function Review() {
     if (!state.job) void load();
   }, [state.changedTick, state.job, load]);
 
+  const invalid = Boolean(o.validation && !o.validation.ok);
+
   const approve = async () => {
     if (!review) return;
     try {
@@ -50,22 +53,24 @@ export function Review() {
         <p>{t('reviewIntro')}</p>
       </header>
       <div className="row wrap" style={{ marginBottom: 14 }}>
-        {review?.approval.ok ? (
+        {review?.approval.ok && o.approval?.valid ? (
           <Pill tone="ok">
             {t('approved')} · {fmtDate(o.approval?.approvedAt)}
           </Pill>
+        ) : review?.approval.ok && o.approval ? (
+          <span className="text-err small">{t('approvalInvalid', { reason: stageReason({ id: 'review', status: 'blocked', reason: o.approval.problem }, o) })}</span>
         ) : (
           <Pill tone="warn">{review?.approval.reason ?? t('notApproved')}</Pill>
         )}
-        {o.validation && <Pill tone={o.validation.ok ? 'ok' : 'err'}>{o.validation.ok ? 'validation ok' : `${o.validation.counts.error} errors · ${o.validation.counts.warning} warnings`}</Pill>}
+        {o.validation && <Pill tone={o.validation.ok ? 'ok' : 'err'}>{o.validation.ok ? t('validationOk') : t('validationErrors', { n: o.validation.counts.error })}</Pill>}
         {review && (
           <span className="dim mono small">
             {t('overallHash')} {review.overallHash.slice(0, 12)}
           </span>
         )}
         <span className="grow" />
-        <Button disabled={busy || loading} onClick={() => run('validate')}>
-          vitrin validate
+        <Button disabled={busy || loading} title="vitrin validate" onClick={() => run('validate')}>
+          {t('stageValidate')}
         </Button>
         <Button disabled={busy || loading} onClick={() => load()}>
           {t('rebuild')}
@@ -73,10 +78,11 @@ export function Review() {
         <Button onClick={() => window.open(fileUrl('metadata/report.html'), '_blank')} disabled={!o.files.report}>
           {t('openGallery')}
         </Button>
-        <Button kind="primary" disabled={busy || loading || !review || review.approval.ok} onClick={() => setConfirm(true)}>
+        <Button kind="primary" disabled={busy || loading || !review || review.approval.ok || invalid} onClick={() => setConfirm(true)}>
           {t('approveAll')}
         </Button>
       </div>
+      {invalid && !review?.approval.ok && <div className="dim small" style={{ marginBottom: 12 }}>{t('approveNeedsValid')}</div>}
       {review && (
         <Card className="tight" title={`${review.items.length} items`}>
           <div className="row wrap">

@@ -169,6 +169,8 @@ export interface SelectionChange {
   targets?: string[] | null;
   /** Store locales of this run (app.locales); never null. */
   locales?: string[];
+  /** app.primaryLocale: the listing's main language, which copy and captures fall back to. */
+  primaryLocale?: string;
   /** ui.language; null removes it. */
   language?: string | null;
   uploader?: Uploader;
@@ -190,6 +192,7 @@ export function applySelection(yamlText: string, change: SelectionChange): strin
   const sel = doc.getIn(['selection']);
   if (isMap(sel) && sel.items.length === 0) doc.delete('selection');
   if (change.locales !== undefined) set(['app', 'locales'], change.locales, false);
+  if (change.primaryLocale !== undefined) set(['app', 'primaryLocale'], change.primaryLocale);
   if (change.language !== undefined) {
     set(['ui', 'language'], change.language);
     const ui = doc.getIn(['ui']);
@@ -205,6 +208,7 @@ export interface SelectOptions {
   assets?: string | string[];
   targets?: string | string[];
   locales?: string | string[];
+  primaryLocale?: string;
   language?: string;
   uploader?: string;
   capture?: string;
@@ -216,15 +220,16 @@ export async function selectCommand(ctx: Ctx, opts: SelectOptions): Promise<numb
   const targets = parseChoice(opts.targets, loadTargets().map((t) => t.id), 'format');
   const locales = opts.locales === undefined ? undefined : [...new Set((Array.isArray(opts.locales) ? opts.locales : opts.locales.split(',')).map((l) => l.trim()).filter(Boolean))];
   if (locales && !locales.length) throw new Error('--locales needs at least one store locale (e.g. en-US,tr).');
-  const badLocales = (locales ?? []).filter((l) => !AscLocale.safeParse(l).success);
+  const primaryLocale = opts.primaryLocale?.trim() || undefined;
+  const badLocales = [...(locales ?? []), ...(primaryLocale ? [primaryLocale] : [])].filter((l) => !AscLocale.safeParse(l).success);
   if (badLocales.length) throw new Error(`Invalid store locale: ${badLocales.join(', ')} (App Store Connect codes such as en-US, tr, de-DE).`);
   const language = opts.language === undefined ? undefined : opts.language.trim() === '' || opts.language === 'default' ? null : opts.language.trim();
   if (opts.uploader !== undefined && !(UploaderEnum.options as readonly string[]).includes(opts.uploader)) throw new Error(`Unknown uploader: ${opts.uploader}. Valid: ${UploaderEnum.options.join(', ')}.`);
   const uploader = opts.uploader as Uploader | undefined;
   if (opts.capture !== undefined && !(CAPTURE_MODES as readonly string[]).includes(opts.capture)) throw new Error(`Unknown capture mode: ${opts.capture}. Valid: ${CAPTURE_MODES.join(', ')}.`);
   const capture = opts.capture as CaptureMode | undefined;
-  const change: SelectionChange = { platforms, assets, targets, locales, language, uploader, capture };
-  if (Object.values(change).every((v) => v === undefined)) throw new Error('Nothing to select: pass --platforms, --assets, --targets, --locales, --language, --uploader and/or --capture.');
+  const change: SelectionChange = { platforms, assets, targets, locales, primaryLocale, language, uploader, capture };
+  if (Object.values(change).every((v) => v === undefined)) throw new Error('Nothing to select: pass --platforms, --assets, --targets, --locales, --primary-locale, --language, --uploader and/or --capture.');
   const text = applySelection(await readFile(ctx.paths.config, 'utf8'), change);
   await writeText(ctx.paths.config, text);
   // Re-read through the schema so an invalid file is caught now, not in the next stage.
@@ -232,7 +237,8 @@ export async function selectCommand(ctx: Ctx, opts: SelectOptions): Promise<numb
   ctx.config = config;
   const s = config.selection ?? {};
   log.ok(`selection: platforms ${s.platforms?.join(', ') ?? 'all detected'} · assets ${s.assets?.join(', ') ?? 'all'} · formats ${s.targets?.join(', ') ?? 'all'}`);
-  log.ok(`locales: ${config.app.locales.join(', ')} · language: ${config.ui?.language ?? 'English (default)'} · uploader: ${config.upload.uploader ?? 'not chosen yet'} · screens: ${config.capture.mode}`);
+  log.ok(`locales: ${config.app.locales.join(', ')} (primary ${config.app.primaryLocale}) · language: ${config.ui?.language ?? 'English (default)'} · uploader: ${config.upload.uploader ?? 'not chosen yet'} · screens: ${config.capture.mode}`);
+  if (!config.app.locales.includes(config.app.primaryLocale)) log.warn(`The primary locale ${config.app.primaryLocale} is not one of the store locales; copy and captures fall back to it. Add it, or set one of them: vitrin select --primary-locale ${config.app.locales[0]}`);
   const profile = await loadProfile(ctx).catch(() => undefined);
   const enabled = enabledTargets(config, profile);
   log.dim(`  ${enabled.length} formats: ${enabled.map((t) => t.id).join(', ') || 'none'}`);

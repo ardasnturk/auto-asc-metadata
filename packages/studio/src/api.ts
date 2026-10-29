@@ -77,6 +77,39 @@ export interface ClaudeRun {
   events: ClaudeEvent[];
 }
 
+/** Mirrors overview.ts in the CLI: the server computes where each stage stands. */
+export type StageStatus = 'done' | 'needs-claude' | 'needs-user' | 'blocked' | 'outdated' | 'not-run' | 'skipped';
+export type PipelineStage = 'analyze' | 'research' | 'write' | 'capture' | 'mockups' | 'design' | 'video' | 'validate' | 'review' | 'rank';
+
+export interface StageView {
+  id: PipelineStage;
+  status: StageStatus;
+  optional?: boolean;
+  completedAt?: string;
+  note?: string;
+  brief?: string;
+  reason?: string;
+}
+
+export type BlockerCode = 'config-error' | 'stray-locales' | 'primary-locale' | 'ffmpeg-missing' | 'claude-missing' | 'uploader-unset' | 'uploader-missing' | 'keys-missing';
+
+export interface Blocker {
+  code: BlockerCode;
+  severity: 'error' | 'warning';
+  stage: PipelineStage | 'upload';
+  params: Record<string, string | number | string[]>;
+  fixes: Array<{ id: string; command: string; args: Record<string, unknown> }>;
+}
+
+export interface NextStep {
+  stage: PipelineStage | 'upload';
+  action: 'claude' | 'run' | 'fix' | 'approve' | 'upload';
+  blocker?: BlockerCode;
+}
+
+/** The locale a page opens on: the primary one when it is a store locale, else the first store locale. */
+export const startLocale = (cfg: { locales: string[]; primaryLocale: string }): string => (cfg.locales.includes(cfg.primaryLocale) ? cfg.primaryLocale : (cfg.locales[0] ?? cfg.primaryLocale));
+
 export interface Overview {
   version: string;
   root: string;
@@ -99,9 +132,23 @@ export interface Overview {
   files: Record<string, boolean>;
   listing: string[];
   playListing: string[];
-  briefs: Array<{ name: string; path: string; modifiedAt: string }>;
-  validation?: { ok: boolean; counts: { error: number; warning: number; info: number }; generatedAt?: string };
-  approval?: { status: string; approvedAt: string; via: string; overallHash: string; upload?: { uploadedAt: string; overallHash: string; readBack: string; differences: string[] }; finalized?: { at: string; mode: string }; rejections: number };
+  /** Open briefs only. */
+  briefs: Array<{ name: string; path: string; modifiedAt: string; stage?: PipelineStage }>;
+  validation?: { ok: boolean; counts: { error: number; warning: number; info: number }; generatedAt?: string; issues: Array<{ severity: 'error' | 'warning' | 'info'; code: string; message: string; file?: string; locale?: string; field?: string }> };
+  approval?: {
+    status: string;
+    approvedAt: string;
+    via: string;
+    overallHash: string;
+    upload?: { uploadedAt: string; overallHash: string; readBack: string; differences: string[] };
+    finalized?: { at: string; mode: string };
+    rejections: number;
+    valid: boolean;
+    problem?: 'validation-errors' | 'content-changed' | 'rejected';
+  };
+  flow: StageView[];
+  blockers: Blocker[];
+  next?: NextStep;
   raw: Record<string, Record<string, RenderedFile[]>>;
   screenshots: Record<string, RenderedFile[]>;
   previews: Record<string, RenderedFile[]>;

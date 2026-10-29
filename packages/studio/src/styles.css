@@ -690,6 +690,58 @@ textarea.code {
   font-size: 12px;
   margin-top: 2px;
 }
+.stage.skipped {
+  opacity: 0.55;
+}
+.stage .more {
+  position: relative;
+}
+.stage .more > summary {
+  list-style: none;
+}
+.stage .more > summary::-webkit-details-marker {
+  display: none;
+}
+.stage .more .menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 4px);
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  min-width: 180px;
+  padding: 4px;
+  background: var(--bg-3);
+  border: 1px solid var(--line-2);
+  border-radius: var(--radius-s);
+}
+.stage .more .menu .btn {
+  justify-content: flex-start;
+}
+.next-step {
+  border-color: var(--accent);
+  margin-bottom: 14px;
+}
+.next-step .next-title {
+  font-size: 16px;
+  font-weight: 600;
+}
+.blocker {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px 10px;
+  border-left: 3px solid var(--warn);
+  background: var(--bg-3);
+  border-radius: var(--radius-s);
+}
+.blocker.error {
+  border-left-color: var(--err);
+}
+.blocker code {
+  font-size: 12px;
+}
 .thumbs {
   display: flex;
   gap: 10px;
@@ -799,6 +851,11 @@ textarea.code {
 }
 .kv dd {
   margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.text-err {
+  color: var(--err);
 }
 .claude-log {
   flex: 1;

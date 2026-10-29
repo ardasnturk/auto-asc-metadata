@@ -2,7 +2,7 @@ import { ensureDir, existsSync, log, writeJson } from '@vitrin/core';
 import { copyFile, lstat, readdir, readFile, rm } from 'node:fs/promises';
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { buildInventory, readApproval, syncFastlaneMetadata, hashFile, type InventoryItem } from './approval.js';
-import { writeBrief } from './briefs.js';
+import { closeBrief, writeBrief } from './briefs.js';
 import { EXIT, NeedsInput, type Ctx } from './context.js';
 
 /**
@@ -177,6 +177,7 @@ Then run \`vitrin finalize --checked --delete-research\` (yes) or \`vitrin final
     log.info(`Kept the research data in metadata/research/ (${fmtSize(researchBytes)}).`);
   }
   await writeJson(ctx.paths.approval, { ...approval, finalized: { at: new Date().toISOString(), mode: opts.deleteResearch ? 'delete-research' : 'keep-research' } });
+  await closeBrief(ctx, 'finalize');
   log.result({ mode: opts.deleteResearch ? 'delete-research' : 'keep-research', removed, researchBytes });
   return EXIT.OK;
 }

@@ -9,6 +9,7 @@ import {
   ReviewFeedback,
   ReviewSnapshot,
   ShotList,
+  ValidationReport,
   type AssetKind,
   type HashedFile,
   type RenderTarget,
@@ -444,7 +445,22 @@ export async function requireReviewedContent(ctx: Ctx, inv: Inventory, expectHas
   }
 }
 
+/**
+ * Approval is for content that can be uploaded: the upload refuses validation errors, so approving them would only
+ * show a green state the upload then rejects. Throws NeedsInput while the last validation run found errors.
+ */
+export async function requireValidContent(ctx: Ctx): Promise<void> {
+  const report = await readJsonIfExists(ctx.paths.validation, ValidationReport).catch(() => undefined);
+  if (!report || report.ok) return;
+  const errors = report.issues.filter((i) => i.severity === 'error');
+  throw new NeedsInput(
+    `Not approved: the last validation found ${errors.length} error(s) (metadata/validation.json), and the upload refuses content with errors. Fix them, run \`vitrin validate\`, then review again.`,
+    errors.slice(0, 12).map((i) => `[${i.code}] ${i.message}`),
+  );
+}
+
 export async function recordApproval(ctx: Ctx, inv: Inventory, via: ApprovalManifest['via']): Promise<ApprovalManifest> {
+  await requireValidContent(ctx);
   const approval: ApprovalManifest = {
     version: 1,
     status: 'approved',

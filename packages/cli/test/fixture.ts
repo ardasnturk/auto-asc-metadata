@@ -98,10 +98,11 @@ export async function makeFixture(opts: { realVideo?: boolean; android?: boolean
   const shotFile = (locale: string, name: string) => join(root, 'metadata', 'store', 'screenshots', locale, name);
   json(join(root, 'metadata', 'validation.json'), {
     generatedAt: '2026-10-26T00:00:00Z',
-    ok: false,
-    counts: { error: 1, warning: 1, info: 0 },
+    // No errors: approval refuses content whose last validation found errors (approval.test covers that).
+    ok: true,
+    counts: { error: 0, warning: 2, info: 0 },
     issues: [
-      { severity: 'error', code: 'image.contrast', message: 'en-US 02 iphone-6.9: text contrast is 2.10:1.', locale: 'en-US', file: shotFile('en-US', '02_shot2_iphone-6.9.png') },
+      { severity: 'warning', code: 'image.contrast', message: 'en-US 02 iphone-6.9: text contrast is 2.10:1.', locale: 'en-US', file: shotFile('en-US', '02_shot2_iphone-6.9.png') },
       { severity: 'warning', code: 'text.subtitle-duplicate', message: 'Subtitle repeats a word from the name.', locale: 'tr', field: 'subtitle', file: 'metadata/listing/tr.json' },
     ],
     measurements: {},
