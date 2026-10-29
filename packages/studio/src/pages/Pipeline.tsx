@@ -1,7 +1,7 @@
 import { Fragment, useState } from 'react';
 import { api, type Overview, type PipelineStage, type StageView } from '../api';
 import { t, type UiKey } from '../i18n';
-import { BlockerItem, blockerText, go, pendingDecisions, STAGE_HINT, STAGE_PAGE, STAGE_TITLE, StageDecision, stageReason, statusClass, StatusPill } from '../status';
+import { BlockerItem, blockerText, go, pendingDecisions, QuestionCard, STAGE_HINT, STAGE_PAGE, STAGE_TITLE, StageDecision, stageReason, statusClass, StatusPill } from '../status';
 import { useBusy, useStudio } from '../store';
 import { Button, Card, fmtDate, Modal, Pill } from '../ui';
 
@@ -81,7 +81,7 @@ export function Pipeline({ openClaude }: { openClaude: () => void }) {
   };
 
   // The next step's own blocker or decision already sits in the card at the top.
-  const decisions = pendingDecisions(o).filter((d) => !('blocker' in d) || d.blocker.code !== o.next?.blocker);
+  const decisions = pendingDecisions(o).filter((d) => ('blocker' in d ? d.blocker.code !== o.next?.blocker : 'question' in d ? d.question.id !== o.next?.question : true));
   const byId = new Map(o.flow.map((s, i) => [s.id, { view: s, n: i + 1 }]));
 
   return (
@@ -91,71 +91,75 @@ export function Pipeline({ openClaude }: { openClaude: () => void }) {
         <p>{t('pipelineIntro')}</p>
       </header>
       <NextStepCard o={o} claudeButton={claudeButton} runButton={runButton} showBrief={showBrief} openClaude={openClaude} />
-      <div className="grid" style={{ gridTemplateColumns: 'minmax(0, 1fr) 320px' }}>
-        <div className="stage-list">
-          {GROUPS.map((g) => (
-            <Fragment key={g.title}>
-              <div className="stage-group">{t(g.title)}</div>
-              {g.stages.map((id) => {
-                const entry = byId.get(id);
-                if (!entry) return null;
-                const { view: s, n } = entry;
-                const running = Boolean(runningCommand && runningCommand === COMMAND[s.id]?.command);
-                const reason = stageReason(s, o);
-                return (
-                  <div key={s.id} className={`stage ${running ? 'running' : statusClass(s.status)}`}>
-                    <div className="num">{s.status === 'done' && !running ? '✓' : n}</div>
-                    <div>
-                      <div className="title">
-                        <a href={`#/${STAGE_PAGE[s.id]}`} title={t('goToPage')}>
-                          {t(STAGE_TITLE[s.id])}
-                        </a>{' '}
-                        {s.optional && <span className="dim small">· {t('optional')}</span>}
+      <div className="pipeline-wrap">
+        <div className="pipeline-grid">
+          <div className="stage-list">
+            {GROUPS.map((g) => (
+              <Fragment key={g.title}>
+                <div className="stage-group">{t(g.title)}</div>
+                {g.stages.map((id) => {
+                  const entry = byId.get(id);
+                  if (!entry) return null;
+                  const { view: s, n } = entry;
+                  const running = Boolean(runningCommand && runningCommand === COMMAND[s.id]?.command);
+                  const reason = stageReason(s, o);
+                  return (
+                    <div key={s.id} className={`stage ${running ? 'running' : statusClass(s.status)}`}>
+                      <div className="num">{s.status === 'done' && !running ? '✓' : n}</div>
+                      <div>
+                        <div className="title">
+                          <a href={`#/${STAGE_PAGE[s.id]}`} title={t('goToPage')}>
+                            {t(STAGE_TITLE[s.id])}
+                          </a>{' '}
+                          {s.optional && <span className="dim small">· {t('optional')}</span>}
+                        </div>
+                        <div className="hint">{t(STAGE_HINT[s.id])}</div>
+                        <div className="sub">
+                          {running ? <Pill tone="accent">{t('running')}</Pill> : <StatusPill status={s.status} />}
+                          {s.completedAt && s.status !== 'not-run' ? ` ${fmtDate(s.completedAt)}` : ''}
+                          {reason ? ` · ${reason}` : ''}
+                          {s.note ? ` · ${s.note}` : ''}
+                        </div>
                       </div>
-                      <div className="hint">{t(STAGE_HINT[s.id])}</div>
-                      <div className="sub">
-                        {running ? <Pill tone="accent">{t('running')}</Pill> : <StatusPill status={s.status} />}
-                        {s.completedAt && s.status !== 'not-run' ? ` ${fmtDate(s.completedAt)}` : ''}
-                        {reason ? ` · ${reason}` : ''}
-                        {s.note ? ` · ${s.note}` : ''}
+                      <div className="row">
+                        {primaryAction(s)}
+                        {COMMAND[s.id] && (
+                          <details className="more">
+                            <summary className="btn sm ghost" title={t('moreActions')}>
+                              ⋯
+                            </summary>
+                            <div className="menu">
+                              {s.brief && (
+                                <Button size="sm" kind="ghost" onClick={() => showBrief(s.brief!)}>
+                                  {t('brief')}
+                                </Button>
+                              )}
+                              {(s.brief || s.status === 'needs-user') && runButton(s.id, { size: 'sm' })}
+                              {runButton(s.id, { size: 'sm', force: true })}
+                            </div>
+                          </details>
+                        )}
                       </div>
                     </div>
-                    <div className="row">
-                      {primaryAction(s)}
-                      {COMMAND[s.id] && (
-                        <details className="more">
-                          <summary className="btn sm ghost" title={t('moreActions')}>
-                            ⋯
-                          </summary>
-                          <div className="menu">
-                            {s.brief && (
-                              <Button size="sm" kind="ghost" onClick={() => showBrief(s.brief!)}>
-                                {t('brief')}
-                              </Button>
-                            )}
-                            {(s.brief || s.status === 'needs-user') && runButton(s.id, { size: 'sm' })}
-                            {runButton(s.id, { size: 'sm', force: true })}
-                          </div>
-                        </details>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </Fragment>
-          ))}
-        </div>
-        <div className="stack">
-          <Card title={t('pendingDecisions')}>
-            {decisions.length === 0 ? (
-              <span className="dim">{t('noDecisions')}</span>
-            ) : (
-              <div className="stack">
-                {decisions.map((d) => ('blocker' in d ? <BlockerItem key={d.key} blocker={d.blocker} openClaude={openClaude} /> : <StageDecision key={d.key} stage={d.stage} o={o} />))}
-              </div>
-            )}
-          </Card>
-          <Summary o={o} />
+                  );
+                })}
+              </Fragment>
+            ))}
+          </div>
+          <div className="stack">
+            <Card title={t('pendingDecisions')}>
+              {decisions.length === 0 ? (
+                <span className="dim">{t('noDecisions')}</span>
+              ) : (
+                <div className="stack">
+                  {decisions.map((d) =>
+                    'question' in d ? <QuestionCard key={d.key} question={d.question} openClaude={openClaude} /> : 'blocker' in d ? <BlockerItem key={d.key} blocker={d.blocker} openClaude={openClaude} /> : <StageDecision key={d.key} stage={d.stage} o={o} />,
+                  )}
+                </div>
+              )}
+            </Card>
+            <Summary o={o} />
+          </div>
         </div>
       </div>
       {brief && (
@@ -200,8 +204,11 @@ function NextStepCard({
   const view = o.flow.find((s) => s.id === next.stage);
   const blocker = next.blocker ? o.blockers.find((b) => b.code === next.blocker) : undefined;
   const reason = view ? stageReason(view, o) : '';
+  const question = next.question ? o.questions.find((q) => q.id === next.question) : undefined;
   let body: React.ReactNode;
-  if ((next.action === 'fix' || next.action === 'decide') && blocker) {
+  if (next.action === 'answer' && question) {
+    body = <QuestionCard question={question} openClaude={openClaude} />;
+  } else if ((next.action === 'fix' || next.action === 'decide') && blocker) {
     body = (
       <>
         {next.action === 'fix' && <div className="dim">{t('nextFixFirst')}</div>}

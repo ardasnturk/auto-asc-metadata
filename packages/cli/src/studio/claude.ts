@@ -18,9 +18,13 @@ export type ClaudeEvent =
   | { type: 'error'; text: string }
   | { type: 'exit'; code: number };
 
+/** What a run was started for, so the panel can name it in the user's language instead of showing the prompt. */
+export type RunLabel = { kind: 'brief'; stage: string; extra?: string } | { kind: 'answer'; question: string; answer: string } | { kind: 'prompt'; text: string };
+
 export interface ClaudeRun {
   id: string;
   prompt: string;
+  label: RunLabel;
   startedAt: string;
   endedAt?: string;
   status: 'running' | 'done' | 'failed' | 'cancelled';
@@ -30,7 +34,7 @@ export interface ClaudeRun {
 const ALLOWED_TOOLS = ['Read', 'Edit', 'Write', 'Glob', 'Grep', 'MultiEdit', 'Skill', 'Bash(vitrin:*)', 'Bash(cat:*)', 'Bash(ls:*)', 'Bash(ffmpeg:*)', 'Bash(ffprobe:*)', 'Bash(open:*)'];
 const DISALLOWED_TOOLS = ['Bash(vitrin upload:*)', 'Bash(vitrin approve:*)', 'Bash(vitrin submit:*)', 'Bash(vitrin finalize:*)', 'Bash(vitrin init:*)', 'Bash(git:*)', 'WebFetch', 'WebSearch'];
 
-const SYSTEM = `You are running headless inside Vitrin Studio, a local web UI for the Vitrin pipeline (the /vitrin skill). The user watches your output in a panel and cannot answer questions mid-run: never wait for an answer. When you need a decision from the user, do everything that does not depend on it and end with a short message that asks the question. Run every command in the foreground and wait for it to finish: never start background commands, never sleep or poll for them. Write only inside metadata/ and vitrin.config.yaml. Never run vitrin upload, approve, submit, finalize or init, never use git, never commit: the user does those in the Studio. When you are done, end with a short summary of what you wrote and what to run next.`;
+const SYSTEM = `You are running headless inside Vitrin Studio, a local web UI for the Vitrin pipeline (the /vitrin skill). The user watches your output in a panel and cannot answer questions mid-run: never wait for an answer. When you need a decision from the user (a design, a wording, whether to install a tool …), do everything that does not depend on it, then add the question to metadata/questions.json — { "questions": [{ "id": "kebab-case-id", "stage": "the pipeline stage it unblocks", "question": "…", "options": [{ "label": "what the button says", "value": "what you get back" }] }] }, options only when the answer is a choice — keep any questions already in the file, and end the run with one sentence that says what you asked. The Studio shows the question as a card, removes it when the user answers, and starts you again with the answer. Run every command in the foreground and wait for it to finish: never start background commands, never sleep or poll for them. Write only inside metadata/ and vitrin.config.yaml. Never run vitrin upload, approve, submit, finalize or init, never use git, never commit: the user does those in the Studio. When you are done, end with a short summary of what you wrote and what to run next.`;
 
 /** The Studio's rules plus the language the user reads the panel in (ui.language; unset = English). */
 export function systemPrompt(language?: string | null): string {
@@ -41,7 +45,7 @@ export function systemPrompt(language?: string | null): string {
   } catch {
     /* not a language tag Intl knows: name it by the tag */
   }
-  return `${SYSTEM} Write every message to the user in ${name} (${language}), including questions and the final summary. Files keep the language they need: store copy is written in its store locale, JSON keys and commands stay as they are.`;
+  return `${SYSTEM} Write every message to the user in ${name} (${language}), including the questions in metadata/questions.json and the final summary. Files keep the language they need: store copy is written in its store locale, JSON keys and commands stay as they are.`;
 }
 
 /** Short, human-readable line for a tool call in the panel. */
@@ -90,10 +94,10 @@ export class ClaudeRunner extends EventEmitter {
   }
 
   /** Starts `claude -p` with the prompt; `fresh` drops the conversation so far. */
-  async start(prompt: string, opts: { fresh?: boolean; language?: string | null } = {}): Promise<ClaudeRun> {
+  async start(prompt: string, opts: { fresh?: boolean; language?: string | null; label?: RunLabel } = {}): Promise<ClaudeRun> {
     if (this.current) throw Object.assign(new Error('Claude is still working.'), { status: 409 });
     if (!(await this.available())) throw Object.assign(new Error('Claude Code (`claude`) is not installed or not on PATH.'), { status: 424 });
-    const run: ClaudeRun = { id: randomUUID().slice(0, 8), prompt, startedAt: new Date().toISOString(), status: 'running', events: [] };
+    const run: ClaudeRun = { id: randomUUID().slice(0, 8), prompt, label: opts.label ?? { kind: 'prompt', text: prompt }, startedAt: new Date().toISOString(), status: 'running', events: [] };
     this.runs.push(run);
     if (this.runs.length > 30) this.runs.splice(0, this.runs.length - 30);
     this.current = run;
@@ -136,6 +140,14 @@ export class ClaudeRunner extends EventEmitter {
       this.child = undefined;
     });
     return run;
+  }
+
+  /** A new conversation: forgets the session and the runs shown so far. Nothing is sent to Claude. */
+  reset(): boolean {
+    if (this.current) return false;
+    this.sessionId = undefined;
+    this.runs.splice(0);
+    return true;
   }
 
   cancel(): boolean {
@@ -189,6 +201,11 @@ export class ClaudeRunner extends EventEmitter {
       });
     }
   }
+}
+
+/** The prompt that hands the user's answer back; self-contained, so it works in a new session as well. */
+export function answerPrompt(q: { question: string; stage?: string }, answer: string, briefRel?: string): string {
+  return `The user answered a question you left in metadata/questions.json (it has been removed from the file).\nQuestion${q.stage ? ` (${q.stage} stage)` : ''}: ${q.question}\nAnswer: ${answer}\n\nContinue the work this answer unblocks${briefRel ? ` (the brief is ${briefRel})` : ''}, using the /vitrin skill.`;
 }
 
 /** The prompt for “let Claude do this stage”: the brief the CLI wrote plus the Studio's rules. */

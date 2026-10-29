@@ -68,9 +68,13 @@ export type ClaudeEvent =
   | { type: 'error'; text: string }
   | { type: 'exit'; code: number };
 
+/** Mirrors claude.ts: what a run was started for. */
+export type RunLabel = { kind: 'brief'; stage: string; extra?: string } | { kind: 'answer'; question: string; answer: string } | { kind: 'prompt'; text: string };
+
 export interface ClaudeRun {
   id: string;
   prompt: string;
+  label?: RunLabel;
   startedAt: string;
   endedAt?: string;
   status: 'running' | 'done' | 'failed' | 'cancelled';
@@ -103,8 +107,18 @@ export interface Blocker {
 
 export interface NextStep {
   stage: PipelineStage;
-  action: 'claude' | 'run' | 'fix' | 'decide' | 'approve' | 'upload' | 'finalize';
+  action: 'answer' | 'claude' | 'run' | 'fix' | 'decide' | 'approve' | 'upload' | 'finalize';
   blocker?: BlockerCode;
+  question?: string;
+}
+
+/** A question Claude left for the user (metadata/questions.json). */
+export interface StudioQuestion {
+  id: string;
+  stage?: string;
+  question: string;
+  options: Array<{ label: string; value: string }>;
+  askedAt?: string;
 }
 
 /** The locale a page opens on: the primary one when it is a store locale, else the first store locale. */
@@ -148,6 +162,7 @@ export interface Overview {
   };
   flow: StageView[];
   blockers: Blocker[];
+  questions: StudioQuestion[];
   next?: NextStep;
   raw: Record<string, Record<string, RenderedFile[]>>;
   screenshots: Record<string, RenderedFile[]>;
@@ -215,6 +230,8 @@ export const api = {
   claude: () => request<{ available: boolean; running: string | null; sessionId: string | null; runs: ClaudeRun[] }>('GET', '/api/claude'),
   askClaude: (body: { prompt?: string; stage?: string; extra?: string; fresh?: boolean }) => request<{ id: string }>('POST', '/api/claude', body),
   cancelClaude: () => request<{ cancelled: boolean }>('POST', '/api/claude/cancel', {}),
+  resetClaude: () => request<{ ok: boolean }>('POST', '/api/claude/reset', {}),
+  answerQuestion: (id: string, answer: string) => request<{ id: string }>('POST', '/api/questions/answer', { id, answer }),
   review: () => request<ReviewState>('GET', '/api/review'),
   approve: (overallHash: string) => request<{ ok: true; overallHash: string; approvedAt: string }>('POST', '/api/approve', { overallHash }),
   reject: (overallHash: string, rejections: Array<{ item: string; comment: string }>) => request<{ ok: true; rejected: number }>('POST', '/api/reject', { overallHash, rejections }),

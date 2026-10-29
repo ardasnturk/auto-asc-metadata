@@ -85,6 +85,8 @@ export function appPaths(root: string) {
     reviewFeedback: join(v, 'review-feedback.json'),
     reviewSnapshot: join(v, 'review-snapshot.json'),
     briefs: join(v, 'briefs'),
+    /** Questions Claude left for the user in Vitrin Studio; the Studio answers them and removes them. */
+    questions: join(v, 'questions.json'),
     uploadPlan: join(v, 'upload-plan.json'),
     config: join(root, 'vitrin.config.yaml'),
     env: join(root, '.env'),

@@ -693,6 +693,21 @@ textarea.code {
 .stage.skipped {
   opacity: 0.55;
 }
+/* The stages beside what waits for the user; stacked when the page is narrow (the Claude drawer is open). */
+.pipeline-wrap {
+  container-type: inline-size;
+}
+.pipeline-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 14px;
+  align-items: start;
+}
+@container (max-width: 720px) {
+  .pipeline-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
 .stage-group {
   margin: 10px 0 0;
   font-size: 11px;
@@ -927,6 +942,23 @@ textarea.code {
 .msg.error {
   color: var(--err);
   background: rgba(255, 107, 107, 0.1);
+}
+.msg.result .written {
+  text-align: left;
+  margin-bottom: 6px;
+  padding: 6px 8px;
+  background: var(--bg-3);
+  border-radius: var(--radius-s);
+}
+.msg.result .written a {
+  color: var(--accent-2);
+}
+.msg.result .row {
+  justify-content: center;
+}
+.blocker .question {
+  font-weight: 500;
+  white-space: pre-wrap;
 }
 .drawer .head {
   display: flex;

@@ -9,3 +9,4 @@ export * from './config.js';
 export * from './state.js';
 export * from './limits.js';
 export * from './approval.js';
+export * from './studio.js';

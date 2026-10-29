@@ -1,7 +1,8 @@
-import { appPaths, exec, existsSync, loadConfig, log, VITRIN_HOME } from '@vitrin/core';
+import { appPaths, exec, existsSync, loadConfig, log, readJsonIfExists, VITRIN_HOME, writeJson } from '@vitrin/core';
+import { StudioQuestions } from '@vitrin/schemas';
 import { watch, type FSWatcher } from 'node:fs';
 import { createReadStream } from 'node:fs';
-import { readFile, realpath, stat } from 'node:fs/promises';
+import { readFile, realpath, rm, stat } from 'node:fs/promises';
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { spawn, type ChildProcess } from 'node:child_process';
@@ -9,7 +10,7 @@ import { extname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { buildInventory, checkApproval, recordApproval, recordRejections, summarize, syncFastlaneMetadata } from '../approval.js';
 import { createContext, NeedsInput } from '../context.js';
 import { buildReport } from '../report.js';
-import { briefPrompt, ClaudeRunner } from './claude.js';
+import { answerPrompt, briefPrompt, ClaudeRunner, type RunLabel } from './claude.js';
 import { EditableError, readEditable, resolveEditable, writeEditable } from './files.js';
 import { JobRunner } from './jobs.js';
 import { buildOverview } from './overview.js';
@@ -185,6 +186,9 @@ class RemotionStudio {
   }
 }
 
+/** The brief a stage writes, where the name differs (capture writes screens.md). */
+const STAGE_BRIEF: Record<string, string> = { capture: 'screens' };
+
 export async function startStudioServer(root: string, opts: { port?: number; host?: string } = {}): Promise<StudioServer> {
   const host = opts.host ?? '127.0.0.1';
   const ui = studioUiDir();
@@ -294,7 +298,9 @@ export async function startStudioServer(root: string, opts: { port?: number; hos
           if (jobs.running) return sendJson(res, 409, { error: `“${jobs.running.command}” is still running; wait for it before starting Claude.` });
           const extra = typeof body.extra === 'string' ? body.extra : undefined;
           let prompt = typeof body.prompt === 'string' ? body.prompt.trim() : '';
+          let label: RunLabel = { kind: 'prompt', text: prompt };
           if (!prompt && typeof body.stage === 'string') {
+            label = { kind: 'brief', stage: body.stage, ...(extra?.trim() ? { extra: extra.trim() } : {}) };
             const brief = `metadata/briefs/${body.stage.replace(/[^\w-]/g, '')}.md`;
             if (!existsSync(join(root, brief))) return sendJson(res, 404, { error: `No brief for “${body.stage}” yet; run the stage first.` });
             prompt = briefPrompt(body.stage, brief, extra);
@@ -302,7 +308,27 @@ export async function startStudioServer(root: string, opts: { port?: number; hos
           if (!prompt) return sendJson(res, 400, { error: 'prompt or stage is required.' });
           // A brief is a task of its own: it starts a new conversation instead of resuming the last one's long context.
           const fresh = body.fresh === true || (typeof body.prompt !== 'string' && typeof body.stage === 'string');
-          const run = await claude.start(prompt, { fresh, language: uiLanguage() });
+          const run = await claude.start(prompt, { fresh, language: uiLanguage(), label });
+          return sendJson(res, 202, { id: run.id, startedAt: run.startedAt });
+        }
+        if (path === '/api/claude/reset' && method === 'POST') {
+          if (!claude.reset()) return sendJson(res, 409, { error: 'Claude is working; stop it first.' });
+          return sendJson(res, 200, { ok: true });
+        }
+        if (path === '/api/questions/answer' && method === 'POST') {
+          if (jobs.running) return sendJson(res, 409, { error: `“${jobs.running.command}” is still running; answer once it finished.` });
+          const file = appPaths(root).questions;
+          const data = await readJsonIfExists(file, StudioQuestions).catch(() => undefined);
+          const q = data?.questions.find((x) => x.id === body.id);
+          if (!data || !q) return sendJson(res, 404, { error: 'No such question; it may have been answered already.' });
+          const answer = typeof body.answer === 'string' ? body.answer.trim().slice(0, 4000) : '';
+          if (!answer) return sendJson(res, 400, { error: 'answer is required.' });
+          const brief = q.stage ? `metadata/briefs/${STAGE_BRIEF[q.stage] ?? q.stage}.md` : undefined;
+          // The answer continues the conversation that asked, when this Studio still has it; the prompt stands alone otherwise.
+          const run = await claude.start(answerPrompt(q, answer, brief && existsSync(join(root, brief)) ? brief : undefined), { language: uiLanguage(), label: { kind: 'answer', question: q.question, answer } });
+          const rest = data.questions.filter((x) => x.id !== q.id);
+          if (rest.length) await writeJson(file, { questions: rest });
+          else await rm(file, { force: true });
           return sendJson(res, 202, { id: run.id, startedAt: run.startedAt });
         }
         if (path === '/api/claude/cancel' && method === 'POST') return sendJson(res, 200, { cancelled: claude.cancel() });

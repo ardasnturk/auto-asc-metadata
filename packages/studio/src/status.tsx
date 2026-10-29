@@ -1,4 +1,5 @@
-import { api, fileUrl, type Blocker, type Overview, type PipelineStage, type StageStatus, type StageView } from './api';
+import { useState } from 'react';
+import { api, fileUrl, type Blocker, type Overview, type PipelineStage, type StageStatus, type StageView, type StudioQuestion } from './api';
 import { t, type UiKey } from './i18n';
 import { useBusy, useStudio } from './store';
 import { Button, Pill } from './ui';
@@ -76,6 +77,7 @@ export function stageReason(view: StageView, o: Overview): string {
   if (view.reason === 'content-changed') return t('reasonContentChanged');
   if (view.reason === 'rejected') return t('reasonRejected');
   if (view.reason === 'readback-differences') return t('reasonReadback');
+  if (view.reason === 'question') return t('reasonQuestion');
   const blocker = o.blockers.find((b) => b.code === view.reason);
   return blocker ? blockerText(blocker) : '';
 }
@@ -118,14 +120,15 @@ function fixLabel(fix: Blocker['fixes'][number], b: Blocker): string {
 }
 
 /** What waits for the user: blockers and decisions first, then stages that wait for their click (approve, upload). */
-export type Pending = { key: string; blocker: Blocker } | { key: string; stage: StageView };
+export type Pending = { key: string; question: StudioQuestion } | { key: string; blocker: Blocker } | { key: string; stage: StageView };
 
 const SEVERITY_ORDER: Record<Blocker['severity'], number> = { decision: 0, error: 1, warning: 2 };
 
 export function pendingDecisions(o: Overview): Pending[] {
   const blockers = [...o.blockers].sort((a, b) => SEVERITY_ORDER[a.severity] - SEVERITY_ORDER[b.severity]).map((b): Pending => ({ key: b.code, blocker: b }));
-  const stages = o.flow.filter((s) => s.status === 'needs-user' && !o.blockers.some((b) => b.code === s.reason)).map((s): Pending => ({ key: `stage-${s.id}`, stage: s }));
-  return [...blockers, ...stages];
+  const stages = o.flow.filter((s) => s.status === 'needs-user' && s.reason !== 'question' && !o.blockers.some((b) => b.code === s.reason)).map((s): Pending => ({ key: `stage-${s.id}`, stage: s }));
+  const questions = o.questions.map((q): Pending => ({ key: `question-${q.id}`, question: q }));
+  return [...questions, ...blockers, ...stages];
 }
 
 /** A stage that waits for the user's click: approving the review, or the upload. */
@@ -219,6 +222,55 @@ function DesignChoice({ blocker, o, openClaude }: { blocker: Blocker; o: Overvie
             {x.letter} · {x.name}
           </Button>
         ))}
+      </div>
+    </div>
+  );
+}
+
+/** A question Claude left: its options as buttons, or an answer in the user's own words. Answering starts Claude again. */
+export function QuestionCard({ question, openClaude }: { question: StudioQuestion; openClaude?: () => void }) {
+  const { state, toast } = useStudio();
+  const busy = useBusy();
+  const [text, setText] = useState('');
+  const o = state.overview!;
+  const answer = async (value: string) => {
+    try {
+      await api.answerQuestion(question.id, value);
+      setText('');
+      toast(t('answerSent'), 'ok');
+      openClaude?.();
+    } catch (err) {
+      toast((err as Error).message, 'err');
+    }
+  };
+  const disabled = busy || !o.claude.available;
+  return (
+    <div className="blocker decision">
+      <div className="dim small">✳ {t('claudeAsks')}</div>
+      <div className="question">{question.question}</div>
+      {question.options.length > 0 && (
+        <div className="row wrap">
+          {question.options.map((x) => (
+            <Button key={x.value} size="sm" kind="primary" disabled={disabled} onClick={() => answer(x.value)}>
+              {x.label}
+            </Button>
+          ))}
+        </div>
+      )}
+      <div className="row">
+        <input
+          className="input grow"
+          placeholder={question.options.length ? t('answerPlaceholder') : `${t('answer')}…`}
+          value={text}
+          disabled={disabled}
+          onChange={(e) => setText(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && text.trim()) void answer(text.trim());
+          }}
+        />
+        <Button size="sm" disabled={disabled || !text.trim()} title={o.claude.available ? '' : t('claudeMissing')} onClick={() => answer(text.trim())}>
+          {t('answer')}
+        </Button>
       </div>
     </div>
   );

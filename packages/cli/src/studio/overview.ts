@@ -1,5 +1,5 @@
 import { appPaths, existsSync, loadConfig, loadEnv, readJsonIfExists, StateStore, vitrinVersion, which, type AppPaths } from '@vitrin/core';
-import { AppProfile, ApprovalManifest, Archetype, BadgeType, BeatScene, EmphasisStyle, Framing, StylePreset, ValidationReport, VideoStyle, VideoTransition, type VitrinConfig } from '@vitrin/schemas';
+import { AppProfile, ApprovalManifest, Archetype, BadgeType, BeatScene, EmphasisStyle, Framing, StudioQuestions, StylePreset, ValidationReport, VideoStyle, VideoTransition, type StudioQuestion, type VitrinConfig } from '@vitrin/schemas';
 import { strayLocaleDirs } from '@vitrin/validate';
 import { readdir, readFile, stat } from 'node:fs/promises';
 import { join, relative, resolve, sep } from 'node:path';
@@ -58,12 +58,14 @@ export interface Blocker {
   fixes: Array<{ id: string; command: string; args: Record<string, unknown> }>;
 }
 
-/** The one thing to do now: the first stage that is not done; undefined once this release is finished. */
+/** The one thing to do now: Claude's open question, else the first stage that is not done; undefined once this release is finished. */
 export interface NextStep {
   stage: PipelineStage;
-  action: 'claude' | 'run' | 'fix' | 'decide' | 'approve' | 'upload' | 'finalize';
+  action: 'answer' | 'claude' | 'run' | 'fix' | 'decide' | 'approve' | 'upload' | 'finalize';
   /** For fix and decide: the blocker or decision to resolve. */
   blocker?: BlockerCode;
+  /** For answer: the question id in metadata/questions.json. */
+  question?: string;
 }
 
 export interface Overview {
@@ -99,6 +101,8 @@ export interface Overview {
   approval?: Pick<ApprovalManifest, 'status' | 'approvedAt' | 'via' | 'overallHash' | 'upload' | 'finalized'> & { rejections: number; valid: boolean; problem?: 'validation-errors' | 'content-changed' | 'rejected' };
   flow: StageView[];
   blockers: Blocker[];
+  /** Questions Claude left for the user (metadata/questions.json), oldest first. */
+  questions: StudioQuestion[];
   next?: NextStep;
   raw: Record<string, Record<string, RenderedFile[]>>;
   screenshots: Record<string, RenderedFile[]>;
@@ -173,6 +177,7 @@ export async function buildOverview(root: string): Promise<Overview> {
     briefs: [],
     flow: [],
     blockers: [],
+    questions: [],
     raw: {},
     screenshots: {},
     previews: {},
@@ -296,10 +301,12 @@ export async function buildOverview(root: string): Promise<Overview> {
   if (base.configError) base.blockers.push({ code: 'config-error', severity: 'error', stage: 'analyze', params: { message: base.configError }, fixes: [] });
   if (config) {
     base.blockers.push(...(await localeBlockers(paths, config, base.listing)), ...toolBlockers(base, config));
-    const choice = designChoice(base, await mtime(paths.artDirection));
+    base.questions = (await readJsonIfExists(paths.questions, StudioQuestions).catch(() => undefined))?.questions ?? [];
+    // When Claude asked about the design itself, its question replaces the guess from the samples.
+    const choice = base.questions.some((q) => q.stage === 'design') ? undefined : designChoice(base, await mtime(paths.artDirection));
     if (choice) base.blockers.push(choice);
     base.flow = stageFlow(base, config, existsSync(paths.rankings));
-    base.next = nextStep(base.flow, base.blockers, Boolean(base.approval?.finalized));
+    base.next = nextStep(base.flow, base.blockers, Boolean(base.approval?.finalized), base.questions);
   }
   return base;
 }
@@ -354,7 +361,7 @@ export function designChoice(o: Pick<Overview, 'samples' | 'stages'>, artDirecti
   return { code: 'design-choice', severity: 'decision', stage: 'design', params: { n: o.samples.options.length, options: o.samples.options.map((x) => `${x.letter} · ${x.name}`) }, fixes: [] };
 }
 
-export function stageFlow(o: Pick<Overview, 'stages' | 'briefs' | 'blockers' | 'approval' | 'validation' | 'mockups'>, config: VitrinConfig, ranked = false): StageView[] {
+export function stageFlow(o: Pick<Overview, 'stages' | 'briefs' | 'blockers' | 'approval' | 'validation' | 'mockups'> & { questions?: StudioQuestion[] }, config: VitrinConfig, ranked = false): StageView[] {
   const assets = config.selection?.assets;
   const skipped: Partial<Record<PipelineStage, boolean>> = {
     design: Boolean(assets && !assets.some((a) => a === 'screenshots' || a === 'creatives' || a === 'events')),
@@ -368,6 +375,7 @@ export function stageFlow(o: Pick<Overview, 'stages' | 'briefs' | 'blockers' | '
     const decision = o.blockers.find((b) => b.stage === id && b.severity === 'decision');
     const newer = (UPSTREAM[id] ?? []).find((up) => rec && (o.stages[up]?.completedAt ?? '') > rec.completedAt);
     if (skipped[id]) return { ...view, status: 'skipped' };
+    if (o.questions?.some((q) => q.stage === id)) return { ...view, status: 'needs-user', reason: 'question', ...(brief ? { brief: brief.name } : {}) };
     if (decision) return { ...view, status: 'needs-user', reason: decision.code, ...(brief ? { brief: brief.name } : {}) };
     // Claude can write the plan while a tool is missing, but the stage cannot finish until the blocker is fixed: say both.
     if (brief) return { ...view, status: 'needs-claude', brief: brief.name, ...(blocker ? { reason: blocker.code } : {}) };
@@ -398,7 +406,13 @@ export function stageFlow(o: Pick<Overview, 'stages' | 'briefs' | 'blockers' | '
   });
 }
 
-export function nextStep(flow: StageView[], blockers: Blocker[], finalized = false): NextStep | undefined {
+export function nextStep(flow: StageView[], blockers: Blocker[], finalized = false, questions: StudioQuestion[] = []): NextStep | undefined {
+  // Claude stopped to ask: nothing else moves until the user answers.
+  const q = questions[0];
+  if (q) {
+    const at = flow.find((s) => s.id === q.stage) ?? flow.find((s) => !s.optional && s.status !== 'done' && s.status !== 'skipped') ?? flow[0];
+    return { stage: at?.id ?? 'analyze', action: 'answer', question: q.id };
+  }
   for (const s of flow) {
     if (s.optional || s.status === 'done' || s.status === 'skipped') continue;
     const blocker = blockers.find((b) => b.stage === s.id && b.severity === 'error');
