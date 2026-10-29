@@ -79,7 +79,7 @@ export interface ClaudeRun {
 
 /** Mirrors overview.ts in the CLI: the server computes where each stage stands. */
 export type StageStatus = 'done' | 'needs-claude' | 'needs-user' | 'blocked' | 'outdated' | 'not-run' | 'skipped';
-export type PipelineStage = 'analyze' | 'research' | 'write' | 'capture' | 'mockups' | 'design' | 'video' | 'validate' | 'review' | 'rank';
+export type PipelineStage = 'analyze' | 'research' | 'write' | 'capture' | 'mockups' | 'design' | 'video' | 'validate' | 'review' | 'upload' | 'rank';
 
 export interface StageView {
   id: PipelineStage;
@@ -91,19 +91,19 @@ export interface StageView {
   reason?: string;
 }
 
-export type BlockerCode = 'config-error' | 'stray-locales' | 'primary-locale' | 'ffmpeg-missing' | 'claude-missing' | 'uploader-unset' | 'uploader-missing' | 'keys-missing';
+export type BlockerCode = 'config-error' | 'stray-locales' | 'primary-locale' | 'ffmpeg-missing' | 'claude-missing' | 'uploader-unset' | 'uploader-missing' | 'keys-missing' | 'design-choice';
 
 export interface Blocker {
   code: BlockerCode;
-  severity: 'error' | 'warning';
-  stage: PipelineStage | 'upload';
+  severity: 'error' | 'warning' | 'decision';
+  stage: PipelineStage;
   params: Record<string, string | number | string[]>;
   fixes: Array<{ id: string; command: string; args: Record<string, unknown> }>;
 }
 
 export interface NextStep {
-  stage: PipelineStage | 'upload';
-  action: 'claude' | 'run' | 'fix' | 'approve' | 'upload';
+  stage: PipelineStage;
+  action: 'claude' | 'run' | 'fix' | 'decide' | 'approve' | 'upload' | 'finalize';
   blocker?: BlockerCode;
 }
 
@@ -155,7 +155,7 @@ export interface Overview {
   creatives: Record<string, RenderedFile[]>;
   videoStyles: Record<string, RenderedFile[]>;
   cpp: Record<string, Record<string, RenderedFile[]>>;
-  samples?: { styles: string[]; contactSheet?: string; storePreview?: string };
+  samples?: { styles: string[]; contactSheet?: string; storePreview?: string; generatedAt?: string; options: Array<{ letter: string; style: string; name: string }> };
   mockups?: { index?: string; screens: RenderedFile[] };
   tools: { asc: string | null; fastlane: string | null; ruby: string | null; bundler: string | null; brew?: string | null; claude: string | null; ffmpeg: string | null };
   missingKeys: string[];

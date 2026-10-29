@@ -11,6 +11,7 @@ import { Screens } from './pages/Screens';
 import { Setup } from './pages/Setup';
 import { Upload } from './pages/Upload';
 import { Video } from './pages/Video';
+import { pendingDecisions } from './status';
 import { useBusy, useStudio } from './store';
 import { Button, Empty } from './ui';
 
@@ -52,7 +53,9 @@ export function App() {
   }, [o?.app?.name]);
 
   const badges: Partial<Record<Route, { n: number; tone?: 'warn' }>> = {};
-  if (o?.briefs.length) badges.pipeline = { n: o.briefs.length, tone: 'warn' };
+  // Everything waiting for the user: blockers, decisions and the approve/upload clicks.
+  const pending = o ? pendingDecisions(o).length : 0;
+  if (pending) badges.pipeline = { n: pending, tone: 'warn' };
   if (o?.validation && !o.validation.ok) badges.review = { n: o.validation.counts.error, tone: 'warn' };
 
   return (

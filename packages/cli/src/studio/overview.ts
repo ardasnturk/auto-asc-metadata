@@ -1,7 +1,7 @@
 import { appPaths, existsSync, loadConfig, loadEnv, readJsonIfExists, StateStore, vitrinVersion, which, type AppPaths } from '@vitrin/core';
 import { AppProfile, ApprovalManifest, Archetype, BadgeType, BeatScene, EmphasisStyle, Framing, StylePreset, ValidationReport, VideoStyle, VideoTransition, type VitrinConfig } from '@vitrin/schemas';
 import { strayLocaleDirs } from '@vitrin/validate';
-import { readdir, stat } from 'node:fs/promises';
+import { readdir, readFile, stat } from 'node:fs/promises';
 import { join, relative, resolve, sep } from 'node:path';
 import { detectUploaderTools, missingUploadKeys, type UploaderTools } from '../commands/doctor.js';
 import { platformsReport, type PlatformsReport } from '../commands/select.js';
@@ -18,8 +18,8 @@ export interface RenderedFile {
   bytes: number;
 }
 
-/** The stages the Studio walks through, in order. mockups and rank are optional side steps. */
-export const PIPELINE = ['analyze', 'research', 'write', 'capture', 'mockups', 'design', 'video', 'validate', 'review', 'rank'] as const;
+/** The stages the Studio walks through, in order. mockups and rank are optional side steps; upload is the user's own click. */
+export const PIPELINE = ['analyze', 'research', 'write', 'capture', 'mockups', 'design', 'video', 'validate', 'review', 'upload', 'rank'] as const;
 export type PipelineStage = (typeof PIPELINE)[number];
 const OPTIONAL = new Set<PipelineStage>(['mockups', 'rank']);
 
@@ -42,24 +42,27 @@ export interface StageView {
   reason?: string;
 }
 
-export type BlockerCode = 'config-error' | 'stray-locales' | 'primary-locale' | 'ffmpeg-missing' | 'claude-missing' | 'uploader-unset' | 'uploader-missing' | 'keys-missing';
+export type BlockerCode = 'config-error' | 'stray-locales' | 'primary-locale' | 'ffmpeg-missing' | 'claude-missing' | 'uploader-unset' | 'uploader-missing' | 'keys-missing' | 'design-choice';
 
-/** Something that stops a stage or the upload, with the one-click fixes the Studio offers for it. */
+/**
+ * Something that stops a stage or waits for the user's decision, with the one-click fixes the Studio offers for it.
+ * A `decision` (design-choice) is not an error: the stage waits for the user instead of Claude.
+ */
 export interface Blocker {
   code: BlockerCode;
-  severity: 'error' | 'warning';
+  severity: 'error' | 'warning' | 'decision';
   /** Where it stops the run; the Studio shows it there. */
-  stage: PipelineStage | 'upload';
+  stage: PipelineStage;
   params: Record<string, string | number | string[]>;
   /** Studio jobs that fix it (the user picks one), most likely first. */
   fixes: Array<{ id: string; command: string; args: Record<string, unknown> }>;
 }
 
-/** The one thing to do now: the first stage that is not done, or the upload when everything is. */
+/** The one thing to do now: the first stage that is not done; undefined once this release is finished. */
 export interface NextStep {
-  stage: PipelineStage | 'upload';
-  action: 'claude' | 'run' | 'fix' | 'approve' | 'upload';
-  /** For fix: the blocker to resolve. */
+  stage: PipelineStage;
+  action: 'claude' | 'run' | 'fix' | 'decide' | 'approve' | 'upload' | 'finalize';
+  /** For fix and decide: the blocker or decision to resolve. */
   blocker?: BlockerCode;
 }
 
@@ -103,7 +106,8 @@ export interface Overview {
   creatives: Record<string, RenderedFile[]>;
   videoStyles: Record<string, RenderedFile[]>;
   cpp: Record<string, Record<string, RenderedFile[]>>;
-  samples?: { styles: string[]; contactSheet?: string; storePreview?: string };
+  /** Design samples: `options` (letter, style id, name) as the last sampling run labelled them. */
+  samples?: { styles: string[]; contactSheet?: string; storePreview?: string; generatedAt?: string; options: Array<{ letter: string; style: string; name: string }> };
   mockups?: { index?: string; screens: RenderedFile[] };
   tools: UploaderTools & { claude: string | null; ffmpeg: string | null };
   missingKeys: string[];
@@ -251,10 +255,18 @@ export async function buildOverview(root: string): Promise<Overview> {
     const problem = approvalProblem(approval, base.stages, base.validation);
     base.approval = { status: approval.status, approvedAt: approval.approvedAt, via: approval.via, overallHash: approval.overallHash, upload: approval.upload, finalized: approval.finalized, rejections: approval.rejections.length, valid: !problem, problem };
   }
+  const mtime = async (p: string) => (await stat(p).catch(() => undefined))?.mtime.toISOString();
+  // The files each brief asks Claude for: once all of them are newer than the brief, Claude's part is done.
+  const outputs: Record<string, string[]> = {
+    write: [...(config?.app.locales ?? []).map((l) => paths.metadataFile(l)), paths.appMetadata],
+    video: [paths.videoPlan],
+  };
   for (const f of await filesIn(root, paths.briefs, /\.md$/)) {
+    const name = f.name.replace(/\.md$/, '');
     const st = await stat(join(root, f.path));
-    const brief = { name: f.name.replace(/\.md$/, ''), path: f.path, modifiedAt: st.mtime.toISOString(), stage: BRIEF_STAGE[f.name.replace(/\.md$/, '')] };
-    if (briefOpen(brief, base.stages, approval)) base.briefs.push(brief);
+    const brief = { name, path: f.path, modifiedAt: st.mtime.toISOString(), stage: BRIEF_STAGE[name] };
+    const written = outputs[name] ? await Promise.all(outputs[name].map(mtime)) : undefined;
+    if (briefOpen(brief, base.stages, approval, written)) base.briefs.push(brief);
   }
   base.briefs.sort((a, b) => b.modifiedAt.localeCompare(a.modifiedAt));
   for (const locale of await subdirs(paths.raw)) {
@@ -270,7 +282,11 @@ export async function buildOverview(root: string): Promise<Overview> {
   if (existsSync(samplesDir)) {
     const styles = await subdirs(samplesDir);
     const rel = (f: string) => (existsSync(join(samplesDir, f)) ? toPosix(relative(root, join(samplesDir, f))) : undefined);
-    base.samples = { styles, contactSheet: rel('contact-sheet.png'), storePreview: rel('store-preview.html') };
+    const index = (await readFile(join(samplesDir, 'samples.json'), 'utf8')
+      .then((t) => JSON.parse(t) as unknown)
+      .catch(() => undefined)) as { generatedAt?: string; samples?: Array<{ letter?: string; style?: string; name?: string }> } | undefined;
+    const options = (index?.samples ?? []).filter((x) => x.letter && x.style).map((x) => ({ letter: x.letter!, style: x.style!, name: x.name ?? x.style! }));
+    base.samples = { styles, contactSheet: rel('contact-sheet.png'), storePreview: rel('store-preview.html'), generatedAt: index?.generatedAt, options };
   }
   const mockupScreens = join(paths.mockups, 'screens');
   if (existsSync(paths.mockups)) {
@@ -280,8 +296,10 @@ export async function buildOverview(root: string): Promise<Overview> {
   if (base.configError) base.blockers.push({ code: 'config-error', severity: 'error', stage: 'analyze', params: { message: base.configError }, fixes: [] });
   if (config) {
     base.blockers.push(...(await localeBlockers(paths, config, base.listing)), ...toolBlockers(base, config));
+    const choice = designChoice(base, await mtime(paths.artDirection));
+    if (choice) base.blockers.push(choice);
     base.flow = stageFlow(base, config, existsSync(paths.rankings));
-    base.next = nextStep(base.flow, base.blockers);
+    base.next = nextStep(base.flow, base.blockers, Boolean(base.approval?.finalized));
   }
   return base;
 }
@@ -293,10 +311,15 @@ const ANSWERED_BY: Record<string, string> = { analyze: 'research', write: 'write
 
 type Stages = Overview['stages'];
 
-export function briefOpen(brief: { name: string; modifiedAt: string }, stages: Stages, approval?: Pick<ApprovalManifest, 'status' | 'approvedAt' | 'finalized'>): boolean {
+/**
+ * `written`: modification times of the files the brief asks for (undefined = missing). When every one of them is newer
+ * than the brief, Claude has answered it even if nobody ran the stage yet.
+ */
+export function briefOpen(brief: { name: string; modifiedAt: string }, stages: Stages, approval?: Pick<ApprovalManifest, 'status' | 'approvedAt' | 'finalized'>, written?: Array<string | undefined>): boolean {
   const after = (at?: string) => Boolean(at && at >= brief.modifiedAt);
   if (brief.name === 'review') return !(approval?.status === 'approved' && after(approval.approvedAt));
   if (brief.name === 'finalize') return !after(approval?.finalized?.at);
+  if (written?.length && written.every(after)) return false;
   const by = ANSWERED_BY[brief.name];
   const rec = by ? stages[by] : undefined;
   return !(rec && rec.status !== 'blocked' && after(rec.completedAt));
@@ -319,6 +342,18 @@ const UPSTREAM: Partial<Record<PipelineStage, string[]>> = {
   validate: ['write', 'design', 'video'],
 };
 
+/**
+ * The design brief's second step: samples were rendered and the user picks one. The choice is written into
+ * art-direction.json afterwards, so an art direction older than the samples (or none) means the choice is still open.
+ */
+export function designChoice(o: Pick<Overview, 'samples' | 'stages'>, artDirectionAt?: string): Blocker | undefined {
+  const at = o.samples?.generatedAt;
+  if (!at || !o.samples?.options.length) return undefined;
+  if ((o.stages.design?.completedAt ?? '') > at) return undefined;
+  if (artDirectionAt && artDirectionAt > at) return undefined;
+  return { code: 'design-choice', severity: 'decision', stage: 'design', params: { n: o.samples.options.length, options: o.samples.options.map((x) => `${x.letter} · ${x.name}`) }, fixes: [] };
+}
+
 export function stageFlow(o: Pick<Overview, 'stages' | 'briefs' | 'blockers' | 'approval' | 'validation' | 'mockups'>, config: VitrinConfig, ranked = false): StageView[] {
   const assets = config.selection?.assets;
   const skipped: Partial<Record<PipelineStage, boolean>> = {
@@ -330,8 +365,10 @@ export function stageFlow(o: Pick<Overview, 'stages' | 'briefs' | 'blockers' | '
     const view: StageView = { id, status: 'not-run', ...(OPTIONAL.has(id) ? { optional: true } : {}), ...(rec ? { completedAt: rec.completedAt, note: rec.note } : {}) };
     const brief = o.briefs.find((b) => b.stage === id);
     const blocker = o.blockers.find((b) => b.stage === id && b.severity === 'error');
+    const decision = o.blockers.find((b) => b.stage === id && b.severity === 'decision');
     const newer = (UPSTREAM[id] ?? []).find((up) => rec && (o.stages[up]?.completedAt ?? '') > rec.completedAt);
     if (skipped[id]) return { ...view, status: 'skipped' };
+    if (decision) return { ...view, status: 'needs-user', reason: decision.code, ...(brief ? { brief: brief.name } : {}) };
     // Claude can write the plan while a tool is missing, but the stage cannot finish until the blocker is fixed: say both.
     if (brief) return { ...view, status: 'needs-claude', brief: brief.name, ...(blocker ? { reason: blocker.code } : {}) };
     if (id === 'mockups') return { ...view, status: o.mockups?.screens.length ? 'done' : 'not-run' };
@@ -345,6 +382,14 @@ export function stageFlow(o: Pick<Overview, 'stages' | 'briefs' | 'blockers' | '
       if (a.problem === 'rejected') return { ...base, status: 'needs-claude', reason: 'rejected' };
       return { ...base, status: 'done' };
     }
+    if (id === 'upload') {
+      const a = o.approval;
+      const up = a?.upload && a.upload.overallHash === a.overallHash ? a.upload : undefined;
+      if (up?.readBack === 'ok') return { ...view, status: 'done', completedAt: up.uploadedAt };
+      if (blocker) return { ...view, status: 'blocked', reason: blocker.code };
+      if (up) return { ...view, status: 'needs-user', reason: 'readback-differences', completedAt: up.uploadedAt };
+      return { ...view, status: a?.valid ? 'needs-user' : 'not-run' };
+    }
     if (blocker) return { ...view, status: 'blocked', reason: blocker.code };
     if (!rec) return view;
     if (rec.status === 'blocked') return { ...view, status: 'blocked', reason: id === 'validate' ? 'validation-errors' : undefined };
@@ -353,18 +398,21 @@ export function stageFlow(o: Pick<Overview, 'stages' | 'briefs' | 'blockers' | '
   });
 }
 
-export function nextStep(flow: StageView[], blockers: Blocker[]): NextStep | undefined {
+export function nextStep(flow: StageView[], blockers: Blocker[], finalized = false): NextStep | undefined {
   for (const s of flow) {
     if (s.optional || s.status === 'done' || s.status === 'skipped') continue;
     const blocker = blockers.find((b) => b.stage === s.id && b.severity === 'error');
     if (blocker) return { stage: s.id, action: 'fix', blocker: blocker.code };
+    const decision = blockers.find((b) => b.stage === s.id && b.severity === 'decision');
+    if (decision) return { stage: s.id, action: 'decide', blocker: decision.code };
     if (s.status === 'needs-claude') return { stage: s.id, action: 'claude' };
+    if (s.id === 'upload') return { stage: 'upload', action: 'upload' };
     if (s.status === 'needs-user') return { stage: s.id, action: 'approve' };
     if (s.status === 'blocked' && s.id === 'review') return { stage: 'validate', action: 'run' };
     return { stage: s.id, action: 'run' };
   }
-  const upload = blockers.find((b) => b.stage === 'upload' && b.severity === 'error');
-  return upload ? { stage: 'upload', action: 'fix', blocker: upload.code } : { stage: 'upload', action: 'upload' };
+  // Uploaded and read back: what is left is checking the store and finishing the run.
+  return flow.some((s) => s.id === 'upload' && s.status === 'done') && !finalized ? { stage: 'upload', action: 'finalize' } : undefined;
 }
 
 /**

@@ -6,7 +6,7 @@ import { appPaths } from '@vitrin/core';
 import { afterEach, describe, expect, it } from 'vitest';
 import { applySelection } from '../src/commands/select.js';
 import { systemPrompt } from '../src/studio/claude.js';
-import { approvalProblem, briefOpen, buildOverview, nextStep, stageFlow, type Blocker } from '../src/studio/overview.js';
+import { approvalProblem, briefOpen, buildOverview, designChoice, nextStep, stageFlow, type Blocker } from '../src/studio/overview.js';
 import { configWith } from './helpers.js';
 
 /** The Studio's stage model: open briefs, approval validity, stage status, blockers and the next step. */
@@ -25,6 +25,10 @@ describe('briefs', () => {
     expect(briefOpen({ name: 'design', modifiedAt: at(10) }, { capture: rec(12) })).toBe(true);
     expect(briefOpen({ name: 'review', modifiedAt: at(10) }, {}, { status: 'approved', approvedAt: at(11) })).toBe(false);
     expect(briefOpen({ name: 'finalize', modifiedAt: at(10) }, {}, { status: 'approved', approvedAt: at(9) })).toBe(true);
+    // Claude wrote every file the brief asks for: its part is done even though nobody ran the stage yet.
+    expect(briefOpen({ name: 'video', modifiedAt: at(10) }, {}, undefined, [at(11)])).toBe(false);
+    expect(briefOpen({ name: 'write', modifiedAt: at(10) }, {}, undefined, [at(11), undefined])).toBe(true);
+    expect(briefOpen({ name: 'write', modifiedAt: at(10) }, {}, undefined, [at(11), at(9)])).toBe(true);
   });
 });
 
@@ -90,7 +94,8 @@ describe('stage flow', () => {
       },
       config,
     );
-    expect(done.filter((s) => !s.optional).every((s) => s.status === 'done')).toBe(true);
+    expect(done.filter((s) => !s.optional && s.id !== 'upload').every((s) => s.status === 'done')).toBe(true);
+    expect(done.find((s) => s.id === 'upload')).toMatchObject({ status: 'needs-user' });
     expect(nextStep(done, [])).toEqual({ stage: 'upload', action: 'upload' });
     const keys: Blocker = { code: 'keys-missing', severity: 'error', stage: 'upload', params: { keys: ['ASC_KEY_ID'] }, fixes: [] };
     expect(nextStep(done, [keys])).toEqual({ stage: 'upload', action: 'fix', blocker: 'keys-missing' });
@@ -100,6 +105,53 @@ describe('stage flow', () => {
     const withBrief = stageFlow({ ...base, briefs: [{ name: 'video', path: 'metadata/briefs/video.md', modifiedAt: at(10), stage: 'video' }], blockers: [ffmpeg] }, config);
     expect(withBrief.find((s) => s.id === 'video')).toMatchObject({ status: 'needs-claude', brief: 'video', reason: 'ffmpeg-missing' });
     expect(nextStep(flow, [ffmpeg])).toEqual({ stage: 'video', action: 'fix', blocker: 'ffmpeg-missing' });
+  });
+});
+
+describe('upload and finish', () => {
+  const config = configWith({ app: { locales: ['tr'], primaryLocale: 'tr' } });
+  const stages = { analyze: rec(8), research: rec(8), write: rec(8), capture: rec(8), design: rec(9), video: rec(9), validate: rec(10) };
+  const flowWith = (upload?: { readBack: string; overallHash?: string }) =>
+    stageFlow(
+      {
+        stages,
+        briefs: [],
+        blockers: [],
+        mockups: undefined,
+        validation: { ok: true, counts: { error: 0, warning: 0, info: 0 }, issues: [] },
+        approval: { status: 'approved', approvedAt: at(11), via: 'cli', overallHash: 'h', rejections: 0, valid: true, ...(upload ? { upload: { uploadedAt: at(12), overallHash: upload.overallHash ?? 'h', readBack: upload.readBack, differences: [] } } : {}) },
+      },
+      config,
+    );
+
+  it('marks the upload done once the approved content was uploaded and read back, then asks to finish the run', () => {
+    const done = flowWith({ readBack: 'ok' });
+    expect(done.find((s) => s.id === 'upload')).toMatchObject({ status: 'done', completedAt: at(12) });
+    expect(nextStep(done, [])).toEqual({ stage: 'upload', action: 'finalize' });
+    expect(nextStep(done, [], true)).toBeUndefined();
+  });
+
+  it('keeps the upload open after read-back differences or an upload of other content', () => {
+    expect(flowWith({ readBack: 'differences' }).find((s) => s.id === 'upload')).toMatchObject({ status: 'needs-user', reason: 'readback-differences' });
+    expect(flowWith({ readBack: 'ok', overallHash: 'older' }).find((s) => s.id === 'upload')).toMatchObject({ status: 'needs-user' });
+  });
+});
+
+describe('design choice', () => {
+  const samples = { styles: ['a', 'b'], generatedAt: at(10), options: [{ letter: 'A', style: 'atleva-fresh', name: 'Atleva Fresh' }, { letter: 'B', style: 'bold-poster-type', name: 'Bold Poster' }] };
+
+  it('waits for the user after the samples, until the art direction is written or the design renders', () => {
+    const open = designChoice({ samples, stages: {} }, at(9));
+    expect(open).toMatchObject({ code: 'design-choice', severity: 'decision', stage: 'design', params: { n: 2, options: ['A · Atleva Fresh', 'B · Bold Poster'] } });
+    expect(designChoice({ samples, stages: {} }, undefined)).toBeDefined();
+    expect(designChoice({ samples, stages: {} }, at(11))).toBeUndefined();
+    expect(designChoice({ samples, stages: { design: rec(11) } }, at(9))).toBeUndefined();
+    expect(designChoice({ samples: { ...samples, options: [] }, stages: {} }, at(9))).toBeUndefined();
+
+    const config = configWith({ app: { locales: ['tr'], primaryLocale: 'tr' } });
+    const flow = stageFlow({ stages: { analyze: rec(8), research: rec(8), write: rec(8), capture: rec(8) }, briefs: [{ name: 'design', path: 'metadata/briefs/design.md', modifiedAt: at(9), stage: 'design' }], blockers: [open!], approval: undefined, validation: undefined, mockups: undefined }, config);
+    expect(flow.find((s) => s.id === 'design')).toMatchObject({ status: 'needs-user', reason: 'design-choice', brief: 'design' });
+    expect(nextStep(flow, [open!])).toEqual({ stage: 'design', action: 'decide', blocker: 'design-choice' });
   });
 });
 

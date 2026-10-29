@@ -1,14 +1,14 @@
-import { useState } from 'react';
-import { api, type PipelineStage, type StageView } from '../api';
-import { t } from '../i18n';
-import { BlockerItem, STAGE_TITLE, stageReason, statusClass, StatusPill } from '../status';
+import { Fragment, useState } from 'react';
+import { api, type Overview, type PipelineStage, type StageView } from '../api';
+import { t, type UiKey } from '../i18n';
+import { BlockerItem, blockerText, go, pendingDecisions, STAGE_HINT, STAGE_PAGE, STAGE_TITLE, StageDecision, stageReason, statusClass, StatusPill } from '../status';
 import { useBusy, useStudio } from '../store';
 import { Button, Card, fmtDate, Modal, Pill } from '../ui';
 
-/** The stage board: the next step first, then every stage with the status the server computed, and what blocks the run. */
+/** The run at a glance: the next step first, then every stage with the status the server computed, and what waits for the user. */
 
-/** The command each stage runs (mockups renders the screens into device frames). */
-const COMMAND: Record<PipelineStage, { command: string; args?: Record<string, unknown> }> = {
+/** The command each stage runs (mockups renders the screens into device frames); the upload is a page, not a command. */
+const COMMAND: Partial<Record<PipelineStage, { command: string; args?: Record<string, unknown> }>> = {
   analyze: { command: 'analyze' },
   research: { command: 'research' },
   write: { command: 'write' },
@@ -21,14 +21,19 @@ const COMMAND: Record<PipelineStage, { command: string; args?: Record<string, un
   rank: { command: 'rank' },
 };
 
-const go = (route: string) => (location.hash = `/${route}`);
+/** The stages in three groups, so the list reads as a path rather than eleven commands. */
+const GROUPS: Array<{ title: UiKey; stages: PipelineStage[] }> = [
+  { title: 'groupPrepare', stages: ['analyze', 'research'] },
+  { title: 'groupContent', stages: ['write', 'capture', 'mockups', 'design', 'video'] },
+  { title: 'groupShip', stages: ['validate', 'review', 'upload', 'rank'] },
+];
 
 export function Pipeline({ openClaude }: { openClaude: () => void }) {
   const { state, run, toast } = useStudio();
   const busy = useBusy();
   const o = state.overview!;
   const [brief, setBrief] = useState<{ name: string; text: string } | undefined>();
-  const runningStage = state.job?.command;
+  const runningCommand = state.job?.command;
 
   const showBrief = async (name: string) => {
     try {
@@ -51,29 +56,33 @@ export function Pipeline({ openClaude }: { openClaude: () => void }) {
       ✳ {t('askClaude')}
     </Button>
   );
-
-  /** The single action a stage row offers; the rest sit behind “More”. */
-  const primaryAction = (s: StageView) => {
-    if (s.brief) return claudeButton(s.brief, 'sm');
-    if (s.id === 'review' && s.status === 'needs-user')
-      return (
-        <Button size="sm" kind="primary" onClick={() => go('review')}>
-          {t('openReview')}
-        </Button>
-      );
-    if (s.status === 'skipped') return null;
-    const c = COMMAND[s.id];
+  const runButton = (id: PipelineStage, opts: { size?: 'sm'; primary?: boolean; force?: boolean } = {}) => {
+    const c = COMMAND[id]!;
+    // A missing tool (ffmpeg) makes the run fail for sure; it unlocks by itself once the tool is installed.
+    const missingTool = o.blockers.find((b) => b.stage === id && b.severity === 'error' && typeof b.params.install === 'string');
     return (
-      <Button size="sm" kind={s.status === 'done' || s.optional ? undefined : 'primary'} disabled={busy} title={`vitrin ${c.command}`} onClick={() => run(c.command, c.args)}>
-        {t('run')}
+      <Button size={opts.size} kind={opts.primary ? 'primary' : opts.force ? 'ghost' : undefined} disabled={busy || Boolean(missingTool)} title={missingTool ? blockerText(missingTool) : `vitrin ${c.command}`} onClick={() => run(c.command, c.args, opts.force)}>
+        {t(opts.force ? 'rerun' : 'run')}
       </Button>
     );
   };
 
-  const next = o.next;
-  const nextBlocker = next?.blocker ? o.blockers.find((b) => b.code === next.blocker) : undefined;
-  const nextView = o.flow.find((s) => s.id === next?.stage);
-  const attention = o.blockers.filter((b) => b !== nextBlocker);
+  /** The single action a stage row offers; the rest sit behind “More”. */
+  const primaryAction = (s: StageView) => {
+    if (s.status === 'skipped') return null;
+    if (s.status === 'needs-user' || s.id === 'upload')
+      return (
+        <Button size="sm" kind={s.status === 'needs-user' ? 'primary' : undefined} onClick={() => go(STAGE_PAGE[s.id])}>
+          {t('goToPage')}
+        </Button>
+      );
+    if (s.brief) return claudeButton(s.brief, 'sm');
+    return runButton(s.id, { size: 'sm', primary: s.status !== 'done' && !s.optional });
+  };
+
+  // The next step's own blocker or decision already sits in the card at the top.
+  const decisions = pendingDecisions(o).filter((d) => !('blocker' in d) || d.blocker.code !== o.next?.blocker);
+  const byId = new Map(o.flow.map((s, i) => [s.id, { view: s, n: i + 1 }]));
 
   return (
     <div className="page">
@@ -81,138 +90,72 @@ export function Pipeline({ openClaude }: { openClaude: () => void }) {
         <h2>{t('pipeline')}</h2>
         <p>{t('pipelineIntro')}</p>
       </header>
-      {next && (
-        <Card className="next-step" title={t('nextStep')}>
-          <div className="stack">
-            <div className="next-title">{t(STAGE_TITLE[next.stage])}</div>
-            {next.action === 'fix' && nextBlocker ? (
-              <>
-                <div className="dim">{t('nextFixFirst')}</div>
-                <BlockerItem blocker={nextBlocker} primary />
-              </>
-            ) : next.action === 'claude' && nextView?.brief ? (
-              <>
-                <div>{t('nextClaude', { stage: t(STAGE_TITLE[next.stage]) })}</div>
-                <div className="row">
-                  {claudeButton(nextView.brief)}
-                  <Button onClick={() => showBrief(nextView.brief!)}>{t('brief')}</Button>
-                </div>
-              </>
-            ) : next.action === 'approve' ? (
-              <>
-                <div>{nextView?.reason ? stageReason(nextView, o) : t('nextApprove')}</div>
-                <div className="row">
-                  <Button kind="primary" onClick={() => go('review')}>
-                    {t('openReview')}
-                  </Button>
-                </div>
-              </>
-            ) : next.action === 'upload' ? (
-              <>
-                <div>{t('nextUpload')}</div>
-                <div className="row">
-                  <Button kind="primary" onClick={() => go('upload')}>
-                    {t('openUpload')}
-                  </Button>
-                </div>
-              </>
-            ) : (
-              next.stage !== 'upload' && (
-                <>
-                  <div>{nextView && stageReason(nextView, o) ? stageReason(nextView, o) : t('nextRun', { stage: t(STAGE_TITLE[next.stage]) })}</div>
-                  <div className="row">
-                    <Button kind="primary" disabled={busy} onClick={() => run(COMMAND[next.stage as PipelineStage].command, COMMAND[next.stage as PipelineStage].args)}>
-                      {t('run')}
-                    </Button>
-                  </div>
-                </>
-              )
-            )}
-          </div>
-        </Card>
-      )}
+      <NextStepCard o={o} claudeButton={claudeButton} runButton={runButton} showBrief={showBrief} openClaude={openClaude} />
       <div className="grid" style={{ gridTemplateColumns: 'minmax(0, 1fr) 320px' }}>
         <div className="stage-list">
-          {o.flow.map((s, i) => {
-            const running = runningStage === COMMAND[s.id].command;
-            const reason = stageReason(s, o);
-            return (
-              <div key={s.id} className={`stage ${running ? 'running' : statusClass(s.status)}`}>
-                <div className="num">{i + 1}</div>
-                <div>
-                  <div className="title">
-                    {t(STAGE_TITLE[s.id])} {s.optional && <span className="dim small">· {t('optional')}</span>}
-                  </div>
-                  <div className="sub">
-                    {running ? t('running') : <StatusPill status={s.status} />}
-                    {s.completedAt && s.status !== 'not-run' ? ` ${fmtDate(s.completedAt)}` : ''}
-                    {reason ? ` · ${reason}` : ''}
-                    {s.note ? ` · ${s.note}` : ''}
-                  </div>
-                </div>
-                <div className="row">
-                  {primaryAction(s)}
-                  <details className="more">
-                    <summary className="btn sm ghost" title={t('moreActions')}>
-                      ⋯
-                    </summary>
-                    <div className="menu">
-                      {s.brief && (
-                        <Button size="sm" kind="ghost" onClick={() => showBrief(s.brief!)}>
-                          {t('brief')}
-                        </Button>
-                      )}
-                      {s.brief && (
-                        <Button size="sm" kind="ghost" disabled={busy} onClick={() => run(COMMAND[s.id].command, COMMAND[s.id].args)}>
-                          {t('run')}
-                        </Button>
-                      )}
-                      <Button size="sm" kind="ghost" disabled={busy} onClick={() => run(COMMAND[s.id].command, COMMAND[s.id].args, true)}>
-                        {t('rerun')}
-                      </Button>
+          {GROUPS.map((g) => (
+            <Fragment key={g.title}>
+              <div className="stage-group">{t(g.title)}</div>
+              {g.stages.map((id) => {
+                const entry = byId.get(id);
+                if (!entry) return null;
+                const { view: s, n } = entry;
+                const running = Boolean(runningCommand && runningCommand === COMMAND[s.id]?.command);
+                const reason = stageReason(s, o);
+                return (
+                  <div key={s.id} className={`stage ${running ? 'running' : statusClass(s.status)}`}>
+                    <div className="num">{s.status === 'done' && !running ? '✓' : n}</div>
+                    <div>
+                      <div className="title">
+                        <a href={`#/${STAGE_PAGE[s.id]}`} title={t('goToPage')}>
+                          {t(STAGE_TITLE[s.id])}
+                        </a>{' '}
+                        {s.optional && <span className="dim small">· {t('optional')}</span>}
+                      </div>
+                      <div className="hint">{t(STAGE_HINT[s.id])}</div>
+                      <div className="sub">
+                        {running ? <Pill tone="accent">{t('running')}</Pill> : <StatusPill status={s.status} />}
+                        {s.completedAt && s.status !== 'not-run' ? ` ${fmtDate(s.completedAt)}` : ''}
+                        {reason ? ` · ${reason}` : ''}
+                        {s.note ? ` · ${s.note}` : ''}
+                      </div>
                     </div>
-                  </details>
-                </div>
-              </div>
-            );
-          })}
+                    <div className="row">
+                      {primaryAction(s)}
+                      {COMMAND[s.id] && (
+                        <details className="more">
+                          <summary className="btn sm ghost" title={t('moreActions')}>
+                            ⋯
+                          </summary>
+                          <div className="menu">
+                            {s.brief && (
+                              <Button size="sm" kind="ghost" onClick={() => showBrief(s.brief!)}>
+                                {t('brief')}
+                              </Button>
+                            )}
+                            {(s.brief || s.status === 'needs-user') && runButton(s.id, { size: 'sm' })}
+                            {runButton(s.id, { size: 'sm', force: true })}
+                          </div>
+                        </details>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </Fragment>
+          ))}
         </div>
         <div className="stack">
-          <Card title={t('attention')}>
-            {attention.length === 0 ? (
-              <span className="dim">{t('allClear')}</span>
+          <Card title={t('pendingDecisions')}>
+            {decisions.length === 0 ? (
+              <span className="dim">{t('noDecisions')}</span>
             ) : (
               <div className="stack">
-                {attention.map((b) => (
-                  <BlockerItem key={b.code} blocker={b} />
-                ))}
+                {decisions.map((d) => ('blocker' in d ? <BlockerItem key={d.key} blocker={d.blocker} openClaude={openClaude} /> : <StageDecision key={d.key} stage={d.stage} o={o} />))}
               </div>
             )}
           </Card>
-          <Card title={t('status')}>
-            <dl className="kv">
-              <dt>{t('storeLocales')}</dt>
-              <dd>{o.config?.locales.join(', ')}</dd>
-              <dt>{t('metadata')}</dt>
-              <dd>{o.listing.length ? o.listing.join(', ') : '—'}</dd>
-              <dt>{t('screenshots')}</dt>
-              <dd>{Object.entries(o.screenshots).map(([l, f]) => `${l}: ${f.length}`).join(' · ') || '—'}</dd>
-              <dt>{t('previews')}</dt>
-              <dd>{Object.entries(o.previews).map(([l, f]) => `${l}: ${f.length}`).join(' · ') || '—'}</dd>
-              <dt>{t('stageValidate')}</dt>
-              <dd>{o.validation ? <Pill tone={o.validation.ok ? 'ok' : 'err'}>{o.validation.ok ? t('validationOk') : t('validationErrors', { n: o.validation.counts.error })}</Pill> : '—'}</dd>
-              <dt>{t('approved')}</dt>
-              <dd>
-                {o.approval?.valid ? (
-                  <Pill tone="ok">{fmtDate(o.approval.approvedAt)}</Pill>
-                ) : o.approval && o.approval.status === 'approved' ? (
-                  <span className="text-err">{t('approvalInvalid', { reason: stageReason({ id: 'review', status: 'blocked', reason: o.approval.problem }, o) })}</span>
-                ) : (
-                  <Pill>{t('notApproved')}</Pill>
-                )}
-              </dd>
-            </dl>
-          </Card>
+          <Summary o={o} />
         </div>
       </div>
       {brief && (
@@ -230,5 +173,152 @@ export function Pipeline({ openClaude }: { openClaude: () => void }) {
         </Modal>
       )}
     </div>
+  );
+}
+
+/** One sentence and one button: what to do now. */
+function NextStepCard({
+  o,
+  claudeButton,
+  runButton,
+  showBrief,
+  openClaude,
+}: {
+  o: Overview;
+  claudeButton: (name: string) => React.ReactNode;
+  runButton: (id: PipelineStage, opts?: { primary?: boolean }) => React.ReactNode;
+  showBrief: (name: string) => void;
+  openClaude: () => void;
+}) {
+  const next = o.next;
+  if (!next)
+    return o.flow.length ? (
+      <Card className="next-step" title={t('nextStep')}>
+        <div>{t('allDone')}</div>
+      </Card>
+    ) : null;
+  const view = o.flow.find((s) => s.id === next.stage);
+  const blocker = next.blocker ? o.blockers.find((b) => b.code === next.blocker) : undefined;
+  const reason = view ? stageReason(view, o) : '';
+  let body: React.ReactNode;
+  if ((next.action === 'fix' || next.action === 'decide') && blocker) {
+    body = (
+      <>
+        {next.action === 'fix' && <div className="dim">{t('nextFixFirst')}</div>}
+        <BlockerItem blocker={blocker} primary openClaude={openClaude} />
+      </>
+    );
+  } else if (next.action === 'claude' && view?.brief) {
+    body = (
+      <>
+        <div>{t('nextClaude', { stage: t(STAGE_TITLE[next.stage]) })}</div>
+        <div className="row">
+          {claudeButton(view.brief)}
+          <Button onClick={() => showBrief(view.brief!)}>{t('brief')}</Button>
+        </div>
+      </>
+    );
+  } else if (next.action === 'approve' || next.action === 'upload' || next.action === 'finalize') {
+    const text = next.action === 'finalize' ? t('nextFinalize') : reason || t(next.action === 'upload' ? 'decisionUpload' : 'nextApprove');
+    body = (
+      <>
+        <div>{text}</div>
+        <div className="row">
+          <Button kind="primary" onClick={() => go(STAGE_PAGE[next.stage])}>
+            {t(next.action === 'approve' ? 'openReview' : 'openUpload')}
+          </Button>
+        </div>
+      </>
+    );
+  } else {
+    body = (
+      <>
+        <div>{reason || t('nextRun', { stage: t(STAGE_TITLE[next.stage]) })}</div>
+        <div className="row">{COMMAND[next.stage] ? runButton(next.stage, { primary: true }) : null}</div>
+      </>
+    );
+  }
+  return (
+    <Card className="next-step" title={t('nextStep')}>
+      <div className="stack">
+        <div className="next-title">{t(STAGE_TITLE[next.stage])}</div>
+        {body}
+      </div>
+    </Card>
+  );
+}
+
+/** What exists for the selected store languages, with what is missing in red. */
+function Summary({ o }: { o: Overview }) {
+  const cfg = o.config;
+  if (!cfg) return null;
+  const skipped = (id: PipelineStage) => o.flow.find((s) => s.id === id)?.status === 'skipped';
+  const extra = o.listing.filter((l) => !cfg.locales.includes(l));
+  const perLocale = (files: Record<string, unknown[]>) =>
+    cfg.locales.map((l, i) => (
+      <Fragment key={l}>
+        {i > 0 && ' · '}
+        <span className={files[l]?.length ? '' : 'text-err'}>
+          {l}: {files[l]?.length ?? 0}
+        </span>
+      </Fragment>
+    ));
+  const up = o.approval?.upload && o.approval.upload.overallHash === o.approval.overallHash ? o.approval.upload : undefined;
+  return (
+    <Card title={t('summary')}>
+      <dl className="kv">
+        <dt>{t('storeLocales')}</dt>
+        <dd>
+          {cfg.locales.join(', ')} {!cfg.locales.includes(cfg.primaryLocale) && <span className="text-err">({t('primaryLocaleIs', { locale: cfg.primaryLocale })})</span>}
+        </dd>
+        <dt>{t('storeText')}</dt>
+        <dd>
+          {cfg.locales.map((l, i) => (
+            <Fragment key={l}>
+              {i > 0 && ' · '}
+              <span className={o.listing.includes(l) ? '' : 'text-err'}>
+                {l} {o.listing.includes(l) ? '✓' : `✗ ${t('missing')}`}
+              </span>
+            </Fragment>
+          ))}
+          {extra.length > 0 && <div className="dim small">{t('notSelectedExtra', { n: extra.length })}</div>}
+        </dd>
+        {!skipped('design') && (
+          <>
+            <dt>{t('screenshots')}</dt>
+            <dd>{perLocale(o.screenshots)}</dd>
+          </>
+        )}
+        {!skipped('video') && (
+          <>
+            <dt>{t('previews')}</dt>
+            <dd>{perLocale(o.previews)}</dd>
+          </>
+        )}
+        <dt>{t('validationLabel')}</dt>
+        <dd>
+          {o.validation ? (
+            <>
+              <Pill tone={o.validation.ok ? 'ok' : 'err'}>{o.validation.ok ? t('validationOk') : t('validationErrors', { n: o.validation.counts.error })}</Pill>
+              {o.validation.counts.warning > 0 && <span className="dim small"> {t('warningsN', { n: o.validation.counts.warning })}</span>}
+            </>
+          ) : (
+            '—'
+          )}
+        </dd>
+        <dt>{t('approvalLabel')}</dt>
+        <dd>
+          {o.approval?.valid ? (
+            <Pill tone="ok">{fmtDate(o.approval.approvedAt)}</Pill>
+          ) : o.approval && o.approval.status === 'approved' ? (
+            <span className="text-err">{t('approvalInvalid', { reason: stageReason({ id: 'review', status: 'blocked', reason: o.approval.problem }, o) })}</span>
+          ) : (
+            <Pill>{t('notApproved')}</Pill>
+          )}
+        </dd>
+        <dt>{t('upload')}</dt>
+        <dd>{up ? <Pill tone={up.readBack === 'ok' ? 'ok' : 'err'}>{fmtDate(up.uploadedAt)}</Pill> : <span className="dim">{t('notUploaded')}</span>}</dd>
+      </dl>
+    </Card>
   );
 }
