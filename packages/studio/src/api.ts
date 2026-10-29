@@ -140,6 +140,7 @@ export interface Overview {
     selection: { platforms?: string[]; assets?: string[]; targets?: string[] };
     video: { enabled: boolean; loops: boolean };
     seeds: string[] | Record<string, string[]>;
+    urls: { support?: string; privacy?: string; marketing?: string };
   };
   platforms?: PlatformsReport;
   stages: Record<string, { completedAt: string; status: string; note?: string } | undefined>;

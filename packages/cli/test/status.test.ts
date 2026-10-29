@@ -208,6 +208,12 @@ describe('locale consistency', () => {
     const yaml = applySelection('app:\n  primaryLocale: en-US\n  locales: [tr]\n', { primaryLocale: 'tr' });
     expect(yaml).toContain('primaryLocale: tr');
   });
+
+  it('select sets the store links for every locale and removes one given as empty', () => {
+    const yaml = applySelection('app:\n  locales: [tr]\nurls:\n  support: https://example.com/support\n  marketing: https://example.com\n', { urls: { support: 'https://atleva.app/help', marketing: '' } });
+    expect(yaml).toContain('support: https://atleva.app/help');
+    expect(yaml).not.toContain('marketing');
+  });
 });
 
 describe('Claude panel language', () => {

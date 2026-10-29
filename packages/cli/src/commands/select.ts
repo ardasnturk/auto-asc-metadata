@@ -171,6 +171,8 @@ export interface SelectionChange {
   locales?: string[];
   /** app.primaryLocale: the listing's main language, which copy and captures fall back to. */
   primaryLocale?: string;
+  /** urls.support / privacy / marketing for every locale (a listing can still override one); '' removes it. */
+  urls?: Partial<Record<'support' | 'privacy' | 'marketing', string>>;
   /** ui.language; null removes it. */
   language?: string | null;
   uploader?: Uploader;
@@ -193,6 +195,7 @@ export function applySelection(yamlText: string, change: SelectionChange): strin
   if (isMap(sel) && sel.items.length === 0) doc.delete('selection');
   if (change.locales !== undefined) set(['app', 'locales'], change.locales, false);
   if (change.primaryLocale !== undefined) set(['app', 'primaryLocale'], change.primaryLocale);
+  for (const [k, v] of Object.entries(change.urls ?? {})) if (v !== undefined) set(['urls', k], v === '' ? null : v);
   if (change.language !== undefined) {
     set(['ui', 'language'], change.language);
     const ui = doc.getIn(['ui']);
@@ -209,6 +212,9 @@ export interface SelectOptions {
   targets?: string | string[];
   locales?: string | string[];
   primaryLocale?: string;
+  supportUrl?: string;
+  privacyUrl?: string;
+  marketingUrl?: string;
   language?: string;
   uploader?: string;
   capture?: string;
@@ -228,8 +234,11 @@ export async function selectCommand(ctx: Ctx, opts: SelectOptions): Promise<numb
   const uploader = opts.uploader as Uploader | undefined;
   if (opts.capture !== undefined && !(CAPTURE_MODES as readonly string[]).includes(opts.capture)) throw new Error(`Unknown capture mode: ${opts.capture}. Valid: ${CAPTURE_MODES.join(', ')}.`);
   const capture = opts.capture as CaptureMode | undefined;
-  const change: SelectionChange = { platforms, assets, targets, locales, primaryLocale, language, uploader, capture };
-  if (Object.values(change).every((v) => v === undefined)) throw new Error('Nothing to select: pass --platforms, --assets, --targets, --locales, --primary-locale, --language, --uploader and/or --capture.');
+  const urlEntries = Object.entries({ support: opts.supportUrl, privacy: opts.privacyUrl, marketing: opts.marketingUrl }).filter((e): e is [string, string] => e[1] !== undefined);
+  for (const [k, v] of urlEntries) if (v.trim() && !/^https?:\/\/[^\s/]+\.[^\s]+$/.test(v.trim())) throw new Error(`Invalid ${k} URL: ${v} (use a full https:// address).`);
+  const urls = urlEntries.length ? (Object.fromEntries(urlEntries.map(([k, v]) => [k, v.trim()])) as SelectionChange['urls']) : undefined;
+  const change: SelectionChange = { platforms, assets, targets, locales, primaryLocale, urls, language, uploader, capture };
+  if (Object.values(change).every((v) => v === undefined)) throw new Error('Nothing to select: pass --platforms, --assets, --targets, --locales, --primary-locale, --support-url, --privacy-url, --marketing-url, --language, --uploader and/or --capture.');
   const text = applySelection(await readFile(ctx.paths.config, 'utf8'), change);
   await writeText(ctx.paths.config, text);
   // Re-read through the schema so an invalid file is caught now, not in the next stage.

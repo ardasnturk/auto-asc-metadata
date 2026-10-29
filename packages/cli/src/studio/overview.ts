@@ -85,6 +85,7 @@ export interface Overview {
     selection: VitrinConfig['selection'];
     video: VitrinConfig['video'];
     seeds: VitrinConfig['research']['seeds'];
+    urls: VitrinConfig['urls'];
   };
   platforms?: PlatformsReport;
   stages: Record<string, { completedAt: string; status: string; note?: string } | undefined>;
@@ -212,6 +213,7 @@ export async function buildOverview(root: string): Promise<Overview> {
       selection: config.selection ?? {},
       video: config.video,
       seeds: config.research.seeds,
+      urls: config.urls,
     };
     if (profile) base.platforms = platformsReport(config, profile);
     const env = loadEnv(paths.env);

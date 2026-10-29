@@ -2,9 +2,9 @@ import { useState } from 'react';
 import { api, fileUrl, startLocale } from '../api';
 import { t } from '../i18n';
 import { useBusy, useFile, useStudio } from '../store';
-import { Button, Card, CodeEditor, Empty, Modal, Pill, Tabs, Thumb } from '../ui';
+import { Button, Card, CodeEditor, Empty, Modal, Tabs, Thumb } from '../ui';
 
-/** The app's screens: the HTML recreations, their renders per language and device, strings, and the mockups. */
+/** The app's screens as a gallery per language and device; the HTML, its source files and strings sit under Advanced. */
 export function Screens({ openClaude }: { openClaude: () => void }) {
   const { state, run, toast } = useStudio();
   const busy = useBusy();
@@ -16,7 +16,10 @@ export function Screens({ openClaude }: { openClaude: () => void }) {
   const [editing, setEditing] = useState<string | undefined>();
   const [stringsLocale, setStringsLocale] = useState<string | undefined>();
   const families = Object.keys(o.raw[locale] ?? {});
+  const [family, setFamily] = useState<string | undefined>();
+  const fam = family && families.includes(family) ? family : families.includes('iphone') ? 'iphone' : families[0];
   const hasBrief = o.briefs.some((b) => b.name === 'screens');
+  const wide = (f?: string) => ['mac', 'tv', 'vision'].includes(f ?? '');
 
   return (
     <div className="page">
@@ -25,78 +28,86 @@ export function Screens({ openClaude }: { openClaude: () => void }) {
         <p>{t('screensIntro')}</p>
       </header>
       <div className="row wrap" style={{ marginBottom: 14 }}>
-        <Button kind="primary" disabled={busy} onClick={() => run('capture')}>
-          {t('renderScreens')}
-        </Button>
-        <Button disabled={busy} onClick={() => run('mockups', { screens: true })}>
-          {t('renderMockups')}
-        </Button>
-        {o.mockups?.index && (
-          <Button onClick={() => window.open(fileUrl(o.mockups!.index!), '_blank')}>
-            {t('openMockups')}
-          </Button>
-        )}
         {hasBrief && (
-          <Button
-            kind="primary"
-            disabled={busy || !o.claude.available}
-            onClick={() =>
-              api
-                .askClaude({ stage: 'screens' })
-                .then(openClaude)
-                .catch((err) => toast((err as Error).message, 'err'))
-            }
-          >
+          <Button kind="primary" disabled={busy || !o.claude.available} onClick={() => api.askClaude({ stage: 'screens' }).then(openClaude).catch((err) => toast((err as Error).message, 'err'))}>
             ✳ {t('askClaude')}
           </Button>
         )}
-        <span className="grow" />
-        {cfg.locales.map((l) => (
-          <Button key={l} size="sm" kind={l === stringsLocale ? 'primary' : 'ghost'} onClick={() => setStringsLocale(l)}>
-            {t('strings')} {l}
+        <Button kind={hasBrief ? undefined : 'primary'} disabled={busy} title="vitrin capture" onClick={() => run('capture')}>
+          {t('renderScreens')}
+        </Button>
+        <Button disabled={busy} title="vitrin mockups --screens" onClick={() => run('mockups', { screens: true })}>
+          {t('renderMockups')}
+        </Button>
+        {o.mockups?.index && (
+          <Button kind="ghost" onClick={() => window.open(fileUrl(o.mockups!.index!), '_blank')}>
+            {t('openMockups')}
           </Button>
-        ))}
+        )}
       </div>
       {cfg.screens.length === 0 ? (
         <Empty>{t('noScreens')}</Empty>
       ) : (
         <>
           <Tabs tabs={locales.map((l) => ({ id: l, label: l }))} value={locale} onChange={setLocale} />
-          <div className="stack">
-            {cfg.screens.map((s) => (
-              <Card
-                key={s.id}
-                title={
-                  <span className="row">
-                    <code>{s.id}</code>
-                    {(s.source ?? []).map((f) => (
-                      <span key={f} className="dim small mono">
-                        {f}
-                      </span>
-                    ))}
-                  </span>
-                }
-                actions={
-                  <Button size="sm" onClick={() => setEditing(`metadata/screens/${s.id}.html`)}>
-                    {s.id}.html
-                  </Button>
-                }
-              >
-                <div className="thumbs">
-                  {families.length === 0 && <span className="dim small">{t('nothingYet')}</span>}
-                  {families.map((fam) => {
-                    const file = o.raw[locale]?.[fam]?.find((f) => f.name === `${s.id}.png`);
-                    return file ? <Thumb key={fam} path={file.path} caption={fam} bust={state.changedTick} wide={['mac', 'tv', 'vision'].includes(fam)} /> : <Pill key={fam}>{fam}: —</Pill>;
-                  })}
+          {families.length > 1 && (
+            <div className="row wrap" style={{ marginBottom: 10 }}>
+              {families.map((f) => (
+                <Button key={f} size="sm" kind={f === fam ? 'primary' : 'ghost'} onClick={() => setFamily(f)}>
+                  {f}
+                </Button>
+              ))}
+            </div>
+          )}
+          <div className="gallery">
+            {cfg.screens.map((s) => {
+              const file = fam ? o.raw[locale]?.[fam]?.find((f) => f.name === `${s.id}.png`) : undefined;
+              return file ? (
+                <Thumb key={s.id} path={file.path} caption={s.id} bust={state.changedTick} large wide={wide(fam)} />
+              ) : (
+                <div key={s.id} className={`thumb lg missing ${wide(fam) ? 'wide' : ''}`}>
+                  <div className="placeholder">{t('notRenderedYet')}</div>
+                  <div className="cap">{s.id}</div>
                 </div>
-              </Card>
-            ))}
+              );
+            })}
           </div>
+          <details className="advanced">
+            <summary>{t('advanced')}</summary>
+            <div className="stack">
+              <div className="dim small">{t('screensAdvancedHint')}</div>
+              <table className="plain">
+                <tbody>
+                  {cfg.screens.map((s) => (
+                    <tr key={s.id}>
+                      <td>
+                        <code>{s.id}</code>
+                      </td>
+                      <td className="dim small mono">{(s.source ?? []).join(', ') || '—'}</td>
+                      <td>
+                        <Button size="sm" kind="ghost" onClick={() => setEditing(`metadata/screens/${s.id}.html`)}>
+                          {t('editHtml')}
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <div className="row wrap">
+                <span className="dim small">{t('strings')}:</span>
+                {cfg.locales.map((l) => (
+                  <Button key={l} size="sm" kind="ghost" onClick={() => setStringsLocale(l)}>
+                    {l}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          </details>
         </>
       )}
       {o.mockups && o.mockups.screens.length > 0 && (
-        <Card title={t('mockups')} className="stack" >
-          <div className="thumbs">
+        <Card title={t('mockups')} className="stack">
+          <div className="gallery">
             {o.mockups.screens.slice(0, 24).map((f) => (
               <Thumb key={f.path} path={f.path} caption={f.name} bust={state.changedTick} large wide />
             ))}

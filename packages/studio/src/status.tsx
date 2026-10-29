@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { api, fileUrl, type Blocker, type Overview, type PipelineStage, type StageStatus, type StageView, type StudioQuestion } from './api';
 import { t, type UiKey } from './i18n';
+import { issueTitle } from './issues';
 import { useBusy, useStudio } from './store';
 import { Button, Pill } from './ui';
 
@@ -169,10 +170,9 @@ export function StageDecision({ stage, o }: { stage: StageView; o: Overview }) {
 
 /** One blocker: what is wrong, and its one-click fixes (or the install command to copy). */
 export function BlockerItem({ blocker, primary, openClaude }: { blocker: Blocker; primary?: boolean; openClaude?: () => void }) {
-  const { state, run } = useStudio();
+  const { run } = useStudio();
   const busy = useBusy();
-  const o = state.overview!;
-  if (blocker.code === 'design-choice') return <DesignChoice blocker={blocker} o={o} openClaude={openClaude} />;
+  if (blocker.code === 'design-choice') return <DesignChoice blocker={blocker} openClaude={openClaude} />;
   const install = typeof blocker.params.install === 'string' ? blocker.params.install : undefined;
   return (
     <div className={`blocker ${blocker.severity}`}>
@@ -202,9 +202,20 @@ export function BlockerItem({ blocker, primary, openClaude }: { blocker: Blocker
  * The design brief's question, answered with a click: each sample is a button that hands the choice to Claude, which
  * writes art-direction.json and continues the brief (the full shot list, then the render).
  */
-function DesignChoice({ blocker, o, openClaude }: { blocker: Blocker; o: Overview; openClaude?: () => void }) {
-  const { toast } = useStudio();
+function DesignChoice({ blocker, openClaude }: { blocker: Blocker; openClaude?: () => void }) {
+  return (
+    <div className="blocker decision">
+      <div>{blockerText(blocker)}</div>
+      <DesignOptionButtons openClaude={openClaude} />
+    </div>
+  );
+}
+
+/** One button per design sample (and the store preview to compare them): a click hands the choice to Claude. */
+export function DesignOptionButtons({ openClaude, label }: { openClaude?: () => void; label?: string }) {
+  const { state, toast } = useStudio();
   const busy = useBusy();
+  const o = state.overview!;
   const choose = async (option: { letter: string; style: string; name: string }) => {
     try {
       await api.askClaude({ stage: 'design', extra: `The user looked at the design samples in the Studio and chose ${option.letter}: “${option.name}” (${option.style}). That answers Step 2 of the brief: write art-direction.json with this choice (selectionReason: “The user chose ${option.letter}.”) and continue with Step 3.` });
@@ -215,20 +226,18 @@ function DesignChoice({ blocker, o, openClaude }: { blocker: Blocker; o: Overvie
     }
   };
   return (
-    <div className="blocker decision">
-      <div>{blockerText(blocker)}</div>
-      <div className="row wrap">
-        {o.samples?.storePreview && (
-          <Button size="sm" onClick={() => window.open(fileUrl(o.samples!.storePreview!), '_blank')}>
-            {t('openSamples')}
-          </Button>
-        )}
-        {o.samples?.options.map((x) => (
-          <Button key={x.style} size="sm" kind="primary" disabled={busy || !o.claude.available} title={o.claude.available ? x.style : t('claudeMissing')} onClick={() => choose(x)}>
-            {x.letter} · {x.name}
-          </Button>
-        ))}
-      </div>
+    <div className="row wrap">
+      {label && <span className="dim small">{label}</span>}
+      {o.samples?.storePreview && (
+        <Button size="sm" onClick={() => window.open(fileUrl(o.samples!.storePreview!), '_blank')}>
+          {t('openSamples')}
+        </Button>
+      )}
+      {o.samples?.options.map((x) => (
+        <Button key={x.style} size="sm" kind="primary" disabled={busy || !o.claude.available} title={o.claude.available ? x.style : t('claudeMissing')} onClick={() => choose(x)}>
+          {x.letter} · {x.name}
+        </Button>
+      ))}
     </div>
   );
 }
@@ -279,5 +288,42 @@ export function QuestionCard({ question, openClaude }: { question: StudioQuestio
         </Button>
       </div>
     </div>
+  );
+}
+
+export interface IssueItem {
+  code: string;
+  severity: 'error' | 'warning' | 'info';
+  message: string;
+  fix?: string;
+  locale?: string;
+  field?: string;
+}
+
+/**
+ * Validation issues without their codes: a title in the Studio's language, the validator's sentence, its fix hint,
+ * and an optional action per issue (e.g. “Fix” that jumps to the field).
+ */
+export function IssueList({ issues, action }: { issues: IssueItem[]; action?: (i: IssueItem) => ReactNode }) {
+  if (!issues.length) return null;
+  return (
+    <ul className="issues">
+      {issues.map((i, n) => {
+        const title = issueTitle(i.code);
+        return (
+          <li key={n} className={i.severity} title={i.code}>
+            {title ? (
+              <>
+                <b>{title}</b> <span className="dim">{i.message}</span>
+              </>
+            ) : (
+              i.message
+            )}
+            {i.fix && <div className="dim">→ {i.fix}</div>}
+            {action?.(i)}
+          </li>
+        );
+      })}
+    </ul>
   );
 }
