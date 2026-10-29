@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { api, type ClaudeEvent, type ClaudeRun, type PipelineStage } from './api';
 import { t } from './i18n';
 import { QuestionCard, STAGE_TITLE } from './status';
-import { useBusy, useStudio } from './store';
+import { useBusy, useDev, useStudio } from './store';
 import { Button, Pill } from './ui';
 
 /**
@@ -188,6 +188,8 @@ function pageFor(rel: string): string | undefined {
 }
 
 function Run({ run, events, root }: { run: RunInfo; events: Event[]; root: string }) {
+  const dev = useDev();
+  const tools = events.filter((e) => e.type === 'tool').length;
   // One summary per run: the last result (an extra result after the first one is a continuation of the same run).
   const results = events.filter((e): e is Extract<Event, { type: 'result' }> => e.type === 'result');
   const last = results[results.length - 1];
@@ -210,11 +212,12 @@ function Run({ run, events, root }: { run: RunInfo; events: Event[]; root: strin
               </div>
             );
           case 'tool':
-            return (
+            // Each Read/Edit/command in developer mode; otherwise a single line counting them.
+            return dev ? (
               <div key={i} className="msg tool">
                 <b>{e.name}</b> {e.summary}
               </div>
-            );
+            ) : null;
           case 'error':
             return (
               <div key={i} className="msg error">
@@ -225,6 +228,7 @@ function Run({ run, events, root }: { run: RunInfo; events: Event[]; root: strin
             return null;
         }
       })}
+      {!dev && tools > 0 && <div className="msg tool">{t('toolCalls', { n: tools })}</div>}
       {last && (
         <div className={`msg result ${last.ok ? '' : 'error'}`}>
           {files.length > 0 && (

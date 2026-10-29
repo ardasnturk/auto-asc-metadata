@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { fileUrl } from './api';
 import { t } from './i18n';
-import type { FileState } from './store';
+import { useDev, type FileState } from './store';
 
 /** Small building blocks shared by the pages. */
 
@@ -210,8 +210,8 @@ export function SaveBar<T>({ file, extra }: { file: FileState<T>; extra?: ReactN
         >
           {saving ? t('saving') : t('save')}
         </Button>
-        {file.dirty && <span className="dim small">unsaved</span>}
-        {file.readOnly && <Pill>read-only</Pill>}
+        {file.dirty && <span className="dim small">{t('unsaved')}</span>}
+        {file.readOnly && <Pill>{t('readOnly')}</Pill>}
         {extra}
       </div>
       {file.error && <div className="small" style={{ color: 'var(--err)' }}>{file.error}</div>}
@@ -238,9 +238,11 @@ export function CodeEditor<T>({ file, rows }: { file: FileState<T>; rows?: numbe
   );
 }
 
-/** A form/JSON toggle for an editor page section. */
+/** A form/JSON toggle for an editor page section; the JSON side is for developer mode. */
 export function useMode(): ['form' | 'json', ReactNode] {
+  const dev = useDev();
   const [mode, setMode] = useState<'form' | 'json'>('form');
+  if (!dev) return ['form', null];
   const toggle = (
     <div className="row" style={{ gap: 2 }}>
       <Button size="sm" kind={mode === 'form' ? undefined : 'ghost'} onClick={() => setMode('form')}>

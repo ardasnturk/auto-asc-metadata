@@ -1,13 +1,14 @@
 import { useState } from 'react';
 import { api, fileUrl, startLocale } from '../api';
 import { t } from '../i18n';
-import { useBusy, useFile, useStudio } from '../store';
+import { useBusy, useCli, useFile, useStudio } from '../store';
 import { Button, Card, CodeEditor, Empty, Modal, Tabs, Thumb } from '../ui';
 
 /** The app's screens as a gallery per language and device; the HTML, its source files and strings sit under Advanced. */
 export function Screens({ openClaude }: { openClaude: () => void }) {
   const { state, run, toast } = useStudio();
   const busy = useBusy();
+  const cli = useCli();
   const o = state.overview!;
   const cfg = o.config!;
   // Only the store locales: raw captures of a locale that is no longer selected are not part of this run.
@@ -33,10 +34,10 @@ export function Screens({ openClaude }: { openClaude: () => void }) {
             ✳ {t('askClaude')}
           </Button>
         )}
-        <Button kind={hasBrief ? undefined : 'primary'} disabled={busy} title="vitrin capture" onClick={() => run('capture')}>
+        <Button kind={hasBrief ? undefined : 'primary'} disabled={busy} title={cli('vitrin capture')} onClick={() => run('capture')}>
           {t('renderScreens')}
         </Button>
-        <Button disabled={busy} title="vitrin mockups --screens" onClick={() => run('mockups', { screens: true })}>
+        <Button disabled={busy} title={cli('vitrin mockups --screens')} onClick={() => run('mockups', { screens: true })}>
           {t('renderMockups')}
         </Button>
         {o.mockups?.index && (

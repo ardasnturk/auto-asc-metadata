@@ -11,16 +11,17 @@ import { Screens } from './pages/Screens';
 import { Setup } from './pages/Setup';
 import { Upload } from './pages/Upload';
 import { Video } from './pages/Video';
-import { pendingDecisions } from './status';
+import { jobName, pageTone, pendingDecisions } from './status';
 import { useBusy, useStudio } from './store';
-import { Button, Empty } from './ui';
+import { Button, Check, Empty } from './ui';
 
 export type Route = 'pipeline' | 'setup' | 'screens' | 'metadata' | 'design' | 'video' | 'review' | 'upload';
+/** In the order the run goes through them. */
 const ROUTES: Array<{ id: Route; icon: string }> = [
   { id: 'pipeline', icon: '◫' },
   { id: 'setup', icon: '⚙' },
-  { id: 'screens', icon: '▭' },
   { id: 'metadata', icon: '¶' },
+  { id: 'screens', icon: '▭' },
   { id: 'design', icon: '✦' },
   { id: 'video', icon: '▶' },
   { id: 'review', icon: '☑' },
@@ -42,7 +43,7 @@ function useRoute(): [Route, (r: Route) => void] {
 }
 
 export function App() {
-  const { state, run, dismiss } = useStudio();
+  const { state, run, dismiss, toast, setDevMode } = useStudio();
   const [route, go] = useRoute();
   const [claudeOpen, setClaudeOpen] = useState(false);
   const busy = useBusy();
@@ -51,6 +52,17 @@ export function App() {
   useEffect(() => {
     document.title = o?.app?.name ? `${o.app.name} · Vitrin Studio` : 'Vitrin Studio';
   }, [o?.app?.name]);
+
+  // One line when a step ends: done, waiting (for Claude or the user) or failed; the console keeps the details.
+  const finished = state.finishedJob;
+  useEffect(() => {
+    if (!finished) return;
+    const name = jobName(finished);
+    if (finished.status === 'ok') toast(t('jobDone', { name }), 'ok');
+    else if (finished.status === 'needs-input') toast(t(/Claude input needed/.test(finished.message ?? '') ? 'jobNeedsClaude' : 'jobNeedsInput', { name }), 'info');
+    else toast(t('jobFailed', { name }), 'err');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [finished?.id]);
 
   const badges: Partial<Record<Route, { n: number; tone?: 'warn' }>> = {};
   // Everything waiting for the user: blockers, decisions and the approve/upload clicks.
@@ -74,8 +86,8 @@ export function App() {
         )}
         <div className="spacer" />
         {state.job && (
-          <span className="pill accent">
-            <span className="dot busy" /> vitrin {state.job.command}
+          <span className="pill accent" title={state.devMode ? `vitrin ${state.job.command}` : undefined}>
+            <span className="dot busy" /> {jobName(state.job)}
           </span>
         )}
         {state.claudeRunning && (
@@ -92,14 +104,23 @@ export function App() {
       </div>
 
       <nav className="sidebar">
-        {ROUTES.map((r) => (
-          <button key={r.id} className={`nav ${route === r.id ? 'active' : ''}`} onClick={() => go(r.id)}>
-            <span className="ico">{r.icon}</span>
-            {t(r.id)}
-            {badges[r.id] && <span className={`badge ${badges[r.id]!.tone ?? ''}`}>{badges[r.id]!.n}</span>}
-          </button>
-        ))}
+        {ROUTES.map((r) => {
+          const tone = o?.flow.length && r.id !== 'pipeline' ? pageTone(o, r.id) : undefined;
+          return (
+            <button key={r.id} className={`nav ${route === r.id ? 'active' : ''}`} onClick={() => go(r.id)}>
+              <span className="ico">{r.icon}</span>
+              {t(r.id)}
+              {tone && !badges[r.id] && <span className={`sdot ${tone}`} />}
+              {badges[r.id] && <span className={`badge ${badges[r.id]!.tone ?? ''}`}>{badges[r.id]!.n}</span>}
+            </button>
+          );
+        })}
         <div className="foot">
+          <div title={t('devModeHint')} style={{ marginBottom: 8 }}>
+            <Check checked={state.devMode} onChange={setDevMode}>
+              <span className="small">{t('devMode')}</span>
+            </Check>
+          </div>
           Vitrin {o?.version ?? __VITRIN_VERSION__}
           <br />
           <span className="mono" title={o?.root}>

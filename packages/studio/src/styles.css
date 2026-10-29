@@ -1378,3 +1378,24 @@ label.mini {
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* A page's status in the sidebar (Akış and İnceleme carry a count instead). */
+.nav .sdot {
+  margin-left: auto;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--text-3);
+}
+.nav .sdot.ok {
+  background: var(--ok);
+}
+.nav .sdot.warn {
+  background: var(--warn);
+}
+.nav .sdot.err {
+  background: var(--err);
+}
+.nav .sdot.info {
+  background: var(--info);
+}

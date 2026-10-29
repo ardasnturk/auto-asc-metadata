@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { api, fileUrl, type RenderedFile } from '../api';
 import { t } from '../i18n';
 import { BlockerItem, DesignOptionButtons, go, IssueList, QuestionCard } from '../status';
-import { useBusy, useFile, useStudio } from '../store';
+import { useBusy, useCli, useFile, useStudio } from '../store';
 import { Button, Card, Check, CodeEditor, Empty, Field, ListInput, Lightbox, SaveBar, Select, Tabs, TextField, Thumb, useMode } from '../ui';
 
 /** The store screenshots in three steps: pick a style from the samples, write each screenshot's text, render and preview the set. */
@@ -101,6 +101,7 @@ export function Design({ openClaude }: { openClaude: () => void }) {
 function StyleStep({ openClaude }: { openClaude: () => void }) {
   const { state, run } = useStudio();
   const busy = useBusy();
+  const cli = useCli();
   const o = state.overview!;
   const ad = useFile<ArtDirection>('metadata/art-direction.json');
   const [styles, setStyles] = useState<string[]>([]);
@@ -125,7 +126,7 @@ function StyleStep({ openClaude }: { openClaude: () => void }) {
       {!s ? (
         <Empty>
           <p style={{ marginBottom: 10 }}>{t('noSamplesYet')}</p>
-          <Button kind="primary" disabled={busy} title="vitrin design --samples" onClick={() => run('design', { samples: true })}>
+          <Button kind="primary" disabled={busy} title={cli('vitrin design --samples')} onClick={() => run('design', { samples: true })}>
             {t('renderSamples')}
           </Button>
         </Empty>
@@ -155,7 +156,7 @@ function StyleStep({ openClaude }: { openClaude: () => void }) {
             ))}
           </div>
           <div className="row">
-            <Button kind="primary" disabled={busy} title="vitrin design --samples" onClick={() => run('design', { samples: true, styles: styles.length ? styles : undefined })}>
+            <Button kind="primary" disabled={busy} title={cli('vitrin design --samples')} onClick={() => run('design', { samples: true, styles: styles.length ? styles : undefined })}>
               {t('renderSamples')} {styles.length ? `(${styles.length})` : ''}
             </Button>
             <span className="dim small">{o.platforms?.samples ? `${o.platforms.samples.locale} · ${o.platforms.samples.target}` : ''}</span>
@@ -174,6 +175,7 @@ function StyleStep({ openClaude }: { openClaude: () => void }) {
 function RenderStep({ locales }: { locales: string[] }) {
   const { state, run } = useStudio();
   const busy = useBusy();
+  const cli = useCli();
   const o = state.overview!;
   const [locale, setLocale] = useState(locales[0] ?? 'en-US');
   const [big, setBig] = useState<string | undefined>();
@@ -183,10 +185,10 @@ function RenderStep({ locales }: { locales: string[] }) {
   return (
     <div className="stack">
       <div className="row wrap">
-        <Button kind="primary" disabled={busy} title="vitrin design" onClick={() => run('design')}>
+        <Button kind="primary" disabled={busy} title={cli('vitrin design')} onClick={() => run('design')}>
           {t('renderAll')}
         </Button>
-        <Button disabled={busy} title="vitrin validate" onClick={() => run('validate')}>
+        <Button disabled={busy} title={cli('vitrin validate')} onClick={() => run('validate')}>
           {t('stageValidate')}
         </Button>
         <span className="grow" />

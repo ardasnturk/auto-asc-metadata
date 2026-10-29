@@ -1,3 +1,4 @@
+import { t, type UiKey } from './i18n';
 /** Types and calls for the Studio server (packages/cli/src/studio). Kept in sync by hand; the server is the source. */
 
 export interface RenderedFile {
@@ -208,6 +209,23 @@ export class ApiError extends Error {
   }
 }
 
+/** Server errors the Studio words itself (the server's `code`); anything else keeps the server's sentence. */
+const ERROR_TEXT: Record<string, UiKey> = {
+  'claude-busy': 'errClaudeBusy',
+  'job-busy': 'errJobBusy',
+  'no-brief': 'errNoBrief',
+  'question-gone': 'errQuestionGone',
+  'files-changed': 'errFilesChanged',
+  'validation-errors': 'errValidationErrors',
+};
+
+function errorText(data: Record<string, unknown>, fallback: string): string {
+  const key = typeof data.code === 'string' ? ERROR_TEXT[data.code] : undefined;
+  if (!key) return typeof data.error === 'string' ? data.error : fallback;
+  const params = (typeof data.params === 'object' && data.params ? data.params : {}) as Record<string, string | number>;
+  return t(key, params);
+}
+
 async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
   const res = await fetch(path, { method, headers: body === undefined ? {} : { 'content-type': 'application/json' }, body: body === undefined ? undefined : JSON.stringify(body) });
   const text = await res.text();
@@ -217,7 +235,7 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
   } catch {
     data = { error: text };
   }
-  if (!res.ok) throw new ApiError(typeof data.error === 'string' ? data.error : `${res.status} ${res.statusText}`, res.status, Array.isArray(data.issues) ? (data.issues as string[]) : [], data);
+  if (!res.ok) throw new ApiError(errorText(data, `${res.status} ${res.statusText}`), res.status, Array.isArray(data.issues) ? (data.issues as string[]) : [], data);
   return data as T;
 }
 

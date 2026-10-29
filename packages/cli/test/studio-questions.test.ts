@@ -68,7 +68,10 @@ describe('answering a question in the Studio', () => {
   }, 30_000);
 
   it('refuses unknown questions and empty answers, then removes the answered one and starts Claude with it', async () => {
-    expect((await post('/api/questions/answer', { id: 'nope', answer: 'B' })).status).toBe(404);
+    const gone = await post('/api/questions/answer', { id: 'nope', answer: 'B' });
+    expect(gone.status).toBe(404);
+    // A stable code lets the Studio word the error in its own language.
+    expect(await gone.json()).toMatchObject({ code: 'question-gone' });
     expect((await post('/api/questions/answer', { id: 'design-style', answer: '  ' })).status).toBe(400);
     const res = await post('/api/questions/answer', { id: 'design-style', answer: 'B' });
     expect(res.status).toBe(202);

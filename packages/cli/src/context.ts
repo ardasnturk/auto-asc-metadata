@@ -9,6 +9,9 @@ export class NeedsInput extends Error {
   constructor(
     message: string,
     public readonly details: string[] = [],
+    /** Stable id (and values) for a UI that words the message in its own language. */
+    public readonly code?: string,
+    public readonly params: Record<string, string | number> = {},
   ) {
     super(message);
   }

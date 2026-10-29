@@ -2,7 +2,7 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { api, type JobSummary } from '../api';
 import { t } from '../i18n';
 import { CopyCode, go, stageReason } from '../status';
-import { useBusy, useStudio } from '../store';
+import { useBusy, useCli, useStudio } from '../store';
 import { Button, Card, Check, fmtDate, Modal, Pill, Radio } from '../ui';
 import { DoctorChecks } from './Setup';
 
@@ -13,6 +13,7 @@ import { DoctorChecks } from './Setup';
 export function Upload() {
   const { state, run } = useStudio();
   const busy = useBusy();
+  const cli = useCli();
   const o = state.overview!;
   const [flags, setFlags] = useState({ creatives: false, cpp: false, events: false, experiment: false, skipScreenshots: false });
   const [doctor, setDoctor] = useState<JobSummary | undefined>();
@@ -78,7 +79,7 @@ export function Upload() {
           ok={keysOk}
           title={t('uploadStepKeys')}
           actions={
-            <Button size="sm" disabled={busy} title="vitrin doctor" onClick={() => run('doctor', {})}>
+            <Button size="sm" disabled={busy} title={cli('vitrin doctor')} onClick={() => run('doctor', {})}>
               {t('doctor')}
             </Button>
           }
@@ -143,7 +144,7 @@ export function Upload() {
             </Check>
           </div>
           <div className="row">
-            <Button kind="primary" disabled={busy} title="vitrin upload --dry-run" onClick={() => run('upload', { dryRun: true, ...flagArgs })}>
+            <Button kind="primary" disabled={busy} title={cli('vitrin upload --dry-run')} onClick={() => run('upload', { dryRun: true, ...flagArgs })}>
               {t('dryRun')}
             </Button>
           </div>
@@ -162,7 +163,7 @@ export function Upload() {
 
         <Step n={5} ok={Boolean(uploaded && uploaded.overallHash === o.approval?.overallHash)} title={t('uploadStepUpload')}>
           <div className="row">
-            <Button kind="danger" disabled={!canUpload} title="vitrin upload --yes" onClick={() => setConfirm(true)}>
+            <Button kind="danger" disabled={!canUpload} title={cli('vitrin upload --yes')} onClick={() => setConfirm(true)}>
               {t('uploadNow')}
             </Button>
           </div>
@@ -178,7 +179,7 @@ export function Upload() {
               <dt>{t('uploaded')}</dt>
               <dd>{fmtDate(uploaded.uploadedAt)}</dd>
               <dt>{t('readBack')}</dt>
-              <dd>{uploaded.readBack === 'ok' ? <Pill tone="ok">ok</Pill> : <Pill tone="err">{uploaded.differences.length} {t('differences')}</Pill>}</dd>
+              <dd>{uploaded.readBack === 'ok' ? <Pill tone="ok">{t('readBackOk')}</Pill> : <Pill tone="err">{uploaded.differences.length} {t('differences')}</Pill>}</dd>
               {uploaded.differences.map((d, i) => (
                 <dd key={i} style={{ gridColumn: '1 / -1' }} className="small">
                   {d}
@@ -207,7 +208,7 @@ export function Upload() {
                   </Radio>
                 </div>
                 <div className="row">
-                  <Button disabled={busy || !uploaded || deleteResearch === undefined} title="vitrin finalize" onClick={() => run('finalize', { checked: true, deleteResearch })}>
+                  <Button disabled={busy || !uploaded || deleteResearch === undefined} title={cli('vitrin finalize')} onClick={() => run('finalize', { checked: true, deleteResearch })}>
                     {t('finalize')}
                   </Button>
                 </div>
@@ -221,7 +222,7 @@ export function Upload() {
             <p className="dim small">{t('submitHint')}</p>
             <div className="row">
               <input className="input mono" placeholder={o.app?.bundleId ?? t('bundleId')} value={bundle} onChange={(e) => setBundle(e.target.value)} />
-              <Button kind="danger" disabled={busy || !bundle || bundle !== o.app?.bundleId} title="vitrin submit" onClick={() => run('submit', { confirm: bundle })}>
+              <Button kind="danger" disabled={busy || !bundle || bundle !== o.app?.bundleId} title={cli('vitrin submit')} onClick={() => run('submit', { confirm: bundle })}>
                 {t('submit')}
               </Button>
             </div>

@@ -2,7 +2,7 @@ import { Fragment, useState } from 'react';
 import { api, type Overview, type PipelineStage, type StageView } from '../api';
 import { t, type UiKey } from '../i18n';
 import { BlockerItem, blockerText, go, pendingDecisions, QuestionCard, STAGE_HINT, STAGE_PAGE, STAGE_TITLE, StageDecision, stageReason, statusClass, StatusPill } from '../status';
-import { useBusy, useStudio } from '../store';
+import { useBusy, useCli, useStudio } from '../store';
 import { Button, Card, fmtDate, Modal, Pill } from '../ui';
 
 /** The run at a glance: the next step first, then every stage with the status the server computed, and what waits for the user. */
@@ -31,6 +31,7 @@ const GROUPS: Array<{ title: UiKey; stages: PipelineStage[] }> = [
 export function Pipeline({ openClaude }: { openClaude: () => void }) {
   const { state, run, toast } = useStudio();
   const busy = useBusy();
+  const cli = useCli();
   const o = state.overview!;
   const [brief, setBrief] = useState<{ name: string; text: string } | undefined>();
   const runningCommand = state.job?.command;
@@ -61,7 +62,7 @@ export function Pipeline({ openClaude }: { openClaude: () => void }) {
     // A missing tool (ffmpeg) makes the run fail for sure; it unlocks by itself once the tool is installed.
     const missingTool = o.blockers.find((b) => b.stage === id && b.severity === 'error' && typeof b.params.install === 'string');
     return (
-      <Button size={opts.size} kind={opts.primary ? 'primary' : opts.force ? 'ghost' : undefined} disabled={busy || Boolean(missingTool)} title={missingTool ? blockerText(missingTool) : `vitrin ${c.command}`} onClick={() => run(c.command, c.args, opts.force)}>
+      <Button size={opts.size} kind={opts.primary ? 'primary' : opts.force ? 'ghost' : undefined} disabled={busy || Boolean(missingTool)} title={missingTool ? blockerText(missingTool) : cli(`vitrin ${c.command}`)} onClick={() => run(c.command, c.args, opts.force)}>
         {t(opts.force ? 'rerun' : 'run')}
       </Button>
     );

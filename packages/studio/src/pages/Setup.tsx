@@ -2,7 +2,7 @@ import { Fragment, useEffect, useMemo, useState, type ReactNode } from 'react';
 import type { JobSummary, Overview } from '../api';
 import { t, type UiKey } from '../i18n';
 import { BlockerItem, CopyCode } from '../status';
-import { useBusy, useStudio } from '../store';
+import { useBusy, useCli, useStudio } from '../store';
 import { Button, Card, Check, Field, Pill, Radio, Select } from '../ui';
 
 /**
@@ -47,6 +47,7 @@ function localeName(tag: string, language: string): string {
 export function Setup() {
   const { state, run } = useStudio();
   const busy = useBusy();
+  const cli = useCli();
   const o = state.overview!;
   const p = o.platforms;
   const cfg = o.config!;
@@ -251,7 +252,7 @@ export function Setup() {
           <span>{t('unsavedChanges', { n: changes })}</span>
           <span className="grow" />
           <Button onClick={() => setDraft(saved)}>{t('discard')}</Button>
-          <Button kind="primary" disabled={busy} title="vitrin select" onClick={() => run('select', args)}>
+          <Button kind="primary" disabled={busy} title={cli('vitrin select')} onClick={() => run('select', args)}>
             {t('save')}
           </Button>
         </div>

@@ -456,6 +456,8 @@ export async function requireValidContent(ctx: Ctx): Promise<void> {
   throw new NeedsInput(
     `Not approved: the last validation found ${errors.length} error(s) (metadata/validation.json), and the upload refuses content with errors. Fix them, run \`vitrin validate\`, then review again.`,
     errors.slice(0, 12).map((i) => `[${i.code}] ${i.message}`),
+    'validation-errors',
+    { n: errors.length },
   );
 }
 

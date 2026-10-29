@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { api, fileUrl, type ReviewState } from '../api';
 import { t } from '../i18n';
-import { useBusy, useStudio } from '../store';
+import { useBusy, useCli, useStudio } from '../store';
 import { stageReason } from '../status';
 import { Button, Card, fmtDate, Modal, Pill } from '../ui';
 
@@ -9,6 +9,7 @@ import { Button, Card, fmtDate, Modal, Pill } from '../ui';
 export function Review() {
   const { state, run, toast } = useStudio();
   const busy = useBusy();
+  const cli = useCli();
   const o = state.overview!;
   const [review, setReview] = useState<ReviewState | undefined>();
   const [loading, setLoading] = useState(false);
@@ -69,7 +70,7 @@ export function Review() {
           </span>
         )}
         <span className="grow" />
-        <Button disabled={busy || loading} title="vitrin validate" onClick={() => run('validate')}>
+        <Button disabled={busy || loading} title={cli('vitrin validate')} onClick={() => run('validate')}>
           {t('stageValidate')}
         </Button>
         <Button disabled={busy || loading} onClick={() => load()}>
@@ -84,7 +85,7 @@ export function Review() {
       </div>
       {invalid && !review?.approval.ok && <div className="dim small" style={{ marginBottom: 12 }}>{t('approveNeedsValid')}</div>}
       {review && (
-        <Card className="tight" title={`${review.items.length} items`}>
+        <Card className="tight" title={t('items', { n: review.items.length })}>
           <div className="row wrap">
             {review.summary.map((l, i) => (
               <span key={i} className="pill">

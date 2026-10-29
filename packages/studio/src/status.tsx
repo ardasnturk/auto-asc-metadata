@@ -2,7 +2,7 @@ import { useState, type ReactNode } from 'react';
 import { api, fileUrl, type Blocker, type Overview, type PipelineStage, type StageStatus, type StageView, type StudioQuestion } from './api';
 import { t, type UiKey } from './i18n';
 import { issueTitle } from './issues';
-import { useBusy, useStudio } from './store';
+import { useBusy, useDev, useStudio } from './store';
 import { Button, Pill } from './ui';
 
 /** How the server's stage model (overview.flow, blockers, next) reads in the Studio: labels, tones and fixes. */
@@ -305,13 +305,14 @@ export interface IssueItem {
  * and an optional action per issue (e.g. “Fix” that jumps to the field).
  */
 export function IssueList({ issues, action }: { issues: IssueItem[]; action?: (i: IssueItem) => ReactNode }) {
+  const dev = useDev();
   if (!issues.length) return null;
   return (
     <ul className="issues">
       {issues.map((i, n) => {
         const title = issueTitle(i.code);
         return (
-          <li key={n} className={i.severity} title={i.code}>
+          <li key={n} className={i.severity} title={dev ? i.code : undefined}>
             {title ? (
               <>
                 <b>{title}</b> <span className="dim">{i.message}</span>
@@ -326,4 +327,25 @@ export function IssueList({ issues, action }: { issues: IssueItem[]; action?: (i
       })}
     </ul>
   );
+}
+
+/** A job in the user's words: the stage it runs, or what the command does. */
+export function jobName(job: { command: string; args?: Record<string, unknown> }): string {
+  if (job.command === 'upload') return t(job.args?.dryRun ? 'dryRun' : 'stageUpload');
+  if (job.command === 'design' && job.args?.samples) return t('renderSamples');
+  const other: Record<string, UiKey> = { select: 'applySelection', doctor: 'doctor', finalize: 'finalize', submit: 'submit', init: 'initNow' };
+  if (other[job.command]) return t(other[job.command]!);
+  const stage = STAGE_TITLE[job.command as PipelineStage];
+  return stage ? t(stage) : job.command;
+}
+
+/** A dot per page in the sidebar: the most urgent status among the stages that live on it. */
+export function pageTone(o: Overview, page: string): 'err' | 'warn' | 'info' | 'ok' | undefined {
+  const views = o.flow.filter((s) => STAGE_PAGE[s.id] === page && s.status !== 'skipped' && !(s.optional && s.status === 'not-run'));
+  if (!views.length) return undefined;
+  if (views.some((s) => s.status === 'blocked')) return 'err';
+  if (views.some((s) => s.status === 'needs-user' || s.status === 'needs-claude')) return 'warn';
+  if (views.some((s) => s.status === 'outdated')) return 'info';
+  if (views.every((s) => s.status === 'done')) return 'ok';
+  return undefined;
 }

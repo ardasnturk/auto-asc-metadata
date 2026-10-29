@@ -169,6 +169,7 @@ describe('approval and validation', () => {
       const err = await recordApproval(ctx, inv, 'cli').catch((e: unknown) => e);
       expect(err).toBeInstanceOf(NeedsInput);
       expect((err as NeedsInput).message).toContain('1 error(s)');
+      expect(err).toMatchObject({ code: 'validation-errors', params: { n: 1 } });
       expect((err as NeedsInput).details).toEqual(['[metadata.stray-locale] metadata/store/metadata/de-DE is a locale not in the config.']);
       expect(existsSync(ctx.paths.approval)).toBe(false);
       writeFileSync(ctx.paths.validation, JSON.stringify(report));

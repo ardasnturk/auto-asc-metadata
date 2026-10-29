@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { api, fileUrl, startLocale } from '../api';
 import { t } from '../i18n';
-import { useBusy, useFile, useStudio } from '../store';
+import { useBusy, useCli, useFile, useStudio } from '../store';
 import { BlockerItem, blockerText } from '../status';
 import { Button, Card, CodeEditor, Empty, Field, ListInput, SaveBar, Select, Tabs, TextField, useMode } from '../ui';
 
@@ -37,6 +37,7 @@ interface VideoPlan {
 export function Video({ openClaude }: { openClaude: () => void }) {
   const { state, run, toast } = useStudio();
   const busy = useBusy();
+  const cli = useCli();
   const o = state.overview!;
   const cfg = o.config!;
   const [locale, setLocale] = useState(startLocale(cfg));
@@ -63,10 +64,10 @@ export function Video({ openClaude }: { openClaude: () => void }) {
         </div>
       )}
       <div className="row wrap" style={{ marginBottom: 14 }}>
-        <Button kind="primary" disabled={busy || Boolean(ffmpeg)} title={renderLock ?? 'vitrin video'} onClick={() => run('video')}>
+        <Button kind="primary" disabled={busy || Boolean(ffmpeg)} title={renderLock ?? cli('vitrin video')} onClick={() => run('video')}>
           {t('renderVideo')}
         </Button>
-        <Button disabled={busy || Boolean(ffmpeg)} title={renderLock ?? 'vitrin video --styles all'} onClick={() => run('video', { styles: ['all'], locales: [locale] })}>
+        <Button disabled={busy || Boolean(ffmpeg)} title={renderLock ?? cli('vitrin video --styles all')} onClick={() => run('video', { styles: ['all'], locales: [locale] })}>
           {t('compareStyles')}
         </Button>
         {hasBrief && (

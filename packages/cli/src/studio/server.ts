@@ -280,7 +280,7 @@ export async function startStudioServer(root: string, opts: { port?: number; hos
         const body = method === 'DELETE' ? {} : await readBody(req);
 
         if (path === '/api/jobs' && method === 'POST') {
-          if (claude.running) return sendJson(res, 409, { error: 'Claude is working in this project; wait for it to finish or cancel it.' });
+          if (claude.running) return sendJson(res, 409, { error: 'Claude is working in this project; wait for it to finish or cancel it.', code: 'claude-busy' });
           const command = typeof body.command === 'string' ? body.command : '';
           if (!command) return sendJson(res, 400, { error: 'command is required.' });
           const args = typeof body.args === 'object' && body.args !== null ? (body.args as Record<string, unknown>) : {};
@@ -295,14 +295,14 @@ export async function startStudioServer(root: string, opts: { port?: number; hos
           return sendJson(res, 200, { ok: true, path: f.rel });
         }
         if (path === '/api/claude' && method === 'POST') {
-          if (jobs.running) return sendJson(res, 409, { error: `“${jobs.running.command}” is still running; wait for it before starting Claude.` });
+          if (jobs.running) return sendJson(res, 409, { error: `“${jobs.running.command}” is still running; wait for it before starting Claude.`, code: 'job-busy' });
           const extra = typeof body.extra === 'string' ? body.extra : undefined;
           let prompt = typeof body.prompt === 'string' ? body.prompt.trim() : '';
           let label: RunLabel = { kind: 'prompt', text: prompt };
           if (!prompt && typeof body.stage === 'string') {
             label = { kind: 'brief', stage: body.stage, ...(extra?.trim() ? { extra: extra.trim() } : {}) };
             const brief = `metadata/briefs/${body.stage.replace(/[^\w-]/g, '')}.md`;
-            if (!existsSync(join(root, brief))) return sendJson(res, 404, { error: `No brief for “${body.stage}” yet; run the stage first.` });
+            if (!existsSync(join(root, brief))) return sendJson(res, 404, { error: `No brief for “${body.stage}” yet; run the stage first.`, code: 'no-brief' });
             prompt = briefPrompt(body.stage, brief, extra);
           }
           if (!prompt) return sendJson(res, 400, { error: 'prompt or stage is required.' });
@@ -312,15 +312,15 @@ export async function startStudioServer(root: string, opts: { port?: number; hos
           return sendJson(res, 202, { id: run.id, startedAt: run.startedAt });
         }
         if (path === '/api/claude/reset' && method === 'POST') {
-          if (!claude.reset()) return sendJson(res, 409, { error: 'Claude is working; stop it first.' });
+          if (!claude.reset()) return sendJson(res, 409, { error: 'Claude is working; stop it first.', code: 'claude-busy' });
           return sendJson(res, 200, { ok: true });
         }
         if (path === '/api/questions/answer' && method === 'POST') {
-          if (jobs.running) return sendJson(res, 409, { error: `“${jobs.running.command}” is still running; answer once it finished.` });
+          if (jobs.running) return sendJson(res, 409, { error: `“${jobs.running.command}” is still running; answer once it finished.`, code: 'job-busy' });
           const file = appPaths(root).questions;
           const data = await readJsonIfExists(file, StudioQuestions).catch(() => undefined);
           const q = data?.questions.find((x) => x.id === body.id);
-          if (!data || !q) return sendJson(res, 404, { error: 'No such question; it may have been answered already.' });
+          if (!data || !q) return sendJson(res, 404, { error: 'No such question; it may have been answered already.', code: 'question-gone' });
           const answer = typeof body.answer === 'string' ? body.answer.trim().slice(0, 4000) : '';
           if (!answer) return sendJson(res, 400, { error: 'answer is required.' });
           const brief = q.stage ? `metadata/briefs/${STAGE_BRIEF[q.stage] ?? q.stage}.md` : undefined;
@@ -341,10 +341,10 @@ export async function startStudioServer(root: string, opts: { port?: number; hos
           return sendJson(res, 200, { running: false });
         }
         if (path === '/api/approve' || path === '/api/reject') {
-          if (jobs.running) return sendJson(res, 409, { error: 'A stage is running; decide once it finished.' });
+          if (jobs.running) return sendJson(res, 409, { error: 'A stage is running; decide once it finished.', code: 'job-busy' });
           const { ctx, inv } = await reviewState();
           if (typeof body.overallHash !== 'string' || body.overallHash !== inv.overallHash) {
-            return sendJson(res, 409, { error: 'The files changed since this page was generated; reload the page and review again.', overallHash: inv.overallHash });
+            return sendJson(res, 409, { error: 'The files changed since this page was generated; reload the page and review again.', code: 'files-changed', overallHash: inv.overallHash });
           }
           if (path === '/api/approve') {
             const approval = await recordApproval(ctx, inv, 'review-server');
@@ -427,6 +427,9 @@ export async function startStudioServer(root: string, opts: { port?: number; hos
       const status = (err as { status?: number }).status ?? (err instanceof EditableError ? err.status : err instanceof NeedsInput ? 409 : 500);
       const body: Record<string, unknown> = { error: (err as Error).message };
       if (err instanceof EditableError) body.issues = err.issues;
+      const code = (err as { code?: unknown }).code;
+      if (typeof code === 'string') body.code = code;
+      if (err instanceof NeedsInput) body.params = err.params;
       if (!res.headersSent) sendJson(res, status, body);
       else res.destroy();
     }

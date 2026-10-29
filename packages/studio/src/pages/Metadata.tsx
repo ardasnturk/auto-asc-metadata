@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { api, type Overview } from '../api';
 import { t } from '../i18n';
 import { IssueList } from '../status';
-import { useBusy, useFile, useStudio } from '../store';
+import { useBusy, useCli, useDev, useFile, useStudio } from '../store';
 import { Button, Card, CodeEditor, Empty, ListInput, Pill, SaveBar, Tabs, TextField, useMode, utf8Bytes } from '../ui';
 
 /** The store text per language with App Store Connect counters, app-level fields and the validation issues inline. */
@@ -55,12 +55,14 @@ const isPlaceholder = (url?: string) => Boolean(url && /\bexample\.(com|org|net)
 export function Metadata({ openClaude }: { openClaude: () => void }) {
   const { state, run, toast } = useStudio();
   const busy = useBusy();
+  const cli = useCli();
   const o = state.overview!;
   const cfg = o.config!;
   const tabs = [...cfg.locales.map((l) => ({ id: l, label: l })), { id: '__app', label: t('appLevel') }, ...(o.playListing.length || o.app?.platforms.includes('android') ? [{ id: '__play', label: t('playListing') }] : [])];
   const [tab, setTab] = useState(tabs[0]!.id);
   const validation = useFile<{ issues: Issue[] }>(o.files.validation ? 'metadata/validation.json' : undefined);
-  const issues = validation.data?.issues ?? [];
+  // Only the text: image, screenshot, badge and video issues belong to Tasarım and Video.
+  const issues = (validation.data?.issues ?? []).filter((i) => !/^(image|shot|badge|video)\./.test(i.code));
   const hasBrief = o.briefs.some((b) => b.name === 'write');
 
   return (
@@ -70,10 +72,10 @@ export function Metadata({ openClaude }: { openClaude: () => void }) {
         <p>{t('metadataIntro')}</p>
       </header>
       <div className="row wrap" style={{ marginBottom: 14 }}>
-        <Button kind="primary" disabled={busy} title="vitrin write" onClick={() => run('write')}>
+        <Button kind="primary" disabled={busy} title={cli('vitrin write')} onClick={() => run('write')}>
           {t('writeAction')}
         </Button>
-        <Button disabled={busy} title="vitrin research" onClick={() => run('research')}>
+        <Button disabled={busy} title={cli('vitrin research')} onClick={() => run('research')}>
           {t('researchAction')}
         </Button>
         {hasBrief && (
@@ -234,6 +236,7 @@ function KeywordChips({ locale, used, keywords, onAdd }: { locale: string; used:
 function UrlsCard({ o }: { o: Overview }) {
   const { run } = useStudio();
   const busy = useBusy();
+  const cli = useCli();
   const saved = o.config!.urls;
   const [draft, setDraft] = useState(saved);
   const key = JSON.stringify(saved);
@@ -260,7 +263,7 @@ function UrlsCard({ o }: { o: Overview }) {
           ))}
         </div>
         <div className="row">
-          <Button kind="primary" disabled={busy || !Object.keys(args).length} title="vitrin select" onClick={() => run('select', args)}>
+          <Button kind="primary" disabled={busy || !Object.keys(args).length} title={cli('vitrin select')} onClick={() => run('select', args)}>
             {t('save')}
           </Button>
         </div>
@@ -318,12 +321,13 @@ function PlayEditor({ locales }: { locales: string[] }) {
 
 function PlayFile({ path }: { path: string }) {
   const file = useFile<Record<string, unknown>>(path);
+  const dev = useDev();
   if (file.loading) return <span className="dim">{t('loading')}</span>;
   const d = file.data;
   const str = (k: string) => (typeof d?.[k] === 'string' ? (d[k] as string) : '');
   const set = (k: string, v: string) => d && file.setData({ ...d, [k]: v });
   return (
-    <Card title={<code>{path}</code>}>
+    <Card title={dev ? <code>{path}</code> : t('playListing')}>
       <div className="stack">
         {d && 'title' in d && (
           <>
@@ -332,7 +336,8 @@ function PlayFile({ path }: { path: string }) {
             <TextField label={t('playFull')} value={str('fullDescription')} max={4000} multiline rows={10} onChange={(v) => set('fullDescription', v)} />
           </>
         )}
-        <CodeEditor file={file} rows={d && 'title' in d ? 10 : 20} />
+        {(dev || !(d && 'title' in d)) && <CodeEditor file={file} rows={d && 'title' in d ? 10 : 20} />}
+        {!dev && d && 'title' in d && <SaveBar file={file} />}
       </div>
     </Card>
   );

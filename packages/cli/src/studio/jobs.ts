@@ -120,7 +120,7 @@ export class JobRunner extends EventEmitter {
 
   /** Starts a job (one at a time); resolves once it is running, not when it ends. */
   start(command: string, args: Record<string, unknown> = {}, opts: { force?: boolean } = {}): Job {
-    if (this.current) throw Object.assign(new Error(`“${this.current.command}” is still running.`), { status: 409 });
+    if (this.current) throw Object.assign(new Error(`“${this.current.command}” is still running.`), { status: 409, code: 'job-busy' });
     const job: Job = { id: randomUUID().slice(0, 8), command, args, status: 'running', startedAt: new Date().toISOString(), lines: [] };
     this.jobs.push(job);
     if (this.jobs.length > 50) this.jobs.splice(0, this.jobs.length - 50);
