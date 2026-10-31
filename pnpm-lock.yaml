@@ -369,8 +369,8 @@ importers:
         specifier: workspace:*
         version: link:../schemas
       lucide-static:
-        specifier: 1.61.0
-        version: 1.61.0
+        specifier: 1.62.0
+        version: 1.62.0
       playwright:
         specifier: ^1.64.1
         version: 1.64.1
@@ -2065,8 +2065,8 @@ packages:
     resolution: {integrity: sha512-Jo6dJ04CmSjuznwJSS3pUeWmd/H0ffTlkXXgwZi+eq1UCmqQwCh+eLsYOYCwY991i2Fah4h1BEMCx4qThGbsiA==}
     engines: {node: '>=10'}
 
-  lucide-static@1.61.0:
-    resolution: {integrity: sha512-yLAiQB3MWUJEstsEDAwenSA3m7vr1tdLvgnC16Q/XMxRRma0DWwMs8M2bWlvgShrIs1m2mWMJ+0AiahqQO4GrA==}
+  lucide-static@1.62.0:
+    resolution: {integrity: sha512-WBZA/m2PvkFpMGHDtsBck5P2A9G4ehLlYu4GwwICcmEm1BvYVgj00lCDxKRWLlbMlOibLaiwdQ88G5pHkSWgwA==}
 
   magic-string@1.4.3:
     resolution: {integrity: sha512-z12OxmaPGE0F4xlpGdjuAUckipLpQlTAuAmyGhNoD7ODpYUzvDfvtxUbjM/jwznyP178oju/KDdyi220wNJ0RQ==}
@@ -3997,7 +3997,7 @@ snapshots:
     dependencies:
       yallist: 4.0.0
 
-  lucide-static@1.61.0: {}
+  lucide-static@1.62.0: {}
 
   magic-string@1.4.3:
     dependencies:
